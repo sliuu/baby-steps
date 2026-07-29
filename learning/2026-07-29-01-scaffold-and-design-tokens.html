@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step 1 · Scaffold and Design Tokens — Baby Steps</title>
+<style>
+  :root {
+    --bg: #f7f4ed;
+    --surface: #fdfcf8;
+    --sunken: #f1eee6;
+    --ink: #1c1a17;
+    --muted: #8a8378;
+    --hair: #e3ded2;
+    --accent: #c4483c;
+    --code-bg: #f4f1e8;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1815; --surface: #221f1b; --sunken: #141310;
+      --ink: #f0ebe0; --muted: #918a7c; --hair: #33302a;
+      --accent: #d75f52; --code-bg: #17150f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 .5rem; font-weight: 600; }
+  h2 {
+    font-size: 1.7rem; margin: 3.5rem 0 1rem; font-weight: 600;
+    padding-top: 1.5rem; border-top: 1px solid var(--hair);
+  }
+  h3 { font-size: 1.2rem; margin: 2rem 0 .6rem; font-weight: 600; }
+  p, li { margin: 0 0 .9rem; }
+  ul, ol { padding-left: 1.3rem; }
+  code {
+    font-family: var(--mono); font-size: .85em;
+    background: var(--code-bg); padding: .1em .35em; border-radius: 3px;
+  }
+  pre {
+    font-family: var(--mono); font-size: .8rem; line-height: 1.55;
+    background: var(--code-bg); border: 1px solid var(--hair);
+    border-radius: 8px; padding: 1rem 1.1rem;
+    overflow-x: auto; white-space: pre; margin: 0 0 1.2rem;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .18em;
+    font-size: .7rem; color: var(--muted); margin-bottom: .8rem;
+  }
+  .lede { font-size: 1.15rem; color: var(--muted); margin-bottom: 2rem; }
+
+  /* Table of contents */
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 2rem 0 1rem;
+  }
+  nav.toc p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .25rem 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.toc a:hover, nav.toc a.active { border-bottom-color: var(--accent); color: var(--accent); }
+
+  /* Callouts */
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--surface);
+    padding: 1rem 1.2rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0;
+  }
+  .callout .label {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--accent); margin-bottom: .4rem;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: .92rem; }
+  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 400; }
+  .scroll { overflow-x: auto; }
+
+  /* ---- Diagram family 1: the chain ---- */
+  .chain { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
+    margin: 1.5rem 0; }
+  .chain .node {
+    flex: 1 1 180px; background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 8px; padding: .8rem .9rem;
+  }
+  .chain .node .cap {
+    font-size: .65rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); margin-bottom: .35rem;
+  }
+  .chain .node .val { font-family: var(--mono); font-size: .78rem; line-height: 1.5; word-break: break-all; }
+  .chain .arrow {
+    flex: 0 0 34px; display: grid; place-items: center;
+    color: var(--muted); font-size: 1.1rem;
+  }
+  @media (max-width: 640px) {
+    .chain { flex-direction: column; }
+    .chain .arrow { flex-basis: 26px; transform: rotate(90deg); }
+  }
+
+  /* ---- Diagram family 2: mini UI ---- */
+  .mini {
+    border: 1px solid var(--hair); border-radius: 10px; overflow: hidden;
+    margin: 1.5rem 0; background: var(--surface);
+  }
+  .mini .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .5rem .8rem; border-bottom: 1px solid var(--hair);
+    font-size: .75rem; color: var(--muted);
+  }
+  .mini .body { padding: 1rem; }
+  .mini .row { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto; }
+  .mini .label { font-size: .85rem; }
+  .swatchgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: .5rem .9rem; }
+
+  /* ---- Diagram family 3: timeline ---- */
+  .timeline { margin: 1.5rem 0; }
+  .timeline .track {
+    display: flex; gap: 2px; margin-bottom: .35rem; border-radius: 4px; overflow: hidden;
+  }
+  .timeline .seg {
+    padding: .45rem .6rem; font-size: .72rem; text-align: center; flex: 1;
+    color: #fff;
+  }
+  .timeline .cap { font-size: .8rem; color: var(--muted); margin-bottom: 1rem; }
+
+  /* Before / after */
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.2rem 0; }
+  @media (max-width: 560px) { .ba { grid-template-columns: 1fr; } }
+  .ba .panel {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 8px; padding: 1rem; text-align: center;
+  }
+  .ba .cap { font-size: .65rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); margin-bottom: .8rem; }
+  .btn-stock {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    background: #2b2b2b; color: #fafafa; border: 0;
+    border-radius: 10px; height: 32px; padding: 0 10px;
+    font-size: 14px; font-weight: 500;
+  }
+  .btn-ours {
+    font-family: Georgia, serif;
+    background: #221f1a; color: #faf8f2; border: 0;
+    border-radius: 10px; height: 32px; padding: 0 10px;
+    font-size: 14px; font-weight: 500;
+  }
+  @media (prefers-color-scheme: dark) {
+    .btn-ours { background: #f0ebe0; color: #1a1815; }
+  }
+  .filetree { font-family: var(--mono); font-size: .8rem; line-height: 1.7; }
+  .filetree .new { color: var(--accent); }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Baby Steps · Step 1 of 17 · 29 July 2026</p>
+  <h1>Scaffold and Design Tokens</h1>
+  <p class="lede">
+    From an empty folder to a running Next.js app with our two serifs, both themes,
+    and a shadcn Button that has learned our accent.
+  </p>
+
+  <nav class="toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#skeleton">The skeleton we started from</a></li>
+      <li><a href="#commands">Every command run</a></li>
+      <li><a href="#tools">Tools</a></li>
+      <li><a href="#intuition">Intuition</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#verify">Verifying it</a></li>
+      <li><a href="#next">What's next</a></li>
+    </ol>
+  </nav>
+
+  <!-- ================================================================= -->
+  <h2 id="skeleton">1 · The skeleton we started from</h2>
+
+  <p>
+    The folder held four things before we typed anything: the two planning
+    documents, a <code>.claude</code> config folder, and a <code>.git</code>
+    directory from the <code>git init</code> in the previous session. No code.
+  </p>
+
+  <p>
+    <code>create-next-app</code> refuses to scaffold into a folder containing files it
+    doesn't recognise, so the two <code>.md</code> files were moved aside and moved back
+    afterwards. It then wrote this:
+  </p>
+
+  <div class="filetree">
+    <pre><code>baby-steps/
+├── app/
+│   ├── favicon.ico
+│   ├── globals.css      ← 30 lines: white bg, black text, Arial
+│   ├── layout.tsx       ← Geist sans + Geist mono
+│   └── page.tsx         ← the Next.js splash screen
+├── public/              ← next.svg, vercel.svg, etc.
+├── eslint.config.mjs
+├── next.config.ts
+├── postcss.config.mjs   ← one line: the Tailwind plugin
+├── tsconfig.json
+├── package.json
+├── .gitignore
+├── AGENTS.md            ← instructions for coding agents
+└── CLAUDE.md            ← one line, pointing at AGENTS.md</code></pre>
+  </div>
+
+  <p>The three template files, in full, before we touched them:</p>
+
+  <pre><code>/* app/globals.css — the template */
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}</code></pre>
+
+  <pre><code>// app/layout.tsx — the template
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({ children }: Readonly&lt;{
+  children: React.ReactNode;
+}&gt;) {
+  return (
+    &lt;html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}&gt;
+      &lt;body className="min-h-full flex flex-col"&gt;{children}&lt;/body&gt;
+    &lt;/html&gt;
+  );
+}</code></pre>
+
+  <p>
+    <code>app/page.tsx</code> was the marketing splash — a Next.js logo, "To get started,
+    edit the page.tsx file", and two buttons linking to Vercel. We replaced it entirely.
+  </p>
+
+  <div class="callout">
+    <div class="label">Worth noticing</div>
+    <p>
+      The template already used the exact pattern this whole step is built on: a
+      <code>:root</code> block of variables, an <code>@theme inline</code> block turning
+      them into Tailwind utilities, and a media query swapping the values for dark. We did
+      not invent this structure — we grew it from two colors to about forty.
+    </p>
+  </div>
+
+  <!-- ================================================================= -->
+  <h2 id="commands">2 · Every command run</h2>
+
+  <div class="scroll">
+  <pre><code># Previous session — the repo itself
+git init
+
+# 1. Scaffold. The two .md files were moved out and back around this.
+npx create-next-app@latest . \
+  --typescript --tailwind --eslint --app \
+  --no-src-dir --import-alias "@/*" --use-npm --yes
+
+# 2. Initialise shadcn/ui. -b picks the primitive library (base | radix | aria),
+#    -p picks a preset. "nova" means Lucide icons + Geist type.
+npx shadcn@latest init -b radix -p nova -y
+
+# 3. Copy one component into the repo.
+npx shadcn@latest add button -y
+
+# 4. Check it compiles and typechecks.
+npm run build
+
+# 5. Run it.
+npm run dev</code></pre>
+  </div>
+
+  <p>
+    Two of these needed a second attempt, which is worth recording. <code>shadcn init</code>
+    used to take a <code>--base-color</code> flag; it no longer exists. And the preset is
+    named <code>nova</code>, not <code>radix-nova</code> — the primitive library and the
+    preset are separate choices.
+  </p>
+
+  <div class="callout">
+    <div class="label">Note</div>
+    <p>
+      <code>npm audit</code> reports 12 high-severity advisories, all of them transitive
+      dependencies of ESLint and the build tooling (<code>minimatch</code>,
+      <code>postcss</code>, <code>sharp</code>). None are reachable from code we ship, and
+      <code>npm audit fix --force</code> would downgrade Next.js. Left alone deliberately.
+    </p>
+  </div>
+
+  <!-- ================================================================= -->
+  <h2 id="tools">3 · Tools</h2>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Tool</th><th>Version</th><th>What it does, and why it's here</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Next.js</strong></td><td>16.2.12</td>
+        <td>A framework built on React. React alone renders components into a page; Next
+        adds the things every real app needs — routing based on the file tree, a build
+        step, a dev server with hot reload, and the ability to render components on the
+        server before sending HTML. Broadly: it is the default way to build a React app in
+        production.</td>
+      </tr>
+      <tr>
+        <td><strong>React</strong></td><td>19.2.4</td>
+        <td>The library that turns data into UI. You describe what the screen should look
+        like for a given state; React works out the minimal DOM changes when that state
+        moves.</td>
+      </tr>
+      <tr>
+        <td><strong>TypeScript</strong></td><td>5.x</td>
+        <td>JavaScript plus type annotations, checked before the code runs. Catches
+        <code>activty</code> vs <code>activity</code> in the editor rather than at
+        runtime. Widely used because it makes refactoring safe.</td>
+      </tr>
+      <tr>
+        <td><strong>Tailwind CSS</strong></td><td>4.x</td>
+        <td>Styling by composing tiny single-purpose classes in the markup
+        (<code>p-8</code> = padding 2rem) instead of writing separate stylesheets. v4 is
+        configured in CSS itself — no <code>tailwind.config.js</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>shadcn/ui</strong></td><td>CLI</td>
+        <td>Not a dependency. A CLI that <em>copies component source into your repo</em>.
+        See the Intuition section — this distinction is the whole point.</td>
+      </tr>
+      <tr>
+        <td><strong>Radix UI</strong></td><td>via shadcn</td>
+        <td>Unstyled, accessible behaviour primitives. A Radix Dialog handles focus
+        trapping, Escape-to-close, and screen-reader announcements, and gives you zero
+        opinions about how it looks.</td>
+      </tr>
+      <tr>
+        <td><strong>next/font</strong></td><td>built in</td>
+        <td>Downloads Google Fonts at <em>build</em> time and self-hosts them. No request
+        to Google at runtime — better privacy, and no flash of unstyled text.</td>
+      </tr>
+      <tr>
+        <td><strong>Lucide</strong></td><td>via shadcn</td>
+        <td>The icon set. We use the moon and sun today; chevrons and a plus later.</td>
+      </tr>
+      <tr>
+        <td><strong>Turbopack</strong></td><td>in Next 16</td>
+        <td>The bundler — it stitches our files and dependencies into what the browser
+        loads. Default in Next 16; a full production build here takes about 1.3 seconds.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout">
+    <div class="label">Next 16 ships its own docs</div>
+    <p>
+      The scaffold wrote an <code>AGENTS.md</code> warning that this version has breaking
+      changes and pointing at <code>node_modules/next/dist/docs/</code>. That folder is the
+      complete documentation, on disk, matched to your installed version. It is the right
+      place to check an API rather than a search engine.
+    </p>
+  </div>
+
+  <!-- ================================================================= -->
+  <h2 id="intuition">4 · Intuition</h2>
+
+  <h3>One name, two values</h3>
+
+  <p>
+    A theme switcher is tempting to build the naive way: write both colors everywhere and
+    pick between them.
+  </p>
+
+  <pre><code>&lt;!-- The trap --&gt;
+&lt;div class="bg-white text-black dark:bg-black dark:text-white"&gt;
+&lt;div class="bg-white text-black dark:bg-black dark:text-white"&gt;
+&lt;div class="bg-white text-black dark:bg-black dark:text-white"&gt;</code></pre>
+
+  <p>
+    Every element now knows about both themes. Adding a third, or nudging the cream a
+    shade warmer, means editing every file. Instead, elements name a <em>role</em>, and
+    the theme decides what that role looks like:
+  </p>
+
+  <div class="chain">
+    <div class="node">
+      <div class="cap">1 · The value</div>
+      <div class="val">:root {<br>&nbsp;&nbsp;--surface: #fdfcf8;<br>}<br><br>.dark {<br>&nbsp;&nbsp;--surface: #221f1b;<br>}</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="cap">2 · The bridge</div>
+      <div class="val">@theme inline {<br>&nbsp;&nbsp;--color-surface:<br>&nbsp;&nbsp;&nbsp;&nbsp;var(--surface);<br>}</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="cap">3 · The class</div>
+      <div class="val">&lt;div class="bg-surface"&gt;</div>
+    </div>
+  </div>
+
+  <p>
+    Step 2 is the part that's specific to Tailwind v4. Naming a variable
+    <code>--color-surface</code> inside <code>@theme</code> is what makes
+    <code>bg-surface</code>, <code>text-surface</code> and <code>border-surface</code>
+    exist as classes. The <code>inline</code> keyword means "keep the
+    <code>var()</code> reference rather than resolving it now" — which is exactly what
+    lets the same class produce different colors under <code>.dark</code>.
+  </p>
+
+  <p>The markup never changes. Only the value at the top of the chain does:</p>
+
+  <div class="chain">
+    <div class="node">
+      <div class="cap">Light — &lt;html&gt;</div>
+      <div class="val">class="bg-surface"<br><span class="muted">resolves to</span><br>#fdfcf8 <span class="dot" style="display:inline-block;width:10px;height:10px;background:#fdfcf8;border:1px solid #ccc"></span></div>
+    </div>
+    <div class="arrow">⇄</div>
+    <div class="node">
+      <div class="cap">Dark — &lt;html class="dark"&gt;</div>
+      <div class="val">class="bg-surface"<br><span class="muted">resolves to</span><br>#221f1b <span class="dot" style="display:inline-block;width:10px;height:10px;background:#221f1b;border:1px solid #555"></span></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label">Key concept — design token</div>
+    <p>
+      A named decision, stored once. <code>--ink-muted</code> is a token; <code>#8a8378</code>
+      is not. Tokens name the <em>role</em> ("muted text") rather than the appearance
+      ("greyish brown"), so a redesign is an edit in one file rather than a search across
+      the codebase.
+    </p>
+  </div>
+
+  <h3>Why shadcn is not a component library</h3>
+
+  <p>
+    Installing a normal component library puts its code in <code>node_modules/</code>. You
+    import from it and configure it through whatever props the author decided to expose.
+    If you want a Button with a different focus ring and the author didn't add a prop for
+    it, you're stuck overriding CSS from outside.
+  </p>
+
+  <p>
+    <code>npx shadcn add button</code> does something different: it writes a 67-line
+    <code>components/ui/button.tsx</code> into <em>your</em> repo, which you then own and
+    edit like anything else you wrote. There is no Button in <code>node_modules</code>.
+  </p>
+
+  <p>
+    But we didn't need to edit it. The file it wrote already refers to roles, not colors:
+  </p>
+
+  <pre><code>default: "bg-primary text-primary-foreground hover:bg-primary/80"</code></pre>
+
+  <p>
+    So pointing <code>--primary</code> at our warm near-black was enough. Same component,
+    same file, untouched:
+  </p>
+
+  <div class="ba">
+    <div class="panel">
+      <div class="cap">Before — as the CLI wrote it</div>
+      <button class="btn-stock">Continue with Google</button>
+      <p class="muted" style="font-size:.75rem;margin:.8rem 0 0">Geist sans · neutral grey</p>
+    </div>
+    <div class="panel">
+      <div class="cap">After — our tokens reached it</div>
+      <button class="btn-ours">Continue with Google</button>
+      <p class="muted" style="font-size:.75rem;margin:.8rem 0 0">EB Garamond · warm near-black</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label">Why this matters later</div>
+    <p>
+      Step 9 needs a modal with a focus trap; Step 10 needs a form. Those are hard to get
+      right and boring to write. shadcn hands us a correct starting point that already
+      speaks our token vocabulary — and when the default look is wrong for us, we edit the
+      file instead of fighting it.
+    </p>
+  </div>
+
+  <h3>The flash of the wrong theme</h3>
+
+  <p>
+    The theme lives in <code>localStorage</code>, which only exists in the browser. The
+    server renders HTML without it. So the obvious implementation — read the preference in
+    a React effect — produces a visible white flash on every load for a dark-theme user:
+  </p>
+
+  <div class="timeline">
+    <div class="track">
+      <div class="seg" style="background:#8a8378">HTML arrives</div>
+      <div class="seg" style="background:#f1eee6;color:#1c1a17">paints LIGHT</div>
+      <div class="seg" style="background:#8a8378">JS loads</div>
+      <div class="seg" style="background:#8a8378">React hydrates</div>
+      <div class="seg" style="background:#221f1b">effect → DARK</div>
+    </div>
+    <p class="cap">Without the script — roughly 200–600ms of the wrong theme, every load.</p>
+
+    <div class="track">
+      <div class="seg" style="background:#8a8378">HTML arrives</div>
+      <div class="seg" style="background:#221f1b">inline script sets <code style="background:none;color:#fff">.dark</code></div>
+      <div class="seg" style="background:#221f1b">paints DARK</div>
+      <div class="seg" style="background:#221f1b">React hydrates</div>
+    </div>
+    <p class="cap">With it — the class is on <code>&lt;html&gt;</code> before the first paint.</p>
+  </div>
+
+  <p>
+    The fix is a small <code>&lt;script&gt;</code> in <code>&lt;head&gt;</code> with no
+    <code>async</code> or <code>defer</code>. The browser stops, runs it, and only then
+    paints. Blocking scripts are normally something to avoid; this is the standard
+    exception, because the alternative is a visible defect.
+  </p>
+
+  <h3>Two kinds of numerals</h3>
+
+  <p>
+    A detail from the prototype worth naming, because we will lean on it repeatedly.
+    Serif faces ship two sets of digits, and they are good at opposite jobs.
+  </p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Style</th><th>Looks like</th><th>Good for</th><th>Bad at</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Oldstyle</strong><br><code class="muted">.oldstyle</code></td>
+        <td>Digits rise and fall like lowercase letters — the 3 and 7 have descenders.</td>
+        <td>Dates and running prose. "July 2026" sits in the line instead of shouting.</td>
+        <td>Columns — the digits have different widths, so numbers won't align.</td>
+      </tr>
+      <tr>
+        <td><strong>Tabular</strong><br><code class="muted">.tabular</code></td>
+        <td>All digits the same height and the same width.</td>
+        <td>The Trends table. Counts stay put instead of jittering as they change.</td>
+        <td>Prose — reads mechanically, and the even spacing looks gappy.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>What the page shows now</h3>
+
+  <div class="mini">
+    <div class="bar"><span>localhost:3002</span><span>◐ theme</span></div>
+    <div class="body">
+      <p class="eyebrow" style="margin-bottom:.3rem">Step one · Foundation</p>
+      <p style="font-size:1.6rem;margin:0 0 1rem">Baby Steps</p>
+      <p class="muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;margin-bottom:.6rem">Life areas</p>
+      <div class="swatchgrid">
+        <div class="row"><span class="dot" style="background:#c4483c"></span><span class="label">Spirituality</span></div>
+        <div class="row"><span class="dot" style="background:#3178b5"></span><span class="label">Exercise</span></div>
+        <div class="row"><span class="dot" style="background:#d9762b"></span><span class="label">Work</span></div>
+        <div class="row"><span class="dot" style="background:#ddb63c"></span><span class="label">Creativity &amp; Play</span></div>
+        <div class="row"><span class="dot" style="background:#4c8b4a"></span><span class="label">Romance &amp; Adventure</span></div>
+        <div class="row"><span class="dot" style="background:#9457c0"></span><span class="label">Friends &amp; Family</span></div>
+      </div>
+      <p class="muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;margin:1rem 0 .5rem">Type · figures · the Button, twice</p>
+    </div>
+  </div>
+
+  <p>
+    It is a specimen sheet, not a feature. Its job is to make every decision in this step
+    visible in one screen so a mistake is obvious now rather than in Step 8.
+  </p>
+
+  <!-- ================================================================= -->
+  <h2 id="code">5 · Code</h2>
+
+  <p>Four files written, two replaced. Grouped by what they're responsible for.</p>
+
+  <div class="filetree">
+    <pre><code>app/
+├── globals.css        <span class="new">rewritten</span>  the token layer
+├── layout.tsx         <span class="new">rewritten</span>  fonts + theme bootstrap
+└── page.tsx           <span class="new">rewritten</span>  the specimen page
+lib/
+├── theme.ts           <span class="new">new</span>        theme constants + the head script
+└── utils.ts                      from shadcn — the cn() class merger
+components/
+├── ThemeToggle.tsx    <span class="new">new</span>        the moon/sun button
+└── ui/button.tsx                 from shadcn — untouched
+components.json                   shadcn's config</code></pre>
+  </div>
+
+  <h3>A · The type — <code>app/layout.tsx</code></h3>
+
+  <p>
+    <code>next/font/google</code> is called at module scope, not inside the component. That
+    is deliberate: it runs at build time, downloads the font files, and self-hosts them.
+    Each call returns an object whose <code>.variable</code> is a generated class name that
+    defines a CSS custom property.
+  </p>
+
+  <pre><code>const cormorant = Cormorant({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const ebGaramond = EB_Garamond({
+  variable: "--font-eb-garamond",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+});</code></pre>
+
+  <p>
+    Both class names go on <code>&lt;html&gt;</code>, so <code>--font-cormorant</code> and
+    <code>--font-eb-garamond</code> are readable from anywhere in the document.
+    <code>subsets: ["latin"]</code> ships only Latin glyphs — a meaningful size saving.
+  </p>
+
+  <pre><code>&lt;html
+  lang="en"
+  suppressHydrationWarning
+  className={`${cormorant.variable} ${ebGaramond.variable} h-full antialiased`}
+&gt;
+  &lt;head&gt;
+    &lt;script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /&gt;
+  &lt;/head&gt;</code></pre>
+
+  <div class="callout">
+    <div class="label">Edge case — suppressHydrationWarning</div>
+    <p>
+      Our script adds <code>class="dark"</code> to <code>&lt;html&gt;</code> before React
+      runs. React then compares the server's HTML against the browser's DOM, finds an
+      attribute it didn't put there, and warns. This prop says "on this one element, that
+      mismatch is expected." It applies only to <code>&lt;html&gt;</code>, not to
+      descendants — it is not a general-purpose silencer.
+    </p>
+    <p>
+      <code>dangerouslySetInnerHTML</code> is React's deliberately alarming name for
+      injecting raw HTML. The danger is injecting user input; this is a constant string we
+      wrote.
+    </p>
+  </div>
+
+  <h3>B · The tokens — <code>app/globals.css</code></h3>
+
+  <p>Three blocks, in order. First the bridge that creates the utility classes:</p>
+
+  <pre><code>@theme inline {
+  --font-sans:    var(--font-eb-garamond), Georgia, serif;
+  --font-heading: var(--font-cormorant), Georgia, serif;
+
+  /* shadcn's contract — its components read only these names. */
+  --color-background: var(--background);
+  --color-primary:    var(--primary);
+  /* …16 more… */
+
+  /* Ours — the vocabulary the rest of Baby Steps speaks. */
+  --color-surface:   var(--surface);
+  --color-ink:       var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-hairline:  var(--hairline);
+
+  --color-area-spirituality: var(--area-spirituality);
+  --color-area-exercise:     var(--area-exercise);
+  /* …four more areas, five moods… */
+}</code></pre>
+
+  <p>
+    The split matters. The first group is a <em>contract</em>: shadcn components reference
+    <code>bg-primary</code> and <code>border-border</code>, so those names must exist and
+    must be sensible. The second group is ours, and nothing outside our code depends on it.
+  </p>
+
+  <p>Then the values, twice:</p>
+
+  <pre><code>:root {
+  --bg:      #f7f4ed;   /* warm cream */
+  --surface: #fdfcf8;
+  --ink:     #1c1a17;   /* warm near-black, not #000 */
+  --ink-muted: #8a8378;
+  --hairline:  #e3ded2;
+
+  --area-spirituality: #c4483c;   /* terracotta */
+  --area-exercise:     #3178b5;   /* steel blue */
+  --area-work:         #d9762b;   /* burnt orange */
+  --area-creativity:   #ddb63c;   /* mustard */
+  --area-romance:      #4c8b4a;   /* moss */
+  --area-friends:      #9457c0;   /* amethyst */
+
+  /* Moods reuse the same five hues, deliberately. */
+  --mood-great: var(--area-exercise);
+  --mood-good:  var(--area-romance);
+  --mood-okay:  var(--area-creativity);
+  --mood-low:   var(--area-work);
+  --mood-rough: var(--area-spirituality);
+
+  /* shadcn's names, pointed at ours. */
+  --background: var(--bg);
+  --primary:    #221f1a;
+  --border:     var(--hairline);
+  /* … */
+}
+
+.dark {
+  --bg:      #1a1815;   /* warm charcoal, not blue-black */
+  --ink:     #f0ebe0;
+  --area-spirituality: #d75f52;   /* every hue lifted ~12% */
+  --area-exercise:     #4a93ce;
+  /* … */
+}</code></pre>
+
+  <div class="callout">
+    <div class="label">Why the dark hues aren't the same hex</div>
+    <p>
+      A color legible on cream is not automatically legible on charcoal. Contrast is a
+      relationship between two colors, not a property of one. Each area hue is lifted in
+      lightness for dark so a sticker stays readable in both.
+    </p>
+    <p>
+      Note also that <code>--mood-*</code> is defined in <code>:root</code> only. Because
+      it points at <code>var(--area-*)</code> and CSS variables resolve at use time, the
+      dark overrides flow through automatically — five aliases we never have to maintain
+      twice.
+    </p>
+  </div>
+
+  <p>Then the two figure utilities, using Tailwind v4's <code>@utility</code> directive:</p>
+
+  <pre><code>@utility tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@utility oldstyle {
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}</code></pre>
+
+  <p>And the base layer, which sets body type and the graph paper:</p>
+
+  <pre><code>@layer base {
+  html { @apply font-sans; }        /* EB Garamond everywhere by default */
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      repeating-linear-gradient(to right,  var(--grid-line) 0 1px, transparent 1px 28px),
+      repeating-linear-gradient(to bottom, var(--grid-line) 0 1px, transparent 1px 28px);
+  }
+
+  h1, h2, h3 { @apply font-heading; }   /* Cormorant for display */
+}</code></pre>
+
+  <p>
+    The grid is two 1px gradients crossed at 28px, in a colour that is 4% opaque. No image
+    file, and it re-tints itself per theme because <code>--grid-line</code> is a token like
+    any other.
+  </p>
+
+  <h3>C · The theme — <code>lib/theme.ts</code> and <code>components/ThemeToggle.tsx</code></h3>
+
+  <p>The script that runs before paint:</p>
+
+  <pre><code>export const THEME_INIT_SCRIPT = `(function () {
+  try {
+    var stored = localStorage.getItem("baby-steps-theme");
+    var theme =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.dataset.theme = theme;
+  } catch (e) {}
+})();`;</code></pre>
+
+  <p>
+    An explicit choice wins; otherwise we follow the operating system. The
+    <code>try/catch</code> is not defensive noise — <code>localStorage</code> throws
+    outright in Safari private mode, and an uncaught error in a blocking head script would
+    stop the page.
+  </p>
+
+  <p>The toggle is our first Client Component:</p>
+
+  <pre><code>"use client";
+
+export function ThemeToggle() {
+  const [theme, setTheme] = useState&lt;Theme&gt;("light");
+  const [ready, setReady] = useState(false);
+
+  useEffect(() =&gt; {
+    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    setReady(true);
+  }, []);
+
+  function toggle() {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+  }
+  // …renders Sun or Moon, nothing until `ready`
+}</code></pre>
+
+  <div class="callout">
+    <div class="label">Key concept — Server and Client Components</div>
+    <p>
+      In the App Router every component is a <strong>Server Component</strong> by default:
+      it runs once on the server, and its JavaScript is never sent to the browser. That is
+      the right default — most UI is static.
+    </p>
+    <p>
+      <code>"use client"</code> opts a file into being a <strong>Client Component</strong>,
+      which ships to the browser and may use state, effects, and event handlers. A toggle
+      needs all three. The rule of thumb: anything with <code>useState</code>,
+      <code>useEffect</code>, or <code>onClick</code> needs the directive.
+    </p>
+  </div>
+
+  <p>
+    The <code>ready</code> flag deserves a word. The DOM already knows the theme, but React
+    renders on the server first, where there is no DOM to ask. So the component starts at a
+    placeholder value and corrects itself in an effect — and renders no icon at all until
+    it has. Showing a sun for one frame in dark mode would be a worse bug than showing
+    nothing.
+  </p>
+
+  <h3>D · The specimen — <code>app/page.tsx</code></h3>
+
+  <p>
+    A plain Server Component: no state, no interactivity, so no directive. It renders the
+    six areas, the five moods, both figure styles, and the two buttons. The "before" button
+    is a plain <code>&lt;button&gt;</code> with stock values hardcoded as inline styles:
+  </p>
+
+  <pre><code>&lt;button style={{
+  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+  backgroundColor: "oklch(0.205 0 0)",
+  color: "oklch(0.985 0 0)",
+  borderRadius: "0.625rem",
+  /* … */
+}}&gt;Continue with Google&lt;/button&gt;
+
+&lt;Button&gt;Continue with Google&lt;/Button&gt;</code></pre>
+
+  <p>
+    Inline styles specifically <em>because</em> our variables can't reach them — that's what
+    makes it an honest snapshot of the default rather than a drawing of one. Both this
+    comparison and the whole page are scaffolding; Step 2 replaces them with the real shell.
+  </p>
+
+  <!-- ================================================================= -->
+  <h2 id="verify">6 · Verifying it</h2>
+
+  <p>
+    Design work is easy to declare finished and hard to prove. Three checks were run.
+  </p>
+
+  <p><strong>It builds and typechecks.</strong></p>
+  <pre><code>$ npm run build
+▲ Next.js 16.2.12 (Turbopack)
+✓ Compiled successfully in 1254ms
+  Running TypeScript ...
+  Finished TypeScript in 952ms
+✓ Generating static pages (4/4)
+
+Route (app)
+┌ ○ /
+└ ○ /_not-found
+○  (Static)  prerendered as static content</code></pre>
+
+  <p>
+    Both routes are <strong>static</strong> — Next rendered them to HTML at build time.
+    That is expected while there's no user data. It will change in Step 3, and the marker
+    in this table is worth watching as it does.
+  </p>
+
+  <p><strong>The tokens actually became classes.</strong> Grepping the compiled stylesheet
+  is more convincing than looking at the page, because it proves the mechanism rather than
+  the outcome:</p>
+
+  <pre><code>.bg-area-work    { background-color: var(--area-work) }
+.text-ink-muted  { color: var(--ink-muted) }
+.border-hairline { border-color: var(--hairline) }
+.oldstyle        { font-variant-numeric: oldstyle-nums proportional-nums }
+.tabular         { font-variant-numeric: tabular-nums lining-nums }
+
+.dark { --bg:#1a1815; --ink:#f0ebe0; --area-spirituality:#d75f52; … }</code></pre>
+
+  <p><strong>The fonts are wired.</strong> The served <code>&lt;html&gt;</code> carries both
+  generated class names:</p>
+
+  <pre><code>&lt;html lang="en" class="cormorant_441b10c7-module__2Hh6Ca__variable
+                      eb_garamond_ea273a80-module__5SVDMq__variable
+                      h-full antialiased"&gt;</code></pre>
+
+  <div class="callout">
+    <div class="label">If you're running it yourself</div>
+    <p>
+      <code>npm run dev</code> picked port <strong>3002</strong>, not 3000 — something else
+      on the machine already had 3000 and 3001. Next steps up until it finds a free one, so
+      check the startup output rather than assuming.
+    </p>
+  </div>
+
+  <!-- ================================================================= -->
+  <h2 id="next">7 · What's next</h2>
+
+  <p>
+    <strong>Step 2 · The shell.</strong> The top nav — wordmark left, a segmented
+    Calendar/Trends pill centred, theme toggle and avatar right — with page switching held
+    in React state rather than real navigation. The specimen page gets deleted; the theme
+    toggle moves into the nav where it belongs.
+  </p>
+
+  <p class="muted" style="font-size:.85rem;margin-top:2.5rem">
+    Concepts introduced here that recur: design tokens · Server vs Client Components ·
+    shadcn as copied source · oldstyle vs tabular figures.
+  </p>
+
+</div>
+
+<script>
+  // Highlight the current section in the table of contents.
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(a => a.classList.remove('active'));
+      const match = links.find(a => a.getAttribute('href') === '#' + entry.target.id);
+      if (match) match.classList.add('active');
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+
+  targets.forEach(t => observer.observe(t));
+</script>
+</body>
+</html>

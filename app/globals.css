@@ -1,0 +1,200 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Bridge: turn CSS variables into Tailwind utilities.
+
+   Everything named here becomes a class. `--color-area-work` gives you
+   `bg-area-work`, `text-area-work`, `border-area-work`. The values live in
+   :root / .dark below, so a utility resolves differently per theme without a
+   single class name changing.
+--------------------------------------------------------------------------- */
+@theme inline {
+  --font-sans: var(--font-eb-garamond), Georgia, "Times New Roman", serif;
+  --font-heading: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* shadcn's contract — its components read only these names. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Ours — the vocabulary the rest of Baby Steps speaks. */
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-hairline: var(--hairline);
+
+  --color-area-spirituality: var(--area-spirituality);
+  --color-area-exercise: var(--area-exercise);
+  --color-area-work: var(--area-work);
+  --color-area-creativity: var(--area-creativity);
+  --color-area-romance: var(--area-romance);
+  --color-area-friends: var(--area-friends);
+
+  --color-mood-great: var(--mood-great);
+  --color-mood-good: var(--mood-good);
+  --color-mood-okay: var(--mood-okay);
+  --color-mood-low: var(--mood-low);
+  --color-mood-rough: var(--mood-rough);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+/* ---------------------------------------------------------------------------
+   Light — warm cream, near-black warm ink.
+--------------------------------------------------------------------------- */
+:root {
+  --radius: 0.625rem;
+
+  --bg: #f7f4ed;
+  --surface: #fdfcf8;
+  --surface-sunken: #f1eee6;
+  --ink: #1c1a17;
+  --ink-muted: #8a8378;
+  --hairline: #e3ded2;
+  --grid-line: rgb(28 26 23 / 0.04);
+
+  --area-spirituality: #c4483c;
+  --area-exercise: #3178b5;
+  --area-work: #d9762b;
+  --area-creativity: #ddb63c;
+  --area-romance: #4c8b4a;
+  --area-friends: #9457c0;
+
+  /* Moods reuse the same five hues, deliberately. */
+  --mood-great: var(--area-exercise);
+  --mood-good: var(--area-romance);
+  --mood-okay: var(--area-creativity);
+  --mood-low: var(--area-work);
+  --mood-rough: var(--area-spirituality);
+
+  /* shadcn's names, pointed at ours. */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: #221f1a;
+  --primary-foreground: #faf8f2;
+  --secondary: #ece7dc;
+  --secondary-foreground: var(--ink);
+  --muted: #ece7dc;
+  --muted-foreground: var(--ink-muted);
+  --accent: #ece7dc;
+  --accent-foreground: var(--ink);
+  --destructive: var(--area-spirituality);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: #b8ac97;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark — warm charcoal, not blue-black. Area hues lift ~12% so they hold
+   their contrast against a dark ground.
+--------------------------------------------------------------------------- */
+.dark {
+  --bg: #1a1815;
+  --surface: #221f1b;
+  --surface-sunken: #141310;
+  --ink: #f0ebe0;
+  --ink-muted: #918a7c;
+  --hairline: #33302a;
+  --grid-line: rgb(240 235 224 / 0.035);
+
+  --area-spirituality: #d75f52;
+  --area-exercise: #4a93ce;
+  --area-work: #e88c42;
+  --area-creativity: #e8c755;
+  --area-romance: #63a55f;
+  --area-friends: #a971d2;
+
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: #f0ebe0;
+  --primary-foreground: #1a1815;
+  --secondary: #2c2924;
+  --secondary-foreground: var(--ink);
+  --muted: #2c2924;
+  --muted-foreground: var(--ink-muted);
+  --accent: #2c2924;
+  --accent-foreground: var(--ink);
+  --destructive: var(--area-spirituality);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: #56503f;
+}
+
+/* ---------------------------------------------------------------------------
+   Figure styles. Two of them, on purpose.
+--------------------------------------------------------------------------- */
+
+/* Columns of numbers that must line up: every digit the same width. */
+@utility tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Numbers set in running prose or dates: they rise and fall like lowercase. */
+@utility oldstyle {
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* Faint graph paper. Two 1px gradients crossed at 28px. */
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        var(--grid-line) 0 1px,
+        transparent 1px 28px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--grid-line) 0 1px,
+        transparent 1px 28px
+      );
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+  }
+}
