@@ -76,7 +76,6 @@
   --ink: #1c1a17;
   --ink-muted: #8a8378;
   --hairline: #e3ded2;
-  --grid-line: rgb(28 26 23 / 0.04);
 
   --area-spirituality: #c4483c;
   --area-exercise: #3178b5;
@@ -124,7 +123,6 @@
   --ink: #f0ebe0;
   --ink-muted: #918a7c;
   --hairline: #33302a;
-  --grid-line: rgb(240 235 224 / 0.035);
 
   --area-spirituality: #d75f52;
   --area-exercise: #4a93ce;
@@ -178,18 +176,6 @@
 
   body {
     @apply bg-background text-foreground;
-    /* Faint graph paper. Two 1px gradients crossed at 28px. */
-    background-image:
-      repeating-linear-gradient(
-        to right,
-        var(--grid-line) 0 1px,
-        transparent 1px 28px
-      ),
-      repeating-linear-gradient(
-        to bottom,
-        var(--grid-line) 0 1px,
-        transparent 1px 28px
-      );
   }
 
   h1,

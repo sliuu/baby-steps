@@ -776,26 +776,32 @@ const ebGaramond = EB_Garamond({
   font-variant-numeric: oldstyle-nums proportional-nums;
 }</code></pre>
 
-  <p>And the base layer, which sets body type and the graph paper:</p>
+  <p>And the base layer, which sets the two defaults everything else inherits:</p>
 
   <pre><code>@layer base {
-  html { @apply font-sans; }        /* EB Garamond everywhere by default */
+  html { @apply font-sans; }            /* EB Garamond everywhere by default */
 
-  body {
-    @apply bg-background text-foreground;
-    background-image:
-      repeating-linear-gradient(to right,  var(--grid-line) 0 1px, transparent 1px 28px),
-      repeating-linear-gradient(to bottom, var(--grid-line) 0 1px, transparent 1px 28px);
-  }
+  body { @apply bg-background text-foreground; }
 
   h1, h2, h3 { @apply font-heading; }   /* Cormorant for display */
 }</code></pre>
 
   <p>
-    The grid is two 1px gradients crossed at 28px, in a colour that is 4% opaque. No image
-    file, and it re-tints itself per theme because <code>--grid-line</code> is a token like
-    any other.
+    <code>@layer base</code> matters here. Rules inside it sit at the bottom of the
+    cascade, so any utility class on an element wins without needing
+    <code>!important</code> — <code>&lt;h1 class="font-sans"&gt;</code> still gets EB
+    Garamond.
   </p>
+
+  <div class="callout">
+    <div class="label">Cut after review</div>
+    <p>
+      This layer briefly also painted faint graph paper on <code>&lt;body&gt;</code> — two
+      1px repeating gradients crossed at 28px, driven by a <code>--grid-line</code> token.
+      It was removed: the calendar is already a grid of ruled cells, and a second grid
+      underneath it fought for the same job. The page is plain ground now.
+    </p>
+  </div>
 
   <h3>C · The theme — <code>lib/theme.ts</code> and <code>components/ThemeToggle.tsx</code></h3>
 
