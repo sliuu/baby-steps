@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step 3 · Sign In — Baby Steps</title>
+<style>
+  :root {
+    --bg: #f7f4ed;
+    --surface: #fdfcf8;
+    --sunken: #f1eee6;
+    --ink: #1c1a17;
+    --muted: #8a8378;
+    --hair: #e3ded2;
+    --accent: #c4483c;
+    --code-bg: #f4f1e8;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1815; --surface: #221f1b; --sunken: #141310;
+      --ink: #f0ebe0; --muted: #918a7c; --hair: #33302a;
+      --accent: #d75f52; --code-bg: #17150f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px; line-height: 1.65;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 .5rem; font-weight: 600; }
+  h2 {
+    font-size: 1.7rem; margin: 3.5rem 0 .4rem; font-weight: 600;
+    padding-top: 1.5rem; border-top: 1px solid var(--hair);
+  }
+  h3 { font-size: 1.2rem; margin: 2rem 0 .6rem; font-weight: 600; }
+  h4 {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); font-weight: 400; margin: 1.6rem 0 .4rem;
+  }
+  p, li { margin: 0 0 .9rem; }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin-bottom: .4rem; }
+  code {
+    font-family: var(--mono); font-size: .85em;
+    background: var(--code-bg); padding: .1em .35em; border-radius: 3px;
+  }
+  pre {
+    font-family: var(--mono); font-size: .8rem; line-height: 1.55;
+    background: var(--code-bg); border: 1px solid var(--hair);
+    border-radius: 8px; padding: 1rem 1.1rem;
+    overflow-x: auto; white-space: pre; margin: 0 0 1.2rem;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .18em;
+    font-size: .7rem; color: var(--muted); margin-bottom: .8rem;
+  }
+  .lede { font-size: 1.15rem; color: var(--muted); margin-bottom: 2rem; }
+  .sub { color: var(--muted); font-size: .9rem; margin: 0 0 1.4rem; }
+
+  .summary {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 2rem 0;
+  }
+  .summary p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  .summary ol { margin: 0; padding-left: 1.2rem; }
+  .summary li { margin: .35rem 0; }
+
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1rem 0;
+  }
+  nav.toc p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .25rem 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.toc a:hover, nav.toc a.active { border-bottom-color: var(--accent); color: var(--accent); }
+
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--surface);
+    padding: 1rem 1.2rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0;
+  }
+  .callout .label {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--accent); margin-bottom: .4rem;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: .6rem 0 1.2rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 400; }
+  td:first-child { white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+
+  /* the hop-by-hop chain */
+  .chain { display: flex; align-items: stretch; flex-wrap: wrap; margin: 1.5rem 0; }
+  .chain .node {
+    flex: 1 1 150px; background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 8px; padding: .8rem .9rem;
+  }
+  .chain .node.them { border-color: var(--accent); border-width: 2px; }
+  .chain .node .cap {
+    font-size: .65rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); margin-bottom: .35rem;
+  }
+  .chain .node .val { font-family: var(--mono); font-size: .76rem; line-height: 1.5; word-break: break-word; }
+  .chain .arrow { flex: 0 0 30px; display: grid; place-items: center; color: var(--muted); font-size: 1.1rem; }
+  @media (max-width: 640px) {
+    .chain { flex-direction: column; }
+    .chain .arrow { flex-basis: 26px; transform: rotate(90deg); }
+  }
+
+  .filetree { font-family: var(--mono); font-size: .8rem; line-height: 1.7; }
+  .filetree .new { color: var(--accent); }
+  .filetree .gone { color: var(--muted); text-decoration: line-through; }
+  .muted { color: var(--muted); }
+  kbd {
+    font-family: var(--mono); font-size: .8em; background: var(--sunken);
+    border: 1px solid var(--hair); border-radius: 4px; padding: .05em .35em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Baby Steps · Step 3 of 17 · 12 August 2026</p>
+  <h1>Sign In</h1>
+  <p class="lede">
+    Google and GitHub authentication, a session that survives a refresh, and a
+    file that runs before every request in the app.
+  </p>
+
+  <div class="summary">
+    <p>The whole step in five lines</p>
+    <ol>
+      <li>You never give Baby Steps your Google password. Google vouches for you instead.</li>
+      <li>Signing in ends with two tokens in cookies your JavaScript cannot read.</li>
+      <li><code>proxy.ts</code> runs before every request, refreshes those tokens, and bounces strangers to <code>/login</code>.</li>
+      <li>Supabase is the OAuth client — that's why Google shows a <code>supabase.co</code> address.</li>
+      <li>The placeholder avatar is now a real menu with your name and a sign-out button.</li>
+    </ol>
+  </div>
+
+  <div class="callout">
+    <div class="label">Read this before anything else</div>
+    <p>
+      <strong><code>middleware.ts</code> does not exist in Next.js 16.</strong> It was
+      renamed to <code>proxy.ts</code>, and the exported function must be called
+      <code>proxy</code> too. Every tutorial you find online will say
+      <code>middleware</code>, because the rename is new.
+    </p>
+    <p>
+      <code>ProjectPlan.md</code> said <code>middleware.ts</code> as well — written
+      before we checked. It's corrected now. This is exactly why
+      <code>AGENTS.md</code> says to read the docs bundled inside
+      <code>node_modules/next/dist/docs/</code> rather than trusting memory.
+    </p>
+  </div>
+
+  <nav class="toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#commands">Every command run</a></li>
+      <li><a href="#tools">Tools — and every word I use</a></li>
+      <li><a href="#intuition">What this changes for you</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#shadcn">The shadcn before/after</a></li>
+      <li><a href="#verify">Verifying it</a></li>
+      <li><a href="#next">What's next</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============================================================ -->
+  <h2 id="commands">1 · Every command run</h2>
+  <p class="sub">Plus about 25 minutes of clicking in three browser consoles.</p>
+
+<pre><code># Read the Next 16 docs before writing a line (AGENTS.md says so).
+ls node_modules/next/dist/docs/01-app/
+grep -rn "middleware" node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md
+
+# The two packages.
+npm install @supabase/ssr @supabase/supabase-js
+
+# Two Radix components, copied into our repo.
+npx shadcn@latest add avatar dropdown-menu
+
+# Check and build.
+npx tsc --noEmit
+npm run build
+
+# Prove the guard works without opening a browser.
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" http://localhost:3000/</code></pre>
+
+  <p>
+    The console work — Supabase project, Google OAuth client, GitHub OAuth app
+    — is written up separately in <code>OAuthSetup.md</code>, because you do it
+    once and never again.
+  </p>
+
+  <h3>What changed on disk</h3>
+
+  <div class="filetree">
+<pre><code>app/
+  page.tsx              now async — reads the user, redirects if absent
+  <span class="new">login/page.tsx        new</span>
+  <span class="new">auth/callback/route.ts        new</span>
+  <span class="new">auth/auth-code-error/page.tsx new</span>
+  <span class="new">actions/auth.ts       new — sign out</span>
+components/
+  TopNav.tsx            placeholder avatar → real menu
+  AppShell.tsx          passes `user` through
+  <span class="new">UserMenu.tsx          new</span>
+  <span class="new">auth/SignInButtons.tsx  new</span>
+  ui/
+    <span class="new">avatar.tsx          new (shadcn)</span>
+    <span class="new">dropdown-menu.tsx   new (shadcn)</span>
+lib/
+  <span class="new">user.ts               new</span>
+  <span class="new">supabase/env.ts       new</span>
+  <span class="new">supabase/client.ts    new</span>
+  <span class="new">supabase/server.ts    new</span>
+<span class="new">proxy.ts                new — runs before every request</span>
+.env.local              new, and gitignored</code></pre>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="tools">2 · Tools — and every word I use</h2>
+  <p class="sub">Nothing here is defined later than it's used.</p>
+
+  <h4>Auth words</h4>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr><td><strong>OAuth</strong></td><td>A protocol for "let someone else vouch for who I am." You prove yourself to Google; Google tells us the result. We never see your password.</td></tr>
+      <tr><td><strong>provider</strong></td><td>The one doing the vouching. Google or GitHub here.</td></tr>
+      <tr><td><strong>OAuth client</strong></td><td>The app <em>registered with</em> the provider. Counter-intuitively this is <strong>Supabase</strong>, not Baby Steps.</td></tr>
+      <tr><td><strong>authorization code</strong></td><td>A short-lived one-time voucher in the URL after you approve. Not a session. It gets swapped for one.</td></tr>
+      <tr><td><strong>access token</strong></td><td>The thing that actually proves you're signed in. Expires after about an hour.</td></tr>
+      <tr><td><strong>refresh token</strong></td><td>Longer-lived. Used to get a new access token without making you sign in again.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Browser and web words</h4>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr><td><strong>cookie</strong></td><td>A small value the browser stores per site and re-sends on every request to it. How the server remembers you between page loads.</td></tr>
+      <tr><td><strong>httpOnly</strong></td><td>A flag saying "JavaScript may not read this cookie." Only the browser and server see it. Blocks a whole class of token theft.</td></tr>
+      <tr><td><strong>redirect</strong></td><td>A response that says "go here instead." Status <code>307</code> is the one we return.</td></tr>
+      <tr><td><strong>GET vs POST</strong></td><td>GET fetches and can be triggered by a link or an image. POST submits and cannot be triggered accidentally. Sign-out must be POST.</td></tr>
+      <tr><td><strong>environment variable</strong></td><td>Config passed in from outside the code, so the same source runs locally and in production with different values.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Next.js words</h4>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr><td><strong>proxy</strong></td><td>Code that runs before every matching request. Called <em>middleware</em> until Next 16. Runs on Node.js; the Edge runtime is not supported and cannot be configured.</td></tr>
+      <tr><td><strong>Route Handler</strong></td><td>A <code>route.ts</code> exporting <code>GET</code>/<code>POST</code>. An HTTP endpoint rather than a page — it returns data or a redirect, not HTML.</td></tr>
+      <tr><td><strong>Server Action</strong></td><td>A function marked <code>"use server"</code> that you can hand straight to a form's <code>action</code>. Next handles the network round-trip.</td></tr>
+      <tr><td><strong>dynamic route</strong></td><td>Marked <code>ƒ</code> in the build output. Rendered per request because it reads cookies. Opposite of <code>○</code> static.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="intuition">3 · What this changes for you</h2>
+  <p class="sub">Three things that affect what you build. Everything else is plumbing, and it's in the box at the end.</p>
+
+  <h3>1 · Google shows a <code>supabase.co</code> address, and that's not a bug</h3>
+
+  <p>
+    <strong>Google doesn't redirect back to Baby Steps.</strong> It redirects to
+    Supabase, which redirects to us.
+  </p>
+
+  <div class="chain">
+    <div class="node"><div class="cap">1 · you</div><div class="val">click Continue
+with Google</div></div>
+    <div class="arrow">→</div>
+    <div class="node them"><div class="cap">2 · google</div><div class="val">you sign in
+and approve</div></div>
+    <div class="arrow">→</div>
+    <div class="node them"><div class="cap">3 · supabase</div><div class="val">/auth/v1/callback
+gets the code</div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="cap">4 · baby steps</div><div class="val">/auth/callback
+swaps it for tokens</div></div>
+  </div>
+
+  <p>
+    Supabase is the app registered with Google, so Google shows Supabase's
+    address on the consent screen. <strong>Only a paid custom domain changes
+    it.</strong> GitHub is fine already — it shows the app's name instead of the
+    host. If someone flags the consent screen in review, that's the answer.
+  </p>
+
+  <h3>2 · The browser can't tell whether you're signed in — only the server can</h3>
+
+  <p>
+    The session token lives in an <strong>httpOnly</strong> cookie, which
+    JavaScript cannot read. Deliberate: an XSS bug still can't steal it.
+  </p>
+
+  <p>What follows from that, for the UI:</p>
+
+  <ul>
+    <li>Auth branches happen in Server Components. There's no client-side <code>isLoggedIn</code> to read.</li>
+    <li>No signed-out flash and no auth spinner — the server knows before the first byte of HTML.</li>
+    <li>Any component that needs the user takes it as a prop. That's why <code>user</code> is threaded down through <code>AppShell</code> to <code>TopNav</code> rather than fetched where it's used.</li>
+  </ul>
+
+  <h3>3 · The redirect is cosmetic. Don't hide anything behind it</h3>
+
+  <p>
+    <code>proxy.ts</code> bounces signed-out visitors to <code>/login</code>. It's
+    a pre-filter, not a lock — the Next.js docs say so outright, which is why
+    <code>app/page.tsx</code> checks again, and why Step 4 puts the real
+    guarantee in the database.
+  </p>
+
+  <p>
+    Design consequence: a redirect is fine for <em>routing</em>, never for
+    <em>secrecy</em>. If a panel shouldn't be seen, it must not be rendered — not
+    merely navigated away from.
+  </p>
+
+  <div class="callout">
+    <div class="label">The one thing the proxy is genuinely for</div>
+    <p>
+      Tokens expire hourly, and only the proxy runs early enough to write a fresh
+      one back. Delete the file and everyone gets logged out mid-session, at
+      random. That's its real job; the redirect is a side benefit.
+    </p>
+  </div>
+
+  <h3>The plumbing, one line each</h3>
+  <p class="sub">You don't need to hold these. They're here so the code doesn't look arbitrary.</p>
+
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr>
+        <td><strong>Why a code, not a token</strong></td>
+        <td>URLs leak into history, logs, and <code>Referer</code>. The code is single-use and swapped server-side.</td>
+      </tr>
+      <tr>
+        <td><strong><code>getUser()</code>, never <code>getSession()</code></strong></td>
+        <td><code>getSession()</code> believes the cookie. <code>getUser()</code> verifies it with Supabase.</td>
+      </tr>
+      <tr>
+        <td><strong>Sign-out is a form</strong></td>
+        <td>POST, so an <code>&lt;img&gt;</code> on another site can't trigger it.</td>
+      </tr>
+      <tr>
+        <td><strong><code>/</code> is dynamic now</strong></td>
+        <td>It reads cookies, so it can't be prerendered. <code>/login</code> still is.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="code">4 · Code</h2>
+  <p class="sub">Five snippets. One line of why under each — skim the code, read the line only if the code looks odd.</p>
+
+  <h3><code>components/UserMenu.tsx</code> — <code>asChild</code></h3>
+  <p class="sub">The one pattern here you'll reuse in every step from now on.</p>
+
+<pre><code>&lt;form action={signOut}&gt;
+  &lt;DropdownMenuItem asChild&gt;
+    &lt;button type="submit" className="w-full cursor-pointer"&gt;Sign out&lt;/button&gt;
+  &lt;/DropdownMenuItem&gt;
+&lt;/form&gt;</code></pre>
+
+  <p>
+    <code>asChild</code> tells a Radix component: <em>don't render your own
+    element — put your behaviour and styling on my child instead.</em> So the menu
+    item's keyboard handling and focus states land on a real
+    <code>&lt;button&gt;</code> that a form can submit.
+  </p>
+
+  <p>
+    It's Radix's answer to "I need your behaviour but my markup," and it's how
+    you'll wrap links, buttons, and triggers for the rest of the project without
+    nesting two interactive elements.
+  </p>
+
+  <h3><code>lib/supabase/env.ts</code> — the one that would have bitten you</h3>
+
+<pre><code>const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;</code></pre>
+
+  <p>
+    Written out literally on purpose. Next find-and-replaces the exact text
+    <code>process.env.NEXT_PUBLIC_…</code> at build time, so a tidy
+    <code>read("NEXT_PUBLIC_SUPABASE_URL")</code> helper compiles, typechecks,
+    works on the server, and is <code>undefined</code> in the browser. Same shape
+    as Tailwind's class scanning in Step 2: the tool reads text, it doesn't run
+    your code.
+  </p>
+
+  <p class="muted">
+    The key is public by design — it grants the <code>anon</code> role and RLS
+    decides the rest. <code>service_role</code> must never take this prefix.
+  </p>
+
+  <h3><code>lib/supabase/server.ts</code> — <code>cookies()</code> is async now</h3>
+
+<pre><code>const cookieStore = await cookies();   // ← a promise in Next 16</code></pre>
+
+  <p>
+    Plain object in Next 14, promise-with-a-warning in 15, <strong>promise only in
+    16</strong>. Same for <code>headers()</code>, <code>params</code>, and
+    <code>searchParams</code> — so any component touching them is
+    <code>async</code>.
+  </p>
+
+  <h3><code>proxy.ts</code> — three lines that are easy to get wrong</h3>
+
+<pre><code>setAll(cookiesToSet, headers) {   // ← two args in @supabase/ssr 0.12
+  …
+  request.cookies.set(name, value);    // ← request too, not just response
+  …
+}
+
+return response;   // ← the one setAll rebuilt, not a fresh NextResponse.next()</code></pre>
+
+  <p>
+    The second <code>setAll</code> argument carries <code>Cache-Control</code> and
+    friends, which stop a CDN serving one person's session to the next. Returning
+    a fresh response instead of the rebuilt one silently drops the refreshed
+    cookie — the classic "it logs me out every hour" bug.
+  </p>
+
+  <h3><code>app/auth/callback/route.ts</code> — two lines of security</h3>
+
+<pre><code>const nextParam = searchParams.get("next") ?? "/";
+const next = nextParam.startsWith("/") ? nextParam : "/";</code></pre>
+
+  <p>
+    Relative paths only. Without it,
+    <code>/auth/callback?next=https://evil.example</code> signs you in and then
+    hands you, freshly authenticated, to someone else's site.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 id="shadcn">5 · The shadcn before/after</h2>
+  <p class="sub">Two new components this step: <code>avatar</code> and <code>dropdown-menu</code>.</p>
+
+  <p>
+    The standing habit is to show a new shadcn component as the CLI delivers it,
+    then after our tokens reach it. This time the interesting part is that
+    <strong>we changed nothing.</strong>
+  </p>
+
+  <p>Here's what the CLI wrote into <code>dropdown-menu.tsx</code>:</p>
+
+<pre><code>className={cn(
+  "bg-popover text-popover-foreground …",
+  "focus:bg-accent focus:text-accent-foreground …",
+  className
+)}</code></pre>
+
+  <p>
+    Those are token names, not colours. And Step 1 already pointed those tokens
+    at our palette:
+  </p>
+
+<pre><code>--popover:            var(--surface);   /* #fdfcf8 warm off-white */
+--popover-foreground: var(--ink);       /* #1c1a17 warm near-black */
+--accent:             #ece7dc;          /* the stone pill from the nav */
+--radius:             0.625rem;</code></pre>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th></th><th>Stock shadcn</th><th>Ours, no edits</th></tr></thead>
+    <tbody>
+      <tr><td>Menu ground</td><td>Pure white <code>#fff</code></td><td>Warm off-white <code>#fdfcf8</code></td></tr>
+      <tr><td>Text</td><td>Near-black, geometric sans</td><td>Warm near-black, EB Garamond</td></tr>
+      <tr><td>Hover</td><td>Cool grey</td><td>The same stone as the nav pill</td></tr>
+      <tr><td>Dark mode</td><td>Cool slate</td><td>Our warm dark, automatically</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    That's the whole argument for the token layer. Two components arrived, read
+    the variables already on the page, and matched a design they've never heard
+    of. The only thing we wrote by hand was the fallback initial's
+    <code>font-heading</code>.
+  </p>
+
+  <div class="callout">
+    <div class="label">One real edit, for a real reason</div>
+    <p>
+      The avatar fallback uses <code>Intl.Segmenter</code> to take the first
+      character of your name, not <code>name[0]</code>. A name starting with an
+      emoji or an accented character is several code units, and slicing one of
+      them renders a broken glyph. Step 10 needs the same trick for sticker
+      marks, so it's worth meeting now.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="verify">6 · Verifying it</h2>
+
+  <p>The guard can be checked without a browser:</p>
+
+<pre><code>$ curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" http://localhost:3000/
+307 http://localhost:3000/login
+
+$ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/login
+200</code></pre>
+
+  <p>And the build shows the shape of the app changing:</p>
+
+<pre><code>Route (app)
+┌ ƒ /                        ← was ○ static in Step 2
+├ ○ /_not-found
+├ ƒ /auth/auth-code-error
+├ ƒ /auth/callback
+└ ○ /login
+
+ƒ Proxy (Middleware)</code></pre>
+
+  <p>
+    <code>/</code> moved from <code>○</code> to <code>ƒ</code>. It reads cookies
+    now, so it can't be built ahead of time — there's no single correct HTML for
+    a page that differs per visitor. <code>/login</code> is identical for
+    everyone, so it stays static.
+  </p>
+
+  <h3>By hand</h3>
+
+  <ul>
+    <li>Visit <code>/</code> signed out — you land on <code>/login</code>.</li>
+    <li>Sign in with Google, then with GitHub. Both should return you to the calendar.</li>
+    <li>Refresh — you stay signed in. That's the cookie doing its job.</li>
+    <li>Open the avatar menu. <kbd>↓</kbd> <kbd>↑</kbd> move, <kbd>Esc</kbd> closes, focus returns to the avatar. None of that is our code — it's Radix.</li>
+    <li>Sign out — back to <code>/login</code>, and <code>/</code> is blocked again.</li>
+  </ul>
+
+  <div class="callout">
+    <div class="label">Known, accepted</div>
+    <p>
+      Google's consent screen shows your Supabase project address rather than
+      "Baby Steps," because Supabase is the registered OAuth client. Fixing it
+      needs a paid custom domain. GitHub already shows the right name, since it
+      displays the OAuth app's name instead of the callback host. Revisit at Step 17.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="next">7 · What's next</h2>
+  <p class="sub">Step 4 — schema, row-level security, and seeding.</p>
+
+  <p>
+    Four tables, written as migration files. Then the most important safety idea
+    in the project: a Postgres rule (<code>user_id = auth.uid()</code>) that
+    filters every query, so even a buggy client can't reach someone else's rows.
+  </p>
+
+  <p>
+    You'll see your six life areas as coloured chips on the Calendar page — read
+    from a real database, belonging to the account you just signed in with.
+  </p>
+
+  <p class="muted" style="font-size:.85rem;margin-top:2.5rem">
+    Concepts from this step that come back: httpOnly cookies · verify, don't
+    trust · checks belong next to the data · literal <code>process.env</code>
+    names · Radix <code>asChild</code>.
+  </p>
+
+</div>
+
+<script>
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(a => a.classList.remove('active'));
+      const match = links.find(a => a.getAttribute('href') === '#' + entry.target.id);
+      if (match) match.classList.add('active');
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+
+  targets.forEach(t => observer.observe(t));
+</script>
+</body>
+</html>

@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step 2 · The Shell — Baby Steps</title>
+<style>
+  :root {
+    --bg: #f7f4ed;
+    --surface: #fdfcf8;
+    --sunken: #f1eee6;
+    --ink: #1c1a17;
+    --muted: #8a8378;
+    --hair: #e3ded2;
+    --accent: #c4483c;
+    --code-bg: #f4f1e8;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1815; --surface: #221f1b; --sunken: #141310;
+      --ink: #f0ebe0; --muted: #918a7c; --hair: #33302a;
+      --accent: #d75f52; --code-bg: #17150f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 .5rem; font-weight: 600; }
+  h2 {
+    font-size: 1.7rem; margin: 3.5rem 0 .4rem; font-weight: 600;
+    padding-top: 1.5rem; border-top: 1px solid var(--hair);
+  }
+  h3 { font-size: 1.2rem; margin: 2rem 0 .6rem; font-weight: 600; }
+  h4 {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); font-weight: 400; margin: 1.6rem 0 .4rem;
+  }
+  p, li { margin: 0 0 .9rem; }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin-bottom: .4rem; }
+  code {
+    font-family: var(--mono); font-size: .85em;
+    background: var(--code-bg); padding: .1em .35em; border-radius: 3px;
+  }
+  pre {
+    font-family: var(--mono); font-size: .8rem; line-height: 1.55;
+    background: var(--code-bg); border: 1px solid var(--hair);
+    border-radius: 8px; padding: 1rem 1.1rem;
+    overflow-x: auto; white-space: pre; margin: 0 0 1.2rem;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .18em;
+    font-size: .7rem; color: var(--muted); margin-bottom: .8rem;
+  }
+  .lede { font-size: 1.15rem; color: var(--muted); margin-bottom: 2rem; }
+  /* one-line "what this section is for", sits under an h2 */
+  .sub { color: var(--muted); font-size: .9rem; margin: 0 0 1.4rem; }
+
+  /* The five-line summary at the top */
+  .summary {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 2rem 0;
+  }
+  .summary p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  .summary ol { margin: 0; padding-left: 1.2rem; }
+  .summary li { margin: .35rem 0; }
+
+  /* Table of contents */
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1rem 0;
+  }
+  nav.toc p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .25rem 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.toc a:hover, nav.toc a.active { border-bottom-color: var(--accent); color: var(--accent); }
+
+  /* Callouts */
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--surface);
+    padding: 1rem 1.2rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0;
+  }
+  .callout .label {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--accent); margin-bottom: .4rem;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: .6rem 0 1.2rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 400; }
+  td:first-child { white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+
+  /* ---- Diagram family 1: the chain ---- */
+  .chain { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 1.5rem 0; }
+  .chain .node {
+    flex: 1 1 180px; background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 8px; padding: .8rem .9rem;
+  }
+  .chain .node.client { border-color: var(--accent); border-width: 2px; }
+  .chain .node .cap {
+    font-size: .65rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); margin-bottom: .35rem;
+  }
+  .chain .node .val { font-family: var(--mono); font-size: .78rem; line-height: 1.5; word-break: break-word; }
+  .chain .arrow {
+    flex: 0 0 34px; display: grid; place-items: center;
+    color: var(--muted); font-size: 1.1rem;
+  }
+  @media (max-width: 640px) {
+    .chain { flex-direction: column; }
+    .chain .arrow { flex-basis: 26px; transform: rotate(90deg); }
+  }
+
+  /* ---- Diagram family 2: mini UI ---- */
+  .mini {
+    border: 1px solid var(--hair); border-radius: 10px; overflow: hidden;
+    margin: 1.5rem 0; background: var(--surface);
+  }
+  .mini .bar {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .6rem .8rem; border-bottom: 1px solid var(--hair);
+    font-size: .8rem;
+  }
+  .mini .body { padding: 1.6rem 1rem; text-align: center; color: var(--muted); font-size: .85rem; }
+  .mini .wordmark { font-weight: 600; font-size: .95rem; }
+  .mini .seg { display: flex; gap: .25rem; flex: 1; justify-content: center; }
+  .mini .pill { padding: .2rem .8rem; border-radius: 999px; font-size: .8rem; color: var(--muted); }
+  .mini .pill.on { background: var(--sunken); color: var(--ink); }
+  .mini .right { display: flex; gap: .3rem; }
+  .mini .circle {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--sunken);
+    display: grid; place-items: center; font-size: .7rem; color: var(--muted);
+  }
+
+  /* ---- Diagram family 3: timeline ---- */
+  .timeline { margin: 1.5rem 0; }
+  .timeline .track {
+    display: flex; gap: 2px; margin-bottom: .35rem; border-radius: 4px; overflow: hidden;
+  }
+  .timeline .seg {
+    padding: .45rem .6rem; font-size: .72rem; text-align: center; flex: 1; color: #fff;
+  }
+  .timeline .cap { font-size: .8rem; color: var(--muted); margin-bottom: 1rem; }
+
+  .filetree { font-family: var(--mono); font-size: .8rem; line-height: 1.7; }
+  .filetree .new { color: var(--accent); }
+  .filetree .gone { color: var(--muted); text-decoration: line-through; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Baby Steps · Step 2 of 17 · 30 July 2026</p>
+  <h1>The Shell</h1>
+  <p class="lede">
+    A top bar that switches between two pages without the browser ever
+    navigating — and the line between code that runs on the server and code
+    that gets sent to your laptop.
+  </p>
+
+  <div class="summary">
+    <p>The whole step in five lines</p>
+    <ol>
+      <li>We built a top bar: wordmark, two tabs, moon icon, avatar.</li>
+      <li>Clicking a tab swaps the page body. No reload, no URL change.</li>
+      <li>One value — <code>page</code> — decides which tab is filled and what shows below.</li>
+      <li>That value lives in <code>AppShell</code>, because two components need it.</li>
+      <li>The calendar and trends views stay on the server. We proved it with <code>grep</code>.</li>
+    </ol>
+  </div>
+
+  <nav class="toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#commands">Every command run</a></li>
+      <li><a href="#tools">Tools — and every word I use</a></li>
+      <li><a href="#intuition">Intuition</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#verify">Verifying it</a></li>
+      <li><a href="#next">What's next</a></li>
+    </ol>
+  </nav>
+
+  <!-- ================================================================= -->
+  <h2 id="commands">1 · Every command run</h2>
+  <p class="sub">Four commands. None of them installed anything.</p>
+
+<pre><code># Re-read the step's scope before writing anything.
+sed -n '/Step 2/,/Step 3/p' ProjectPlan.md
+
+# Compile, typecheck, and build the HTML.
+npm run build
+
+# Prove the server/client split (§5 explains this).
+grep -rl "The month goes here" .next/static/chunks/
+grep -rl "Trends" .next/static/chunks/
+
+# Serve it.
+npm run dev</code></pre>
+
+  <p>
+    Step 2 is pure code. Every package it needs arrived in Step 1.
+  </p>
+
+  <div class="callout">
+    <div class="label">No new shadcn component this step</div>
+    <p>
+      Our habit: when a new shadcn component gets added, show it twice — as the
+      CLI delivers it, then after our colours and fonts reach it. Nothing new
+      was added here. The segmented control is hand-written, because shadcn has
+      no segmented-control component and ours is two links on a rounded
+      background. The next before/after is Step 3.
+    </p>
+  </div>
+
+  <h3>What changed on disk</h3>
+
+  <div class="filetree">
+<pre><code>app/
+  layout.tsx          unchanged
+  globals.css         unchanged
+  page.tsx            <span class="gone">specimen sheet</span> → three lines
+components/
+  ThemeToggle.tsx     unchanged — it just moved into the nav
+  <span class="new">AppShell.tsx        new</span>
+  <span class="new">TopNav.tsx          new</span>
+  <span class="new">views/</span>
+    <span class="new">CalendarView.tsx  new</span>
+    <span class="new">TrendsView.tsx    new</span>
+    <span class="new">Placeholder.tsx   new</span>
+  ui/button.tsx       unchanged
+lib/
+  theme.ts            unchanged
+  <span class="new">nav.ts              new</span></code></pre>
+  </div>
+
+  <p>
+    The Step 1 specimen sheet is deleted. Its job was to prove the palette and
+    the fonts were real. It did that.
+  </p>
+
+  <!-- ================================================================= -->
+  <h2 id="tools">2 · Tools — and every word I use</h2>
+  <p class="sub">
+    Nothing below is defined later than it is used. If a word here shows up in
+    §3 or §4 and you've lost it, this is the section to jump back to.
+  </p>
+
+  <h4>React words</h4>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr>
+        <td><strong>component</strong></td>
+        <td>A function that returns a description of some UI. <code>TopNav</code> is one. You use it by writing <code>&lt;TopNav /&gt;</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>props</strong></td>
+        <td>The values you pass into a component — its arguments. <code>&lt;TopNav page="calendar" /&gt;</code> passes a prop named <code>page</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>state</strong></td>
+        <td>A value a component remembers between renders. Props come from outside; state is the component's own.</td>
+      </tr>
+      <tr>
+        <td><strong>render</strong></td>
+        <td>React calling your component function to find out what should be on screen. A <em>re-render</em> is it calling again because something changed.</td>
+      </tr>
+      <tr>
+        <td><strong>hook</strong></td>
+        <td>A function whose name starts with <code>use</code>, which plugs a component into a React feature. <code>useState</code> is the only one this step.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Browser words</h4>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr>
+        <td><strong>DOM</strong></td>
+        <td>Document Object Model — the browser's live tree of the elements on the page. You don't edit it directly here. React does.</td>
+      </tr>
+      <tr>
+        <td><strong>event</strong></td>
+        <td>Something that happened: a click, a keypress, a form submit.</td>
+      </tr>
+      <tr>
+        <td><strong>event handler</strong></td>
+        <td>A function that runs when an event happens. <code>onClick={...}</code> registers one.</td>
+      </tr>
+      <tr>
+        <td><strong>bundle / chunk</strong></td>
+        <td>The JavaScript files shipped to the browser. A chunk is one such file. Smaller bundle = the page becomes clickable sooner.</td>
+      </tr>
+      <tr>
+        <td><strong>hydration</strong></td>
+        <td>The browser attaching event handlers to HTML the server already sent. Before it, the page looks right but doesn't respond.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Next.js words</h4>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr>
+        <td><strong>Server Component</strong></td>
+        <td>The default. Runs on the server, sends finished HTML, ships zero JavaScript to the browser.</td>
+      </tr>
+      <tr>
+        <td><strong>Client Component</strong></td>
+        <td>A file marked <code>"use client"</code>. Runs on the server <em>and</em> in the browser, so it can hold state and handle clicks.</td>
+      </tr>
+      <tr>
+        <td><strong>directive</strong></td>
+        <td>A bare string at the very top of a file that changes how the file is treated. <code>"use client"</code> is one.</td>
+      </tr>
+      <tr>
+        <td><strong>static</strong></td>
+        <td>The HTML was built once, during <code>npm run build</code>. Loading the page does no server work. Marked <code>○</code> in the build output.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Syntax you'll see below</h4>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr>
+        <td><strong>JSX</strong></td>
+        <td>HTML-looking syntax written inside JavaScript. <code>&lt;TopNav /&gt;</code> is not HTML — it compiles to a function call.</td>
+      </tr>
+      <tr>
+        <td><strong>fragment</strong></td>
+        <td><code>&lt;&gt;...&lt;/&gt;</code>. Groups several elements without adding a wrapper to the page.</td>
+      </tr>
+      <tr>
+        <td><strong>ternary</strong></td>
+        <td><code>test ? a : b</code>. A one-line if/else that produces a value. Reads as "if test, then a, otherwise b."</td>
+      </tr>
+      <tr>
+        <td><strong>union type</strong></td>
+        <td>A type listing the exact allowed values: <code>"calendar" | "trends"</code> means those two strings and nothing else.</td>
+      </tr>
+      <tr>
+        <td><strong>ARIA</strong></td>
+        <td>Extra HTML attributes that tell screen readers what something means when the visual design alone can't.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>New this step, specifically</h4>
+  <div class="scroll">
+  <table>
+    <thead>
+      <tr><th>Thing</th><th>What it does</th><th>Why we need it</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>useState</code></td>
+        <td>Gives a component a value that survives re-renders, plus a function to change it. Changing it triggers a re-render.</td>
+        <td>Holds which page is showing. One line instead of a router.</td>
+      </tr>
+      <tr>
+        <td><code>"use client"</code></td>
+        <td>Marks where server-only rendering stops and browser JavaScript begins.</td>
+        <td>State and clicks only exist in a browser. Two of our six new files need it.</td>
+      </tr>
+      <tr>
+        <td><code>preventDefault()</code></td>
+        <td>Cancels the browser's built-in response to an event — here, following a link.</td>
+        <td>Lets the tabs be real <code>&lt;a&gt;</code> elements with no page load.</td>
+      </tr>
+      <tr>
+        <td>Lifting state up</td>
+        <td>When two components need the same value, it lives in their nearest shared parent and travels down as props.</td>
+        <td>The nav and the body both need to know the active page.</td>
+      </tr>
+      <tr>
+        <td><code>aria-current</code></td>
+        <td>Announces "this is the one you're on."</td>
+        <td>A filled pill means nothing to a screen reader. This is the part that isn't decoration.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ================================================================= -->
+  <h2 id="intuition">3 · Intuition</h2>
+  <p class="sub">Four ideas: what it looks like, why links, where state lives, server vs client.</p>
+
+  <h3>What we built</h3>
+
+  <div class="mini">
+    <div class="bar">
+      <span class="wordmark">Baby Steps</span>
+      <span class="seg">
+        <span class="pill on">Calendar</span>
+        <span class="pill">Trends</span>
+      </span>
+      <span class="right">
+        <span class="circle">☾</span>
+        <span class="circle">◍</span>
+      </span>
+    </div>
+    <div class="body">the page body swaps here — nothing else moves</div>
+  </div>
+
+  <p>
+    Wordmark left. Two tabs centred. Moon and avatar right. One hairline
+    underneath.
+  </p>
+
+  <p>
+    Click <em>Trends</em> and only the area below the bar changes. The URL stays
+    put. The back button stays grey. Nothing reloads.
+  </p>
+
+  <h3>Why the tabs are links, not buttons</h3>
+
+  <p>
+    A tab that swaps content in place could be a <code>&lt;button&gt;</code>.
+    We used <code>&lt;a href&gt;</code>. Two reasons:
+  </p>
+
+  <ul>
+    <li>Keyboard and screen-reader users already know what a link in a nav bar does.</li>
+    <li>Steps 5–15 may give these views real URLs. The <code>href</code>s are already written. Only the click handler would change.</li>
+  </ul>
+
+  <p>The cost is one line — we have to cancel what the browser wants to do:</p>
+
+<pre><code>onClick={(event) => {
+  event.preventDefault();   // don't follow the href
+  props.onPageChange(id);   // do this instead
+}}</code></pre>
+
+  <div class="callout">
+    <div class="label">What preventDefault actually prevents</div>
+    <p>
+      Every event has a built-in browser behaviour: a link navigates, a form
+      submits, a checkbox toggles, the spacebar scrolls.
+      <code>preventDefault()</code> switches that behaviour off for this one
+      event.
+    </p>
+    <p>
+      It does <em>not</em> stop the event travelling up to other handlers. That
+      is <code>stopPropagation()</code> — a different method for a different
+      problem. We want the first one.
+    </p>
+  </div>
+
+  <h3>Where the state lives</h3>
+
+  <p>Two components need to know which page is active:</p>
+
+  <ul>
+    <li>The nav, to decide which pill is filled.</li>
+    <li>The body, to decide what to show.</li>
+  </ul>
+
+  <p>
+    React's answer is not to give each one a copy. It's to put the value in
+    their nearest shared parent and pass it down. That parent is
+    <code>AppShell</code>.
+  </p>
+
+  <div class="chain">
+    <div class="node client">
+      <div class="cap">AppShell · client</div>
+      <div class="val">const [page, setPage]
+  = useState("calendar")</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node client">
+      <div class="cap">TopNav · client</div>
+      <div class="val">page → which pill
+onPageChange → setPage</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="cap">the body</div>
+      <div class="val">page === "calendar"
+  ? calendar : trends</div>
+    </div>
+  </div>
+
+  <p>
+    <code>TopNav</code> owns nothing. It receives the current page and a
+    function to call, and it has no idea what that function does. So it can be
+    restyled or reused without touching the logic, and the logic can move
+    without touching the markup.
+  </p>
+
+  <h3>Server and client</h3>
+
+  <p>
+    Every component runs on the server by default and sends only finished HTML.
+    <code>"use client"</code> opts a file into <em>also</em> running in the
+    browser. Its JavaScript gets downloaded, and React reattaches the event
+    handlers to the HTML that's already painted. That reattaching is hydration.
+  </p>
+
+  <div class="timeline">
+    <div class="track">
+      <div class="seg" style="background:#4c8b4a">server renders</div>
+      <div class="seg" style="background:#3178b5">HTML paints</div>
+      <div class="seg" style="background:#d9762b">client JS arrives</div>
+      <div class="seg" style="background:#c4483c">hydration</div>
+    </div>
+    <p class="cap">
+      You can read the page at step 2. You can click it at step 4. Keeping the
+      bundle small shortens the gap.
+    </p>
+  </div>
+
+  <p>
+    <strong>The test for whether a file needs the directive: does it use state,
+    an effect, or an event handler?</strong> Here that's three files —
+    <code>AppShell</code> (state), <code>TopNav</code> (clicks), and
+    <code>ThemeToggle</code> (all three, from Step 1). Everything else stays on
+    the server.
+  </p>
+
+  <div class="callout">
+    <div class="label">The directive spreads downward, through imports</div>
+    <p>
+      Once a file says <code>"use client"</code>, everything it
+      <em>imports</em> joins the client bundle too.
+    </p>
+    <p>
+      That's the trap. Import <code>&lt;CalendarView&gt;</code> into
+      <code>AppShell</code> and the whole calendar ships to the browser — even
+      before you've clicked anything.
+    </p>
+    <p>
+      The way out: this applies to imports, not to <strong>props</strong>. A
+      Server Component passed <em>into</em> a Client Component is rendered on
+      the server and handed over as finished output. So
+      <code>app/page.tsx</code> stays a Server Component, builds both views,
+      and passes them down:
+    </p>
+  </div>
+
+<pre><code>&lt;AppShell calendar={&lt;CalendarView /&gt;} trends={&lt;TrendsView /&gt;} /&gt;</code></pre>
+
+  <p>
+    The shell knows how to switch between two unknown things. It never learns
+    that they're a calendar and a chart, and it never imports them. §5 is the
+    proof this worked.
+  </p>
+
+  <div class="chain">
+    <div class="node">
+      <div class="cap">app/page.tsx · server</div>
+      <div class="val">renders CalendarView
+and TrendsView here</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node client">
+      <div class="cap">AppShell · client</div>
+      <div class="val">receives them as
+props, picks one</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="cap">browser</div>
+      <div class="val">gets the switcher's JS,
+not the views' JS</div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <h2 id="code">4 · Code</h2>
+  <p class="sub">Five files, smallest first.</p>
+
+  <div class="callout">
+    <div class="label">House style — how to read a component signature</div>
+    <p>
+      Every component below looks like this:
+    </p>
+<pre><code>type Props = { … };
+
+export function Thing(props: Props) { … }</code></pre>
+    <p>
+      There is exactly <strong>one</strong> parameter, named <code>props</code>,
+      and it's an object. React always calls a component with one argument — the
+      object holding everything you passed in JSX. So
+      <code>&lt;Thing a={1} b={2} /&gt;</code> becomes
+      <code>Thing({ a: 1, b: 2 })</code>.
+    </p>
+    <p>
+      The <code>: Props</code> after it is a <em>type annotation</em>, the same
+      colon as in <code>const n: string</code>. It is required —
+      <code>strict</code> is on in our <code>tsconfig.json</code>, so an
+      un-annotated parameter fails the build. Its real payoff is at the call
+      site: forget a prop in <code>app/page.tsx</code> and you get an error
+      there, instead of a silently blank half-page.
+    </p>
+    <p>
+      We keep the <code>props.</code> prefix rather than destructuring to
+      <code>{ calendar, trends }</code>. It costs seven characters per use and
+      buys one thing: you can always tell at a glance that a value came from
+      outside the component, not from a line above.
+    </p>
+  </div>
+
+  <h3><code>lib/nav.ts</code> — the shared vocabulary</h3>
+
+<pre><code>export type Page = "calendar" | "trends";
+
+export const PAGES: { id: Page; label: string; href: string }[] = [
+  { id: "calendar", label: "Calendar", href: "#calendar" },
+  { id: "trends",   label: "Trends",   href: "#trends"   },
+];
+</code></pre>
+
+  <p>
+    Plain data. No <code>"use client"</code>, no React. A server file and a
+    client file can both import it, because it contains nothing that needs
+    either environment.
+  </p>
+
+  <p>
+    <code>Page</code> is a union type — those two strings and nothing else.
+    TypeScript now rejects <code>setPage("calender")</code> at build time.
+  </p>
+
+  <p>
+    It lives here rather than in <code>AppShell.tsx</code> to avoid a circular
+    import (two files each importing the other). The shell renders the nav;
+    if the type lived in the shell, the nav would have to import back into it.
+  </p>
+
+  <h3><code>components/AppShell.tsx</code> — the state</h3>
+
+<pre><code>"use client";
+
+import { useState } from "react";
+import { TopNav } from "./TopNav";
+import type { Page } from "@/lib/nav";
+
+type Props = {
+  calendar: React.ReactNode;
+  trends: React.ReactNode;
+};
+
+export function AppShell(props: Props) {
+  const [page, setPage] = useState&lt;Page&gt;("calendar");
+
+  return (
+    &lt;&gt;
+      &lt;TopNav page={page} onPageChange={setPage} /&gt;
+      &lt;main className="mx-auto w-full max-w-5xl flex-1 px-8 py-14"&gt;
+        {page === "calendar" ? props.calendar : props.trends}
+      &lt;/main&gt;
+    &lt;/&gt;
+  );
+}
+</code></pre>
+
+  <p>Three things to notice:</p>
+
+  <ul>
+    <li>
+      <code>useState&lt;Page&gt;("calendar")</code> returns a pair: the current
+      value, and a function to change it. Calling <code>setPage("trends")</code>
+      tells React this component is out of date. React re-runs the function,
+      gets different JSX, and updates the DOM to match. Nothing in our code says
+      "hide the calendar" — we describe what the page looks like for a given
+      state, and React works out the difference.
+    </li>
+    <li>
+      <code>React.ReactNode</code> is the type meaning "anything renderable":
+      elements, strings, arrays, <code>null</code>. It's what lets the shell
+      accept two views it knows nothing about.
+    </li>
+    <li>
+      The fragment <code>&lt;&gt;...&lt;/&gt;</code> keeps the header and
+      <code>&lt;main&gt;</code> as siblings, which is what Step 1's layout
+      expects.
+    </li>
+  </ul>
+
+  <h3><code>components/TopNav.tsx</code> — the bar</h3>
+
+  <p>
+    Three regions in a row. The middle one takes all leftover space and centres
+    its contents, which is what keeps the pills centred on the <em>page</em>
+    rather than centred between their neighbours.
+  </p>
+
+<pre><code>&lt;header className="sticky top-0 z-20 border-b border-hairline
+                   bg-background/85 backdrop-blur-sm"&gt;
+  &lt;nav className="mx-auto flex h-16 w-full max-w-5xl items-center gap-6 px-8"&gt;
+    &lt;span className="font-heading text-2xl font-semibold tracking-tight"&gt;
+      Baby Steps
+    &lt;/span&gt;
+
+    &lt;div className="flex flex-1 justify-center"&gt; … pills … &lt;/div&gt;
+
+    &lt;div className="flex items-center gap-1"&gt;
+      &lt;ThemeToggle /&gt;
+      &lt;span aria-hidden className="grid size-9 place-items-center
+                                   rounded-full bg-secondary text-ink-muted"&gt;
+        &lt;User className="size-[17px]" strokeWidth={1.5} /&gt;
+      &lt;/span&gt;
+    &lt;/div&gt;
+  &lt;/nav&gt;
+&lt;/header&gt;
+</code></pre>
+
+  <p>
+    <code>bg-background/85</code> is Step 1's colour token at 85% opacity — the
+    <code>/85</code> suffix works on any colour utility. Combined with
+    <code>backdrop-blur-sm</code>, content scrolling underneath is blurred
+    rather than hidden. Because <code>--background</code> already has a
+    different value per theme, this needs no dark-mode variant.
+  </p>
+
+  <p>Each pill:</p>
+
+<pre><code>{PAGES.map(({ id, label, href }) =&gt; {
+  const active = id === props.page;
+  return (
+    &lt;a
+      key={id}
+      href={href}
+      aria-current={active ? "page" : undefined}
+      onClick={(event) =&gt; {
+        event.preventDefault();
+        props.onPageChange(id);
+      }}
+      className={`rounded-full px-5 py-1.5 text-[0.95rem] transition-colors ${
+        active
+          ? "bg-secondary text-ink"
+          : "text-ink-muted hover:text-ink"
+      }`}
+    &gt;
+      {label}
+    &lt;/a&gt;
+  );
+})}
+</code></pre>
+
+  <ul>
+    <li>
+      <code>key={id}</code> is required on anything produced by
+      <code>.map()</code>. React uses it to match elements between renders
+      instead of rebuilding the whole list.
+    </li>
+    <li>
+      <code>aria-current</code> is <code>undefined</code> when inactive, not
+      <code>false</code>. <code>undefined</code> removes the attribute;
+      <code>aria-current="false"</code> would be a claim rather than an absence.
+    </li>
+  </ul>
+
+  <div class="callout">
+    <div class="label">Both class names are written out in full — on purpose</div>
+    <p>
+      Step 1 established that Tailwind finds classes by scanning your source as
+      plain text. It never runs your code. So <code>bg-secondary</code> and
+      <code>text-ink-muted</code> must each appear literally somewhere, or the
+      CSS for them is never generated.
+    </p>
+    <p>
+      The tidier-looking
+      <code>{`bg-${active ? "secondary" : "transparent"}`}</code> compiles,
+      runs, and renders an unstyled pill. No error. No warning. Write complete
+      class names on both branches.
+    </p>
+  </div>
+
+  <h3><code>components/views/</code> — the placeholders</h3>
+
+  <p>
+    Three small server files. <code>Placeholder</code> holds the shared markup;
+    <code>CalendarView</code> and <code>TrendsView</code> supply the words. None
+    has a directive, and none needs one. All three get deleted in later steps.
+  </p>
+
+<pre><code>export function CalendarView() {
+  return (
+    &lt;Placeholder
+      eyebrow="July 2026"
+      title="The month goes here"
+      body="A Sunday-start grid of days, with a tray of stickers alongside it. …"
+    /&gt;
+  );
+}
+</code></pre>
+
+  <h3><code>app/page.tsx</code> — the entry point</h3>
+
+  <p>The specimen sheet became this:</p>
+
+<pre><code>import { AppShell } from "@/components/AppShell";
+import { CalendarView } from "@/components/views/CalendarView";
+import { TrendsView } from "@/components/views/TrendsView";
+
+export default function Home() {
+  return &lt;AppShell calendar={&lt;CalendarView /&gt;} trends={&lt;TrendsView /&gt;} /&gt;;
+}
+</code></pre>
+
+  <p>
+    No <code>"use client"</code>. This file runs once, on the server, at build
+    time. The build marks <code>/</code> as <code>○ (Static)</code>.
+  </p>
+
+  <!-- ================================================================= -->
+  <h2 id="verify">5 · Verifying it</h2>
+  <p class="sub">The important claim is invisible in the browser, so we check it with grep.</p>
+
+  <p>
+    The claim: the views really did stay on the server. The build writes the
+    browser's JavaScript into <code>.next/static/chunks/</code>. If the
+    calendar's text is in there, it shipped.
+  </p>
+
+<pre><code>$ grep -rl "The month goes here" .next/static/chunks/
+(nothing)
+
+$ grep -rl "Trends" .next/static/chunks/
+.next/static/chunks/29i6nal-6xuxx.js</code></pre>
+
+  <p>Both results matter, in opposite directions:</p>
+
+  <ul>
+    <li>
+      <strong>Absent:</strong> the calendar's text is in no client chunk. It
+      exists only in the prebuilt HTML. That's the win.
+    </li>
+    <li>
+      <strong>Present:</strong> the word "Trends" <em>is</em> there, because
+      <code>lib/nav.ts</code> is imported by <code>TopNav</code>, which is a
+      Client Component. The tab label had to travel. That's the boundary, made
+      visible.
+    </li>
+  </ul>
+
+  <p>The build:</p>
+
+<pre><code>✓ Compiled successfully in 1447ms
+  Finished TypeScript in 1359ms
+✓ Generating static pages (4/4)
+
+Route (app)
+┌ ○ /
+└ ○ /_not-found</code></pre>
+
+  <h3>By hand</h3>
+
+  <ul>
+    <li>Click <em>Trends</em> — the body changes, the URL bar doesn't.</li>
+    <li>Press <kbd>Tab</kbd> — the wordmark is skipped, both pills take focus with a visible ring, then the moon.</li>
+    <li>Toggle the theme while on Trends — you stay on Trends. Theme and page are separate state.</li>
+    <li>Reload — you land on Calendar. The page choice isn't saved anywhere, by design.</li>
+    <li>Narrow the window — the three regions hold until roughly phone width. Desktop-first was the brief.</li>
+  </ul>
+
+  <div class="callout">
+    <div class="label">Known and accepted</div>
+    <p>
+      Back and forward do nothing, and you can't send someone a link to Trends.
+      Both follow from "no browser navigation," which the spec asked for. The
+      <code>href</code>s are in place if that changes.
+    </p>
+  </div>
+
+  <!-- ================================================================= -->
+  <h2 id="next">6 · What's next</h2>
+  <p class="sub">Step 3 — sign in with Google and GitHub.</p>
+
+  <p>
+    Supabase gets wired up. The placeholder avatar becomes a real account with
+    a dropdown menu. The app learns to tell one person's days from another's.
+  </p>
+
+  <p>
+    It's the first step with setup outside the repo (three consoles, about 25
+    minutes — see <code>OAuthSetup.md</code>) and the first with a
+    <code>.env.local</code>.
+  </p>
+
+  <p class="muted" style="font-size:.85rem;margin-top:2.5rem">
+    Concepts from this step that come back: <code>useState</code> · lifting
+    state up · the client boundary and how props cross it · complete class
+    names.
+  </p>
+
+</div>
+
+<script>
+  // Highlight the current section in the table of contents.
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(a => a.classList.remove('active'));
+      const match = links.find(a => a.getAttribute('href') === '#' + entry.target.id);
+      if (match) match.classList.add('active');
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+
+  targets.forEach(t => observer.observe(t));
+</script>
+</body>
+</html>

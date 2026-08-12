@@ -208,12 +208,12 @@ Each step is one sitting, one learning doc, one reviewable change.
 **New concepts:**
 - *OAuth in one paragraph* — you never give Baby Steps your Google password. Google authenticates you and hands back a signed token saying "this is who they are."
 - *Sessions and cookies* — the token lives in an httpOnly cookie the browser sends on every request.
-- *Middleware* — one file that runs before every page and bounces logged-out visitors to sign-in.
+- *Proxy* — one file that runs before every page and bounces logged-out visitors to sign-in. (Called *middleware* everywhere online; renamed to `proxy.ts` in Next 16.)
 - *Secrets* — `.env.local`, and why it must be gitignored.
 **Setup you'll do:** create a Supabase project; register OAuth apps at Google Cloud Console and GitHub Developer Settings; paste the keys.
 **shadcn:** `button`, `avatar`, `dropdown-menu` — the user menu is our first real Radix component, and a chance to see what "accessible by default" buys (arrow-key navigation, Escape to close, focus returning to the trigger).
-**Files:** `lib/supabase/{client,server,middleware}.ts`, `middleware.ts`, `app/login/page.tsx`, `app/auth/callback/route.ts`, `components/UserMenu.tsx`
-**Doc:** `03-oauth-sessions-and-middleware`
+**Files:** `lib/supabase/{env,client,server}.ts`, `proxy.ts`, `app/login/page.tsx`, `app/auth/callback/route.ts`, `app/actions/auth.ts`, `lib/user.ts`, `components/UserMenu.tsx`
+**Doc:** `03-oauth-sessions-and-proxy`
 
 #### Step 4 · Schema, row-level security, and seeding
 **Goal:** The four tables exist and are locked to their owner.

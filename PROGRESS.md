@@ -2,7 +2,70 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 1 of 17 done. Step 2 (the shell) is next.
+**Now:** Step 3 of 17 done. Step 4 (schema + RLS) is next.
+
+---
+
+## 2026-08-12 · Step 3 · Sign in
+
+**Decisions**
+
+- **`middleware.ts` does not exist in Next 16 — it's `proxy.ts`, exporting `proxy`.** Node runtime only; Edge can't be configured. Caught by reading `node_modules/next/dist/docs/` per `AGENTS.md`. `ProjectPlan.md` Step 3 said `middleware.ts`; corrected, along with the doc name.
+- `getUser()` everywhere, never `getSession()`. On a server a cookie is just bytes the client sent; `getUser()` verifies with Supabase and triggers the refresh.
+- `app/page.tsx` re-checks the user even though the proxy already did. Next's docs are explicit that proxy is an optimistic pre-filter, not an authorization boundary. Real guarantee lands in Step 4 as RLS.
+- `setAll(cookiesToSet, headers)` takes **two** args in `@supabase/ssr` 0.12 — verified in the installed `.d.ts`, not from memory. The second carries `Cache-Control`/`Expires`/`Pragma`, which stop a CDN serving one user's session to another. The proxy returns the `response` that `setAll` rebuilt; returning a fresh `NextResponse.next()` would silently drop the refreshed cookie.
+- Env vars read as literal `process.env.NEXT_PUBLIC_…` text in `lib/supabase/env.ts`. Next does find-and-replace at build time, so a `read(name)` helper would be `undefined` in the browser. Same class of bug as Tailwind's class scanning.
+- Sign-out is a Server Action in a `<form>`, not a link. A GET endpoint can be fired by an `<img>` on someone else's page.
+- `next` param in the callback is forced to a relative path — otherwise `?next=https://evil.example` hands over a freshly authenticated visitor.
+- Publishable key in plaintext `.env.local` is correct: it's the `anon` role and ships in the bundle by design. `service_role` must never take a `NEXT_PUBLIC_` prefix.
+- All three Supabase Data API toggles ON, including auto-expose — against Supabase's own hint. Automatic RLS closes the dangerous failure mode, and manual `GRANT` plumbing would muddy the Step 4 lesson. **Migrations are the source of truth; dashboard toggles are the safety net.**
+- Avatar initial via `Intl.Segmenter`, not `name[0]` — emoji and accented names are multiple code units. Step 10's sticker marks need the same.
+- `avatar` and `dropdown-menu` taken from shadcn **unedited**. They read `--popover`/`--accent`/`--radius`, which Step 1 already pointed at our palette, so the retheme was free. Only hand-written bit is `font-heading` on the fallback.
+
+**Changed**
+
+- `proxy.ts` — new, repo root
+- `lib/supabase/{env,client,server}.ts`, `lib/user.ts` — new
+- `app/login/page.tsx`, `app/auth/callback/route.ts`, `app/auth/auth-code-error/page.tsx`, `app/actions/auth.ts` — new
+- `components/auth/SignInButtons.tsx`, `components/UserMenu.tsx` — new
+- `components/ui/{avatar,dropdown-menu}.tsx` — new (shadcn, unmodified)
+- `app/page.tsx` — now async, redirects when signed out, passes `user`
+- `components/{AppShell,TopNav}.tsx` — thread `user` through; placeholder avatar → real menu
+- `OAuthSetup.md` — new, three-console clickthrough
+- `learning/2026-08-12-03-oauth-sessions-and-proxy.html`
+- `.env.local` — new, gitignored, two `NEXT_PUBLIC_` vars
+
+**State:** `tsc --noEmit` clean, build clean. `/` moved from `○` static to `ƒ` dynamic (reads cookies); `/login` stays static; Proxy registered. `curl /` → 307 → `/login` signed out. Google and GitHub round trips confirmed by hand. Committed together with Step 2's shell.
+
+**Open**
+
+- Google's consent screen reads "Sign in to hcomppydgxbearzqxslf.supabase.co" — Supabase is the registered OAuth client, so only a paid custom domain changes it. GitHub already shows the right name. Deferred to Step 17.
+
+**Next:** Step 4 — four tables as migrations, RLS keyed on `auth.uid()`, seed the six life areas, render them as chips.
+
+---
+
+## 2026-07-30 · Step 2 · The shell
+
+**Decisions**
+
+- `app/page.tsx` stays a Server Component and passes both views into the client shell as props. Importing them would have dragged the whole calendar into the browser bundle; props cross the boundary as finished server output. Verified by grep.
+- Tabs are real `<a href>` with `preventDefault`, not `<button>`. Costs one line, buys keyboard/screen-reader familiarity now and real URLs later if we want them.
+- State lives in `AppShell`, not `TopNav` — the nav and the body both need it. `TopNav` owns nothing.
+- `Page` type and `PAGES` list in `lib/nav.ts` rather than a component file, to keep the shell↔nav import from going circular.
+- Segmented control hand-written. shadcn has no such primitive and it's two links and a rounded background.
+- No page persistence and no history entries. Follows from "no browser navigation" in the spec; accepted.
+
+**Changed**
+
+- `components/AppShell.tsx`, `components/TopNav.tsx`, `lib/nav.ts` — new
+- `components/views/` — `CalendarView`, `TrendsView`, `Placeholder` (all temporary)
+- `app/page.tsx` — specimen sheet deleted, now three lines
+- `learning/2026-07-30-02-app-shell-and-client-components.html`
+
+**State:** builds clean, `/` still static. Client bundle confirmed free of view copy. Committed together with Step 3 — the two steps share `app/page.tsx`, so they couldn't be split cleanly.
+
+**Next:** Step 3 — Supabase auth, Google + GitHub, the placeholder avatar becomes a real account menu. First `.env.local`.
 
 ---
 
@@ -26,7 +89,7 @@ Newest first. One entry per step.
 - `app/page.tsx` — specimen sheet (deleted in Step 2)
 - `learning/2026-07-29-01-scaffold-and-design-tokens.html`
 
-**State:** builds clean, both routes static, both themes verified in the compiled CSS. Commit `f5a7ff6`; grid removal still uncommitted.
+**State:** builds clean, both routes static, both themes verified in the compiled CSS. Commits `f5a7ff6` and `6b01610`.
 
 **Next:** Step 2 — top nav, segmented Calendar/Trends pill, page switching in React state. Toggle moves into the nav. Specimen page deleted.
 

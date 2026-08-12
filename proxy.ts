@@ -1,0 +1,95 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+import { supabaseEnv } from "@/lib/supabase/env";
+
+/**
+ * Runs before every request.
+ *
+ * In Next 16 this file is `proxy.ts`. It was `middleware.ts` through Next 15 —
+ * same job, new name, and the exported function must be called `proxy` too.
+ * The runtime is Node.js and cannot be changed to Edge.
+ *
+ * Two jobs, in this order:
+ *
+ *  1. Refresh the session. Access tokens expire after an hour. Server
+ *     Components can read cookies but not write them, so this is the only
+ *     place a refreshed token can be written back to the browser.
+ *  2. Bounce signed-out visitors to /login.
+ */
+
+/** Paths reachable while signed out. Everything else requires a session. */
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/auth/auth-code-error"];
+
+export async function proxy(request: NextRequest) {
+  const { url, anonKey } = supabaseEnv();
+
+  // Starts as a pass-through. `setAll` replaces it if tokens were refreshed.
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet, headers) {
+        // Write to the request too, so anything rendering later in this same
+        // pass sees the new token rather than the expired one.
+        for (const { name, value } of cookiesToSet) {
+          request.cookies.set(name, value);
+        }
+
+        response = NextResponse.next({ request });
+
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
+
+        // Supabase hands us Cache-Control/Expires/Pragma headers here. They
+        // stop a CDN or reverse proxy caching a response that carries a
+        // session cookie — without them, one visitor's token can be served
+        // to the next person who asks for the same URL.
+        for (const [name, value] of Object.entries(headers)) {
+          response.headers.set(name, value);
+        }
+      },
+    },
+  });
+
+  // getUser() — not getSession(). getSession() reads the cookie and believes
+  // it. getUser() asks Supabase's auth server to verify the token, and is the
+  // call that triggers a refresh when the token has expired.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+  const isPublic = PUBLIC_PATHS.some(
+    (p) => path === p || path.startsWith(`${p}/`),
+  );
+
+  if (!user && !isPublic) {
+    const loginUrl = new URL("/login", request.nextUrl);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (user && path === "/login") {
+    return NextResponse.redirect(new URL("/", request.nextUrl));
+  }
+
+  // Must be the response `setAll` built, or a refreshed token is dropped and
+  // the visitor gets logged out at random.
+  return response;
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Everything except:
+     *   _next/static, _next/image  — build output, no session needed
+     *   favicon.ico, image files   — static assets
+     * Skipping these keeps the auth check off requests that can't use it.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
