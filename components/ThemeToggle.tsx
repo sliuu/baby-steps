@@ -1,24 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import { THEME_STORAGE_KEY, type Theme } from "@/lib/theme";
 
-export function ThemeToggle() {
-  // The inline script in <head> already set the real theme before paint.
-  // We can't read it during render (the server has no DOM), so we start
-  // with a placeholder and sync in an effect.
-  const [theme, setTheme] = useState<Theme>("light");
-  const [ready, setReady] = useState(false);
+/** The <head> script owns the class; nothing else changes it behind our back. */
+const noSubscription = () => () => {};
 
-  useEffect(() => {
-    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
-    setReady(true);
-  }, []);
+export function ThemeToggle() {
+  // The inline script in <head> already set the real theme before paint, but
+  // the server has no DOM to read it from. useSyncExternalStore's third
+  // argument is the server-and-hydration value, so the icon renders nothing
+  // until the browser can answer — rather than flashing the wrong one.
+  const domTheme = useSyncExternalStore<Theme | null>(
+    noSubscription,
+    () => (document.documentElement.classList.contains("dark") ? "dark" : "light"),
+    () => null,
+  );
+
+  const [chosen, setChosen] = useState<Theme | null>(null);
+  const theme = chosen ?? domTheme;
+  const ready = theme !== null;
 
   function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
+    setChosen(next);
     document.documentElement.classList.toggle("dark", next === "dark");
     document.documentElement.dataset.theme = next;
     localStorage.setItem(THEME_STORAGE_KEY, next);

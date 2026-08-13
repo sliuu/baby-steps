@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step 5 · The Month Grid — Baby Steps</title>
+<style>
+  :root {
+    --bg: #f7f4ed;
+    --surface: #fdfcf8;
+    --sunken: #f1eee6;
+    --ink: #1c1a17;
+    --muted: #8a8378;
+    --hair: #e3ded2;
+    --accent: #c4483c;
+    --code-bg: #f4f1e8;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1815; --surface: #221f1b; --sunken: #141310;
+      --ink: #f0ebe0; --muted: #918a7c; --hair: #33302a;
+      --accent: #d75f52; --code-bg: #17150f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px; line-height: 1.65;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 .5rem; font-weight: 600; }
+  h2 {
+    font-size: 1.7rem; margin: 3.5rem 0 .4rem; font-weight: 600;
+    padding-top: 1.5rem; border-top: 1px solid var(--hair);
+  }
+  h3 { font-size: 1.2rem; margin: 2rem 0 .6rem; font-weight: 600; }
+  h4 {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); font-weight: 400; margin: 1.6rem 0 .4rem;
+  }
+  p, li { margin: 0 0 .9rem; }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin-bottom: .4rem; }
+  code {
+    font-family: var(--mono); font-size: .85em;
+    background: var(--code-bg); padding: .1em .35em; border-radius: 3px;
+  }
+  pre {
+    font-family: var(--mono); font-size: .8rem; line-height: 1.55;
+    background: var(--code-bg); border: 1px solid var(--hair);
+    border-radius: 8px; padding: 1rem 1.1rem;
+    overflow-x: auto; white-space: pre; margin: 0 0 1.2rem;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .18em;
+    font-size: .7rem; color: var(--muted); margin-bottom: .8rem;
+  }
+  .lede { font-size: 1.15rem; color: var(--muted); margin-bottom: 2rem; }
+  .sub { color: var(--muted); font-size: .9rem; margin: 0 0 1.4rem; }
+
+  .summary {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 2rem 0;
+  }
+  .summary p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  .summary ol { margin: 0; padding-left: 1.2rem; }
+  .summary li { margin: .35rem 0; }
+
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1rem 0;
+  }
+  nav.toc p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .25rem 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.toc a:hover, nav.toc a.active { border-bottom-color: var(--accent); color: var(--accent); }
+
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--surface);
+    padding: 1rem 1.2rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0;
+  }
+  .callout .label {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--accent); margin-bottom: .4rem;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: .6rem 0 1.2rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 400; }
+  td:first-child { white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .muted { color: var(--muted); }
+
+  /* A miniature of the thing this step built. */
+  .mini {
+    border: 1px solid var(--hair); background: var(--hair);
+    border-radius: 8px; overflow: hidden; margin: 1.4rem 0 1.6rem;
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+  }
+  .mini div {
+    background: var(--surface); aspect-ratio: 1 / .78;
+    font-family: var(--mono); font-size: .62rem; color: var(--ink);
+    padding: .3rem .35rem;
+  }
+  .mini .head {
+    aspect-ratio: auto; text-align: center; padding: .4rem 0;
+    font-family: Georgia, serif; font-size: .55rem;
+    letter-spacing: .14em; color: var(--muted);
+  }
+  .mini .out { background: var(--sunken); color: var(--muted); }
+  .mini .now span {
+    display: inline-grid; place-items: center;
+    width: 1.15rem; height: 1.15rem; border-radius: 999px;
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Baby Steps · Step 5 of 17 · 12 August 2026</p>
+  <h1>The Month Grid</h1>
+  <p class="lede">
+    Forty-two cells, always. Plus the reason a calendar is the one component
+    that can't trust the clock.
+  </p>
+
+  <div class="summary">
+    <p>The whole step in five lines</p>
+    <ol>
+      <li>The grid always draws six rows, so its height never changes between months.</li>
+      <li>Days are <code>"2026-08-12"</code> strings, never <code>Date</code> objects, everywhere outside <code>lib/dates.ts</code>.</li>
+      <li>The server doesn't know what day it is <em>where you are</em>, so "today" appears a beat after first paint.</li>
+      <li>Today is a ring, not a filled circle — a fill needs inverted text, and inverted text broke once already.</li>
+      <li>Every cell carries <code>data-day</code>. That's the handle Step 8 drops stickers onto.</li>
+    </ol>
+  </div>
+
+  <div class="mini">
+    <div class="head">SUN</div><div class="head">MON</div><div class="head">TUE</div>
+    <div class="head">WED</div><div class="head">THU</div><div class="head">FRI</div>
+    <div class="head">SAT</div>
+    <div class="out">26</div><div class="out">27</div><div class="out">28</div>
+    <div class="out">29</div><div class="out">30</div><div class="out">31</div><div>1</div>
+    <div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div>
+    <div>9</div><div>10</div><div>11</div><div class="now"><span>12</span></div>
+    <div>13</div><div>14</div><div>15</div>
+  </div>
+
+  <nav class="toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#commands">Every command run</a></li>
+      <li><a href="#words">Words you'll need</a></li>
+      <li><a href="#changes">What this changes for you</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#verify">Verifying it</a></li>
+      <li><a href="#next">What's next</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============================================================ -->
+  <h2 id="commands">1 · Every command run</h2>
+
+<pre><code>npm install date-fns
+npm run check:dates            # the 18 assertions, in your timezone
+TZ=Pacific/Auckland npm run check:dates
+npx tsc --noEmit &amp;&amp; npx eslint . &amp;&amp; npm run build</code></pre>
+
+  <h4>New files</h4>
+
+<pre><code>lib/dates.ts                       every date decision, in one file
+components/calendar/MonthGrid.tsx   "use client" — owns which month
+components/calendar/MonthHeader.tsx title + arrows
+components/calendar/DayCell.tsx     one cell
+scripts/check-dates.mts             18 assertions, no test runner</code></pre>
+
+  <p class="muted">
+    No database. Nothing in this step knows Supabase exists.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 id="words">2 · Words you'll need</h2>
+
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr><td><strong>hydration</strong></td><td>The browser re-running a component over HTML the server already sent, to attach the interactivity. The two runs must produce identical markup.</td></tr>
+      <tr><td><strong>derived state</strong></td><td>A value recomputed from another value instead of stored beside it. The 42 cells are derived from the month.</td></tr>
+      <tr><td><strong>timezone</strong></td><td>An offset from UTC. Your server is almost certainly on UTC; you are not. For about seven hours a day they disagree about the date.</td></tr>
+      <tr><td><strong>DST</strong></td><td>Daylight saving. Two days a year are 23 or 25 hours long, which breaks anything that advances a date by adding 86,400 seconds.</td></tr>
+      <tr><td><strong>oldstyle figures</strong></td><td>Numerals that rise and fall like lowercase letters. Set in the date numbers so they sit in the page rather than shouting from it.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="changes">3 · What this changes for you</h2>
+  <p class="sub">Four things you'll design around. The mechanics are in the box at the end.</p>
+
+  <h3>1 · The grid never changes height</h3>
+
+  <p>
+    Six rows always, even when five would do. A 31-day month starting on a
+    Friday genuinely needs six, and a grid that grows a row between August and
+    September makes the whole page jump every time an arrow is pressed — the
+    tray moves, the footer moves, and the eye loses its place mid-scan.
+  </p>
+
+  <p>
+    So the extra row is a design decision, not a maths accident. February gets a
+    row of greyed-out March, and that's the price of a page that holds still.
+  </p>
+
+  <h3>2 · "Today" isn't in the first paint</h3>
+
+  <p>
+    The HTML is built on a server in UTC. It has no idea what date it is in your
+    kitchen. So the first frame the browser draws has <em>no</em> today marker,
+    and the ring appears a moment later once the browser can answer.
+  </p>
+
+  <p>
+    That constrains the marker: it must not change the cell's size or position,
+    or the whole grid twitches on load. A ring drawn inside the numeral's own
+    box is safe. A larger cell, a border on the cell, or bold text that reflows
+    the row is not.
+  </p>
+
+  <p class="muted">
+    The alternative — reading the clock during render — produces a hydration
+    mismatch: React builds the markup twice, gets two different answers, and
+    warns in the console. See §4.
+  </p>
+
+  <h3>3 · Today is a ring, because a fill needs inverted text</h3>
+
+  <p>
+    The first version was a filled ink circle with the numeral knocked out in
+    the page background colour. The number vanished — one missing token and
+    "light text" resolved to nothing, leaving dark ink on a dark circle.
+  </p>
+
+  <p>
+    A ring never has that failure mode. The numeral keeps the same colour it
+    already had; the ring is added <em>around</em> it. Nothing about legibility
+    depends on a second token being correct.
+  </p>
+
+  <div class="callout">
+    <div class="label">Build-time tools read text, third sighting</div>
+    <p>
+      The actual bug: <code>text-bg</code> was a class Tailwind had never heard
+      of, because <code>--color-bg</code> was missing from the <code>@theme</code>
+      block. An unknown utility isn't an error — it's just nothing. The rule
+      that keeps catching us: <em>if a token isn't published in
+      <code>@theme</code>, its class silently does nothing.</em>
+    </p>
+    <p>
+      Same family as Step 3's <code>process.env.NEXT_PUBLIC_…</code> and Step 4's
+      <code>bg-ramp-${key}</code>.
+    </p>
+  </div>
+
+  <h3>4 · Every cell already has a handle</h3>
+
+<pre><code>&lt;div data-day="2026-08-12" …&gt;</code></pre>
+
+  <p>
+    Nothing reads it yet. Step 8 will: a drop target needs an identifier that
+    survives the trip from DOM event back to database row, and
+    <code>"2026-08-12"</code> is exactly what <code>day_activities.day</code>
+    stores. Same string, no conversion at either end.
+  </p>
+
+  <p>
+    The hairlines between cells, incidentally, aren't borders. The grid has a
+    1px gap and a coloured background showing through it — one rule instead of
+    per-cell borders that double up at every seam.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 id="code">4 · Code</h2>
+  <p class="sub">Three snippets. The first is the one worth remembering.</p>
+
+  <h3>The clock, on both sides of hydration</h3>
+
+<pre><code>const todayString = useSyncExternalStore(
+  noSubscription,
+  () =&gt; today(),   // browser: the visitor's own date
+  () =&gt; null,      // server AND hydration: we don't know yet
+);</code></pre>
+
+  <p>
+    The third argument is the trick. React uses it on the server <em>and</em> for
+    the hydration pass, then immediately switches to the second. So both runs
+    agree on <code>null</code>, the markup matches, and the real date arrives
+    one render later.
+  </p>
+
+  <p>
+    Reach for this any time a component needs something only the browser knows —
+    the current time, <code>localStorage</code>, the actual theme class,
+    <code>matchMedia</code>. <code>ThemeToggle</code> has the identical shape for
+    the identical reason.
+  </p>
+
+  <p class="muted">
+    Not <code>useEffect</code> + <code>setState</code>. That works, but React's
+    <code>set-state-in-effect</code> lint rule rejects it, and it renders the
+    wrong value once before correcting.
+  </p>
+
+  <h3><code>toISOString().slice(0, 10)</code> is wrong a third of the day</h3>
+
+<pre><code>format(date, "yyyy-MM-dd")           // local calendar fields  ✅
+date.toISOString().slice(0, 10)      // converts to UTC first  ❌</code></pre>
+
+  <p>
+    At 11pm on the 12th in California, UTC is already the 13th. A sticker placed
+    at night would land on tomorrow. <code>date-fns</code>' <code>format</code>
+    reads the local fields and never converts.
+  </p>
+
+  <p>
+    The same reasoning is why <code>addDays</code> and <code>addMonths</code> do
+    the stepping rather than arithmetic on timestamps — two days a year aren't
+    24 hours long.
+  </p>
+
+  <h3>Two classes for one slot is a coin flip</h3>
+
+<pre><code>function numeralClasses(cell: DayCellData): string {
+  if (cell.isToday) return "font-medium text-ink ring-1 ring-ink";
+  if (cell.inMonth) return "text-ink";
+  return "text-ink-muted/60";
+}</code></pre>
+
+  <p>
+    If <code>text-ink</code> and <code>text-ink-muted</code> both land on an
+    element, Tailwind picks the winner by position in the <em>compiled
+    stylesheet</em> — not by the order you wrote them in the template. Writing
+    the later one second changes nothing. Branches that return exactly one class
+    per slot are the fix.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 id="verify">5 · Verifying it</h2>
+
+  <p>
+    Date bugs are seasonal — the February one shows up in February. So the
+    checks are a script rather than a browser pass:
+  </p>
+
+<pre><code>$ npm run check:dates
+TZ = America/Los_Angeles
+PASS  weekday labels start on Sunday
+PASS  42 cells
+PASS  first cell is 2026-06-28
+…
+PASS  late-night stays on its own day
+      toISOString would have said: 2026-08-13
+…                                            18 lines, no FAIL
+
+$ TZ=Pacific/Auckland npm run check:dates     # the same 18</code></pre>
+
+  <p>Among them:</p>
+
+  <ul>
+    <li>July 2026 matches the reference screenshot cell for cell.</li>
+    <li>February still draws six rows.</li>
+    <li>Exactly one cell is today — and zero when the clock is unknown.</li>
+    <li>11:30pm resolves to the right day. The script prints what <code>toISOString</code> would have said, for contrast.</li>
+    <li>Stepping across a DST boundary and across a year boundary both land correctly.</li>
+  </ul>
+
+  <p class="muted">
+    No test runner. It's a <code>.mts</code> file Node runs directly, throwing on
+    failure. A real one arrives when there's something worth mocking.
+  </p>
+
+  <div class="callout">
+    <div class="label">Worth doing once, by hand</div>
+    <p>
+      Run <code>TZ=Pacific/Kiritimati npm run dev</code> and load the page.
+      Kiritimati is UTC+14 — reliably a different date from your machine. Watch
+      the today ring: nothing on the first frame, then it appears. That flash is
+      the hydration boundary, made visible.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="next">6 · What's next</h2>
+  <p class="sub">Step 6 — stickers that are already in the database appear on their days.</p>
+
+  <p>
+    The Server Component fetches rows, then reshapes the flat list into a
+    <code>Map&lt;"2026-08-12", Sticker[]&gt;</code> so each cell does one instant
+    lookup instead of scanning the whole month. The <code>data-day</code> string
+    from this step is the map key.
+  </p>
+
+  <p>
+    Nothing about the grid changes. That's the point of having spent a step on
+    it alone.
+  </p>
+
+  <p class="muted" style="font-size:.85rem;margin-top:2.5rem">
+    Concepts from this step that come back: derived, never stored ·
+    <code>useSyncExternalStore</code> for browser-only values · days are strings ·
+    one class per slot · <code>data-day</code> as the drop key.
+  </p>
+
+</div>
+
+<script>
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(a => a.classList.remove('active'));
+      const match = links.find(a => a.getAttribute('href') === '#' + entry.target.id);
+      if (match) match.classList.add('active');
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+
+  targets.forEach(t => observer.observe(t));
+</script>
+</body>
+</html>

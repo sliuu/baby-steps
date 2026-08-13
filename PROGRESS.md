@@ -2,7 +2,53 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 4 of 17 done. Step 5 (month grid) is next.
+**Now:** Step 5 of 17 done. Step 6 (render placed stickers) is next.
+
+---
+
+## 2026-08-12 · Step 5 · The month grid
+
+**Decisions**
+
+- **Always 42 cells, never 35.** A 31-day month starting on a Friday needs six rows, and a grid that changes height between months makes the page jump on every arrow press. February gets a row of greyed-out March; that's the price of a page that holds still.
+- **The clock is passed in, not read during render.** `monthGrid(month, todayString)` takes today as a parameter. Calling `isToday()` inside would make the output depend on *where* it runs — the server is UTC, the browser isn't, and they disagree about the date for ~7 hours a day.
+- **`useSyncExternalStore` for today, not `useEffect` + `setState`.** Third argument is the server-and-hydration value (`null`), second is the real browser value. Both render passes agree, so no hydration mismatch, and React's `set-state-in-effect` lint rule stays happy. `ThemeToggle.tsx` was converted to the same shape — it had the same bug and was already failing lint.
+- **Days are `"2026-08-12"` strings outside `lib/dates.ts`.** `toISOString().slice(0,10)` converts to UTC first and is wrong about a third of the day; `format(date, "yyyy-MM-dd")` reads local calendar fields. Matches what `day_activities.day` stores, so no conversion at either end.
+- **The 42 cells are derived from `month` every render, never stored.** One source of truth for what the grid shows.
+- **Today is a ring, not a filled circle.** A fill needs the numeral inverted, and inverted text is one missing token away from invisible — which is exactly what happened (see below).
+- **Hairlines are `gap-px` over a `bg-hairline` container**, not per-cell borders that double up at every seam.
+- `data-day` on every cell now, though nothing reads it. Step 8's drop target needs it.
+- **`scripts/check-dates.mts` instead of a test runner.** Date bugs are seasonal — the February one shows up in February. Plain Node, throws on failure. A real runner arrives when there's something worth mocking.
+- Arrows sit in the header, pinned right. Tried flanking the grid; reverted after review.
+
+**Changed**
+
+- `lib/dates.ts` — new, every date decision in one file
+- `components/calendar/{MonthGrid,MonthHeader,DayCell}.tsx` — new
+- `scripts/check-dates.mts` — new, 18 assertions
+- `components/views/CalendarView.tsx` — renders the grid above the chips
+- `components/LifeAreaChips.tsx` — left-aligned now that the grid sets the column width
+- `components/ThemeToggle.tsx` — `useEffect` → `useSyncExternalStore`
+- `app/globals.css` — added `--color-bg` to `@theme`
+- `tsconfig.json` — `allowImportingTsExtensions`, for `scripts/` only
+- `package.json` — `date-fns`, `check:dates` script
+- `learning/2026-08-12-05-month-grid-and-date-handling.html`
+
+**Also**
+
+- **The invisible today numeral, third sighting of the build-time-tools-read-text trap.** The class was `text-bg`, but `--color-bg` had never been published in the `@theme` block, so the utility didn't exist and the numeral inherited dark ink on a dark circle. An unknown Tailwind class isn't an error — it's nothing. Fixed both ends: exposed the token *and* switched to a ring so legibility never depends on a second token resolving. Same family as Step 3's `process.env.NEXT_PUBLIC_…` and Step 4's `bg-ramp-${key}`.
+- `DayCell` picks exactly one class per slot via `numeralClasses()`. `text-ink` and `text-ink-muted` on the same element resolve by position in the compiled stylesheet, not by source order.
+- `TZ=Pacific/Kiritimati npm run dev` (UTC+14) makes the hydration boundary visible: no today ring on the first frame, then it appears.
+- **`learning/README.md` is now the doc you actually read** — five lines per step, one design consequence each, plus a symptom index (*if you see X, it's because Y*) and a declared floor of things to trust without understanding. The long `.html` docs stay as reference. Reason: a concept explained before you've felt the problem has nothing to stick to, so the docs should be indexed by symptom rather than by topic. Future steps get the card first; the long doc is optional.
+
+**State:** `tsc --noEmit`, `eslint .`, and `npm run build` all clean. `check:dates` passes 18/18 in both `America/Los_Angeles` and `Pacific/Auckland`. Grid confirmed in the browser — arrows in the header, today's number visible inside its ring. Uncommitted.
+
+**Open**
+
+- `scripts/` isn't type-checked by the build (`.mts`, run directly by Node). It compiles under `tsc --noEmit` only because of `allowImportingTsExtensions`. Fine while it's one file.
+- No keyboard navigation between cells yet. Not needed until cells are interactive in Step 8.
+
+**Next:** Step 6 — seeded sticker rows appear on their days. Server-side fetch reshaped into a `Map<DayString, Sticker[]>` so each cell does one lookup instead of scanning the month.
 
 ---
 

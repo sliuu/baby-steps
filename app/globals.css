@@ -38,6 +38,7 @@
   --color-ring: var(--ring);
 
   /* Ours — the vocabulary the rest of Baby Steps speaks. */
+  --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
   --color-ink: var(--ink);

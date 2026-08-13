@@ -7,7 +7,7 @@ type Props = {
 
 export function LifeAreaChips(props: Props) {
   return (
-    <ul className="flex flex-wrap items-center justify-center gap-2">
+    <ul className="flex flex-wrap items-center gap-2">
       {props.areas.map((area) => {
         const { bg } = ramp(area.colorKey);
         return (
