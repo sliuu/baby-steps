@@ -44,6 +44,14 @@
   --color-ink-muted: var(--ink-muted);
   --color-hairline: var(--hairline);
 
+  /* Hue ramps — what `color_key` names. `bg-ramp-red`, `text-ramp-blue`, … */
+  --color-ramp-red: var(--ramp-red);
+  --color-ramp-blue: var(--ramp-blue);
+  --color-ramp-orange: var(--ramp-orange);
+  --color-ramp-yellow: var(--ramp-yellow);
+  --color-ramp-green: var(--ramp-green);
+  --color-ramp-purple: var(--ramp-purple);
+
   --color-area-spirituality: var(--area-spirituality);
   --color-area-exercise: var(--area-exercise);
   --color-area-work: var(--area-work);
@@ -77,12 +85,23 @@
   --ink-muted: #8a8378;
   --hairline: #e3ded2;
 
-  --area-spirituality: #c4483c;
-  --area-exercise: #3178b5;
-  --area-work: #d9762b;
-  --area-creativity: #ddb63c;
-  --area-romance: #4c8b4a;
-  --area-friends: #9457c0;
+  /* Ramps are named by hue, because `life_areas.color_key` stores a hue. An
+     area is a database row that points at one of these; it is not itself a
+     colour. Adding a seventh area later means picking a ramp, not editing CSS. */
+  --ramp-red: #c4483c;
+  --ramp-blue: #3178b5;
+  --ramp-orange: #d9762b;
+  --ramp-yellow: #ddb63c;
+  --ramp-green: #4c8b4a;
+  --ramp-purple: #9457c0;
+
+  /* The default six, by name. Aliases — the ramp above is the real value. */
+  --area-spirituality: var(--ramp-red);
+  --area-exercise: var(--ramp-blue);
+  --area-work: var(--ramp-orange);
+  --area-creativity: var(--ramp-yellow);
+  --area-romance: var(--ramp-green);
+  --area-friends: var(--ramp-purple);
 
   /* Moods reuse the same five hues, deliberately. */
   --mood-great: var(--area-exercise);
@@ -124,12 +143,14 @@
   --ink-muted: #918a7c;
   --hairline: #33302a;
 
-  --area-spirituality: #d75f52;
-  --area-exercise: #4a93ce;
-  --area-work: #e88c42;
-  --area-creativity: #e8c755;
-  --area-romance: #63a55f;
-  --area-friends: #a971d2;
+  /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
+     and the mood aliases follow automatically. */
+  --ramp-red: #d75f52;
+  --ramp-blue: #4a93ce;
+  --ramp-orange: #e88c42;
+  --ramp-yellow: #e8c755;
+  --ramp-green: #63a55f;
+  --ramp-purple: #a971d2;
 
   --background: var(--bg);
   --foreground: var(--ink);

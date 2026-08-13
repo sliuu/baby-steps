@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step 4 · The Database — Baby Steps</title>
+<style>
+  :root {
+    --bg: #f7f4ed;
+    --surface: #fdfcf8;
+    --sunken: #f1eee6;
+    --ink: #1c1a17;
+    --muted: #8a8378;
+    --hair: #e3ded2;
+    --accent: #c4483c;
+    --code-bg: #f4f1e8;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1815; --surface: #221f1b; --sunken: #141310;
+      --ink: #f0ebe0; --muted: #918a7c; --hair: #33302a;
+      --accent: #d75f52; --code-bg: #17150f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px; line-height: 1.65;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  h1 { font-size: 2.5rem; line-height: 1.15; margin: 0 0 .5rem; font-weight: 600; }
+  h2 {
+    font-size: 1.7rem; margin: 3.5rem 0 .4rem; font-weight: 600;
+    padding-top: 1.5rem; border-top: 1px solid var(--hair);
+  }
+  h3 { font-size: 1.2rem; margin: 2rem 0 .6rem; font-weight: 600; }
+  h4 {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--muted); font-weight: 400; margin: 1.6rem 0 .4rem;
+  }
+  p, li { margin: 0 0 .9rem; }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin-bottom: .4rem; }
+  code {
+    font-family: var(--mono); font-size: .85em;
+    background: var(--code-bg); padding: .1em .35em; border-radius: 3px;
+  }
+  pre {
+    font-family: var(--mono); font-size: .8rem; line-height: 1.55;
+    background: var(--code-bg); border: 1px solid var(--hair);
+    border-radius: 8px; padding: 1rem 1.1rem;
+    overflow-x: auto; white-space: pre; margin: 0 0 1.2rem;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .18em;
+    font-size: .7rem; color: var(--muted); margin-bottom: .8rem;
+  }
+  .lede { font-size: 1.15rem; color: var(--muted); margin-bottom: 2rem; }
+  .sub { color: var(--muted); font-size: .9rem; margin: 0 0 1.4rem; }
+
+  .summary {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 2rem 0;
+  }
+  .summary p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  .summary ol { margin: 0; padding-left: 1.2rem; }
+  .summary li { margin: .35rem 0; }
+
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 1.2rem 1.5rem; margin: 1rem 0;
+  }
+  nav.toc p { font-size: .7rem; text-transform: uppercase; letter-spacing: .18em;
+    color: var(--muted); margin: 0 0 .7rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .25rem 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.toc a:hover, nav.toc a.active { border-bottom-color: var(--accent); color: var(--accent); }
+
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--surface);
+    padding: 1rem 1.2rem; margin: 1.5rem 0; border-radius: 0 8px 8px 0;
+  }
+  .callout .label {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--accent); margin-bottom: .4rem;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: .6rem 0 1.2rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 400; }
+  td:first-child { white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.2rem 0 1.6rem; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .5rem;
+    border: 1px solid var(--hair); background: var(--surface);
+    border-radius: 999px; padding: .35rem 1rem .35rem .6rem; font-size: .85rem;
+  }
+  .dot { width: .6rem; height: .6rem; border-radius: 999px; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Baby Steps · Step 4 of 17 · 12 August 2026</p>
+  <h1>The Database</h1>
+  <p class="lede">
+    Four tables, a rule that filters every query inside Postgres, and six rows
+    that appear the moment an account does.
+  </p>
+
+  <div class="summary">
+    <p>The whole step in five lines</p>
+    <ol>
+      <li>The schema lives in <code>.sql</code> files in the repo, applied in order. The database is now reproducible.</li>
+      <li>Row-level security filters every query by <code>user_id</code> inside Postgres — not in your code.</li>
+      <li>"One mood per day" is a <code>UNIQUE</code> constraint, so the UI can't get it wrong.</li>
+      <li>A trigger creates the six life areas when a user is created.</li>
+      <li>The chips on the Calendar page are real rows now.</li>
+    </ol>
+  </div>
+
+  <div class="chips">
+    <span class="chip"><span class="dot" style="background:#c4483c"></span>Spirituality</span>
+    <span class="chip"><span class="dot" style="background:#3178b5"></span>Exercise</span>
+    <span class="chip"><span class="dot" style="background:#d9762b"></span>Work</span>
+    <span class="chip"><span class="dot" style="background:#ddb63c"></span>Creativity &amp; Play</span>
+    <span class="chip"><span class="dot" style="background:#4c8b4a"></span>Romance &amp; Adventure</span>
+    <span class="chip"><span class="dot" style="background:#9457c0"></span>Friends &amp; Family</span>
+  </div>
+
+  <nav class="toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#commands">Every command run</a></li>
+      <li><a href="#words">Words you'll need</a></li>
+      <li><a href="#changes">What this changes for you</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#verify">Verifying it</a></li>
+      <li><a href="#next">What's next</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============================================================ -->
+  <h2 id="commands">1 · Every command run</h2>
+
+<pre><code>npx supabase init                                  # creates supabase/
+npx supabase login                                 # browser
+npx supabase link --project-ref hcomppydgxbearzqxslf
+npx supabase db push                               # applies the three migrations
+npx supabase migration list                        # local and remote now match</code></pre>
+
+  <p class="muted">
+    <code>db dump</code> and local development need Docker, which isn't installed
+    on this machine. Not required — we push straight to the hosted project.
+  </p>
+
+  <h4>New files</h4>
+
+<pre><code>supabase/migrations/
+  20260812090000_schema.sql            four tables
+  20260812090100_rls.sql               RLS on, 14 policies
+  20260812090200_seed_life_areas.sql   trigger + backfill
+
+lib/queries/lifeAreas.ts               reads your areas
+lib/palette.ts                         color_key → Tailwind class
+components/LifeAreaChips.tsx           the chips
+app/globals.css                        hue ramps added
+components/views/CalendarView.tsx      now async</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="words">2 · Words you'll need</h2>
+
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr><td><strong>migration</strong></td><td>One <code>.sql</code> file, applied once, in filename order. Never edited after it ships — you write a new one instead.</td></tr>
+      <tr><td><strong>RLS</strong></td><td>Row-Level Security. A rule attached to a table that Postgres silently adds to every query against it.</td></tr>
+      <tr><td><strong>policy</strong></td><td>One RLS rule, for one operation. <code>using</code> filters rows you may see; <code>with check</code> validates rows you write.</td></tr>
+      <tr><td><strong>constraint</strong></td><td>A rule the table refuses to break — <code>unique</code>, <code>check</code>, <code>not null</code>. Rejects bad writes rather than correcting them.</td></tr>
+      <tr><td><strong>trigger</strong></td><td>A function the database runs automatically when a row changes.</td></tr>
+      <tr><td><strong>upsert</strong></td><td>Insert, or overwrite if it's already there. One request, no "does it exist?" check first.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="changes">3 · What this changes for you</h2>
+  <p class="sub">Four things. The SQL underneath them is in the box at the end.</p>
+
+  <h3>1 · Rules you'd normally write in the UI now live in the table</h3>
+
+  <p>
+    "A day holds any number of stickers, but only one mood" is one line of
+    schema:
+  </p>
+
+<pre><code>unique (user_id, day)</code></pre>
+
+  <p>
+    So dropping a mood onto an occupied day isn't a branch you write. It's an
+    upsert — <em>insert, or overwrite the one that's there</em> — and the
+    database decides which. No "does this day already have a mood?" round trip,
+    no race between two fast drops, no state to keep in sync.
+  </p>
+
+  <p>
+    You'll feel this in Step 8, when drag-and-drop lands: the drop handler stays
+    a single call, and the interesting work is all animation.
+  </p>
+
+  <h3>2 · Queries don't filter by user, and mustn't start to</h3>
+
+<pre><code>await supabase.from("life_areas").select("…").order("sort_order");
+// no .eq("user_id", …) anywhere</code></pre>
+
+  <p>
+    RLS adds <code>where user_id = auth.uid()</code> inside Postgres, on every
+    query, whether or not the caller remembered. Adding the filter in the app too
+    would work — and would suggest the safety lives in the query file. Then one
+    forgotten line becomes a leak.
+  </p>
+
+  <p>
+    Practical effect: you can write a component that fetches whatever it needs
+    without first checking who's asking. The wrong rows aren't hard to reach —
+    they're unreachable.
+  </p>
+
+  <h3>3 · <code>color_key</code> is a hue, and an area is a row</h3>
+
+  <p>
+    Step 1 named the colour tokens after the six areas. That's now inverted: the
+    hue is the real value, and the area name is an alias.
+  </p>
+
+<pre><code>--ramp-red: #c4483c;                      /* the value */
+--area-spirituality: var(--ramp-red);     /* an alias */</code></pre>
+
+  <p>
+    A life area is a database row holding <code>color_key: 'red'</code>. So the
+    seventh area someone adds in v2 picks an existing ramp — no CSS edit, no
+    chart edit, no new token. That was the whole reason the plan said "names a
+    ramp, never a hex."
+  </p>
+
+  <div class="callout">
+    <div class="label">The Tailwind trap, second sighting</div>
+    <p>
+      <code>bg-ramp-${colorKey}</code> produces nothing. Tailwind finds class
+      names by scanning source text, so a name assembled at runtime never makes
+      it into the compiled CSS. <code>lib/palette.ts</code> writes all six out
+      by hand for exactly this reason.
+    </p>
+    <p>
+      Same shape as Step 3's <code>process.env.NEXT_PUBLIC_…</code>. Worth
+      recognising as a category: <em>build-time tools read your file, they don't
+      run it.</em>
+    </p>
+  </div>
+
+  <h3>4 · The data arrives before the HTML does</h3>
+
+<pre><code>export async function CalendarView() {
+  const areas = await getLifeAreas();
+  …
+}</code></pre>
+
+  <p>
+    A Server Component can be <code>async</code> and just await the database. No
+    loading state, no skeleton, no <code>useEffect</code>, and no Supabase client
+    in the browser bundle for this query. The browser receives finished markup
+    with the chips already in it.
+  </p>
+
+  <p>
+    When you <em>do</em> want a skeleton — for something genuinely slow — that's
+    a <code>&lt;Suspense&gt;</code> boundary around the component, not state
+    inside it. Nothing here is slow enough to need one yet.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 id="code">4 · Code</h2>
+  <p class="sub">Four snippets. Read the line under each only if the code looks odd.</p>
+
+  <h3>RLS is two steps, and the second one alone is the dangerous case</h3>
+
+<pre><code>alter table life_areas enable row level security;   -- deny everything
+
+create policy "read own life areas" on life_areas
+  for select to authenticated
+  using ((select auth.uid()) = user_id);           -- allow this much back</code></pre>
+
+  <p>
+    Enabling without policies locks everyone out — loud and obvious. Writing
+    policies without enabling does <strong>nothing at all</strong>, and the app
+    keeps working perfectly while the table sits wide open. If you ever audit
+    this project, that's the thing to check first.
+  </p>
+
+  <p class="muted">
+    <code>(select auth.uid())</code> — the parentheses aren't decoration.
+    Wrapped in a select, Postgres evaluates it once per query instead of once
+    per row.
+  </p>
+
+  <h3><code>life_areas</code> has no insert or delete policy</h3>
+
+<pre><code>create policy "read own life areas"   … for select …
+create policy "update own life areas" … for update …
+-- and that's it</code></pre>
+
+  <p>
+    You can read your six and rename them. You cannot add or remove one, because
+    no policy permits it. "Editing life areas is a v2 feature" stops being a
+    thing we remember and becomes a thing the database enforces.
+  </p>
+
+  <h3>The seed trigger runs as the owner, not as you</h3>
+
+<pre><code>create function public.seed_life_areas(for_user uuid)
+  … security definer
+      set search_path = ''</code></pre>
+
+  <p>
+    <code>security definer</code> runs the function as its owner, so it can
+    insert rows for a user who has no session yet and couldn't pass the RLS
+    check themselves. <code>search_path = ''</code> is the safety catch that has
+    to come with it — it stops a planted schema shadowing a table name inside a
+    function with elevated rights. That's why every name in the file is written
+    <code>public.something</code>.
+  </p>
+
+  <h3>Foreign keys carry <code>user_id</code> along</h3>
+
+<pre><code>foreign key (activity_id, user_id)
+  references activities (id, user_id) on delete restrict</code></pre>
+
+  <p>
+    A plain <code>references activities(id)</code> would let a row point at an
+    activity belonging to someone else — RLS filters what you can <em>read</em>,
+    not what you can <em>reference</em>. Pairing the columns makes that
+    impossible.
+  </p>
+
+  <p>
+    <code>on delete restrict</code>, not <code>cascade</code>: deleting a life
+    area must never quietly delete months of history. Retiring one is what the
+    <code>archived</code> flag is for.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2 id="verify">5 · Verifying it</h2>
+
+  <p>The RLS check, without a browser:</p>
+
+<pre><code>$ curl "$URL/rest/v1/life_areas?select=id,name" -H "apikey: $ANON_KEY"
+[]</code></pre>
+
+  <p>
+    Empty array, <em>not</em> an error. That's the shape of a working policy: the
+    rows exist, the request was valid, and Postgres filtered every one of them
+    away because there's no session. A <code>401</code> would mean something else
+    was stopping it — and would still be true if RLS were off.
+  </p>
+
+  <p>Then, signed in:</p>
+
+<pre><code>npx supabase migration list   # local and remote match, all three
+npm run build                 # / still ƒ dynamic, /login still ○ static</code></pre>
+
+  <p>Six chips under "Your life areas" on the Calendar page, in spec order.</p>
+
+  <div class="callout">
+    <div class="label">Worth doing once, by hand</div>
+    <p>
+      Open the Supabase dashboard → Table Editor → <code>life_areas</code>. You'll
+      see your six rows. Then look at the same table through the SQL editor while
+      signed out of the app — the rows are still there. RLS doesn't hide data
+      from the owner of the database; it filters what an <em>application
+      request</em> can reach. Knowing which is which will save you an hour
+      someday.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="next">6 · What's next</h2>
+  <p class="sub">Step 5 — the month grid. No data.</p>
+
+  <p>
+    A correct Sunday-start calendar: letterspaced day initials, oldstyle
+    numerals, adjacent-month days sunk into <code>--surface-sunken</code>.
+    Pure layout and date maths — nothing touches the database.
+  </p>
+
+  <p>
+    The one idea to brace for: <strong>a <code>Date</code> at midnight UTC is
+    the previous day in California.</strong> Days get stored and compared as
+    <code>YYYY-MM-DD</code> strings for that reason, which is why
+    <code>day_activities.day</code> is a <code>date</code> and not a
+    <code>timestamptz</code>.
+  </p>
+
+  <p class="muted" style="font-size:.85rem;margin-top:2.5rem">
+    Concepts from this step that come back: constraints over UI checks · RLS as
+    the boundary · <code>color_key</code> names a ramp · build-time tools read
+    text, they don't run it.
+  </p>
+
+</div>
+
+<script>
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const targets = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(a => a.classList.remove('active'));
+      const match = links.find(a => a.getAttribute('href') === '#' + entry.target.id);
+      if (match) match.classList.add('active');
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+
+  targets.forEach(t => observer.observe(t));
+</script>
+</body>
+</html>
