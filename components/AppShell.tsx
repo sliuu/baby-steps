@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TopNav } from "./TopNav";
+import { PAGE_WIDTH } from "@/lib/layout";
 import type { Page } from "@/lib/nav";
 import type { SessionUser } from "@/lib/user";
 
@@ -28,7 +29,7 @@ export function AppShell(props: Props) {
   return (
     <>
       <TopNav page={page} onPageChange={setPage} user={props.user} />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-8 py-14">
+      <main className={`${PAGE_WIDTH} flex-1 py-14`}>
         {page === "calendar" ? props.calendar : props.trends}
       </main>
     </>

@@ -2,7 +2,53 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 5 of 17 done. Step 6 (render placed stickers) is next.
+**Now:** Step 6 of 17 done. Step 7 (the sticker tray) is next.
+
+---
+
+## 2026-08-18 · Step 6 · Stickers on their days
+
+**Decisions**
+
+- **`Map<DayString, DayStickers>`, built once on the server.** The grid renders 42 cells and each asks "what's on this day?" — against an array that's 42 passes over every row you own; against a Map it's 42 lookups and one build pass.
+- **Fetch every sticker, not one month.** A few years of daily use is a few thousand rows, smaller than the JavaScript on the page, and it means arrowing to September needs no round trip. Revisit at five figures; the fix is a date range on both queries and nothing above changes.
+- **A day is `{ activities: [], mood: null }`, not a flat list.** That asymmetry is `unique (user_id, day)` written into the type. A `Mood[]` would leave every reader deciding what two moods on a Tuesday means, for a state the database can't produce. Replaced an earlier discriminated union, which stopped fitting once the mood moved out of the sticker row.
+- **Generated database types.** `lib/database.types.ts` from `npm run types:db`, passed to both Supabase clients. Without it the client can't tell a many-to-one join from one-to-many and types an embedded single row as an array. Regenerate after every migration.
+- **Two queries in `Promise.all`.** The page waits for the slower one rather than the two end to end. Same in `CalendarView` for areas + stickers.
+- **Stickers are the soft end of the ramp, mark always `--ink`.** Six saturated circles shout over the date they annotate. Keeping the mark on `--ink` means legibility never depends on the fill being light enough for white — the Step 5 trap, avoided by construction rather than by picking good values.
+- **The mood is not a sticker, so it doesn't look like one.** Outlined face in plain ink, no colour, sitting on the date's own line at the top-right; activities are filled pastel circles wrapping below. Different shape, weight, and position. The five moods are distinguished by mouth alone, so they work in greyscale and never compete with the six area hues.
+- **Right rail at `lg`, stacked below it.** Page container went `max-w-5xl` → `max-w-7xl` so the grid keeps roughly its width once the rail takes 16rem. The rail is sticky under the nav — it becomes the drag source in Step 8.
+- **`PAGE_WIDTH` in `lib/layout.ts`.** The gutter was duplicated in `AppShell` and `TopNav`; if those drift the wordmark stops sitting above the calendar's left edge.
+- Sample data is SQL run through `npx supabase db query --linked`, which uses the CLI's own auth. No `service_role` key had to be created or stored.
+
+**Changed**
+
+- `lib/queries/stickers.ts`, `lib/moods.ts`, `lib/layout.ts`, `lib/database.types.ts` — new
+- `components/calendar/{StickerMark,MoodMark}.tsx` — new
+- `components/calendar/{DayCell,MonthGrid}.tsx` — render and thread the stickers
+- `components/views/CalendarView.tsx` — two-column, both queries in parallel
+- `components/{AppShell,TopNav}.tsx` — shared `PAGE_WIDTH`
+- `components/LifeAreaChips.tsx` — vertical in the rail, soft dots matching the stickers
+- `lib/supabase/{server,client}.ts` — typed with `<Database>`
+- `lib/palette.ts`, `app/globals.css` — `--ramp-*-soft` for both themes
+- `supabase/migrations/20260817120000_unique_activity_names.sql` — new
+- `scripts/seed.sql`, `scripts/seed-reset.sql` — new; `package.json` gains `seed`, `seed:reset`, `types:db`
+- `learning/README.md` — Step 6 card, five new symptom rows
+
+**Also**
+
+- **The seed script wasn't idempotent, despite its own comment saying so.** Running it twice gave 26 activities. `on conflict do nothing` catches a unique violation, and there was no unique constraint on activity names to violate. Fixed in the schema rather than the script: an activity name is now unique within its life area, which is a real rule — two circles both called "Gym" under Exercise are indistinguishable once they're on a day. The migration dedupes first, re-pointing placed stickers at the survivor so no history is lost. Step 10's create-your-own-sticker form had the same hole.
+- Verified the `bg-ramp-*-soft` classes and both hex sets actually reached the compiled CSS, rather than assuming. Fourth time this category has come up; checking it is now cheap.
+
+**State:** `tsc --noEmit`, `eslint .`, `npm run build` all clean. Four migrations applied, local and remote lists match. Seed stable across runs at 13 activities / 155 placed / 37 moods. Calendar, pastels, mood faces, and the right rail all confirmed in the browser. Uncommitted.
+
+**Open**
+
+- Starter activities live in the sample-data script, per ProjectPlan's split between "required app data" (trigger) and "developer convenience" (script). But an empty tray is a poor first run, and Step 10 only *adds* to it. Decide before Step 17 whether the thirteen become trigger-seeded app data.
+- `proxy.ts` builds its Supabase client without `<Database>`. It only calls `getUser()`, so no table types are involved. Add it if it ever touches a table.
+- No keyboard navigation between cells. Still not needed until Step 8.
+
+**Next:** Step 7 — the sticker tray. Presentational only; the same `StickerMark` renders in the tray and on a day, differing by props.
 
 ---
 

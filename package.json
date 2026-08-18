@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:dates": "node scripts/check-dates.mts"
+    "check:dates": "node scripts/check-dates.mts",
+    "seed": "npx supabase db query --linked -f scripts/seed.sql",
+    "seed:reset": "npx supabase db query --linked -f scripts/seed-reset.sql",
+    "types:db": "npx supabase gen types typescript --linked > lib/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

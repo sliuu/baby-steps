@@ -2,6 +2,7 @@
 
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
+import { PAGE_WIDTH } from "@/lib/layout";
 import { PAGES, type Page } from "@/lib/nav";
 import type { SessionUser } from "@/lib/user";
 
@@ -19,7 +20,7 @@ type Props = {
 export function TopNav(props: Props) {
   return (
     <header className="sticky top-0 z-20 border-b border-hairline bg-background/85 backdrop-blur-sm">
-      <nav className="mx-auto flex h-16 w-full max-w-5xl items-center gap-6 px-8">
+      <nav className={`${PAGE_WIDTH} flex h-16 items-center gap-6`}>
         <span className="font-heading text-2xl font-semibold tracking-tight">
           Baby Steps
         </span>

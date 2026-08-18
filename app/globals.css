@@ -53,6 +53,16 @@
   --color-ramp-green: var(--ramp-green);
   --color-ramp-purple: var(--ramp-purple);
 
+  /* The pastel end of each ramp — what a sticker is actually filled with. The
+     full hue stays for anything that needs to carry at a distance: chart
+     vertices, the highlight tint, the dots beside labels. */
+  --color-ramp-red-soft: var(--ramp-red-soft);
+  --color-ramp-blue-soft: var(--ramp-blue-soft);
+  --color-ramp-orange-soft: var(--ramp-orange-soft);
+  --color-ramp-yellow-soft: var(--ramp-yellow-soft);
+  --color-ramp-green-soft: var(--ramp-green-soft);
+  --color-ramp-purple-soft: var(--ramp-purple-soft);
+
   --color-area-spirituality: var(--area-spirituality);
   --color-area-exercise: var(--area-exercise);
   --color-area-work: var(--area-work);
@@ -95,6 +105,17 @@
   --ramp-yellow: #ddb63c;
   --ramp-green: #4c8b4a;
   --ramp-purple: #9457c0;
+
+  /* Each hue at ~28% over the surface cream. A sticker is a tint, not a block
+     of colour — six saturated circles on one day shout over the dates they're
+     meant to annotate. The mark on top is --ink, so legibility never depends on
+     the tint being light enough for white. */
+  --ramp-red-soft: #edcac3;
+  --ramp-blue-soft: #c4d7e5;
+  --ramp-orange-soft: #f3d6bf;
+  --ramp-yellow-soft: #f4e8c3;
+  --ramp-green-soft: #cbdcc7;
+  --ramp-purple-soft: #e0cee8;
 
   /* The default six, by name. Aliases — the ramp above is the real value. */
   --area-spirituality: var(--ramp-red);
@@ -152,6 +173,16 @@
   --ramp-yellow: #e8c755;
   --ramp-green: #63a55f;
   --ramp-purple: #a971d2;
+
+  /* "Pastel" inverts in the dark theme: a tint toward the surface is a *darker*
+     muted hue, not a lighter one. Same 28% mix, opposite direction, so --ink
+     still reads on top. */
+  --ramp-red-soft: #58322c;
+  --ramp-blue-soft: #2e4251;
+  --ramp-orange-soft: #5d4027;
+  --ramp-yellow-soft: #5d512c;
+  --ramp-green-soft: #36472f;
+  --ramp-purple-soft: #4b3852;
 
   --background: var(--bg);
   --foreground: var(--ink);

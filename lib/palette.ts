@@ -9,12 +9,12 @@
  * run it.
  */
 export const RAMP = {
-  red: { bg: "bg-ramp-red", text: "text-ramp-red", border: "border-ramp-red" },
-  blue: { bg: "bg-ramp-blue", text: "text-ramp-blue", border: "border-ramp-blue" },
-  orange: { bg: "bg-ramp-orange", text: "text-ramp-orange", border: "border-ramp-orange" },
-  yellow: { bg: "bg-ramp-yellow", text: "text-ramp-yellow", border: "border-ramp-yellow" },
-  green: { bg: "bg-ramp-green", text: "text-ramp-green", border: "border-ramp-green" },
-  purple: { bg: "bg-ramp-purple", text: "text-ramp-purple", border: "border-ramp-purple" },
+  red: { bg: "bg-ramp-red", soft: "bg-ramp-red-soft", text: "text-ramp-red", border: "border-ramp-red" },
+  blue: { bg: "bg-ramp-blue", soft: "bg-ramp-blue-soft", text: "text-ramp-blue", border: "border-ramp-blue" },
+  orange: { bg: "bg-ramp-orange", soft: "bg-ramp-orange-soft", text: "text-ramp-orange", border: "border-ramp-orange" },
+  yellow: { bg: "bg-ramp-yellow", soft: "bg-ramp-yellow-soft", text: "text-ramp-yellow", border: "border-ramp-yellow" },
+  green: { bg: "bg-ramp-green", soft: "bg-ramp-green-soft", text: "text-ramp-green", border: "border-ramp-green" },
+  purple: { bg: "bg-ramp-purple", soft: "bg-ramp-purple-soft", text: "text-ramp-purple", border: "border-ramp-purple" },
 } as const;
 
 export type RampKey = keyof typeof RAMP;

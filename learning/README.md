@@ -65,6 +65,20 @@ index at the bottom sends you there.
 
 ---
 
+## Step 6 · Stickers on their days
+
+1. Stickers are fetched on the server and arrive as finished HTML. Still no spinner.
+2. They come back as a `Map` keyed by day, so each of the 42 cells does one lookup instead of scanning everything.
+3. *All* of them, not one month — so arrowing to September needs no request at all.
+4. A day is `{ activities: [], mood: null }` — the shape of `unique (user_id, day)`, written into the type.
+5. `npm run seed` fills a plausible two months. `npm run seed:reset` empties it.
+
+**Design consequence:** two kinds of thing on a day need two treatments, not one component with a flag. Activities are pastel filled circles wrapping under the date; the mood is an outlined face in plain ink, up on the date's own line. Different shape, weight, and position — legible apart at a glance, and the mood never competes with the six area hues.
+
+**Second one:** a sticker's fill is the *soft* end of its ramp, and the mark is always `--ink`. Six saturated circles shout over the date they annotate, and a light fill would have re-created the Step 5 bug where legibility depended on a second token being right.
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -90,6 +104,11 @@ Read left to right. Nothing here needs to be memorized.
 | The whole page jumps on an arrow press | a month drew five rows instead of six | `lib/dates.ts` → `WEEKS_IN_GRID` |
 | A query returns `[]` instead of an error | RLS worked. The rows exist and were filtered out | `supabase/migrations/*_rls.sql` |
 | A table is wide open despite having policies | `enable row level security` was never run — policies alone are inert | same |
+| A joined query is typed as an array when it's one row | the client has no `<Database>` type, so it can't tell a many-to-one join from one-to-many | `lib/supabase/server.ts` |
+| Types disagree with the database after a migration | they're generated, not live. Run `npm run types:db` | `lib/database.types.ts` |
+| Re-running a seed script doubles the data | `on conflict do nothing` needs a matching unique constraint, or it catches nothing | `..._unique_activity_names.sql` |
+| A flex child overflows and shoves its sibling off-screen | flex items won't shrink below their content width until you add `min-w-0` | `CalendarView.tsx` |
+| The nav's wordmark stops lining up with the page below | the two containers disagree about max-width | `lib/layout.ts` |
 
 ---
 

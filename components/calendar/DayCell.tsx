@@ -1,7 +1,11 @@
+import { MoodMark } from "./MoodMark";
+import { StickerMark } from "./StickerMark";
 import type { DayCellData } from "@/lib/dates";
+import type { DayStickers } from "@/lib/queries/stickers";
 
 type Props = {
   cell: DayCellData;
+  stickers: DayStickers;
 };
 
 /**
@@ -20,7 +24,7 @@ function numeralClasses(cell: DayCellData): string {
 }
 
 export function DayCell(props: Props) {
-  const { cell } = props;
+  const { cell, stickers } = props;
 
   return (
     <div
@@ -31,12 +35,30 @@ export function DayCell(props: Props) {
         cell.inMonth ? "bg-surface" : "bg-surface-sunken"
       }`}
     >
-      <time
-        dateTime={cell.day}
-        className={`oldstyle grid size-7 place-items-center rounded-full text-[0.95rem] ${numeralClasses(cell)}`}
-      >
-        {cell.dayOfMonth}
-      </time>
+      {/* The day's own line: number left, mood right. The mood is a summary of
+          the whole day, so it sits with the date rather than in the row of
+          things that happened. */}
+      <div className="flex items-center justify-between gap-2">
+        <time
+          dateTime={cell.day}
+          className={`oldstyle grid size-7 place-items-center rounded-full text-[0.95rem] ${numeralClasses(cell)}`}
+        >
+          {cell.dayOfMonth}
+        </time>
+
+        {stickers.mood && <MoodMark mood={stickers.mood} />}
+      </div>
+
+      {/* Wraps rather than scrolls or truncates: a day with eight stickers is a
+          good day, and hiding some of them would be lying about it. The cell's
+          min-height is a floor, so a busy day simply makes its row taller. */}
+      {stickers.activities.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {stickers.activities.map((sticker) => (
+            <StickerMark key={sticker.id} sticker={sticker} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

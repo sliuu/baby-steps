@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+import type { Database } from "@/lib/database.types";
 import { supabaseEnv } from "./env";
 
 /**
@@ -11,12 +12,16 @@ import { supabaseEnv } from "./env";
  *
  * Every caller gets a fresh client bound to *this* request's cookies. Sharing
  * one across requests would leak one visitor's session into another's page.
+ *
+ * The `<Database>` parameter is what makes `.select()` return real types instead
+ * of `any`, and it's the only way the client can tell a many-to-one join from a
+ * one-to-many one. Regenerate it with `npm run types:db` after every migration.
  */
 export async function createClient() {
   const { url, anonKey } = supabaseEnv();
   const cookieStore = await cookies();
 
-  return createServerClient(url, anonKey, {
+  return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
