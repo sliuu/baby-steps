@@ -1,14 +1,16 @@
 import { ramp } from "@/lib/palette";
-import type { ActivitySticker } from "@/lib/queries/stickers";
+import type { StickerFace } from "@/lib/stickers";
 
 type Props = {
-  sticker: ActivitySticker;
+  sticker: StickerFace;
 };
 
 /**
  * A pastel circle in its life area's colour with the mark in ink. The same
- * component renders on a day here and in the tray in Step 7 — that's why it
- * takes a sticker and knows nothing about where it sits.
+ * component renders on a day and in the tray — that's why it takes a
+ * StickerFace, the three fields it actually draws, rather than a row from
+ * either table. Nothing here knows where it sits, so there is no variant prop
+ * and no second component to keep in step.
  *
  * The fill is the soft end of the ramp, not the full hue. Five saturated
  * circles on one day shout over the date they're annotating; five tints read as

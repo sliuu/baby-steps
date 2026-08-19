@@ -14,9 +14,7 @@ export function Placeholder({
 }) {
   return (
     <section className="rounded-xl border border-dashed border-hairline bg-surface px-10 py-20 text-center">
-      <p className="oldstyle text-[0.7rem] uppercase tracking-[0.18em] text-ink-muted">
-        {eyebrow}
-      </p>
+      <p className="eyebrow oldstyle">{eyebrow}</p>
       <h1 className="mt-4 text-4xl font-medium tracking-tight">{title}</h1>
       <p className="mx-auto mt-4 max-w-sm leading-relaxed text-ink-muted">
         {body}

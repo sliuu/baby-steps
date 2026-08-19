@@ -1,7 +1,7 @@
 import { MonthGrid } from "@/components/calendar/MonthGrid";
-import { LifeAreaChips } from "@/components/LifeAreaChips";
+import { StickerTray } from "@/components/tray/StickerTray";
 import { toMonthString } from "@/lib/dates";
-import { getLifeAreas } from "@/lib/queries/lifeAreas";
+import { getStickerLibrary } from "@/lib/queries/activities";
 import { getStickersByDay } from "@/lib/queries/stickers";
 
 /**
@@ -14,8 +14,8 @@ import { getStickersByDay } from "@/lib/queries/stickers";
 export async function CalendarView() {
   // Both queries start before either is awaited, so the page waits for the
   // slower one rather than for the two of them end to end.
-  const [areas, stickersByDay] = await Promise.all([
-    getLifeAreas(),
+  const [groups, stickersByDay] = await Promise.all([
+    getStickerLibrary(),
     getStickersByDay(),
   ]);
 
@@ -34,14 +34,12 @@ export async function CalendarView() {
       </div>
 
       {/* Beside the calendar once there's room, stacked underneath when there
-          isn't. Sticky below the 4rem nav, so it stays put while a tall month
-          scrolls — that matters more once Step 8 makes it a drag source.
-          Step 7 fills this in properly. */}
-      <aside className="lg:sticky lg:top-24 lg:w-64 lg:shrink-0">
-        <p className="mb-4 text-[0.7rem] uppercase tracking-[0.18em] text-ink-muted">
-          Your life areas
-        </p>
-        <LifeAreaChips areas={areas} />
+          isn't. Sticky below the 4rem nav so it stays put while a tall month
+          scrolls — that matters more once Step 8 makes it a drag source — and
+          scrolling on its own once the list outgrows the window, rather than
+          pushing the page taller than the calendar it sits beside. */}
+      <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:w-72 lg:shrink-0 lg:overflow-y-auto">
+        <StickerTray groups={groups} />
       </aside>
     </div>
   );

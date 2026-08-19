@@ -2,7 +2,47 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 6 of 17 done. Step 7 (the sticker tray) is next.
+**Now:** Step 7 of 17 done. Step 8 (drag and drop) is next.
+
+---
+
+## 2026-08-18 · Step 7 · The sticker tray
+
+**Decisions**
+
+- **The tray owns no data.** `StickerTray` takes a finished list and renders it; `CalendarView` does the fetching. That seam is the point of the step, and it's what lets Step 8 wrap the tray in a drag context without touching any loading.
+- **One `StickerMark`, no variant prop.** It now takes `StickerFace` — name, mark, colour, the three fields it draws — instead of a row from either table. The tray and a day cell pass different things that both satisfy it.
+- **The ids stay separate.** `ActivitySticker.id` is a `day_activities` row (one placement); `LibrarySticker.id` is an `activities` row (the sticker itself). Same shape on screen, different meaning, and Step 8 needs both: it drops by activity id and removes by placement id. Merging them would have been a bug that typechecks.
+- **`getStickerLibrary()` queries downward from `life_areas`,** with `activities(...)` embedded. One query instead of two, grouping for free, and an area with no stickers still comes back — with an empty array. Six labelled groups is what shows the six areas exist before you've made a single sticker. `.eq("activities.archived", false)` filters the nested rows; `!inner` on the embed is what would drop areas instead.
+- **Names, not just marks.** ProjectPlan had marks in a wrapped row; you asked for full names in the rail. So each group is a vertical list of circle + name, which makes the tray the legend too.
+- **`LifeAreaChips` deleted.** The tray's group labels are the life areas now, so the chips were a second, quieter version of the same information. `getLifeAreas()` is kept — Step 10's form needs it to pick an area.
+- **The rail scrolls on its own** (`lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto`) and went `w-64` → `w-72` to fit names. Otherwise a long list makes the page taller than the calendar it sits beside.
+- **`TrayRow` hides the visual from screen readers.** Both marks carry their own accessible name, which is right on the grid where no text sits beside them — here it'd be read twice.
+- **The `+` is present and disabled.** Step 10 fills it in; having it now settles the header's proportions.
+- **Groups lie in a grid, and only the column count changes between the two places the tray lives** — 2/3/4 columns below `lg`, one in the rail. Stacked under the calendar, a single 18rem column would be a thin ribbon with the page empty either side. The stickers inside a group stay vertical, so a label always sits directly above what it names.
+- **`color-scheme` declared on both themes.** It's what tells the browser which way its own furniture leans — scrollbars, form controls, the ground painted before our CSS lands. Without it a dark page kept a light scrollbar. Then `scrollbar-width: thin` and a `--ink` -at-35% thumb on `html`; both properties inherit, so every scrolling box gets them without a class. (Invisible on a Mac unless scroll bars are set to "Always".)
+- **`@utility eyebrow` for the small letterspaced caps,** with a new `--ink-label` token between `--ink` and `--ink-muted`. Two things at once: the labels were fading out — caps set small and spaced apart lose contrast twice over, so `--ink-muted` is legible in a sentence and faint in a label — and the five copies of the same four classes had already drifted to three font sizes and two tracking values. Size lives in the utility so the family stays a family. Dark's value goes *lighter*, as the pastels did.
+
+**Changed**
+
+- `lib/stickers.ts`, `lib/queries/activities.ts` — new
+- `components/tray/{StickerTray,TrayGroup}.tsx` — new (`TrayGroup` also exports `TrayRow`)
+- `components/calendar/StickerMark.tsx` — takes `StickerFace`
+- `components/views/CalendarView.tsx` — fetches the library, renders the tray
+- `components/LifeAreaChips.tsx` — deleted
+- `app/globals.css` — `color-scheme`, themed scrollbars, `--ink-label`, `@utility eyebrow`
+- `components/calendar/MonthGrid.tsx`, `components/views/Placeholder.tsx`, `app/login/page.tsx`, `app/auth/auth-code-error/page.tsx` — onto `eyebrow`
+- `learning/README.md` — Step 7 card, three new symptom rows
+
+**State:** `tsc --noEmit`, `eslint .`, `npm run build` all clean. Not yet confirmed in the browser.
+
+**Open**
+
+- **The Supabase CLI stopped authenticating.** `npx supabase` now resolves to 2.115.0, which returns `LegacyPlatformAuthRequiredError: Access token not provided`. Blocks `npm run seed`, `seed:reset`, and `types:db` until `supabase login` is run again. Fix afterwards by pinning a version in the scripts rather than letting `npx` float.
+- The `life_areas → activities` embed typechecks but hasn't run against the database yet, because the CLI is locked out and the page needs a browser session.
+- Empty life areas render as a bare label with nothing under it. Fine while seeded; decide by Step 10 whether it wants "Nothing here yet" text.
+
+**Next:** Step 8 — drag and drop.
 
 ---
 

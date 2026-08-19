@@ -79,6 +79,20 @@ index at the bottom sends you there.
 
 ---
 
+## Step 7 · The sticker tray
+
+1. The tray takes a finished list and draws it. No query, no state, no idea where the data came from.
+2. `CalendarView` fetches; `StickerTray` renders. Swapping either one doesn't touch the other.
+3. The *same* `StickerMark` draws a sticker in the tray and on a day — no variant prop, no second component.
+4. That works because it asks for `StickerFace` — name, mark, colour — not a row from either table.
+5. `TrayGroup` doesn't know if it's holding activities or moods. It takes a label and a list.
+
+**Design consequence:** the seam is "who fetches" versus "who draws". Anything that only draws can be moved, reused, or restyled without a thought about loading — which is why Step 8 can wrap the tray in a drag context and change nothing about the data.
+
+**Second one:** two rows in two tables look identical on screen. The shared type is the three fields they draw, not the rows themselves — the ids stay separate because they mean different things (an activity you own vs. one placement of it on a day).
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -109,6 +123,9 @@ Read left to right. Nothing here needs to be memorized.
 | Re-running a seed script doubles the data | `on conflict do nothing` needs a matching unique constraint, or it catches nothing | `..._unique_activity_names.sql` |
 | A flex child overflows and shoves its sibling off-screen | flex items won't shrink below their content width until you add `min-w-0` | `CalendarView.tsx` |
 | The nav's wordmark stops lining up with the page below | the two containers disagree about max-width | `lib/layout.ts` |
+| A screen reader says a label twice | the icon carries its own name and the text repeats it — hide one | `TrayGroup.tsx` → `TrayRow` |
+| `truncate` does nothing and the text overflows | same `min-w-0` rule: a flex item won't shrink below its text | `TrayGroup.tsx` |
+| A joined query drops rows that have no children | the embed was `!inner`, or a filter on it made it behave that way | `lib/queries/activities.ts` |
 
 ---
 

@@ -1,13 +1,15 @@
 import type { DayString } from "@/lib/dates";
 import { isMood, type Mood } from "@/lib/moods";
+import type { StickerFace } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
 
-export type ActivitySticker = {
+export type ActivitySticker = StickerFace & {
+  /**
+   * The day_activities row — this placement, not the activity itself. The same
+   * activity on two days is two ActivityStickers with two ids. Step 8 removes a
+   * sticker by this id; it drops a new one by the activity's.
+   */
   id: string;
-  name: string;
-  /** One grapheme — a letter or an emoji. */
-  mark: string;
-  colorKey: string;
 };
 
 /**

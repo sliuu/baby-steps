@@ -78,7 +78,7 @@ export function MonthGrid(props: Props) {
           {labels.map((label) => (
             <div
               key={label}
-              className="bg-surface py-3 text-center text-[0.7rem] uppercase tracking-[0.16em] text-ink-muted"
+              className="eyebrow bg-surface py-3 text-center"
             >
               {label}
             </div>

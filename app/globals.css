@@ -43,6 +43,7 @@
   --color-surface-sunken: var(--surface-sunken);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
+  --color-ink-label: var(--ink-label);
   --color-hairline: var(--hairline);
 
   /* Hue ramps — what `color_key` names. `bg-ramp-red`, `text-ramp-blue`, … */
@@ -87,6 +88,11 @@
    Light — warm cream, near-black warm ink.
 --------------------------------------------------------------------------- */
 :root {
+  /* Tells the browser which way *its own* furniture should lean — scrollbars,
+     form controls, the ground it paints before our CSS lands. Without it a dark
+     page still gets a light scrollbar, because the browser has no way to know. */
+  color-scheme: light;
+
   --radius: 0.625rem;
 
   --bg: #f7f4ed;
@@ -94,6 +100,11 @@
   --surface-sunken: #f1eee6;
   --ink: #1c1a17;
   --ink-muted: #8a8378;
+  /* Between the two. Letterspaced caps are set small and spaced apart, which
+     costs them contrast twice over — --ink-muted is legible in a sentence and
+     faint in a label. This is the weight a label needs to hold its own without
+     competing with the thing it's naming. */
+  --ink-label: #5b5449;
   --hairline: #e3ded2;
 
   /* Ramps are named by hue, because `life_areas.color_key` stores a hue. An
@@ -158,11 +169,17 @@
    their contrast against a dark ground.
 --------------------------------------------------------------------------- */
 .dark {
+  color-scheme: dark;
+
   --bg: #1a1815;
   --surface: #221f1b;
   --surface-sunken: #141310;
   --ink: #f0ebe0;
   --ink-muted: #918a7c;
+  /* "Darker" inverts here, as the pastels did: more presence against a dark
+     ground means lighter, not darker. Same step away from --ink-muted, toward
+     --ink rather than away from it. */
+  --ink-label: #bcb4a4;
   --hairline: #33302a;
 
   /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
@@ -218,6 +235,22 @@
   font-variant-numeric: oldstyle-nums proportional-nums;
 }
 
+/* ---------------------------------------------------------------------------
+   The small letterspaced caps that name a section: SUN–SAT over the grid, a
+   life area over its stickers, the line above a page title.
+
+   One utility rather than five copies of the same four classes, which had
+   already drifted into three sizes and two tracking values. Size lives here
+   too, so the family stays a family — override it in a call site only when you
+   mean to break rank.
+--------------------------------------------------------------------------- */
+@utility eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-label);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -225,6 +258,21 @@
 
   html {
     @apply font-sans;
+
+    /* Two values: the thumb (the part you drag), then the track behind it. Both
+       inherit, so every scrolling box on the page gets them — the sticker rail
+       included — without a class anywhere.
+
+       The thumb is ink at 35%, so it lands correctly in both themes from one
+       declaration. A fixed grey would be too dark on cream or invisible on
+       charcoal. The track is transparent: a visible groove would draw a line
+       down the page that isn't part of the design.
+
+       On a Mac these only show if scroll bars are set to "Always" in System
+       Settings; otherwise macOS overlays its own and hides them when idle. */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--ink) 35%, transparent)
+      transparent;
   }
 
   body {

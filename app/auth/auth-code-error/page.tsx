@@ -12,7 +12,7 @@ export default async function AuthCodeError({
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-8 py-24 text-center">
-      <p className="mb-3 text-xs uppercase tracking-[0.18em] text-ink-muted">
+      <p className="eyebrow mb-3">
         Something went sideways
       </p>
       <h1 className="mb-4 font-heading text-4xl font-semibold tracking-tight">

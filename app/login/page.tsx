@@ -3,7 +3,7 @@ import { SignInButtons } from "@/components/auth/SignInButtons";
 export default function LoginPage() {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center px-8 py-24 text-center">
-      <p className="mb-4 text-xs uppercase tracking-[0.18em] text-ink-muted">
+      <p className="eyebrow mb-4">
         A quiet ledger of days
       </p>
 
