@@ -93,6 +93,20 @@ index at the bottom sends you there.
 
 ---
 
+## Step 8 · Drag and drop
+
+1. Pick a sticker up in the tray, drop it on a day, and it's there — through a refresh.
+2. It appears the instant you let go, *before* the database has answered. If the write fails it vanishes and a line of text says why.
+3. Dropping a mood on a day that already has one replaces it. That's not a branch anyone wrote — it's `unique (user_id, day)` doing it.
+4. The tray and the grid moved into one component, `CalendarBoard`, because a drag has to be inside something that contains both ends of it.
+5. The whole calendar is in the browser bundle now. `CalendarView` kept the only part that mattered: the fetching.
+
+**Design consequence:** the app can now lie for half a second, on purpose. Drawing the sticker before the server confirms it is what makes a drag feel physical — and the price is that every optimistic redraw is a second copy of a rule the server also has, which has to be kept honest. There are exactly two of those here, both in `CalendarBoard` → `withDrop`.
+
+**Second one:** feedback is the interaction. A sticker that lifts, a square that lights up under it, an original that stays put so the list doesn't shuffle under your hand — remove any one and the same drag stops feeling like moving an object.
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -118,6 +132,15 @@ Read left to right. Nothing here needs to be memorized.
 | The whole page jumps on an arrow press | a month drew five rows instead of six | `lib/dates.ts` → `WEEKS_IN_GRID` |
 | A query returns `[]` instead of an error | RLS worked. The rows exist and were filtered out | `supabase/migrations/*_rls.sql` |
 | A table is wide open despite having policies | `enable row level security` was never run — policies alone are inert | same |
+| A sticker appears on drop, then disappears | the write failed; the optimistic copy expired and fell back to the server's | `CalendarBoard.tsx` → `useOptimistic` |
+| A dropped sticker flickers or doubles | the optimistic redraw and the server disagree about the same rule | `CalendarBoard.tsx` → `withDrop` |
+| The wrong square lights up mid-drag | collision was measured from the dragged item's centre, not the cursor | `CalendarBoard.tsx` → `collisionDetection` |
+| A scrolling box scrolls sideways too | `overflow-y: auto` promotes `overflow-x` from `visible` to `auto`; something inside is bleeding past the edge | `CalendarBoard.tsx` → the rail `<aside>` |
+| One thing in the rail sits indented from the rest | it isn't carrying `TRAY_INSET` — everything in there shares one gutter | `lib/layout.ts` |
+| A character in a round button sits off-centre | flex centres the glyph's line box, not its ink. Draw it instead of typing it | `StickerTray.tsx` → the `+` |
+| Nothing drags on a phone, fine on a mouse | the element is missing `touch-none`, so the browser took the gesture for scrolling | `DraggableSticker.tsx` |
+| A click on a sticker does nothing | it started a drag instead; `activationConstraint` sets how far a press must travel first | same |
+| The page doesn't update after a write | the action returned without `refresh()` — nothing told the router to re-render | `app/actions/stickers.ts` |
 | A joined query is typed as an array when it's one row | the client has no `<Database>` type, so it can't tell a many-to-one join from one-to-many | `lib/supabase/server.ts` |
 | Types disagree with the database after a migration | they're generated, not live. Run `npm run types:db` | `lib/database.types.ts` |
 | Re-running a seed script doubles the data | `on conflict do nothing` needs a matching unique constraint, or it catches nothing | `..._unique_activity_names.sql` |

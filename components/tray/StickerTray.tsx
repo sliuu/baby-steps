@@ -1,7 +1,12 @@
+"use client";
+
+import { Plus } from "lucide-react";
+
 import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { TrayGroup, TrayRow } from "@/components/tray/TrayGroup";
 import { Button } from "@/components/ui/button";
+import { TRAY_INSET } from "@/lib/layout";
 import { MOOD_LABEL, MOODS } from "@/lib/moods";
 import type { LibraryGroup } from "@/lib/queries/activities";
 
@@ -13,19 +18,34 @@ type Props = {
  * The palette beside the calendar: every sticker you own, grouped by life area,
  * with the five moods last.
  *
- * Presentational. It takes a finished list and renders it — no query, no state,
- * no idea where the data came from. CalendarView does the fetching. That split
- * is what will let Step 8 wrap this in a drag context without touching the
- * loading of anything, and what lets this file be read top to bottom as layout.
+ * Still presentational: it takes a finished list and renders it — no query, no
+ * state, no idea where the data came from. That's what let Step 8 wrap it in a
+ * drag context without touching the loading of anything.
+ *
+ * It did have to become a Client Component, though. Every row is now something
+ * you can pick up, and `useDraggable` is a hook. The seam that mattered held
+ * anyway — "who fetches" is still somewhere else, and this file still reads top
+ * to bottom as layout.
  */
 export function StickerTray(props: Props) {
   return (
     <div className="flex flex-col gap-7">
-      <header>
+      {/* Inset to match the rows, so the wordmark of the rail sits above the
+          stickers rather than a few pixels left of them. The + button rides the
+          same padding in from the right edge. */}
+      <header className={TRAY_INSET}>
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-heading text-2xl leading-none">Your stickers</h2>
           {/* Inert until Step 10. Present now so the header's proportions are
-              settled before there's a form behind it. */}
+              settled before there's a form behind it.
+
+              An SVG rather than a "+" character. Flex centres a glyph's line
+              box, not its ink, and a serif plus sits on the font's math axis
+              a little below the middle of that box — so it reads low in a
+              round button. A nudge would fix it for EB Garamond at one size
+              and be wrong again in Georgia while the webfont is still loading.
+              Drawn, it's centred by geometry in any font. The button's own
+              [&_svg]:size-4 rule sizes it; strokeWidth matches the nav icons. */}
           <Button
             variant="outline"
             size="icon-sm"
@@ -33,9 +53,7 @@ export function StickerTray(props: Props) {
             aria-label="New sticker"
             title="New sticker"
           >
-            <span aria-hidden="true" className="text-base leading-none">
-              +
-            </span>
+            <Plus strokeWidth={1.5} />
           </Button>
         </div>
         <p className="mt-2 text-[0.9rem] text-ink-muted">Drag one onto a day</p>
@@ -57,6 +75,12 @@ export function StickerTray(props: Props) {
             {group.stickers.map((sticker) => (
               <TrayRow
                 key={sticker.id}
+                dragId={sticker.id}
+                payload={{
+                  kind: "activity",
+                  activityId: sticker.id,
+                  face: sticker,
+                }}
                 visual={<StickerMark sticker={sticker} />}
                 name={sticker.name}
               />
@@ -70,6 +94,8 @@ export function StickerTray(props: Props) {
           {MOODS.map((mood) => (
             <TrayRow
               key={mood}
+              dragId={mood}
+              payload={{ kind: "mood", mood }}
               visual={<MoodMark mood={mood} />}
               name={MOOD_LABEL[mood]}
             />

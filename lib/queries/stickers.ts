@@ -6,10 +6,18 @@ import { createClient } from "@/lib/supabase/server";
 export type ActivitySticker = StickerFace & {
   /**
    * The day_activities row — this placement, not the activity itself. The same
-   * activity on two days is two ActivityStickers with two ids. Step 8 removes a
-   * sticker by this id; it drops a new one by the activity's.
+   * activity on two days is two ActivityStickers with two ids. Step 9 removes a
+   * sticker by this id.
    */
   id: string;
+  /**
+   * The activities row — the sticker itself. Carried alongside the placement id
+   * because a drop needs to ask "is this one already here?", and `id` can't
+   * answer that: two placements of the same activity have different ids by
+   * definition. Without this the optimistic redraw adds a duplicate circle and
+   * the server's answer takes it away again a moment later.
+   */
+  activityId: string;
 };
 
 /**
@@ -81,6 +89,7 @@ export async function getStickersByDay(): Promise<StickersByDay> {
 
     dayEntry(row.day).activities.push({
       id: row.id,
+      activityId: activity.id,
       name: activity.name,
       mark: activity.mark,
       colorKey: activity.life_areas?.color_key ?? "blue",

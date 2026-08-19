@@ -2,7 +2,61 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 7 of 17 done. Step 8 (drag and drop) is next.
+**Now:** Step 8 of 17 done. Step 9 (the day modal) is next.
+
+---
+
+## 2026-08-18 · Step 8 · Drag and drop
+
+**Decisions**
+
+- **`@dnd-kit/core` 6.3.1, not `@dnd-kit/react` 0.5.** The 0.5 line is the next-generation rewrite with a different API; 6.3.1 is the stable release and it's the one whose vocabulary ProjectPlan teaches — `DndContext`, `useDraggable`, `useDroppable`, `{active, over}`, `DragOverlay`. One package, no `@dnd-kit/sortable` (nothing here reorders) and no `@dnd-kit/utilities` (the overlay does the moving, so no transform to apply by hand).
+- **`CalendarBoard` exists because `DndContext` has to contain both ends of a drag.** The tray and the grid were siblings under a Server Component with nothing above them but layout, so the layout is what moved. Consequence, and it's the real cost of the step: the two-column arrangement, `StickerTray`, and `TrayGroup` are all in the client bundle now. `CalendarView` is down to the two queries — which is the half of the Step 7 seam that was worth keeping.
+- **`refresh()`, not `revalidatePath()`.** New in Next 16 (`next/cache`), and the right one here: the page has no Next cache entry to invalidate — it reads cookies and queries Postgres every request. What's stale is the rendered tree the browser holds. `refresh()` re-runs the route server-side and ships the new RSC payload back in the *same* response as the action's return value. `revalidatePath` would have worked by accident, via a cache that isn't there.
+- **`useOptimistic`, so the rollback isn't code.** It takes the server's Map plus a reducer and returns a Map including drops still in flight. When the transition ends it stops overriding and falls back to the prop — by then either the server's new answer or, on failure, exactly what was there before. Nothing restores anything; the lie just expires. Requires `applyDrop` to be called *inside* `startTransition`, which is how React knows when that is.
+- **The actions return `{ok, message}` rather than throwing.** A thrown error in a Server Action reaches the client opaque, and inside a transition it hits an error boundary — the calendar would come down over a failed sticker. Returned, it's a value the tray can render as one sentence. `useOptimistic` still rolls back, because the transition ends either way.
+- **`ActivitySticker` gained `activityId`.** Step 7 kept the two ids separate on purpose; this is the step that needed both, and it turned out to need them *at once*. A drop has to ask "is this sticker already on this day?" and the placement `id` can't answer — two placements of the same activity have different ids by definition. Without it the optimistic redraw adds a duplicate circle and the refresh takes it away a moment later.
+- **Both actions upsert; only one replaces.** `day_moods` conflicts on `(user_id, day)` and overwrites — that's "mood replaces mood" as one statement, no read-then-decide-then-write and no race between them. `day_activities` conflicts on `(user_id, day, activity_id)` with `ignoreDuplicates`, so a second drop of the same sticker is a no-op rather than an error the UI has to explain. Same verb, two conflict behaviours, both already guaranteed by Step 4's unique constraints.
+- **No ownership check on `activity_id` in the action.** Deliberate, and the same reasoning as `lib/queries/`: the row is written with the caller's own `user_id`, and `day_activities` references `(activity_id, user_id)` as a pair, so an id belonging to someone else has no row to point at and Postgres rejects it. A check here would imply the safety lives in this file. Identity itself does come from `getUser()` on the server — an action is a POST endpoint, and the drag handler in front of it is a convenience, not a gate.
+- **`pointerWithin` with `closestCenter` as the fallback.** `closestCenter` compares the *dragged item's* centre to each day's, and the overlay is a whole tray row — its centre can sit 100px from the cursor, lighting the wrong square. `pointerWithin` asks the only question a mouse user is asking. But a keyboard drag has no pointer and would return nothing forever, so it falls through. One line, and both input methods get the rule that suits them.
+- **`useDroppable` inside `DayCell`, not a wrapper.** dnd-kit measures a box; a wrapper needs one, and a box between the grid and its cells is exactly what breaks the layout. (`display: contents` has no box to measure, so it's not an escape.) The day string is the droppable id, which is why `over` alone says where a sticker landed.
+- **The drop highlight is its own layer, tinted `bg-ink/6` with a `border-ink/40`.** It has to sit *over* the cell's own colour — a cell borrowed from next month is sunken and should still read as targeted — so it can't be a swapped background class. Ink at low opacity is one declaration correct in both themes: dark ink darkens the cream, light ink lightens the charcoal. Same trick as the scrollbar thumb.
+- **`TrayRowFace` split out of `TrayRow`.** Two places draw the circle-and-name pair now — the row in the tray and the copy following the cursor — and a lifted sticker that doesn't match the one you grabbed reads as a different object. The only way to guarantee they match is for them to be the same component.
+- **The tray row is a real `<button>`.** `useDraggable`'s `attributes` include `tabIndex` and `aria-roledescription`, and its `listeners` cover keyboard as well as pointer; none of that works on something that can't hold focus. It stays a button in Step 9 when clicking one will mean something. `touch-none` is load-bearing — without `touch-action: none` the browser claims the gesture for scrolling before dnd-kit sees enough of it.
+- **`TRAY_INSET` in `lib/layout.ts` — the whole rail shares one horizontal inset.** Took three tries, and the middle one is the lesson. A tray row is a hover-and-drag band, so it needs padding inside its edges or the highlight starts exactly where the circle does and looks clamped to it. But padding the row alone pushes every sticker right of the label naming it, and cancelling that with `-mx-1` put 4px of every row *outside* the rail — which is a horizontal scrollbar, because **`overflow-y: auto` does not leave the other axis alone**: CSS promotes `overflow-x` from `visible` to `auto` alongside it. (`overflow-x-hidden` would have masked that rather than fixed it.) The resolution is that the padding can't belong to the row. The header, every group label, every row, the error callout, and the drag overlay all carry `TRAY_INSET`, so text starts at one x, filled things still span the rail edge to edge, and nothing reaches past it. Five files have to agree, which is why it's a constant — same reasoning as `PAGE_WIDTH` one level up. The `<ul>` gap dropped to `gap-0.5` to absorb the row's new vertical padding.
+- **`activationConstraint: { distance: 4 }`** so a press has to travel before it counts as a drag. Step 9 wants that click.
+- **Custom `announcements`.** dnd-kit announces by default but only knows ids, and ours are uuids and `2026-08-12` — the default reads out the uuid. Needed `formatDayLong()` in `lib/dates.ts`, built on `parse` rather than `new Date(day)`, which parses as UTC midnight and is the previous evening in California.
+- **The error line is a live region rendered always, filled sometimes.** A `role="status"` that only enters the tree when it gains text often doesn't announce — it has to be there beforehand for the change to be a change. `empty:hidden` keeps it out of the layout meanwhile.
+- **The tray's `+` became a drawn icon.** It was a `"+"` character and sat visibly low in its round button. Flex centres a glyph's *line box*, not its ink, and a serif plus rides the font's math axis below the middle of that box. A nudge would have been a magic number true only for EB Garamond at one size — and wrong again during the font swap, while Georgia with different metrics is standing in. Same reasoning that already made `MoodMark` an SVG: a mark that has to sit centred should be geometry, not typography.
+- Verified `bg-ink/6`, `border-ink/40`, `bg-ramp-red-soft`, `empty:hidden`, `touch-none`, `opacity-35`, and `px-2` reached the compiled CSS with real values rather than assuming. Fifth time this category has come up.
+
+**Changed**
+
+- `app/actions/stickers.ts` — new; `placeActivity`, `setDayMood`
+- `components/dnd/{CalendarBoard,DraggableSticker,payload}.tsx|ts` — new
+- `components/views/CalendarView.tsx` — down to two queries and one child
+- `components/tray/StickerTray.tsx` — now `"use client"`, passes drag payloads, `+` is a lucide `Plus`
+- `components/tray/TrayGroup.tsx` — `TrayRow` is draggable; `TrayRowFace` split out
+- `components/calendar/DayCell.tsx` — droppable, with the over-highlight layer
+- `lib/queries/stickers.ts` — `ActivitySticker.activityId`
+- `lib/dates.ts` — `formatDayLong()`
+- `lib/layout.ts` — `TRAY_INSET`
+- `package.json` — `@dnd-kit/core`; the three Supabase scripts pinned to `supabase@2.115.0`
+- `learning/README.md` — Step 8 card, six new symptom rows
+
+**State:** `tsc --noEmit`, `eslint .`, `npm run build` all clean. Dev server starts, `/` still 307s to `/login` signed out.
+
+**Placing a sticker is confirmed against the real database.** Four rows written from the browser on 19 Aug between 21:42 and 22:08 — Meditation on 31 Jul, 1 Aug, and 19 Aug, then Gym on 19 Aug. Two of them land on the same day, so more than one sticker per day works. `day_activities` is now 159 rows against the seed's 155, and both unique constraints still hold across the whole table: no day carries the same activity twice, no day carries two moods.
+
+**Still unconfirmed:** the mood path (nothing in `day_moods` has been touched in two days, so neither the insert nor the replace has run), the duplicate-drop no-op, and the failure line. Step 7's tray is confirmed by implication — those four drags started from it.
+
+**Open**
+
+- **Nothing removes a sticker yet.** `ActivitySticker.id` is the handle for it and is threaded through; Step 9's modal is where it gets used. Dragging one *off* a day isn't in the plan and isn't built.
+- **Keyboard drag works but is coarse.** dnd-kit's default keyboard coordinate getter moves 25px per arrow press, so crossing a ~150px cell takes six. Functional and announced correctly, but Step 9's modal is the real precise-editing door — check whether a custom coordinate getter that steps cell to cell is worth it once the modal exists.
+- **`ProjectPlan.md` says to delete `scripts/seed.sql` once Step 8 works.** Left in place — placing works now, but `seed:reset` is still the only way back to an empty calendar, and nothing in the UI removes a sticker until Step 9. Revisit then, together with the Step 6 question about whether the thirteen starter activities become trigger-seeded app data.
+
+**Next:** Step 9 — the day modal. Same server actions behind a second door, so the two can't drift.
 
 ---
 
@@ -38,8 +92,8 @@ Newest first. One entry per step.
 
 **Open**
 
-- **The Supabase CLI stopped authenticating.** `npx supabase` now resolves to 2.115.0, which returns `LegacyPlatformAuthRequiredError: Access token not provided`. Blocks `npm run seed`, `seed:reset`, and `types:db` until `supabase login` is run again. Fix afterwards by pinning a version in the scripts rather than letting `npx` float.
-- The `life_areas → activities` embed typechecks but hasn't run against the database yet, because the CLI is locked out and the page needs a browser session.
+- ~~**The Supabase CLI stopped authenticating.**~~ Resolved 19 Aug: `supabase login` re-run, and the three scripts now pin `supabase@2.115.0` instead of letting `npx` float onto whatever is newest.
+- ~~The `life_areas → activities` embed hasn't run against the database.~~ Resolved 19 Aug: the anon request returns HTTP 200 `[]`, so PostgREST resolved the relationship and the nested `archived` filter — a malformed embed or an ambiguous relationship is a 400 with a hint, not an empty array. The `[]` itself is RLS, same signature as Step 4.
 - Empty life areas render as a bare label with nothing under it. Fine while seeded; decide by Step 10 whether it wants "Nothing here yet" text.
 
 **Next:** Step 8 — drag and drop.

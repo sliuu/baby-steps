@@ -42,6 +42,18 @@ export function formatMonthTitle(month: Date): string {
   return format(month, "MMMM yyyy");
 }
 
+/**
+ * "Wednesday, 12 August 2026" — for screen reader announcements during a drag,
+ * where "2026-08-12" would be read out as three numbers.
+ *
+ * `parse` with an explicit format, not `new Date("2026-08-12")`. The string
+ * form is parsed as UTC midnight, which is the previous evening in California —
+ * the same trap `toDayString` avoids at the other end.
+ */
+export function formatDayLong(day: DayString): string {
+  return format(parse(day, "yyyy-MM-dd", new Date()), "EEEE, d MMMM yyyy");
+}
+
 /** "2026-08" — stable, sortable, and safe in a URL. */
 export function toMonthString(month: Date): string {
   return format(month, "yyyy-MM");
