@@ -154,6 +154,15 @@ export function CalendarBoard(props: Props) {
 
   return (
     <DndContext
+      // Not decoration, and not optional. dnd-kit stamps every draggable with
+      // `aria-describedby="DndDescribedBy-N"`, where N comes from a counter
+      // living in a module variable. On the client that module is fresh, so N
+      // starts at 0. On the server the module is cached for the life of the
+      // Node process, so N keeps climbing with every request — the second
+      // render of this page sends `-1`, the third `-2`, and hydration finds an
+      // attribute that doesn't match what it computed. Passing an id of our own
+      // makes dnd-kit use it verbatim instead of counting, so both sides agree.
+      id="calendar-board"
       sensors={sensors}
       collisionDetection={collisionDetection}
       accessibility={{ announcements }}
