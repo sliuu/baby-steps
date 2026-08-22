@@ -2,7 +2,61 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 10 of 17 done and confirmed in the browser. Step 11 (highlight mode) is next.
+**Now:** Step 11 of 17 done and confirmed in the browser, uncommitted. Step 12 (aggregation and the range picker) is next.
+
+---
+
+## 2026-08-21 · Step 11 · Highlight mode
+
+**Decisions**
+
+- **The selection lives in `useState` in `CalendarBoard` and nowhere else — no row, no URL, no `localStorage`.** This is the step's whole subject, so it's worth saying what makes it obvious rather than treating it as obvious: the test is whether the value should survive someone else opening the app, or a refresh, or a link being shared. A highlight is a way of *looking* at a month. It has no meaning tomorrow, it isn't part of what happened, and a refresh that restored it would feel like the app had gotten stuck. Everything the app stores answers "what happened"; this answers "what am I looking at", and those go in different places.
+- **`selection` is identity; `highlight` is derived with `useMemo`.** `selection` is three fields naming a thing (`{kind, activityId}` / `{kind, areaId}` / `{kind, mood}`). Everything visible — the set of ids, the colour, the label — is computed from it plus the library on each render. So renaming or recolouring a sticker on the server changes what the highlight says with no code, and nothing has to watch for a selected sticker being archived: `buildHighlight` returns `null` and the page is simply not lit. Storing the resolved thing would have needed an invalidation rule; deriving it has none to get wrong.
+- **An area and a single sticker leave `buildHighlight` as the same shape.** Both become `activityIds: ReadonlySet<string>` — an area's is just bigger. That's the reason `dayMatches` is four lines and `DayCell` has no branch for "is this an area highlight": the union exists at the point of *selection*, and is gone by the point of *drawing*. The alternative — passing the kind downward — would have put the same two-way branch in the cell, the mark wrapper, and the label builder.
+- **Matching is on `activityId`, never the placement `id`.** A `day_activities` row has its own uuid; the sticker it draws has another. They're both called "id" in nearby code and Step 7 already separated them on purpose. `lib/highlight.test.ts` builds every fixture with `id: placement-${activityId}-${day}` so the two can never coincide — a fixture where they matched would pass whichever one the code got wrong.
+- **The grid answers `lit`, the cell answers `selected`.** Two questions, deliberately split by who already has the data. "Does this day match?" needs the day's stickers, which `MonthGrid` already has in hand from its one `Map` lookup — so it calls `dayMatches` there and passes a boolean. "Is *this particular mark* the selected one?" is per-sticker, and pushing it up would mean handing every cell an array. The cell gets the `Highlight` object for that, and asks it directly.
+- **Recede rather than emphasise, at `opacity-35`** — chosen over a brighter/ringed treatment. Nothing about the selected marks changes at all; the rest step back. But the fade stops at the marks: the numerals, the today ring, and the grid lines stay full strength. Fading the calendar's own skeleton would mean every selection costs you the ability to read a date, and the feature is supposed to be something you *look through*, not a mode you leave to get your calendar back.
+- **The wash is a `-z-10` layer inside an `isolate` stacking context.** Two failures ruled this: an opaque `bg-ramp-red-soft` painted in front hides the very stickers it's pointing at, and a translucent `bg-ink/10` painted directly onto the cell shows the grid's hairline colour through it. A negative z-index paints *after* the element's own background and *before* its in-flow children, which is exactly the slot a wash wants; `isolate` on the button is what keeps it from escaping and painting behind the grid. It stays a separate element from the `isOver` drop layer, which has no z-index and genuinely should read on top of the marks. **Stated cost:** `hover:bg-ink/2` barely reads under an opaque tint on a lit cell. The tint is louder feedback than the hover was, so it stands in for it.
+- **One `wash(colorKey)` in `lib/palette.ts`, used by the day cell, the tray row, and the area label.** Same argument as `validateDraft` in Step 10: three call sites means three chances to drift, and here drift is visible — the row you clicked would be a slightly different colour from the days that lit up. `null` means ink at 10%, which is what a mood gets, because moods are drawn colourless everywhere in this app precisely so they never compete with the six area hues.
+- **Moods are selectable; "Mood" as a heading is not.** Clicking Happy lights every day you were happy, in ink. But the group's label names five separately selectable things rather than one thing, so it gets no `onSelect` and stays a plain `<h3>` — a heading that lit nothing would be a control that does nothing. Where an area label *is* clickable, the `<button>` goes **inside** the `<h3>` rather than replacing it, so the tray's structure survives for anyone navigating by headings.
+- **Space lifts, Enter selects.** dnd-kit's `defaultKeyboardCodes.start` is `["Space", "Enter"]` and the activator calls `preventDefault()`, so with the default a keyboard user could never reach a highlight at all — the sensor eats the key first. Narrowed `keyboardCodes.start` to `["Space"]`, which is also what dnd-kit's own screen-reader instructions describe ("press the space bar"), leaving Enter free. Then extended `screenReaderInstructions` so the second half is discoverable, because a feature made entirely of colour does not exist for someone who can't see it.
+- **A lit day says so in its `aria-label`** — `dayLabel` appends "highlighted for Meditation". Same reason as the sensor decision: the tint is the entire feature and it is pure colour.
+- **Three ways out, because a mode with no visible exit is a trap.** Click the lit row again (`toggle` in the tray), the "clear" link in the header line, or Escape. The row can be scrolled off the bottom of a long rail and Escape is invisible, so the header line earns its keep: while something is lit it reads `Showing Meditation · clear`. The Escape handler is bound only while `selection && !openDay`, so it never competes with the modal's own.
+- **The tray stayed presentational.** It renders the selection it's handed and reports clicks upward; it doesn't own the value, doesn't know which days are lit, and doesn't decide that clicking a lit row means "clear" — `toggle` calls `onClear`, and the board decides what that does. Same Step 7 seam, now covering "who remembers" as well as "who fetches".
+- **`label` is a prop, not computed in the tray.** I wrote a `labelFor(selection, groups)` helper there first and deleted it: `buildHighlight` already computes that exact string to label the days, and a second implementation of "what is this thing called" is precisely the drift this project keeps refusing. The board passes `highlight?.label ?? null`.
+- **ProjectPlan names `components/calendar/CalendarPage.tsx`, which doesn't exist.** No new file was needed — `CalendarBoard` is already the shared parent of the tray and the grid, because Step 8's drag needed exactly the same containment for exactly the same reason.
+
+**Changed**
+
+- `lib/highlight.ts` — new; `Selection`, `sameSelection`, `Highlight`, `buildHighlight`, `dayMatches`
+- `lib/highlight.test.ts` — new; 27 cases
+- `lib/palette.ts` — `wash(colorKey)`
+- `lib/moods.ts` — deleted the dead `MOOD_RAMP`
+- `components/dnd/CalendarBoard.tsx` — owns `selection`; Escape; `keyboardCodes`; `screenReaderInstructions`
+- `components/calendar/MonthGrid.tsx` — calls `dayMatches`, passes `lit`
+- `components/calendar/DayCell.tsx` — the wash layer, the per-mark fade, the label
+- `components/dnd/DraggableSticker.tsx` — clickable, `aria-pressed`, three-way background
+- `components/tray/TrayGroup.tsx` — optional clickable label; row selection
+- `components/tray/StickerTray.tsx` — `toggle`, the header line, the clear link
+- `learning/README.md` — Step 11 card, ten new symptom rows
+
+**Also**
+
+- **dnd-kit already prevents a drag from also firing a click — verified in `core.cjs.development.js`, not assumed.** `handleStart()` registers a capture-phase document `click` listener that calls `stopPropagation` once the activation constraint is met. So the 4px `PointerSensor` distance is the whole separation between "clicked a sticker" and "picked it up", and no ref-based "did I just drag?" guard is needed. That guard was the first thing I reached for.
+- **`MOOD_RAMP` in `lib/moods.ts` had no callers and contradicted `MoodMark`'s own comment** ("No colour at all"). Deleted rather than used for the mood wash — a constant that says moods have colours, sitting unused next to a component built on them not having any, is a trap for whoever reaches this file next.
+- **`bg-ink/10` compiles to two rules**: an opaque `background-color: var(--ink)` and then `color-mix(in oklab, var(--ink) 10%, transparent)` inside an `@supports` guard. Grepping for the class and reading the first hit says "fully opaque", which is wrong. Same shape as the `bg-ink/5` and `bg-ink/6` already shipping since Step 7, so it's Tailwind's pattern rather than anything new here.
+
+**State:** `npm test` 69/69 (up from 42), `tsc --noEmit`, `eslint .`, `npm run build` all clean. Verified `-z-10`, `isolate`, `bg-ink/10`, `underline-offset-2`, `opacity-35`, `py-0.5`, and `bg-ramp-red-soft` reached the compiled CSS with real values — seventh time. **Uncommitted.**
+
+**Confirmed in the browser on 2026-08-22.** The keyboard path specifically, since that's the one the code changed out from under dnd-kit: tab to a tray row, Enter lights the days and Enter again clears them, Space still lifts the sticker for a drag. So the narrowed `keyboardCodes.start` does hand Enter back to the button without costing the drag its activator.
+
+**Open**
+
+- **Everything Step 10 left open is still open** — the Step 8 duplicate-drop no-op and failure line, `scripts/seed.sql`, and nothing being able to remove a sticker from the library.
+- **The keyboard drag stays coarse (25px per arrow press), decided rather than deferred.** Step 10 said "decide at Step 11". The modal is the precise-editing door and it's fully keyboard-operable, so the cell-to-cell coordinate getter isn't being written. Reopen only if the modal stops being the answer.
+- **A day lit by an area shows no sign of *which* sticker matched.** All the marks on it stay lit if they're in the area, which is correct, but a day matching one sticker out of six in that area looks the same as a day matching all six. Fine at a glance; possibly a Step 12 question if trends want it.
+
+**Next:** Step 12 — aggregation and the range picker.
 
 ---
 
@@ -52,7 +106,7 @@ Newest first. One entry per step.
 - **`.length` is not safe to use on emoji even in a test file.** The Edit tool couldn't match strings in `lib/graphemes.test.ts` containing variation selectors and combining marks. Rewrote the file with `Write`, hoisting each tricky character into a named constant with escapes — a test about counting characters shouldn't be ambiguous about which characters it contains — then confirmed the intended byte sequences survived by asserting on `.length` (a decomposed `é` at 2, the family ZWJ sequence at 8).
 - **Shell `cd` persists between tool calls**, which briefly made `git rm lib/queries/lifeAreas.ts` look like the file had vanished. Absolute paths from here.
 
-**State:** `npm test` 42/42, `tsc --noEmit`, `eslint .`, `npm run build` all clean. Verified `outline-ink/40`, `border-dashed`, `border-hairline`, `bg-ink/5`, `grid-cols-8`, and `text-ink-muted` reached the compiled CSS with real values — sixth time. **Not committed.**
+**State:** `npm test` 42/42, `tsc --noEmit`, `eslint .`, `npm run build` all clean. Verified `outline-ink/40`, `border-dashed`, `border-hairline`, `bg-ink/5`, `grid-cols-8`, and `text-ink-muted` reached the compiled CSS with real values — sixth time. Committed as `7c0ddb2`.
 
 **Confirmed against the hosted database, inside rolled-back transactions as the `authenticated` role** — same method as Step 9. The happy-path insert succeeded and came back with `mark: '🏋️'`, **`length() = 2`**, 7 bytes, `archived: false` — a live demonstration that Postgres calls a one-character mark two characters, which is the whole argument for keeping that rule in TypeScript. A second insert of the same name in the same area raised `23505 … activities_user_area_name_key`. An insert naming an area belonging to someone else raised `23503 … activities_life_area_id_user_id_fkey`, so the composite foreign key is doing the ownership check the action deliberately doesn't. Afterwards: 13 activities, no probe rows left behind.
 

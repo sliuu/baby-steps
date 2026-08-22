@@ -8,6 +8,15 @@ import { TRAY_INSET } from "@/lib/layout";
 
 type Props = {
   label: string;
+  /**
+   * Selecting the whole area. Omitted by the mood group, which labels five
+   * separately selectable things rather than naming one — so its heading stays
+   * a heading and never becomes a control that does nothing.
+   */
+  onSelect?: () => void;
+  selected?: boolean;
+  /** The wash a selected label carries, matching its stickers and its days. */
+  wash?: string;
   /** One <li> per sticker. */
   children: ReactNode;
 };
@@ -20,10 +29,30 @@ type Props = {
 export function TrayGroup(props: Props) {
   return (
     <section>
-      {/* Inset to match the rows below it. The label has no highlight of its
-          own, so this is purely so its first letter sits directly above the
-          first circle it names. */}
-      <h3 className={`eyebrow ${TRAY_INSET}`}>{props.label}</h3>
+      {/* The heading stays an <h3> even when it's clickable — the button goes
+          *inside* it. A heading that becomes a button stops being a landmark
+          for anyone navigating the page by headings, which is most of the value
+          the tray's structure has for a screen reader.
+
+          The inset moves onto whichever of the two is the outer box, so the
+          label's first letter keeps sitting directly above the first circle it
+          names, and a selected label's wash spans the rail like a row's. */}
+      {props.onSelect ? (
+        <h3 className="eyebrow">
+          <button
+            type="button"
+            onClick={props.onSelect}
+            aria-pressed={props.selected ?? false}
+            className={`${TRAY_INSET} flex w-full cursor-pointer rounded-md py-0.5 text-left transition-colors ${
+              props.selected ? (props.wash ?? "") : "hover:bg-ink/5"
+            }`}
+          >
+            {props.label}
+          </button>
+        </h3>
+      ) : (
+        <h3 className={`eyebrow ${TRAY_INSET}`}>{props.label}</h3>
+      )}
       {/* Small gap because each row now carries its own vertical padding — it's
           a hover band, not a line of text. The two together land on roughly the
           rhythm the tray had before it became draggable. */}
@@ -69,13 +98,22 @@ type RowProps = FaceProps & {
   /** Unique within the drag context: an activity's uuid, or a mood's name. */
   dragId: string;
   payload: DragPayload;
+  selected: boolean;
+  wash: string;
+  onSelect: () => void;
 };
 
-/** One row of the tray: a sticker you can pick up, and its name. */
+/** One row of the tray: a sticker you can pick up, click, and its name. */
 export function TrayRow(props: RowProps) {
   return (
     <li className="flex">
-      <DraggableSticker id={props.dragId} payload={props.payload}>
+      <DraggableSticker
+        id={props.dragId}
+        payload={props.payload}
+        selected={props.selected}
+        wash={props.wash}
+        onSelect={props.onSelect}
+      >
         <TrayRowFace visual={props.visual} name={props.name} />
       </DraggableSticker>
     </li>

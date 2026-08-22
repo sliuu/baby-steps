@@ -14,7 +14,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { useOptimistic, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 
 import {
   clearDayMood,
@@ -31,6 +31,7 @@ import { StickerTray } from "@/components/tray/StickerTray";
 import { TrayRowFace } from "@/components/tray/TrayGroup";
 import { applyChange, type CalendarChange } from "@/lib/changes";
 import { formatDayLong, toMonthString, type DayString } from "@/lib/dates";
+import { buildHighlight, type Selection } from "@/lib/highlight";
 import { TRAY_INSET } from "@/lib/layout";
 import { MOOD_LABEL } from "@/lib/moods";
 import type { LibraryGroup } from "@/lib/queries/activities";
@@ -101,11 +102,82 @@ export function CalendarBoard(props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
+  /**
+   * Highlight mode, and the whole of it is this one line.
+   *
+   * It sits here for the plainest reason there is: the tray sets it, the grid
+   * draws it, and those two are siblings. The lowest component containing both
+   * is this one — which already exists because `DndContext` needed exactly the
+   * same thing, so lifting state up cost nothing this time.
+   *
+   * What's worth noticing is where it *isn't*. There's no column for it, no
+   * server action, no `refresh()`, nothing in the URL and nothing in
+   * `localStorage`. A highlight is a way of looking at the month rather than a
+   * fact about it, so it lives for as long as the component does and dies on
+   * reload. It doesn't even survive switching to the Trends tab, because
+   * `AppShell` unmounts this whole tree to do that — and coming back to a month
+   * still filtered by something you clicked five minutes ago would be a small
+   * mystery, not a feature.
+   *
+   * Contrast the sticker sitting next to it on a day: that's a fact, it went
+   * through a Server Action, and it's still there next year. Same click, same
+   * tray, opposite lifetimes — which is the distinction this step is about.
+   */
+  const [selection, setSelection] = useState<Selection | null>(null);
+
+  /**
+   * Everything visible about the selection, derived rather than stored.
+   *
+   * `selection` is three fields of identity; this is the colour, the label, and
+   * the set of activity ids that count. Keeping the second computed means a
+   * sticker renamed or recoloured on the server changes what the highlight says
+   * with no code, and it's why nothing has to reset the selection when the
+   * library reloads under it. Null when the selected thing is gone.
+   */
+  const highlight = useMemo(
+    () => (selection ? buildHighlight(selection, props.groups) : null),
+    [selection, props.groups],
+  );
+
+  /**
+   * Escape clears it, which is the third way out after clicking the lit row
+   * again and the "clear" link in the tray header.
+   *
+   * Bound only while something is lit *and* the modal is shut. Escape is
+   * heavily subscribed here — Radix closes the dialog with it, dnd-kit cancels
+   * a drag with it — and a listener that isn't attached can't race with either.
+   */
+  useEffect(() => {
+    if (!selection || openDay) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelection(null);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selection, openDay]);
+
   const sensors = useSensors(
     // Four pixels of travel before a press counts as a drag. Without it every
-    // click on a sticker starts one, and the day cell wants that click.
+    // click on a sticker starts one, and both the day cell and — since Step 11
+    // — the tray row want that click.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor, {
+      // Space lifts, Enter selects. Both start a drag by default, which left a
+      // keyboard user no way to reach the highlight at all: the sensor calls
+      // `preventDefault()` on activation, so the button's own click never
+      // fires. Dropping Enter from `start` hands it back to the button.
+      //
+      // Space is the one that stayed with the drag because dnd-kit's built-in
+      // screen-reader instructions — read out on focus — say "to pick up a
+      // draggable item, press the space bar". The instructions below add the
+      // other half rather than contradicting this one.
+      keyboardCodes: {
+        start: ["Space"],
+        cancel: ["Escape"],
+        end: ["Space", "Tab"],
+      },
+    }),
   );
 
   /**
@@ -164,7 +236,7 @@ export function CalendarBoard(props: Props) {
       id="calendar-board"
       sensors={sensors}
       collisionDetection={collisionDetection}
-      accessibility={{ announcements }}
+      accessibility={{ announcements, screenReaderInstructions }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setDragging(null)}
@@ -180,6 +252,7 @@ export function CalendarBoard(props: Props) {
             initialMonth={toMonthString(new Date())}
             stickersByDay={stickersByDay}
             onOpenDay={setOpenDay}
+            highlight={highlight}
           />
         </div>
 
@@ -197,7 +270,13 @@ export function CalendarBoard(props: Props) {
             it would only move the problem. Long names truncate; hit areas fill
             the width rather than reaching past it. */}
         <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:w-72 lg:shrink-0 lg:overflow-y-auto">
-          <StickerTray groups={props.groups} />
+          <StickerTray
+            groups={props.groups}
+            selection={selection}
+            onSelect={setSelection}
+            onClear={() => setSelection(null)}
+            label={highlight?.label ?? null}
+          />
 
           {/* Rendered always, filled sometimes. A live region the browser only
               discovers at the moment it gains text is a live region that often
@@ -264,6 +343,24 @@ export function CalendarBoard(props: Props) {
     </DndContext>
   );
 }
+
+/**
+ * What a screen reader is told the moment a tray row takes focus.
+ *
+ * dnd-kit ships this sentence and it's good, but as of Step 11 it's no longer
+ * the whole truth: the same button now does two things depending on which key
+ * you press. Overriding it is the only way that second thing is discoverable
+ * without sight — the highlight is pure colour, and a keyboard user who never
+ * learns about Enter never finds the feature at all.
+ */
+const screenReaderInstructions = {
+  draggable: `
+    To highlight every day this appears on, press Enter. Press Enter again to clear it.
+    To pick up a draggable item, press the space bar.
+    While dragging, use the arrow keys to move the item.
+    Press space again to drop the item in its new position, or press escape to cancel.
+  `,
+};
 
 /**
  * What a screen reader says during a drag.

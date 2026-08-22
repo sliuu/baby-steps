@@ -25,3 +25,20 @@ const FALLBACK: RampKey = "blue";
 export function ramp(colorKey: string) {
   return RAMP[colorKey as RampKey] ?? RAMP[FALLBACK];
 }
+
+/**
+ * The tint a highlighted thing wears: the day cells it lights, its own row in
+ * the tray, and the area label above it.
+ *
+ * One function so those three can't drift — the same argument as `validateDraft`
+ * in Step 10, and it's why the tray row you clicked is visibly the same colour
+ * as the days that just lit up rather than approximately it.
+ *
+ * `null` means ink, which is what a mood gets. Moods are drawn as plain
+ * outlines everywhere in this app precisely so they never compete with the six
+ * area hues, and giving them one here would undo that. Ink at low opacity is
+ * one declaration that lands correctly in both themes.
+ */
+export function wash(colorKey: string | null): string {
+  return colorKey ? ramp(colorKey).soft : "bg-ink/10";
+}

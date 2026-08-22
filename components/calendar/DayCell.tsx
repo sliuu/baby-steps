@@ -3,13 +3,27 @@ import { useDroppable } from "@dnd-kit/core";
 import { MoodMark } from "./MoodMark";
 import { StickerMark } from "./StickerMark";
 import { formatDayLong, type DayCellData, type DayString } from "@/lib/dates";
+import type { Highlight } from "@/lib/highlight";
 import { MOOD_LABEL } from "@/lib/moods";
+import { wash } from "@/lib/palette";
 import type { DayStickers } from "@/lib/stickers";
 
 type Props = {
   cell: DayCellData;
   stickers: DayStickers;
   onOpen: (day: DayString) => void;
+  /**
+   * What's selected in the tray, or null when nothing is. The cell reads it to
+   * decide which of *its own marks* are the selected one — a per-sticker
+   * question the parent can't answer for it without handing down an array.
+   */
+  highlight: Highlight | null;
+  /**
+   * Whether this day is one the selection lands on. The cell never works this
+   * out: the grid already has the day's stickers in hand from its one Map
+   * lookup, so it asks `dayMatches` there and passes the answer down.
+   */
+  lit: boolean;
 };
 
 /**
@@ -35,8 +49,16 @@ function numeralClasses(cell: DayCellData): string {
  * As a button those names would be concatenated into its label, and "20 Gym
  * Meditation Great" is not a sentence. `aria-label` takes precedence over
  * contents, so this replaces all of it with something a person would say.
+ *
+ * A lit day says so. The tint is the entire point of highlight mode and it is
+ * pure colour, so without this sentence the feature simply doesn't exist for
+ * anyone reading the page rather than looking at it.
  */
-function dayLabel(cell: DayCellData, stickers: DayStickers): string {
+function dayLabel(
+  cell: DayCellData,
+  stickers: DayStickers,
+  litBy: string | null,
+): string {
   const parts = [formatDayLong(cell.day)];
 
   if (stickers.activities.length > 0) {
@@ -46,12 +68,27 @@ function dayLabel(cell: DayCellData, stickers: DayStickers): string {
     parts.push(`feeling ${MOOD_LABEL[stickers.mood]}`);
   }
   if (parts.length === 1) parts.push("empty");
+  if (litBy) parts.push(`highlighted for ${litBy}`);
 
   return parts.join(". ");
 }
 
+
 export function DayCell(props: Props) {
-  const { cell, stickers, onOpen } = props;
+  const { cell, stickers, onOpen, highlight, lit } = props;
+
+  /**
+   * One rule, and it covers every mark on the page: a mark stays at full
+   * strength exactly when it is the thing you selected. Everything else recedes
+   * — the other stickers on a lit day, every sticker on a day that didn't
+   * match, and every mood while an activity is selected.
+   *
+   * Note what it does *not* touch: the numeral, the today ring, and the grid
+   * lines. Fading those would dim the calendar's own skeleton, and for as long
+   * as a selection was held the page would stop working as a calendar.
+   */
+  const selected = (isSelected: boolean) =>
+    highlight && !isSelected ? "opacity-35" : "";
 
   // The drop target is the cell itself, so the hook lives here rather than in a
   // wrapper. A wrapper would need a box for dnd-kit to measure, and a box
@@ -75,7 +112,7 @@ export function DayCell(props: Props) {
       // The machine-readable date, the droppable id, and now also the argument.
       data-day={cell.day}
       onClick={() => onOpen(cell.day)}
-      aria-label={dayLabel(cell, stickers)}
+      aria-label={dayLabel(cell, stickers, lit && highlight ? highlight.label : null)}
       // `flex flex-col justify-start` is not a layout choice, it's a correction.
       // A button centres its own contents vertically — that behaviour is built
       // into how the browser lays a button out, and `display: block` does not
@@ -95,12 +132,42 @@ export function DayCell(props: Props) {
       // and as a grey square across a 150px cell — tint is perceived by area, so
       // the larger the surface the lower the number has to go to mean the same
       // thing.
-      className={`relative flex min-h-32 w-full cursor-pointer flex-col items-stretch justify-start p-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
+      //
+      // `isolate` is what makes the wash layer below safe. It gives the button
+      // its own stacking context, so a negative z-index inside can't escape and
+      // paint behind the grid.
+      className={`relative isolate flex min-h-32 w-full cursor-pointer flex-col items-stretch justify-start p-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
         cell.inMonth
           ? "bg-surface hover:bg-ink/2"
           : "bg-surface-sunken hover:bg-ink/2"
       }`}
     >
+      {/* The highlight wash, and it sits *behind* the contents — `-z-10`, where
+          the drop layer below has no z-index at all and so paints in front.
+          That difference is the whole reason they're two elements rather than
+          one shared "overlay" helper.
+
+          A negative z-index paints after the button's own background and before
+          its in-flow children, which is exactly what a wash should do: an
+          opaque `bg-ramp-red-soft` in front of the marks would hide the very
+          stickers it's pointing at, while the drop highlight is a 6% tint that
+          genuinely should read on top of them.
+
+          Keeping the base surface underneath is also what makes the ink wash
+          work at all. `bg-ink/10` is translucent, so it needs a real surface
+          beneath it — laid straight onto the cell it would show the grid's
+          hairline colour through the gaps.
+
+          Cost, stated plainly: on a lit cell the `hover:bg-ink/2` above is now
+          under an opaque tint and barely reads. The tint is louder feedback
+          than the hover ever was, so it stands in for it. */}
+      {lit && highlight && (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 -z-10 ${wash(highlight.colorKey)}`}
+        />
+      )}
+
       {/* The highlight is its own layer rather than a swapped background class,
           because it has to sit *over* the cell's own colour — a cell borrowed
           from next month is sunken, and it should still read as targeted.
@@ -127,7 +194,13 @@ export function DayCell(props: Props) {
           {cell.dayOfMonth}
         </time>
 
-        {stickers.mood && <MoodMark mood={stickers.mood} />}
+        {stickers.mood && (
+          <span
+            className={`transition-opacity ${selected(highlight?.mood === stickers.mood)}`}
+          >
+            <MoodMark mood={stickers.mood} />
+          </span>
+        )}
       </div>
 
       {/* Wraps rather than scrolls or truncates: a day with eight stickers is a
@@ -136,7 +209,19 @@ export function DayCell(props: Props) {
       {stickers.activities.length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {stickers.activities.map((sticker) => (
-            <StickerMark key={sticker.id} sticker={sticker} />
+            // The wrapper is what fades, not StickerMark itself. Four other
+            // places draw that component — the tray, the drag overlay, the
+            // modal, the new-sticker preview — and none of them has any notion
+            // of a highlight. A `faded` prop would push this step's concern
+            // into all five.
+            <span
+              key={sticker.id}
+              className={`transition-opacity ${selected(
+                highlight?.activityIds.has(sticker.activityId) ?? false,
+              )}`}
+            >
+              <StickerMark sticker={sticker} />
+            </span>
           ))}
         </div>
       )}

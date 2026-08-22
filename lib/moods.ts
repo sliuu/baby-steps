@@ -1,19 +1,8 @@
-import type { RampKey } from "@/lib/palette";
-
 /** The five moods, in the order the picker shows them. Matches the CHECK
  *  constraint on day_moods.mood — if these ever disagree, the database wins. */
 export const MOODS = ["great", "good", "okay", "low", "rough"] as const;
 
 export type Mood = (typeof MOODS)[number];
-
-/** Moods deliberately reuse the life-area hues rather than introducing five more. */
-export const MOOD_RAMP: Record<Mood, RampKey> = {
-  great: "blue",
-  good: "green",
-  okay: "yellow",
-  low: "orange",
-  rough: "red",
-};
 
 export const MOOD_LABEL: Record<Mood, string> = {
   great: "Great",

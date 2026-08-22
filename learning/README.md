@@ -137,6 +137,20 @@ index at the bottom sends you there.
 
 ---
 
+## Step 11 · Highlight mode
+
+1. Click a sticker and every day you did it tints in its own colour; everything else recedes. Click a life-area label and the whole area lights at once.
+2. Nothing about it is saved. Refresh and it's gone — that's not a gap, it's the point. It's a way of *looking* at the month, not a fact about it.
+3. The tray sets it and the grid draws it, and those two are siblings — so the value lives in `CalendarBoard`, the lowest component containing both. Same rule as Step 2, third time it's decided the answer.
+4. A cell never asks "am I highlighted?" The grid already holds the day's stickers from its one `Map` lookup, so it answers with `dayMatches` and passes down a `lit` boolean.
+5. One sticker and a whole area are the same thing by the time anything draws them — a *set* of activity ids. Only the size differs, so nothing downstream has two branches.
+
+**Design consequence:** highlighting is subtraction. The selected marks stay exactly as they were and everything else drops to 35% — nothing gets brighter, bolder, or bigger, because a page where the answer shouts is a page you can only use one way. What *doesn't* fade is the load-bearing half of the decision: the numerals, the today ring, and the grid lines all hold full strength, so the calendar is still a calendar while you're looking through it. Fade those and every selection would cost you the ability to read a date.
+
+**Second one:** a mode with no visible way out is a trap, so there are three — click the lit row again, click "clear" under the heading, or press Escape. The row can scroll off the bottom of a long rail and Escape is invisible, which is why the line under the heading changes to say what's showing and offer the exit. The same reasoning runs the keyboard: Space lifts a sticker and **Enter** highlights it, because dnd-kit claims both by default and a keyboard user would otherwise have no way to reach this feature at all.
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -195,6 +209,15 @@ Read left to right. Nothing here needs to be memorized.
 | Opening a picker submits the form | a `<button>` inside a `<form>` submits by default; `type="button"` is load-bearing | same |
 | A dialog reopens holding last time's typing | the state outlived the dialog. Move it into a child Radix unmounts on close | `NewStickerForm.tsx` → `StickerFields` |
 | A Server Action wants `(previousState, formData)` | that's `useActionState`'s shape, not the action's. Wrap it in a client function | same → `submit` |
+| An overlay hides the very thing it's pointing at | it needs `-z-10`, which paints *after* the element's background but *before* its in-flow children | `DayCell.tsx` → the wash layer |
+| A negative `z-index` escapes and paints behind its parent | the parent never made a stacking context to contain it — add `isolate` | same |
+| A translucent tint shows the grid lines through it | it was laid on the gap, not on a surface. Keep the base background underneath | same |
+| A `bg-*/10` class looks fully opaque | Tailwind emits a solid fallback *and* a `color-mix` rule behind `@supports` — you're seeing the fallback | compiled CSS, not your code |
+| A click and a drag both fire from one gesture | they don't: dnd-kit swallows the click in the capture phase once the distance constraint is met | `DraggableSticker.tsx` |
+| A keyboard shortcut never fires inside a drag context | `KeyboardSensor` claims Space *and* Enter by default and `preventDefault`s them — narrow `keyboardCodes` | `CalendarBoard.tsx` |
+| A clickable heading vanishes from a screen reader's heading list | the `<button>` must go *inside* the `<h3>`, not replace it | `TrayGroup.tsx` |
+| A feature made of colour doesn't exist for a screen reader | nothing said it out loud; put it in the accessible name | `DayCell.tsx` → `dayLabel()` |
+| A highlight lights the wrong days, or none | a placement's `id` is not the activity's `id` — match on `activityId` | `lib/highlight.ts` → `dayMatches` |
 
 ---
 

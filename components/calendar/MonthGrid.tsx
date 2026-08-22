@@ -13,6 +13,7 @@ import {
   weekdayLabels,
   type DayString,
 } from "@/lib/dates";
+import { dayMatches, type Highlight } from "@/lib/highlight";
 import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
 
 type Props = {
@@ -25,6 +26,11 @@ type Props = {
   stickersByDay: StickersByDay;
   /** Passed straight through to every cell. The grid itself owns no selection. */
   onOpenDay: (day: DayString) => void;
+  /**
+   * The resolved selection, or null. Also not owned here — it belongs to the
+   * board, because the tray is what sets it and the tray is the grid's sibling.
+   */
+  highlight: Highlight | null;
 };
 
 /** Today never changes mid-session, so there is nothing to subscribe to. */
@@ -85,17 +91,31 @@ export function MonthGrid(props: Props) {
             </div>
           ))}
 
-          {cells.map((cell) => (
-            <DayCell
-              key={cell.day}
-              cell={cell}
-              // One lookup per cell. A shared empty value rather than a fresh
-              // object each time, so an empty day's props stay referentially
-              // equal between renders and React can skip the work.
-              stickers={props.stickersByDay.get(cell.day) ?? NO_STICKERS}
-              onOpen={props.onOpenDay}
-            />
-          ))}
+          {cells.map((cell) => {
+            // One lookup per cell. A shared empty value rather than a fresh
+            // object each time, so an empty day's props stay referentially
+            // equal between renders and React can skip the work.
+            const stickers = props.stickersByDay.get(cell.day) ?? NO_STICKERS;
+
+            return (
+              <DayCell
+                key={cell.day}
+                cell={cell}
+                stickers={stickers}
+                onOpen={props.onOpenDay}
+                highlight={props.highlight}
+                // The cell is told whether it's lit; it never works it out. The
+                // stickers are already in hand from the lookup above, so asking
+                // here costs nothing and keeps the rule in one function that a
+                // test can reach.
+                lit={
+                  props.highlight
+                    ? dayMatches(props.highlight, stickers)
+                    : false
+                }
+              />
+            );
+          })}
         </div>
       </div>
     </section>
