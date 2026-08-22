@@ -1,5 +1,10 @@
 import type { DayString } from "@/lib/dates";
 import type { Mood } from "@/lib/moods";
+// The one value import in this file, and it is relative with the extension on
+// purpose. `lib/stickers.test.ts` loads this module in `node --test`, where
+// nothing resolves `@/` — that alias belongs to the bundler, and there is no
+// bundler in that process. Type imports are erased and can keep using it.
+import { graphemeCount } from "./graphemes.ts";
 
 /**
  * Everything needed to *draw* a sticker, and nothing else.
@@ -65,3 +70,109 @@ export type StickersByDay = Map<DayString, DayStickers>;
  * on this side, and `lib/queries/` stays server-only.
  */
 export const NO_STICKERS: DayStickers = { activities: [], mood: null };
+
+/**
+ * A sticker that doesn't exist yet: what the new-sticker form collects.
+ *
+ * Three strings, because that is what an HTML form has. It becomes an
+ * `activities` row only if `validateDraft` says so, and only the server writes
+ * it.
+ */
+export type StickerDraft = {
+  name: string;
+  mark: string;
+  lifeAreaId: string;
+};
+
+/** Which field a complaint belongs to, so the form can point at it. */
+export type DraftField = "name" | "mark" | "lifeArea";
+
+export type DraftCheck =
+  /** `draft` is the cleaned-up version — trimmed. Write *this*, not the input. */
+  | { ok: true; draft: StickerDraft }
+  | { ok: false; field: DraftField; message: string };
+
+/**
+ * Long enough for "Romance & Adventure"-sized habits, short enough that the
+ * tray never has to truncate a name it could have shown. In *graphemes*: a
+ * limit measured in code units would tell someone their five-emoji name is
+ * fifteen characters long.
+ */
+export const NAME_MAX = 24;
+
+/** Pull a draft out of a form. Anything missing is "", never null. */
+export function readDraft(form: FormData): StickerDraft {
+  return {
+    name: readField(form, "name"),
+    mark: readField(form, "mark"),
+    lifeAreaId: readField(form, "lifeArea"),
+  };
+}
+
+function readField(form: FormData, key: string): string {
+  const value = form.get(key);
+  // A FormData entry is a string *or a File*, and a POST anyone can craft can
+  // send either. Anything that isn't a string is treated as absent rather than
+  // stringified into "[object File]".
+  return typeof value === "string" ? value : "";
+}
+
+/**
+ * The one rule about what a sticker may be, in the one place both sides read.
+ *
+ * Both sides call this: the browser before it sends anything, so a mistake
+ * costs no round trip and the message appears instantly; and the Server Action
+ * before it writes, because the browser is a convenience and the POST endpoint
+ * behind it is reachable without one. Because it is literally the same
+ * function, the two checks cannot drift and the sentence the user reads is the
+ * same sentence either way — the Step 9 argument for `CalendarChange`, applied
+ * to validation instead of to changes.
+ *
+ * Below it sits a third layer that this function can't reproduce: `NOT NULL`,
+ * the composite foreign key, and `unique (user_id, life_area_id, name)` in the
+ * database. Those are the ones that hold when two tabs submit at once. What
+ * *can't* live down there is the "one character" rule — SQL's `length()`
+ * counts code points and would call a single emoji two or three characters —
+ * which is exactly why this function is unit-tested and the constraints aren't.
+ */
+export function validateDraft(draft: StickerDraft): DraftCheck {
+  const name = draft.name.trim();
+  const mark = draft.mark.trim();
+  const lifeAreaId = draft.lifeAreaId.trim();
+
+  if (!name) {
+    return { ok: false, field: "name", message: "Give your sticker a name." };
+  }
+  if (graphemeCount(name) > NAME_MAX) {
+    return {
+      ok: false,
+      field: "name",
+      message: `That name is too long — ${NAME_MAX} characters at most.`,
+    };
+  }
+
+  if (!mark) {
+    return {
+      ok: false,
+      field: "mark",
+      message: "Pick a mark: one letter or one emoji.",
+    };
+  }
+  if (graphemeCount(mark) !== 1) {
+    return {
+      ok: false,
+      field: "mark",
+      message: "The mark is a single character — one letter or one emoji.",
+    };
+  }
+
+  if (!lifeAreaId) {
+    return {
+      ok: false,
+      field: "lifeArea",
+      message: "Choose a life area.",
+    };
+  }
+
+  return { ok: true, draft: { name, mark, lifeAreaId } };
+}

@@ -123,6 +123,20 @@ index at the bottom sends you there.
 
 ---
 
+## Step 10 · Making a sticker
+
+1. The `+` opens a small form — a mark, a name, a life area — and the sticker is in the tray by the time it closes.
+2. The form posts to a *function*, not a URL. `createActivity` is a Server Action, so there's no route to write, no `fetch` to call, and no JSON on either side.
+3. The same `validateDraft` runs in the browser and again on the server. One function, so the quick check and the real check can't drift and the sentence is identical.
+4. "One character" means one **grapheme**. `🏋️` is 1 — not 3 (`.length`) and not 2 (code points). That's `Intl.Segmenter`, in `lib/graphemes.ts`.
+5. Closing the dialog *is* the reset. The fields live in a child that Radix unmounts, so there's no clearing code and no reopening onto last time's half-filled form.
+
+**Design consequence:** the same rule is now checked in three places, at three strengths, and that's the design rather than duplication. The browser check is for speed and tone — it costs no round trip and is the only one that can point at a field while you're still typing. The Server Action's check is the one that counts, because a Server Action is a POST endpoint and the form in front of it is a convenience, not a gate. The database's constraints are the ones that can't be skipped by any client at all. Push each rule as far down as it will go: "this area is yours" is a composite foreign key and so is never written as code, and "this name is unique in this area" is an index — which is why the action reads Postgres's refusal codes instead of asking first.
+
+**Second one:** one rule refused to go down. Postgres's `length('🏋️')` is **2** — it counts code points — so "exactly one character" cannot be a `CHECK` constraint, and the only copy of it lives in TypeScript. That is exactly the shape of thing `npm test` is for: a rule with no backstop underneath it. The constraints aren't tested, because they can't drift; `validateDraft` and `graphemeCount` are, because they're the last word.
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -162,7 +176,7 @@ Read left to right. Nothing here needs to be memorized.
 | The wrong square lights up mid-drag | collision was measured from the dragged item's centre, not the cursor | `CalendarBoard.tsx` → `collisionDetection` |
 | A scrolling box scrolls sideways too | `overflow-y: auto` promotes `overflow-x` from `visible` to `auto`; something inside is bleeding past the edge | `CalendarBoard.tsx` → the rail `<aside>` |
 | One thing in the rail sits indented from the rest | it isn't carrying `TRAY_INSET` — everything in there shares one gutter | `lib/layout.ts` |
-| A character in a round button sits off-centre | flex centres the glyph's line box, not its ink. Draw it instead of typing it | `StickerTray.tsx` → the `+` |
+| A character in a round button sits off-centre | flex centres the glyph's line box, not its ink. Draw it instead of typing it | `NewStickerForm.tsx` → the `+` |
 | Nothing drags on a phone, fine on a mouse | the element is missing `touch-none`, so the browser took the gesture for scrolling | `DraggableSticker.tsx` |
 | A click on a sticker does nothing | it started a drag instead; `activationConstraint` sets how far a press must travel first | same |
 | The page doesn't update after a write | the action returned without `refresh()` — nothing told the router to re-render | `app/actions/stickers.ts` |
@@ -174,6 +188,13 @@ Read left to right. Nothing here needs to be memorized.
 | A screen reader says a label twice | the icon carries its own name and the text repeats it — hide one | `TrayGroup.tsx` → `TrayRow` |
 | `truncate` does nothing and the text overflows | same `min-w-0` rule: a flex item won't shrink below its text | `TrayGroup.tsx` |
 | A joined query drops rows that have no children | the embed was `!inner`, or a filter on it made it behave that way | `lib/queries/activities.ts` |
+| `maxLength={1}` accepts `A` but mangles `🏋️` | the attribute counts UTF-16 code units, so it truncates an emoji mid-surrogate-pair | `NewStickerForm.tsx` → the mark input |
+| `"🏋️".length` is 3 and the database says 2 | three different questions: code units, code points, and characters as people see them | `lib/graphemes.ts` |
+| A `CHECK` constraint can't express "one character" | SQL `length()` counts code points; there is no grapheme in Postgres | `lib/stickers.ts` → `validateDraft` |
+| A dropdown's value never arrives in `FormData` | a Radix `Select` only renders its hidden native `<select>` when you give it `name` | `NewStickerForm.tsx` → the life-area `Select` |
+| Opening a picker submits the form | a `<button>` inside a `<form>` submits by default; `type="button"` is load-bearing | same |
+| A dialog reopens holding last time's typing | the state outlived the dialog. Move it into a child Radix unmounts on close | `NewStickerForm.tsx` → `StickerFields` |
+| A Server Action wants `(previousState, formData)` | that's `useActionState`'s shape, not the action's. Wrap it in a client function | same → `submit` |
 
 ---
 

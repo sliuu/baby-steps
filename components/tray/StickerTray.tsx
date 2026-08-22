@@ -1,11 +1,9 @@
 "use client";
 
-import { Plus } from "lucide-react";
-
 import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerMark } from "@/components/calendar/StickerMark";
+import { NewStickerForm } from "@/components/tray/NewStickerForm";
 import { TrayGroup, TrayRow } from "@/components/tray/TrayGroup";
-import { Button } from "@/components/ui/button";
 import { TRAY_INSET } from "@/lib/layout";
 import { MOOD_LABEL, MOODS } from "@/lib/moods";
 import type { LibraryGroup } from "@/lib/queries/activities";
@@ -36,25 +34,17 @@ export function StickerTray(props: Props) {
       <header className={TRAY_INSET}>
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-heading text-2xl leading-none">Your stickers</h2>
-          {/* Inert until Step 10. Present now so the header's proportions are
-              settled before there's a form behind it.
-
-              An SVG rather than a "+" character. Flex centres a glyph's line
-              box, not its ink, and a serif plus sits on the font's math axis
-              a little below the middle of that box — so it reads low in a
-              round button. A nudge would fix it for EB Garamond at one size
-              and be wrong again in Georgia while the webfont is still loading.
-              Drawn, it's centred by geometry in any font. The button's own
-              [&_svg]:size-4 rule sizes it; strokeWidth matches the nav icons. */}
-          <Button
-            variant="outline"
-            size="icon-sm"
-            disabled
-            aria-label="New sticker"
-            title="New sticker"
-          >
-            <Plus strokeWidth={1.5} />
-          </Button>
+          {/* The `+` and everything behind it. The tray hands it the six areas
+              it is already grouped by, rather than the form fetching them:
+              they're the same six rows, and two queries for one list is how
+              the dropdown and the groups end up disagreeing. */}
+          <NewStickerForm
+            areas={props.groups.map((group) => ({
+              id: group.areaId,
+              name: group.areaName,
+              colorKey: group.colorKey,
+            }))}
+          />
         </div>
         <p className="mt-2 text-[0.9rem] text-ink-muted">Drag one onto a day</p>
       </header>
@@ -72,6 +62,18 @@ export function StickerTray(props: Props) {
       <div className="grid grid-cols-2 items-start gap-x-8 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-1">
         {props.groups.map((group) => (
           <TrayGroup key={group.areaId} label={group.areaName}>
+            {/* An area with nothing in it was a bare label with a gap under it
+                until this step — which read as something failing to load. Now
+                that the `+` works it's a state you can be in on purpose and
+                get out of, so it says so. Sits inside the <ul> as a real <li>,
+                because an empty list with a paragraph next to it is a lie a
+                screen reader repeats. */}
+            {group.stickers.length === 0 && (
+              <li className={`${TRAY_INSET} py-1 text-[0.9rem] text-ink-muted`}>
+                Nothing here yet
+              </li>
+            )}
+
             {group.stickers.map((sticker) => (
               <TrayRow
                 key={sticker.id}

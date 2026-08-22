@@ -9,6 +9,13 @@ export type LibrarySticker = StickerFace & {
 export type LibraryGroup = {
   areaId: string;
   areaName: string;
+  /**
+   * The area's own ramp. Every sticker below already carries a copy of it —
+   * that's how a sticker gets its colour — but the group needs it in its own
+   * right now: the new-sticker form offers the six areas as a dropdown, and an
+   * area with nothing in it yet has no sticker to borrow a colour from.
+   */
+  colorKey: string;
   stickers: LibrarySticker[];
 };
 
@@ -44,6 +51,7 @@ export async function getStickerLibrary(): Promise<LibraryGroup[]> {
   return data.map((area) => ({
     areaId: area.id,
     areaName: area.name,
+    colorKey: area.color_key,
     stickers: area.activities.map((activity) => ({
       id: activity.id,
       name: activity.name,

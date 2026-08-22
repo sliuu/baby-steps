@@ -1,5 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 
+import { firstGrapheme } from "@/lib/graphemes";
+
 /**
  * The slice of the Supabase user we actually render.
  *
@@ -32,14 +34,9 @@ export function toSessionUser(user: User): SessionUser {
     avatarUrl,
     // Intl.Segmenter, not [0] — an emoji or accented character in a display
     // name is several code units, and slicing one would render a broken glyph.
-    // Same reasoning we'll apply to sticker marks in Step 10.
+    // The helper lived here privately until Step 10 needed the same thing for
+    // sticker marks; it's `lib/graphemes.ts` now, and this is its second caller
+    // rather than a second copy.
     initial: firstGrapheme(label).toUpperCase() || "?",
   };
-}
-
-function firstGrapheme(value: string): string {
-  if (!value) return "";
-  const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-  const [first] = segmenter.segment(value);
-  return first?.segment ?? "";
 }
