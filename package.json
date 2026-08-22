@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test",
     "check:dates": "node scripts/check-dates.mts",
     "seed": "npx supabase@2.115.0 db query --linked -f scripts/seed.sql",
     "seed:reset": "npx supabase@2.115.0 db query --linked -f scripts/seed-reset.sql",

@@ -81,6 +81,45 @@ export async function placeActivity(
 }
 
 /**
+ * Take an activity sticker off a day.
+ *
+ * By `(day, activity_id)`, not by the `day_activities` row id. The modal is a
+ * checkbox list built from the *library*, so what it knows is "Gym, on this
+ * Tuesday" — the placement id would mean looking it up first, and the unique
+ * constraint already guarantees the pair matches at most one row.
+ *
+ * No `.eq("user_id", …)`, for the same reason the queries in `lib/queries/`
+ * don't carry one: the DELETE policy on `day_activities` is
+ * `(select auth.uid()) = user_id`, so Postgres has already narrowed this to
+ * rows that are yours. Repeating it here would suggest the safety lives in
+ * this file — and if it did, forgetting it once would be a very bad day.
+ */
+export async function removeActivity(
+  day: DayString,
+  activityId: string,
+): Promise<PlaceResult> {
+  if (!DAY_PATTERN.test(day)) {
+    return { ok: false, message: "That isn't a day." };
+  }
+
+  const { supabase, user } = await signedInClient();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const { error } = await supabase
+    .from("day_activities")
+    .delete()
+    .eq("day", day)
+    .eq("activity_id", activityId);
+
+  if (error) {
+    return { ok: false, message: "That sticker wouldn't come off. Try again." };
+  }
+
+  refresh();
+  return { ok: true };
+}
+
+/**
  * Set the day's mood, replacing whatever was there.
  *
  * A true upsert this time, and the reason "mood replaces mood" needs no branch
@@ -110,6 +149,34 @@ export async function setDayMood(
 
   if (error) {
     return { ok: false, message: "That mood didn't save. Try again." };
+  }
+
+  refresh();
+  return { ok: true };
+}
+
+/**
+ * Take the mood off a day entirely.
+ *
+ * Not in ProjectPlan's description of the step, which asks for a five-way
+ * picker and stops there. Added because "no mood" is a state the calendar can
+ * already be in — most days are — and a picker that can reach every state but
+ * that one means a mis-click is permanent. Deleting the row is what "none"
+ * means here; there is no sixth mood, and adding one would have put a value in
+ * the CHECK constraint that the grid would then have to know not to draw.
+ */
+export async function clearDayMood(day: DayString): Promise<PlaceResult> {
+  if (!DAY_PATTERN.test(day)) {
+    return { ok: false, message: "That isn't a day." };
+  }
+
+  const { supabase, user } = await signedInClient();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const { error } = await supabase.from("day_moods").delete().eq("day", day);
+
+  if (error) {
+    return { ok: false, message: "That mood wouldn't clear. Try again." };
   }
 
   refresh();

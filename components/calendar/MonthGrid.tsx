@@ -11,8 +11,9 @@ import {
   today,
   toMonthString,
   weekdayLabels,
+  type DayString,
 } from "@/lib/dates";
-import type { DayStickers, StickersByDay } from "@/lib/queries/stickers";
+import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
 
 type Props = {
   /** "2026-08", computed on the server so first paint isn't blank. */
@@ -22,9 +23,9 @@ type Props = {
    * September is instant and needs no request — the data for it is already here.
    */
   stickersByDay: StickersByDay;
+  /** Passed straight through to every cell. The grid itself owns no selection. */
+  onOpenDay: (day: DayString) => void;
 };
-
-const NO_STICKERS: DayStickers = { activities: [], mood: null };
 
 /** Today never changes mid-session, so there is nothing to subscribe to. */
 const noSubscription = () => () => {};
@@ -92,6 +93,7 @@ export function MonthGrid(props: Props) {
               // object each time, so an empty day's props stay referentially
               // equal between renders and React can skip the work.
               stickers={props.stickersByDay.get(cell.day) ?? NO_STICKERS}
+              onOpen={props.onOpenDay}
             />
           ))}
         </div>

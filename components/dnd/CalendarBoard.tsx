@@ -16,17 +16,25 @@ import {
 } from "@dnd-kit/core";
 import { useOptimistic, useState, useTransition } from "react";
 
-import { placeActivity, setDayMood } from "@/app/actions/stickers";
+import {
+  clearDayMood,
+  placeActivity,
+  removeActivity,
+  setDayMood,
+  type PlaceResult,
+} from "@/app/actions/stickers";
+import { DayModal } from "@/components/calendar/DayModal";
 import { MonthGrid } from "@/components/calendar/MonthGrid";
 import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { TrayRowFace } from "@/components/tray/TrayGroup";
+import { applyChange, type CalendarChange } from "@/lib/changes";
 import { formatDayLong, toMonthString, type DayString } from "@/lib/dates";
 import { TRAY_INSET } from "@/lib/layout";
 import { MOOD_LABEL } from "@/lib/moods";
 import type { LibraryGroup } from "@/lib/queries/activities";
-import type { StickersByDay } from "@/lib/queries/stickers";
+import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
 import { payloadName, readDragPayload, type DragPayload } from "./payload";
 
 type Props = {
@@ -34,44 +42,18 @@ type Props = {
   stickersByDay: StickersByDay;
 };
 
-/** A sticker landing on a day: everything the optimistic redraw needs. */
-type Drop = { day: DayString; payload: DragPayload };
-
-/**
- * The optimistic redraw, and the only place that duplicates what the server
- * will do. Same rules as the two actions in `app/actions/stickers.ts`: a mood
- * replaces, an activity that's already there changes nothing.
- *
- * A new Map and new objects along the path that changed, never a mutation of
- * what came in. React compares by identity to decide what to re-render, so
- * pushing onto the existing array would draw nothing at all — and it would also
- * corrupt the server's copy, which we still need to fall back to.
- */
-function withDrop(byDay: StickersByDay, drop: Drop): StickersByDay {
-  const current = byDay.get(drop.day) ?? { activities: [], mood: null };
-  const next = new Map(byDay);
-
-  if (drop.payload.kind === "mood") {
-    next.set(drop.day, { ...current, mood: drop.payload.mood });
-    return next;
+/** Which action a change is. The only place the two are matched up. */
+function runChange(change: CalendarChange): Promise<PlaceResult> {
+  switch (change.kind) {
+    case "place":
+      return placeActivity(change.day, change.activityId);
+    case "remove":
+      return removeActivity(change.day, change.activityId);
+    case "mood":
+      return setDayMood(change.day, change.mood);
+    case "clearMood":
+      return clearDayMood(change.day);
   }
-
-  const { activityId, face } = drop.payload;
-  if (current.activities.some((sticker) => sticker.activityId === activityId)) {
-    return byDay;
-  }
-
-  next.set(drop.day, {
-    ...current,
-    activities: [
-      ...current.activities,
-      // There is no day_activities row yet, so there is no real id to use. This
-      // one only has to be unique among its siblings for React's key, and it
-      // only has to survive until the server's answer replaces the whole Map.
-      { id: `pending:${drop.day}:${activityId}`, activityId, ...face },
-    ],
-  });
-  return next;
 }
 
 /**
@@ -110,17 +92,39 @@ const collisionDetection: CollisionDetection = (args) => {
  * it's what happens when the lie expires.
  */
 export function CalendarBoard(props: Props) {
-  const [stickersByDay, applyDrop] = useOptimistic(props.stickersByDay, withDrop);
+  const [stickersByDay, apply] = useOptimistic(
+    props.stickersByDay,
+    applyChange,
+  );
   const [dragging, setDragging] = useState<DragPayload | null>(null);
+  const [openDay, setOpenDay] = useState<DayString | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const sensors = useSensors(
     // Four pixels of travel before a press counts as a drag. Without it every
-    // click on a sticker starts one, and Step 9 wants that click.
+    // click on a sticker starts one, and the day cell wants that click.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor),
   );
+
+  /**
+   * The single way anything changes, whichever door it came through.
+   *
+   * Everything here happens inside one transition, and the order matters.
+   * `apply` is only allowed to be called from inside one — that's how React
+   * knows when the optimistic value has expired. The await keeps the transition
+   * open for the round trip, and Next.js commits the re-rendered page inside it
+   * too, so a sticker is drawn continuously: optimistic first, real second, no
+   * frame in between where it's missing.
+   */
+  function commit(change: CalendarChange) {
+    startTransition(async () => {
+      apply(change);
+      const result = await runChange(change);
+      setError(result.ok ? null : result.message);
+    });
+  }
 
   function handleDragStart(event: DragStartEvent) {
     setDragging(readDragPayload(event.active.data.current));
@@ -134,22 +138,17 @@ export function CalendarBoard(props: Props) {
     if (!payload || typeof event.over?.id !== "string") return;
     const day = event.over.id;
 
-    // Everything below happens inside one transition, and the order matters.
-    // `applyDrop` is only allowed to be called from inside one — that's how
-    // React knows when the optimistic value has expired. The await keeps the
-    // transition open for the round trip, and Next.js commits the re-rendered
-    // page inside it too, so the sticker is drawn continuously: optimistic
-    // first, real second, no frame in between where it's missing.
-    startTransition(async () => {
-      applyDrop({ day, payload });
-
-      const result =
-        payload.kind === "mood"
-          ? await setDayMood(day, payload.mood)
-          : await placeActivity(day, payload.activityId);
-
-      setError(result.ok ? null : result.message);
-    });
+    // A drag says what was dropped where; `commit` decides what that means.
+    commit(
+      payload.kind === "mood"
+        ? { kind: "mood", day, mood: payload.mood }
+        : {
+            kind: "place",
+            day,
+            activityId: payload.activityId,
+            face: payload.face,
+          },
+    );
   }
 
   return (
@@ -180,6 +179,7 @@ export function CalendarBoard(props: Props) {
           <MonthGrid
             initialMonth={toMonthString(new Date())}
             stickersByDay={stickersByDay}
+            onOpenDay={setOpenDay}
           />
         </div>
 
@@ -247,6 +247,20 @@ export function CalendarBoard(props: Props) {
           </div>
         )}
       </DragOverlay>
+
+      {/* The second door. It reads the same optimistic Map the grid draws from
+          and reports back through the same `commit`, so a sticker ticked here
+          and a sticker dropped over there are indistinguishable by the time
+          anything acts on them. */}
+      <DayModal
+        day={openDay}
+        stickers={
+          openDay ? (stickersByDay.get(openDay) ?? NO_STICKERS) : NO_STICKERS
+        }
+        groups={props.groups}
+        onClose={() => setOpenDay(null)}
+        onCommit={commit}
+      />
     </DndContext>
   );
 }

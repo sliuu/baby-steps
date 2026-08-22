@@ -101,9 +101,25 @@ index at the bottom sends you there.
 4. The tray and the grid moved into one component, `CalendarBoard`, because a drag has to be inside something that contains both ends of it.
 5. The whole calendar is in the browser bundle now. `CalendarView` kept the only part that mattered: the fetching.
 
-**Design consequence:** the app can now lie for half a second, on purpose. Drawing the sticker before the server confirms it is what makes a drag feel physical — and the price is that every optimistic redraw is a second copy of a rule the server also has, which has to be kept honest. There are exactly two of those here, both in `CalendarBoard` → `withDrop`.
+**Design consequence:** the app can now lie for half a second, on purpose. Drawing the sticker before the server confirms it is what makes a drag feel physical — and the price is that every optimistic redraw is a second copy of a rule the server also has, which has to be kept honest. There are exactly two of those here, both in `CalendarBoard` → `applyChange`.
 
 **Second one:** feedback is the interaction. A sticker that lifts, a square that lights up under it, an original that stays put so the list doesn't shuffle under your hand — remove any one and the same drag stops feeling like moving an object.
+
+---
+
+## Step 9 · The day modal
+
+1. Click any day and a panel opens on it: every sticker as a checkbox, the mood as a radio.
+2. Ticking a box and dragging a sticker are the *same event* by the time anything acts on them — both build a `CalendarChange` and hand it to one `commit()`.
+3. So the modal has no rules of its own, no optimistic copy, and no idea which server action it just caused.
+4. It also has no state. The boxes are drawn from the same optimistic Map the grid draws from, so a failed write un-ticks its own box with nothing written to do it.
+5. Escape, click-outside, the focus trap, and returning focus to the day you came from are all Radix's, in `components/ui/dialog.tsx`.
+
+**`npm test` exists now** — Node's own runner, no dependency. It covers one function, `applyChange`, because that's the only place the app keeps a second copy of a rule the database also enforces. Tests earn their keep on things that can drift silently, not on things that break loudly.
+
+**Design consequence:** two ways to do one thing is a maintenance bill unless they meet early. They meet at `CalendarChange` — a union naming everything that can happen to a day — so a new interface later (a keyboard shortcut, a bulk edit) writes one of those and inherits the optimistic redraw, the action, and the error line for free. The alternative is the modal reimplementing the drag's rules slightly differently and the two disagreeing under some condition nobody thought to check.
+
+**Second one:** a picker must be able to hold every state its data can be in. The five moods are the interesting values, but "no mood" is the state most days are in — so it's a sixth radio, and choosing it deletes the row. Without it a mis-click is permanent.
 
 ---
 
@@ -134,7 +150,15 @@ Read left to right. Nothing here needs to be memorized.
 | A query returns `[]` instead of an error | RLS worked. The rows exist and were filtered out | `supabase/migrations/*_rls.sql` |
 | A table is wide open despite having policies | `enable row level security` was never run — policies alone are inert | same |
 | A sticker appears on drop, then disappears | the write failed; the optimistic copy expired and fell back to the server's | `CalendarBoard.tsx` → `useOptimistic` |
-| A dropped sticker flickers or doubles | the optimistic redraw and the server disagree about the same rule | `CalendarBoard.tsx` → `withDrop` |
+| A dropped sticker flickers or doubles | the optimistic redraw and the server disagree about the same rule | `CalendarBoard.tsx` → `applyChange` |
+| A Client Component import breaks the build with `next/headers` | `import type` is erased and crosses freely; a **value** import is real code and drags its whole module graph | `lib/stickers.ts` → `NO_STICKERS` |
+| A screen reader reads a cell as "20 Gym Meditation Great" | the container became a control, so its children's names got concatenated into its own | `DayCell.tsx` → `dayLabel()` |
+| A focus ring is shaved off along one edge | the parent clips (`overflow-hidden`); use an inward `outline-offset`, not a ring | same |
+| Contents drift to the middle after a div becomes a `<button>` | a button centres its own contents, and `display: block` doesn't stop it — declare a real `flex`/`grid` layout | same |
+| The same hover tint looks right on a small row and heavy on a big one | tint is perceived by area; a larger surface needs a lower opacity to read the same | `DayCell.tsx` vs `DraggableSticker.tsx` |
+| A hover band is either clamped to its text or indented from its heading | it needs padding *and* a matching negative margin on the scroll container — one decision, two numbers | `DayModal.tsx` → `ROW` / `SCROLL_PAD` |
+| A test suite passes no matter what you break | it was never checked against a broken version; mutate the code on purpose once | `lib/changes.test.ts` |
+| A radio resets to the last value you picked | the "nothing chosen" state has no value to hold, so it isn't really controlled | `DayModal.tsx` → `NO_MOOD` |
 | The wrong square lights up mid-drag | collision was measured from the dragged item's centre, not the cursor | `CalendarBoard.tsx` → `collisionDetection` |
 | A scrolling box scrolls sideways too | `overflow-y: auto` promotes `overflow-x` from `visible` to `auto`; something inside is bleeding past the edge | `CalendarBoard.tsx` → the rail `<aside>` |
 | One thing in the rail sits indented from the rest | it isn't carrying `TRAY_INSET` — everything in there shares one gutter | `lib/layout.ts` |

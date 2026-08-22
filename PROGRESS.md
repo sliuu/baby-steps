@@ -2,7 +2,62 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 8 of 17 done. Step 9 (the day modal) is next.
+**Now:** Step 9 of 17 built and green. Browser confirmation of the two removal paths is the one thing outstanding.
+
+---
+
+## 2026-08-19 · Step 9 · The day modal
+
+**Decisions**
+
+- **`CalendarChange` in `lib/changes.ts` — one union naming everything that can happen to a day.** This is the whole step. ProjectPlan calls it "two doors, one room" and warns the two can drift; a union plus a single `commit()` in `CalendarBoard` makes drifting impossible rather than discouraged. A drag builds one of these, the modal builds one of these, and from there the *same* function does the optimistic redraw, calls the matching action, and reports the failure. The modal contains no rule about what a change means and no knowledge of which action it just caused. Four kinds: `place`, `remove`, `mood`, `clearMood`.
+- **`withDrop` became `applyChange`, moved into `lib/changes.ts`, and `handleDragEnd` shrank to a translation.** The old reducer took a drag payload — a shape that only exists because dnd-kit produced it — so the modal could not have reused it without pretending to be a drag. Now the reducer takes a `CalendarChange` and the drag handler's only job is turning `{active, over}` into one. `runChange` is the other half: a four-case switch that is the single place a change is matched to an action.
+- **No-op branches return `byDay` itself, not a copy.** `remove` on a day that doesn't have the sticker, `clearMood` on a day with no mood. Returning the same Map reference means React sees nothing changed and every `DayCell` skips its render. A fresh `new Map()` with identical contents would redraw all 42.
+- **`DayModal` holds no state at all.** The checkboxes and the radio are controlled by the optimistic Map that `CalendarBoard` already owns. Local state would be a second copy of the truth that has to be synced back, and it would visibly disagree the moment a write failed and the optimistic value expired. Reading straight from the prop means a rolled-back sticker un-ticks its own box with no code to do it — which is the argument for controlled inputs, stated as a consequence instead of a rule.
+- **`day: DayString | null` is both "which day" and "open".** One value, so the two can't disagree — no `open` boolean to leave true while `day` is null.
+- **A sixth radio, "No mood", which is not a sixth mood.** ProjectPlan asks for a five-way picker and stops there. But "no mood" is the state most days are in, and a picker that can reach every state except that one makes a mis-click permanent. `value={stickers.mood ?? NO_MOOD}` maps "no row" onto it; choosing it deletes the row. This is also what makes the radio genuinely controlled — an uncontrolled one would reset to whatever was last chosen.
+- **`removeActivity` deletes by `(day, activity_id)`, not by the `day_activities` row id.** The modal knows which *activity* a checkbox stands for; it has no placement id to hand, and `unique (user_id, day, activity_id)` guarantees at most one row to match anyway. Step 7 threaded `ActivitySticker.id` through for this and it turned out not to be the handle the modal wanted. Neither delete carries `.eq("user_id", …)`, for the Step 4 reason: the DELETE policies are `(select auth.uid()) = user_id`, so Postgres has already narrowed to your rows.
+- **`DayCell` became a real `<button>`.** It has to be tab-reachable, fire on Enter and Space, and announce itself as something that does something — all free and correct on a button, none of it free on a div with an `onClick`. Nothing inside it is interactive, so there are no nested controls: the stickers are drawings, and editing them is what the modal is for.
+- **One `aria-label` for the whole cell, replacing the contents.** As a container, letting the numeral, each sticker, and the mood carry their own names was right. As a button those get concatenated into its name and "20 Gym Meditation Great" is not a sentence. `aria-label` takes precedence over contents, so `dayLabel()` writes the sentence instead: *"Thursday, 20 August 2026. Gym, Meditation. feeling great"*, or `". empty"` when there's nothing on it.
+- **The focus ring is an outline pulled inward** (`focus-visible:-outline-offset-2`), not a ring. The grid clips its children — `overflow-hidden` is what makes the 1px hairlines — so a ring drawn outside the cell's box gets shaved off along every shared edge.
+- **The cell carries `flex flex-col justify-start`, which is a correction rather than a layout.** Turning the div into a button vertically centred the date and stickers: centring its own contents is built into how a browser lays a button out, and `display: block` does not turn it off. `min-h-32` makes every cell taller than its contents, so it showed on every day at once. Declaring a real layout replaces the built-in one; `items-stretch` keeps the date row full width so the mood stays pinned right. General shape: **when a container becomes a control, check its layout, not just its behaviour** — the element's own default styling changed underneath.
+- **The dialog's focus trap, Escape, click-outside, focus return, `aria-modal`, and page inertness are all Radix's**, in `components/ui/dialog.tsx`. Read it once: it is a lot of behaviour, genuinely hard to get right by hand, and it's our file now. `DialogContent` defaults to `sm:max-w-sm`, which is sized for a confirm prompt; the modal overrides to `sm:max-w-md` and scrolls its body vertically at `max-h-[60vh]`. Names truncate rather than widening the panel — same rule as the rail.
+- **`TrayRowFace` draws the sticker in the modal too.** Third place it appears now (tray row, drag overlay, checkbox row) and still one component, so they cannot look different.
+- **The first real test suite, and it covers exactly one function.** `node --test` with `node:test` and `node:assert` — both built in, so no dependency, no config, no transform. Node strips the types itself, which is why `changes.test.ts` imports `./changes.ts` with the extension and why nothing it touches may use a `@/` path: the alias is a bundler's idea and there is no bundler in that process. `applyChange` earned it by being the one piece of Step 9 holding a *second copy* of a rule the database also enforces — a mood replaces, a duplicate activity is a no-op — and a second copy of a rule is the thing that silently drifts. Fourteen cases, weighted toward the no-op branches and toward not mutating the input, since a mutation there corrupts the value `useOptimistic` rolls back *to*. Everything around it is either a library's (Radix's focus trap, React's transition) or a call to Postgres, which a unit test can only fake and therefore can only lie about. Step 5 said a real runner arrives when there's something worth mocking; this arrived for the opposite reason — a pure function worth checking with nothing to mock at all.
+- **The tests were checked by breaking the code on purpose.** Three mutations — a duplicate `place` no longer short-circuiting, `place` pushing onto the incoming array, `clearMood` returning a fresh Map from its no-op branch — and each one turned the suite red. A fourth attempt failed to fail, which turned out to be a bad mutant (`splice(0, 0)` removes nothing) rather than a gap. Worth doing once per suite: a test that cannot fail is decoration, and you can't tell by reading it.
+- **Two hover values, not one.** The day cell washes to `bg-ink/2`; a tray row and a modal row use `bg-ink/5`. Same trick, deliberately different numbers — 5% reads as a light touch across a 28px band and as a grey square across a 150px cell. Tint is perceived by area, so the larger the surface the lower the number has to go to mean the same thing.
+- **Modal rows are hover bands, matching the tray, and the negative margin is the interesting part.** A band has to extend past its text or the highlight looks clamped to the checkbox, but padding the row alone pushes every name right of the heading above it. So the row reaches back out (`-mx-2`) by exactly what the scrolling container pads in (`px-2`): text lines up with the heading and the dialog title, the band stops at the container's content edge rather than past it, and the two numbers are one decision — which is why they're two named constants in the file rather than four literals. Same constraint as the rail, for the same reason: `overflow-y: auto` promotes `overflow-x` to `auto` alongside it, so anything genuinely wider is a horizontal scrollbar. The list gaps dropped to `gap-0.5` to absorb the rows' new vertical padding, exactly as the tray's did in Step 8.
+- **shadcn's `add` was run with `yes n |` piped in.** `--yes` does not cover the overwrite prompt, and the first attempt stalled asking to replace `button.tsx` — which is rethemed and carries our custom `icon-sm` size. Verified untouched afterwards. `checkbox.tsx` and `radio-group.tsx` carry `dark:` classes, which is fine: they resolve through `@custom-variant dark` in `globals.css`, and the rule against `dark:` is about *our* code.
+
+**Changed**
+
+- `lib/changes.ts` — new; the `CalendarChange` union and `applyChange`
+- `lib/changes.test.ts` — new; 14 cases, the project's first tests
+- `components/calendar/DayModal.tsx` — new
+- `components/ui/{dialog,checkbox,radio-group}.tsx` — new (shadcn, unmodified)
+- `app/actions/stickers.ts` — `removeActivity`, `clearDayMood`
+- `components/dnd/CalendarBoard.tsx` — `withDrop` → `applyChange` and out to `lib/`, new `runChange` and `commit`, owns `openDay`, renders the modal
+- `components/calendar/DayCell.tsx` — a button now, with `dayLabel()`
+- `package.json` — `npm test`
+- `components/calendar/MonthGrid.tsx` — threads `onOpenDay`, uses the shared `NO_STICKERS`
+- `lib/stickers.ts` — gained `ActivitySticker`, `DayStickers`, `StickersByDay`, `NO_STICKERS`
+- `lib/queries/stickers.ts` — trimmed to the one query
+- `learning/README.md` — Step 9 card, four new symptom rows
+
+**Also**
+
+- **The build broke on a server module reaching the client bundle, and the cause is worth keeping.** `NO_STICKERS` started life in `lib/queries/stickers.ts` beside the query that produces it. Importing it from `CalendarBoard` pulled `lib/supabase/server.ts` — and through it `next/headers` — into a Client Component, and the build failed. The distinction: `import type` is erased at compile time and crosses the boundary freely, which is why the *types* had lived there harmlessly for three steps. A **value** import is real code, and it drags its entire module graph along. Fixed by moving the shapes and the empty value to `lib/stickers.ts` and leaving `lib/queries/` with nothing exported but the async function. Good rule: a module that touches `next/headers`, even two imports down, should export types and nothing else.
+
+**State:** `npm test` 14/14, `tsc --noEmit`, `eslint .`, `npm run build` all clean. Both new delete paths verified against the hosted database as the `authenticated` role carrying the real uid, inside a rolled-back transaction: one `day_activities` row and one `day_moods` row deleted, so neither DELETE policy blocks the modal. Not yet exercised in the browser. Uncommitted.
+
+**Open**
+
+- **The modal is unconfirmed in the browser.** Needs: open a day, tick and untick an activity, choose a mood, choose "No mood", close with Escape and by clicking outside. The two untick paths are the ones that touch new SQL — confirm the rows are actually gone rather than just missing from the screen.
+- **Still unconfirmed from Step 8:** the duplicate-drop no-op and the failure line. Ticking a box for a sticker already on the day now exercises the same `ignoreDuplicates` path from a second direction.
+- **`scripts/seed.sql` is still in place**, and the reason to keep it just weakened: `seed:reset` was the only way back to an empty calendar, and the modal now removes stickers one at a time. Decide with the Step 6 question about whether the thirteen starter activities become trigger-seeded app data.
+- **Keyboard drag is still coarse** — 25px per arrow press, ~6 to cross a cell. The modal is now the precise-editing door ProjectPlan promised, so a cell-to-cell coordinate getter may not be worth writing at all. Decide rather than leave open.
+
+**Next:** Step 10 — creating your own stickers.
 
 ---
 
