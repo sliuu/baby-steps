@@ -151,6 +151,22 @@ index at the bottom sends you there.
 
 ---
 
+## Step 12 · Counting
+
+1. The Trends tab is real: six life areas, their marks, their share, and a range dropdown above them.
+2. Switching range makes **no request**. Every placement is already in the browser — the calendar fetched all of them back in Step 6 — so a range change is one pass over memory.
+3. A range is a *rule*, not a pair of dates. "This month" stores nothing; `resolveBounds` turns the rule plus today into two edges on every render, so a tab left open overnight isn't still reporting on yesterday.
+4. Those edges are strings, and comparing them is just `<=`. `"2026-08-09" < "2026-08-10"` for the same reason `"a" < "b"` — there is no `Date` object and no timezone anywhere in `lib/analytics.ts`.
+5. The percentages carry **one decimal place**, and each one is rounded on its own — so the column sometimes reads 100.1, and the total row prints that rather than a flat "100%".
+
+**Design consequence:** "where do you aggregate" has a real answer, and it's not always the database. Postgres could `group by` and return six rows, and that would be one request every time you touch the dropdown, re-deriving numbers from rows the browser is *already holding* for the calendar. Counting here costs one pass over an array in memory and makes the range control feel like it has no latency, because it doesn't. The tradeoff is honest and has a stated expiry: this works because the calendar already ships every placement, so the day that stops being true — a few thousand rows, per the note on `getStickersByDay` — both move to the server together. Aggregating close to the data is the right instinct; it's just not free when the data is already here.
+
+**Second one:** `useMemo` here is not about speed. Six areas and a few hundred marks is nothing to count — you could redo it every render and never see it. It's about **identity**: the tally object becomes props for the table now and for three charts in Steps 13 and 14, and a fresh object every render means every one of them re-renders every time anything on the page changes. Memoizing is what makes the things underneath it *skippable*. That's the usual reason to reach for it, and "it was slow" usually isn't.
+
+**Third one, learned the hard way:** the first version apportioned. Floor every row, hand the leftover points to whichever rows lost most in the flooring — largest-remainder, the method that turns votes into seats — and the column sums to exactly 100 by construction. Textbook, and wrong here. Real data produced two areas at 11 marks out of 63, and apportionment has to give a single leftover point to *one* of two equal claims, so they came out 18% and 17%. The table sorts by count, so those two rows landed adjacent: same number of marks, different share, stacked. **A column that sums to 99 makes you doubt the last digit; two equal counts with unequal shares makes you doubt the whole table.** Equal in, equal out is the stronger promise, and only rounding each row independently can keep it. The decimal place is what makes that cheap — ties land on the same number, and the drift shrinks from a whole point to a tenth, which reads as rounding rather than error. The general shape: a rule that's provably correct in aggregate can still be locally absurd, and a table is read locally, one row against its neighbour.
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -218,6 +234,20 @@ Read left to right. Nothing here needs to be memorized.
 | A clickable heading vanishes from a screen reader's heading list | the `<button>` must go *inside* the `<h3>`, not replace it | `TrayGroup.tsx` |
 | A feature made of colour doesn't exist for a screen reader | nothing said it out loud; put it in the accessible name | `DayCell.tsx` → `dayLabel()` |
 | A highlight lights the wrong days, or none | a placement's `id` is not the activity's `id` — match on `activityId` | `lib/highlight.ts` → `dayMatches` |
+| Two rows show the same count but different percentages | the shares are apportioned, so a leftover point went to one of them; round each row on its own instead | `lib/analytics.ts` → `percent` |
+| A percentage column adds up to 100.1 | independent rounding, on purpose — print the real sum in the total row rather than a flat "100%" | `AreaTable.tsx` → `columnTotal` |
+| A decimal column looks ragged even in `tabular` | whole numbers are dropping their decimal; `toFixed(1)` everything so the points line up | `AreaTable.tsx` |
+| Numbers twitch sideways as they change | proportional figures re-space the column when a 1 becomes a 7 — use `tabular` | `AreaTable.tsx` |
+| A screen reader reads a table as a wall of digits | it needs real `<th scope>` and a `<caption>`, not a grid of divs | same |
+| Two dates compare wrong when one has a single-digit day | zero padding is the whole reason `"2026-08-09" < "2026-08-10"` works | `lib/analytics.ts` → `inBounds` |
+| A formatted date mismatches on hydration | `toLocaleDateString` uses the *runtime's* locale, and the server's isn't the browser's | `lib/dates.ts` → `formatDayShort` |
+| A range picked end-first returns nothing | the edges arrive in click order; put them in date order once, centrally | `lib/analytics.ts` → `normalizeBounds` |
+| Re-running `shadcn add` silently reverts a tweak | the CLI overwrites the files it owns — diff after every add | `components/ui/button.tsx` |
+| The page looks inset from itself | the page gutter got applied twice, once by `<main>` and once below it | `TrendsBoard.tsx` |
+| A chart changes shape when the data barely moved | something sorted the shared array; a ranking belongs in the view, not in the data | `AreaTable.tsx` → `ranked` |
+| Sorting one component's list reorders another's | `sort` mutates in place — copy before sorting anything memoized upstream | same |
+| A table of numbers has no period attached to it | its `<caption>` is the accessible name; hide it visually, don't delete it | `AreaTable.tsx` |
+| A control announces the change but not the result | the value updates silently somewhere else — that element needs `aria-live` | `TrendsBoard.tsx` |
 
 ---
 

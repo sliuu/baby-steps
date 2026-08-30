@@ -43,15 +43,40 @@ export function formatMonthTitle(month: Date): string {
 }
 
 /**
+ * "2026-08-12" back into a `Date` at local midnight.
+ *
+ * `parse` with an explicit format, not `new Date("2026-08-12")`. The string form
+ * is parsed as UTC midnight, which is the previous evening in California — the
+ * same trap `toDayString` avoids at the other end.
+ *
+ * Exported because the range picker needs it: react-day-picker's API is `Date`,
+ * while every day in this app is a string. That conversion happens at that one
+ * boundary and turns straight back, so this is the inverse of `toDayString` and
+ * the pair has to stay honest.
+ */
+export function fromDayString(day: DayString): Date {
+  return parse(day, "yyyy-MM-dd", new Date());
+}
+
+/**
  * "Wednesday, 12 August 2026" — for screen reader announcements during a drag,
  * where "2026-08-12" would be read out as three numbers.
- *
- * `parse` with an explicit format, not `new Date("2026-08-12")`. The string
- * form is parsed as UTC midnight, which is the previous evening in California —
- * the same trap `toDayString` avoids at the other end.
  */
 export function formatDayLong(day: DayString): string {
-  return format(parse(day, "yyyy-MM-dd", new Date()), "EEEE, d MMMM yyyy");
+  return format(fromDayString(day), "EEEE, d MMMM yyyy");
+}
+
+/**
+ * "12 Aug 2026" — short enough to sit on a button.
+ *
+ * `format` rather than `toLocaleDateString`. The browser's locale and the
+ * server's are not the same thing, so a locale-formatted date rendered during
+ * hydration is a mismatch waiting for the first visitor outside en-US — the same
+ * class of bug as reading the clock during render, and harder to notice because
+ * it depends on who's looking.
+ */
+export function formatDayShort(day: DayString): string {
+  return format(fromDayString(day), "d MMM yyyy");
 }
 
 /** "2026-08" — stable, sortable, and safe in a URL. */
