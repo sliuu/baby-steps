@@ -167,6 +167,22 @@ index at the bottom sends you there.
 
 ---
 
+## Step 13 · The Life Star
+
+1. The shape of a range, drawn: one spoke per life area, hairline hexagons at 25/50/75/100%, a neutral polygon with a coloured dot at each corner and "Area · count" outside it.
+2. Hand-written SVG, no chart library — the whole thing is one function. `x = cx + r·cos(θ)`, `y = cy + r·sin(θ)`: an angle and a distance in, a point on the canvas out.
+3. Distance from the centre is a share of the **busiest area**, not of the total — so the fullest spoke always touches the outer ring and the shape reads as balance rather than volume.
+4. The spoke angle is `(2π / n) · i` and nothing anywhere writes `60`. Hand it seven areas and it draws seven.
+5. `viewBox` is an invented coordinate system: the numbers are 520 wide because *we* said so, and the browser scales the drawing to whatever the card gives it. No code asks how wide anything is in pixels.
+
+**Design consequence:** normalizing against the maximum is a decision about what the chart is *for*, and it has a cost worth saying out loud. Against the total, six areas at 20 marks each would draw a small hexagon at 16.7% and the shape would tell you nothing the number 20 didn't. Against the maximum, the same six draw a full regular hexagon — "evenly spread" — and a lopsided month draws a spike, whatever the totals were. The price is that the chart genuinely cannot tell you how big a month was: identical proportions at 60 marks and 600 draw the same polygon. That's why the counts are in the spoke labels. **The shape carries the balance and the labels carry the magnitude, and neither is asked to do the other's job** — which is the general answer to "this chart is ambiguous": add the other channel rather than compromising the first one.
+
+**Second one:** the star draws `tally.areas` in the library's order and must never sort. `AreaTable` ranks biggest-first, from the same object, which is why Step 12 put the sort in the table and not in `tally`. A polygon whose vertices reorder by count changes shape for a reason that has nothing to do with the data — Spirituality moves from the top spoke to the left one and the outline is different because the *ranking* moved, not the counts. Then two ranges can't be compared, which is the one thing this chart is good at. **A ranking is a view's question; a fixed frame is the chart's requirement; both read one tally.**
+
+**Third one:** floating point stops being trivia the moment you draw with it. `Math.cos(-Math.PI / 2)` is `6.123233995736766e-17`, not `0`, because π/2 isn't exactly representable in binary — so the top spoke, which points straight up, has a *positive* cosine. Anchor the labels with a bare `cos > 0` and the top one silently hangs a full name's width off to the right of a spoke pointing at neither side. It looks like a layout bug and it's an arithmetic one. One `EPSILON` constant fixes it, and the tests here can't use `assert.equal` on any coordinate for the same reason.
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -248,6 +264,16 @@ Read left to right. Nothing here needs to be memorized.
 | Sorting one component's list reorders another's | `sort` mutates in place — copy before sorting anything memoized upstream | same |
 | A table of numbers has no period attached to it | its `<caption>` is the accessible name; hide it visually, don't delete it | `AreaTable.tsx` |
 | A control announces the change but not the result | the value updates silently somewhere else — that element needs `aria-live` | `TrendsBoard.tsx` |
+| A radar chart comes out rotated a quarter turn | angle 0 points *east*, not north — subtract π/2 to start at the top | `lib/lifestar.ts` → `spokeAngle` |
+| A chart is mirrored vertically, or sweeps anticlockwise | SVG's y grows **downward**, so positive angles go clockwise — the opposite of the maths convention | same |
+| A label at the top of a chart hangs off to one side | `cos(-π/2)` is `6.12e-17`, not `0`, so `cos > 0` calls straight-up "the right-hand side" | same → `labelAnchor` |
+| Left-hand chart labels run back across the chart | they need `text-anchor: end`; the anchor has to be computed from the angle, not written per item | same |
+| An SVG shape ignores `text-*` and `bg-*` colours | SVG paints with `fill` and `stroke`; `color` and `background-color` do nothing to a `<circle>` | `lib/palette.ts` → `fill` |
+| Hairlines in a chart look furred or uneven | the stroke scales with the `viewBox` and lands on half-pixels — pin it with `vector-effect="non-scaling-stroke"` | `LifeStar.tsx` |
+| Chart labels are sliced off at the edge | the root `<svg>` clips at the `viewBox`, and SVG can't measure or reflow text — budget the room in advance | `lib/lifestar.ts` → `VIEW` |
+| A polygon vanishes entirely instead of collapsing | one `NaN` in a `points` attribute drops the whole shape silently; `0/0` is the usual source | same → `normalize` |
+| A chart's tests pass on coordinates that can't be exactly equal | trigonometry returns the nearest double — compare within a tolerance, don't round to suit the test | `lib/lifestar.test.ts` |
+| A chart and a table of the same data are read out twice | shape doesn't survive being spoken; hide the chart and let the table be the text version | `LifeStar.tsx` → `aria-hidden` |
 
 ---
 

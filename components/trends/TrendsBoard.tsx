@@ -3,6 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { AreaTable } from "./AreaTable";
+import { LifeStar } from "./LifeStar";
 import { RangePicker } from "./RangePicker";
 import {
   RANGE_LABEL,
@@ -122,12 +123,23 @@ export function TrendsBoard(props: Props) {
       </header>
 
       {/* Wide enough to read, not so wide the eye loses the row it's on. Three
-          columns of short values don't need the whole page. */}
-      <section className="max-w-2xl">
+          columns of short values don't need the whole page.
+
+          Step 15 turns this into two columns — the chart card on the left, the
+          readout on the page ground to its right. Stacked for now, because the
+          column split is that step's subject and guessing at it here would mean
+          building the layout twice. */}
+      <section className="flex max-w-2xl flex-col gap-8">
         {totals.total === 0 ? (
           <Empty range={range} />
         ) : (
-          <AreaTable tally={totals} caption={tableCaption(range, bounds)} />
+          <>
+            {/* Same `totals` object the table reads. Three charts will share it
+                by Step 14, which is what the `useMemo` above is protecting —
+                one tally, several lenses, no recomputation per lens. */}
+            <LifeStar tally={totals} />
+            <AreaTable tally={totals} caption={tableCaption(range, bounds)} />
+          </>
         )}
 
         {/* Zero today, and it stays invisible while it is. It exists so that
