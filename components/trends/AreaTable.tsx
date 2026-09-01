@@ -101,9 +101,14 @@ export function AreaTable(props: Props) {
                 reader say the name again beside each number in it. */}
             <th scope="row" className="py-2.5 font-normal">
               <span className="flex items-center gap-2.5">
+                {/* Bare. This dot briefly wore a hairline ring, because at
+                    28% a 10px tint on cream was 1.19:1 and genuinely
+                    invisible. Deepening the ramp to 48% fixed the cause
+                    instead, and once the colour carries itself the ring is a
+                    second outline competing with the row's own rule. */}
                 <span
                   aria-hidden="true"
-                  className={`size-2.5 shrink-0 rounded-full ${ramp(area.colorKey).bg}`}
+                  className={`size-2.5 shrink-0 rounded-full ${ramp(area.colorKey).soft}`}
                 />
                 {area.areaName}
               </span>

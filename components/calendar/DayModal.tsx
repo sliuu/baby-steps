@@ -144,7 +144,7 @@ export function DayModal(props: Props) {
                               identical in all three places it appears. */}
                           <label
                             htmlFor={inputId}
-                            className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5"
+                            className="flex min-w-0 flex-1 items-center gap-2.5"
                           >
                             <TrayRowFace
                               visual={<StickerMark sticker={sticker} />}
@@ -179,7 +179,7 @@ export function DayModal(props: Props) {
                       <RadioGroupItem value={mood} id={`day-mood-${mood}`} />
                       <label
                         htmlFor={`day-mood-${mood}`}
-                        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5"
+                        className="flex min-w-0 flex-1 items-center gap-2.5"
                       >
                         <TrayRowFace
                           visual={<MoodMark mood={mood} />}
@@ -197,7 +197,7 @@ export function DayModal(props: Props) {
                     <RadioGroupItem value={NO_MOOD} id="day-mood-none" />
                     <label
                       htmlFor="day-mood-none"
-                      className="min-w-0 flex-1 cursor-pointer text-[0.9rem] text-ink-muted"
+                      className="min-w-0 flex-1 text-[0.9rem] text-ink-muted"
                     >
                       No mood
                     </label>

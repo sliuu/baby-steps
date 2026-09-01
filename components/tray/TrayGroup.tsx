@@ -43,7 +43,7 @@ export function TrayGroup(props: Props) {
             type="button"
             onClick={props.onSelect}
             aria-pressed={props.selected ?? false}
-            className={`${TRAY_INSET} flex w-full cursor-pointer rounded-md py-0.5 text-left transition-colors ${
+            className={`${TRAY_INSET} flex w-full rounded-md py-0.5 text-left transition-colors ${
               props.selected ? (props.wash ?? "") : "hover:bg-ink/5"
             }`}
           >

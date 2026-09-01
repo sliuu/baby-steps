@@ -22,7 +22,7 @@ export function UserMenu(props: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label={`Account menu for ${user.name}`}
       >
         <Avatar className="size-9">
@@ -53,7 +53,7 @@ export function UserMenu(props: Props) {
             embeds an image pointed here sign you out without asking. */}
         <form action={signOut}>
           <DropdownMenuItem asChild>
-            <button type="submit" className="w-full cursor-pointer">
+            <button type="submit" className="w-full">
               Sign out
             </button>
           </DropdownMenuItem>

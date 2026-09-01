@@ -44,7 +44,7 @@ function MonthArrow(props: ArrowProps) {
       type="button"
       onClick={props.onClick}
       aria-label={`${props.direction === "previous" ? "Previous" : "Next"} month`}
-      className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors hover:bg-secondary hover:text-ink"
+      className="grid size-9 shrink-0 place-items-center rounded-full text-ink-muted transition-colors hover:bg-secondary hover:text-ink"
     >
       <Icon className="size-5" />
     </button>

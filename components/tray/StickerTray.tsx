@@ -85,7 +85,7 @@ export function StickerTray(props: Props) {
               <button
                 type="button"
                 onClick={props.onClear}
-                className="cursor-pointer underline underline-offset-2 hover:text-ink"
+                className="underline underline-offset-2 hover:text-ink"
               >
                 clear
               </button>

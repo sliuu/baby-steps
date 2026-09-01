@@ -28,3 +28,28 @@ export const PAGE_WIDTH = "mx-auto w-full max-w-7xl px-8";
  * is exactly why it's a constant.
  */
 export const TRAY_INSET = "px-2";
+
+/**
+ * A segment of a pill: the nav's tabs, and the Trends chart switcher.
+ *
+ * Two controls that are not the same component and must look like the same
+ * thing. They can't share a component — the nav's segments are `<a href>`s so
+ * that a tab is a link you can middle-click, and the switcher's are radio
+ * buttons because picking a lens is not navigation and nothing in the URL
+ * changes. Different elements, different semantics, one appearance. So what
+ * gets shared is the appearance, and only that.
+ *
+ * Written as a function rather than three exported strings because the on/off
+ * pair is the actual unit: an `active` segment that forgot to stop being muted
+ * is the bug this prevents, and it's easy to write twice.
+ *
+ * `outline-none` with an explicit ring, because the default focus outline
+ * traces the pill's rounded box tightly enough to read as a border, and a
+ * segmented control with a border on one segment looks like a state rather than
+ * like focus.
+ */
+export function segment(active: boolean): string {
+  return `rounded-full px-5 py-1.5 text-[0.95rem] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 ${
+    active ? "bg-secondary text-ink" : "text-ink-muted hover:text-ink"
+  }`;
+}

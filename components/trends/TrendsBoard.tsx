@@ -3,6 +3,9 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { AreaTable } from "./AreaTable";
+import { Bars } from "./Bars";
+import { ChartSwitcher } from "./ChartSwitcher";
+import { Donut } from "./Donut";
 import { LifeStar } from "./LifeStar";
 import { RangePicker } from "./RangePicker";
 import {
@@ -12,6 +15,7 @@ import {
   type Bounds,
   type Range,
 } from "@/lib/analytics";
+import type { ChartKind } from "@/lib/charts";
 import { formatDayShort, today, type DayString } from "@/lib/dates";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
@@ -65,6 +69,17 @@ export function TrendsBoard(props: Props) {
    * it should die on refresh.
    */
   const [range, setRange] = useState<Range>({ kind: "month" });
+
+  /**
+   * Which lens you're looking through. UI state for the same reason `range` is,
+   * only more so — the range at least changes which numbers exist, and this
+   * changes nothing but how they're drawn.
+   *
+   * Held here rather than inside a `Chart` component that switches on itself,
+   * because the switcher and the chart are siblings on the page: the pill sits
+   * above the card, not inside it. This is the lowest node that owns both.
+   */
+  const [chart, setChart] = useState<ChartKind>("star");
 
   const bounds = useMemo(
     () => resolveBounds(range, todayString),
@@ -134,10 +149,28 @@ export function TrendsBoard(props: Props) {
           <Empty range={range} />
         ) : (
           <>
-            {/* Same `totals` object the table reads. Three charts will share it
-                by Step 14, which is what the `useMemo` above is protecting —
-                one tally, several lenses, no recomputation per lens. */}
-            <LifeStar tally={totals} />
+            {/* The switcher sits above the card it changes, not inside it —
+                a control that redraws a panel belongs next to the panel, and
+                putting it in the card's own padding would make it look like
+                part of the chart. */}
+            <div className="flex flex-col gap-4">
+              <ChartSwitcher value={chart} onChange={setChart} />
+
+              {/* One tally, three lenses, and this is the line the Step 12/13
+                  seam was built for: every chart below reads the same memoized
+                  `totals` and none of them touches data code. Switching lens
+                  re-renders one component and recomputes nothing.
+
+                  Mounted one at a time rather than all three with two hidden.
+                  Hidden charts would still be in the accessibility tree and in
+                  the DOM, and Step 16 is going to animate this — a thing that
+                  enters is far easier to animate than a thing that was always
+                  there wearing `display: none`. */}
+              {chart === "star" && <LifeStar tally={totals} />}
+              {chart === "donut" && <Donut tally={totals} />}
+              {chart === "bars" && <Bars tally={totals} />}
+            </div>
+
             <AreaTable tally={totals} caption={tableCaption(range, bounds)} />
           </>
         )}

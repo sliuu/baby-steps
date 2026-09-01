@@ -2,7 +2,7 @@
 
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
-import { PAGE_WIDTH } from "@/lib/layout";
+import { PAGE_WIDTH, segment } from "@/lib/layout";
 import { PAGES, type Page } from "@/lib/nav";
 import type { SessionUser } from "@/lib/user";
 
@@ -39,11 +39,9 @@ export function TopNav(props: Props) {
                     event.preventDefault();
                     props.onPageChange(id);
                   }}
-                  className={`rounded-full px-5 py-1.5 text-[0.95rem] transition-colors ${
-                    active
-                      ? "bg-secondary text-ink"
-                      : "text-ink-muted hover:text-ink"
-                  }`}
+                  // Shared with the Trends chart switcher, which is a radio
+                  // group rather than links. See `segment`.
+                  className={segment(active)}
                 >
                   {label}
                 </a>

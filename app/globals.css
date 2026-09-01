@@ -117,16 +117,23 @@
   --ramp-green: #4c8b4a;
   --ramp-purple: #9457c0;
 
-  /* Each hue at ~28% over the surface cream. A sticker is a tint, not a block
+  /* Each hue at 48% over the surface cream. A sticker is a tint, not a block
      of colour — six saturated circles on one day shout over the dates they're
      meant to annotate. The mark on top is --ink, so legibility never depends on
-     the tint being light enough for white. */
-  --ramp-red-soft: #edcac3;
-  --ramp-blue-soft: #c4d7e5;
-  --ramp-orange-soft: #f3d6bf;
-  --ramp-yellow-soft: #f4e8c3;
-  --ramp-green-soft: #cbdcc7;
-  --ramp-purple-soft: #e0cee8;
+     the tint being light enough for white.
+
+     Was 28%, raised in Step 14 when Trends started wearing these too. A tint
+     that carries a 26px sticker was too faint to carry a 10px swatch: at 28%
+     the palest sat at 1.19:1 against this surface. 48% is one number rather
+     than six hand-picked values, which is the point of writing them as a mix —
+     the whole ramp moves together, and a seventh hue is derived rather than
+     guessed. Ink still clears 7:1 on all six here. */
+  --ramp-red-soft: #e2a69e;
+  --ramp-blue-soft: #9bbdd8;
+  --ramp-orange-soft: #ecbc96;
+  --ramp-yellow-soft: #eeda9e;
+  --ramp-green-soft: #a8c6a4;
+  --ramp-purple-soft: #cbaddd;
 
   /* The default six, by name. Aliases — the ramp above is the real value. */
   --area-spirituality: var(--ramp-red);
@@ -192,14 +199,22 @@
   --ramp-purple: #a971d2;
 
   /* "Pastel" inverts in the dark theme: a tint toward the surface is a *darker*
-     muted hue, not a lighter one. Same 28% mix, opposite direction, so --ink
-     still reads on top. */
-  --ramp-red-soft: #58322c;
-  --ramp-blue-soft: #2e4251;
-  --ramp-orange-soft: #5d4027;
-  --ramp-yellow-soft: #5d512c;
-  --ramp-green-soft: #36472f;
-  --ramp-purple-soft: #4b3852;
+     muted hue, not a lighter one. Same mix, opposite direction, so --ink still
+     reads on top.
+
+     42%, not the 48% the light theme uses, and the gap is the one place these
+     two ramps can't move together. Mixing further from the surface means
+     *toward the full hue*, which is brighter here and darker there — so the
+     same step that adds contrast under --ink in the light theme takes it away
+     in this one. --ramp-yellow is the binding constraint: at 48% the mark on a
+     Creativity & Play sticker falls to 4.03:1, under the 4.5 it has always
+     held. 42% is the furthest this side can travel and still clear it. */
+  --ramp-red-soft: #6f3a33;
+  --ramp-blue-soft: #32516a;
+  --ramp-orange-soft: #784e2d;
+  --ramp-yellow-soft: #786a35;
+  --ramp-green-soft: #3d5939;
+  --ramp-purple-soft: #5b416b;
 
   --background: var(--bg);
   --foreground: var(--ink);
@@ -254,6 +269,45 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  /* The hand cursor, which Tailwind v3 used to add for you and v4 does not.
+     Preflight now leaves `button` at the browser default, which is an arrow —
+     defensible, since that *is* the spec's default, and disorienting on a page
+     where every other affordance says "click me".
+
+     One rule rather than a `cursor-pointer` on each control. Twelve call sites
+     across nine components had already grown that class one at a time, which is
+     what a missing base rule looks like from the inside: the fix keeps working,
+     so the cause never gets found, and the next control starts the count at
+     thirteen. All twelve came out with this rule going in.
+
+     The list is what Radix actually renders, not a guess. A radio item and a
+     dropdown trigger are real `<button>`s, so they come free; a Select option
+     is a `<div role="option">` and a menu item is `<div role="menuitem">`, so
+     those are named. `label[for]` is here because a label bound to a control is
+     a click target too — the mood picker's rows are the case — and a bare
+     `<label>` wrapping nothing is not.
+
+     Disabled controls are excluded three ways because the three libraries
+     spell it three ways: a native `disabled`, Radix's `data-disabled`, and
+     `aria-disabled` on things that can't take the attribute. A hand cursor
+     over a control that will not respond is a promise the page can't keep. */
+  button,
+  summary,
+  label[for],
+  [role="button"],
+  [role="option"],
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="menuitemcheckbox"] {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [data-disabled],
+  [aria-disabled="true"] {
+    cursor: default;
   }
 
   html {

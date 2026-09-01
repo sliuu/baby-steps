@@ -183,6 +183,37 @@ index at the bottom sends you there.
 
 ---
 
+## Step 14 · Pie and Bars
+
+1. A segmented pill above the chart card switches Life Star / Pie / Bars. Same three areas, same range, three drawings — and no data code runs when you switch.
+2. A donut is **one stroked circle per segment**, not six wedges. `fill: none`, a stroke as thick as the ring, `stroke-dasharray` to cut it into a dash and a gap, `stroke-dashoffset` to slide that around the rim. Thickness is one property and the hole comes free.
+3. The donut is the one chart here that uses **share of the total**, because a ring *is* the total. The star and the bars both use share of the *maximum*, because they're about balance. Same numbers, different divisor, different claim.
+4. The bars aren't SVG. A bar is a rectangle of a given width and HTML has always drawn those; reaching for a viewBox would mean giving up wrapping text and inheriting fonts to draw six boxes.
+5. The switcher is a radio group, not three buttons — arrows move between segments, Tab leaves the control, and a reader says "Pie, 2 of 3".
+6. All three charts wear the same pastels as the calendar stickers, and draw into one fixed-size card, so switching lenses changes the drawing and nothing else.
+
+**Design consequence:** the two seams built in Steps 12 and 13 got their real test here, and neither moved. Three charts now read one memoized `tally` and none of them touches data code; the sort that ranks the bars lives in `Bars.tsx`, exactly where `AreaTable.tsx` put its own. That's the payoff for a decision that looked like over-thinking two steps ago — **"where does the sort live" is cheap to answer once and expensive to answer three times**, and the version where each chart sorts its own copy is the version where the star silently starts reordering its spokes.
+
+**Second one, and it cost a resize:** the shared `viewBox` had to be re-budgeted, because a box that fits the star does *not* fit the donut. Six spokes starting at the top put the star's side labels at 30° off horizontal, pulled in by `cos(30°)`; six *slices* starting at the top put the donut's labels at the slice middles, and two of those land at exactly three and nine o'clock — 17 units further out, with a longer string attached. **A shared frame has to satisfy the worse of its tenants, and the worse one isn't always the one you designed it for.** The fix was partly a wider budget and partly stacking the percentage under the name instead of running it on after a `·`, which is cheaper than the 90 units of width the circle would then sit in the middle of. The reason they share a box at all is worth keeping: you flip between these two while looking at the same numbers, and a second box would resize the card and jump everything under it.
+
+**Third one, and it started as a bug report:** Trends was painting areas at full strength while the calendar painted the same areas as tints, so one life area was two different reds depending on which tab you were on. The obvious move is to saturate the calendar, because pale things are hard to see; the call went the other way — everything goes pastel. What made that safe was measuring instead of guessing. Adjacent donut wedges at their worst came out at ΔE 10.5 and the palest bar against its track at ΔE 11.2, both readable, because **a tint needs area to be perceived, and a 26-unit ring and a full-width pill have area.** The 10px dots didn't: the table's swatch, the star's vertex dots and the sticker picker's dot all measured 1.19:1 against cream. Each got a hairline ring to give it an edge.
+
+**Fourth, and it undid the third:** three rings is three symptoms. The cause was one ramp tuned for one job — these tints were mixed for a 26px sticker and were being asked to carry a 10px dot. Stephanie named the fix by naming a colour, `#e2a79c` for red-soft, and that turned out to be *the same recipe at a different number*: the tokens are `mix(hue, surface, 28%)` and her value is that mix at 48%. One number moved, all six hues followed, and all three rings came off. **A palette written as a recipe can be re-tuned; a palette written as six hex values can only be re-picked** — and the version where you hand-darken six swatches is the version where the seventh area, added later, doesn't match any of them.
+
+The theme split is the part worth keeping. Mixing further from the surface means moving *toward the full hue*, which is brighter in a dark theme and darker in a light one — so the same step that buys contrast under dark text costs it under light text. Yellow binds first: at 48% a mark on a dark-theme sticker drops to 4.03:1, under the 4.5 the file had always held, so dark stops at 42%. **A token pair that has always moved together can still have one number that doesn't**, and the giveaway is when the two sides mean opposite things by "more".
+
+The star's dots are the sharpest version of the whole detour. They had a *cream* ring to keep overlapping dots apart; the moment the fill went pale, that ring became a cream dot on a cream card, so it went hairline; once the ramp deepened it went back to cream. **A separator only works if it contrasts with both things it separates** — and half of "both things" kept changing underneath it.
+
+**Fifth, and it's the same shape twice in one session:** none of the buttons had a hand cursor. Tailwind v3's Preflight set `cursor: pointer` on `button` and v4 dropped it, matching the browser's actual default — so every control on the page said "arrow" while looking like it said "click me". The interesting part isn't the fix, it's that the codebase had *already been fixing it*: twelve `cursor-pointer` classes across nine components, added one at a time, each one working. **A local fix that works is how a missing base rule stays missing** — nothing ever fails, so nothing ever points at the cause, and the count just goes up. One rule in `@layer base` replaced all twelve.
+
+The selector list is worth copying, because "just style `button`" misses half of it. Radix renders a radio item and a dropdown trigger as real `<button>`s, so those come free — but a Select option is a `<div role="option">` and a menu item is a `<div role="menuitem">`, and a `<div>` has never had a cursor. `label[for]` is in because a label bound to a control is a click target too. And disabled has to be excluded three ways — native `disabled`, Radix's `data-disabled`, `aria-disabled` — because a hand cursor over a control that won't respond is a promise the page can't keep.
+
+**Sixth, and it's a two-line diff with a rule inside it:** once the charts went pastel, `RAMP`'s saturated `fill` and `stroke` had no callers, and they got deleted rather than left sitting there. The rule the step ended on is "every chart wears the calendar's tint", and **a rule you can only keep by remembering it is not a rule.** With the classes gone, painting a chart in a saturated hue means adding one back — which is a diff big enough to notice. The verification has a matching shape: the usual check is that a class you need *reached* the compiled CSS, and this time the useful check was that the deleted ones *left* it. Tailwind only ships what it finds in the source text, so a class vanishing from the stylesheet is proof the last caller is gone.
+
+**Seventh:** the same `viewBox` that makes a drawing resolution-independent is also what makes `vector-effect="non-scaling-stroke"` necessary — and the donut is where that stops being a blanket rule. Every hairline in the star carries it, because a hairline is meant to be one device pixel at any size. The donut's stroke carries the opposite requirement: it *is* the drawing, 26 units of ring, and pinning it would render a 26-pixel band regardless of the card's width. **Two strokes, one attribute, opposite answers — the question is whether the thickness is part of the picture or part of the furniture.**
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -274,6 +305,35 @@ Read left to right. Nothing here needs to be memorized.
 | A polygon vanishes entirely instead of collapsing | one `NaN` in a `points` attribute drops the whole shape silently; `0/0` is the usual source | same → `normalize` |
 | A chart's tests pass on coordinates that can't be exactly equal | trigonometry returns the nearest double — compare within a tolerance, don't round to suit the test | `lib/lifestar.test.ts` |
 | A chart and a table of the same data are read out twice | shape doesn't survive being spoken; hide the chart and let the table be the text version | `LifeStar.tsx` → `aria-hidden` |
+| A pie slice over 180° renders as its own complement | that's the `A` path's `large-arc-flag` — a single digit that silently inverts the drawing | `lib/charts.ts` → `donutArcs` |
+| Every donut segment is the right size in the wrong place | `stroke-dashoffset` shifts the pattern *backwards*, so the offset has to be negative | same |
+| A donut segment fills the whole chart | a stroked circle needs `fill: none` — otherwise you're painting the disc, not the outline | `Donut.tsx` |
+| A donut starts at three o'clock | a stroke begins at angle 0; rotate the `<g>` by -90° rather than offsetting every segment | same |
+| Chart labels come out lying on their sides | they were inside a rotated `<g>` — `rotate` turns glyphs too. Position text outside the transform | same |
+| A donut adds up to more than it should | it's the one chart that must use share of the *total*; `normalize` divides by the max | `lib/charts.ts` → `normalize` |
+| A `<tspan>` steps diagonally away from the line above | it continues from where the last one ended; give it `x` again, not just `dy` | `Donut.tsx` |
+| Every label on one side of a chart hangs slightly low | `dominant-baseline` positions a *line*, not a block — a second line needs its own offset | `lib/charts.ts` → `stackOffset` |
+| SVG text has no line-height | there is no line box; a `<tspan>` moves by exactly the `dy` you give it, so leading is a constant you pick | same → `LINE` |
+| A chart's stroke renders the same width at every size | `non-scaling-stroke` is wrong when the stroke *is* the drawing — it's for furniture, not picture | `Donut.tsx` |
+| A `-0` fails a test that expects `0` | `Object.is(-0, 0)` is false, and that's what `assert.strictEqual` compares with | `lib/charts.ts` → `donutArcs`, `stackOffset` |
+| A tiny bar renders as a lopsided blob | `rounded-full` on a fill narrower than it is tall; give a nonzero bar a minimum width | `Bars.tsx` |
+| A long name in a grid pushes everything else off the card | a grid column's default minimum is its content — `minmax(0, …)` is what lets it shrink | same |
+| Tailwind can't produce the class you need for a data-driven width | it never sees the number; that's the case an inline `style` is actually for | same |
+| Two components must look identical but can't share one | share the class string, not the component — different elements, one appearance | `lib/layout.ts` → `segment` |
+| A shadcn preset fights every style you put on it | it was drawn for a different shape; build on the Radix primitive underneath instead | `ChartSwitcher.tsx` |
+| Arrow keys move the wrong way in a row of radios | Radix defaults a radio group to vertical — `orientation` decides which keys work | same |
+| The card resizes when you switch to one particular view | a shared `viewBox` only sizes the charts that *have* one; the HTML one needs the ratio stated | `ChartCard.tsx` |
+| A pastel swatch is invisible but the same pastel reads fine as a bar | a tint needs area — the ramp was tuned for the big shape, not the 10px one | `app/globals.css` |
+| You're about to add an outline to make a colour visible | check whether the colour itself can move first; an outline is a symptom fix, and you'll need one everywhere | same |
+| Buttons show an arrow cursor, not a hand | Tailwind v4's Preflight dropped `cursor: pointer` on `button`; v3 set it for you | `app/globals.css` → `@layer base` |
+| You've written the same one-off fix in more than three components | that's a missing base rule; the local fix working is why nobody found the cause | same |
+| A Radix menu or select option still has no pointer after you style `button` | those render as `<div role="option">` / `role="menuitem"`, not buttons | same |
+| A Tailwind class ships that nothing uses | the scanner reads source *text* — naming it in a comment is enough to generate it | same |
+| Darkening a token improves contrast in one theme and ruins it in the other | "further from the surface" means *toward the hue*, which is brighter on one side and darker on the other | same → the two `-soft` blocks |
+| You grep the compiled CSS for `--x: #hex` and find nothing | the output has no space after the colon; read the artefact before writing the matcher | `.next/static/chunks/*.css` |
+| A ring meant to separate two shapes stops separating them | its contrast was against the *old* fill — a separator has to contrast with both sides | `LifeStar.tsx` → vertex dots |
+| The same thing is two different colours on two pages | one page used the ramp's full end and the other its soft end; the hue mapping was never the problem | `lib/palette.ts` |
+| You want to prove a style is really gone | check the class *left* the compiled CSS — Tailwind only ships what it still finds in source | `.next/static/chunks/*.css` |
 
 ---
 

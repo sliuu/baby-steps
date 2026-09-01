@@ -35,7 +35,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      className="grid size-9 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors hover:bg-secondary hover:text-ink"
+      className="grid size-9 place-items-center rounded-full text-ink-muted transition-colors hover:bg-secondary hover:text-ink"
     >
       {/* Until the effect runs we don't know the theme; render nothing rather
           than flash the wrong icon. */}

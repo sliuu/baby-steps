@@ -250,7 +250,7 @@ function StickerFields(props: FieldsProps) {
                         setMark(emoji);
                         setPickerOpen(false);
                       }}
-                      className="grid size-7 cursor-pointer place-items-center rounded-md text-base transition-colors hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink/40"
+                      className="grid size-7 place-items-center rounded-md text-base transition-colors hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink/40"
                     >
                       {emoji}
                     </button>
@@ -293,13 +293,16 @@ function StickerFields(props: FieldsProps) {
           <SelectContent>
             {areas.map((option) => (
               <SelectItem key={option.id} value={option.id}>
-                {/* The full ramp, not the soft end a sticker is filled with.
-                    Tint is perceived by area and this dot is 10px across — the
-                    same reasoning that makes a day cell's hover 2% and a tray
-                    row's 5%, pointed the other way. */}
+                {/* The soft end. This dot used to be the full ramp, because
+                    tint is perceived by area and 10px is no area at all. That
+                    was right about the problem and wrong about the fix — the
+                    answer was to deepen the ramp rather than to saturate one
+                    dot, and now the swatch matches both the sticker it will
+                    produce and the identical dot in Trends' area table. Three
+                    places, one dot, one meaning. */}
                 <span
                   aria-hidden="true"
-                  className={`size-2.5 rounded-full ${ramp(option.colorKey).bg}`}
+                  className={`size-2.5 rounded-full ${ramp(option.colorKey).soft}`}
                 />
                 {option.name}
               </SelectItem>

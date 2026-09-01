@@ -136,7 +136,7 @@ export function DayCell(props: Props) {
       // `isolate` is what makes the wash layer below safe. It gives the button
       // its own stacking context, so a negative z-index inside can't escape and
       // paint behind the grid.
-      className={`relative isolate flex min-h-32 w-full cursor-pointer flex-col items-stretch justify-start p-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
+      className={`relative isolate flex min-h-32 w-full flex-col items-stretch justify-start p-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
         cell.inMonth
           ? "bg-surface hover:bg-ink/2"
           : "bg-surface-sunken hover:bg-ink/2"

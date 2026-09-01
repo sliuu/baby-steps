@@ -1,12 +1,15 @@
+import { ChartCard } from "./ChartCard";
 import type { Tally } from "@/lib/analytics";
 import {
   LABEL_GAP,
-  RINGS,
   VIEW,
   labelAnchor,
   labelBaseline,
   normalize,
   polar,
+} from "@/lib/charts";
+import {
+  RINGS,
   ringPoints,
   spokeAngle,
   starPoints,
@@ -54,31 +57,15 @@ export function LifeStar(props: Props) {
   const vertices = starPoints(shares, radius, cx, cy);
 
   return (
-    // Only the chart panel and the calendar grid get a card. The readout column
-    // Step 15 adds sits directly on the page ground, so this surface is what
-    // separates "the drawing" from "the numbers about it".
-    <figure className="rounded-2xl border border-hairline bg-surface p-6">
+    // The card, its size and its `aria-hidden` all live in `ChartCard`, which
+    // all three charts share — see the note there.
+    <ChartCard>
       <svg
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
-        // Width comes from the card, height from the viewBox's aspect ratio.
-        // This is the whole reason the geometry is written in invented units:
-        // the drawing is resolution-independent for free, and no code anywhere
-        // asks how wide the card is.
-        className="w-full"
-        /**
-         * Hidden from screen readers, deliberately and conditionally.
-         *
-         * A radar chart is shape, and shape does not survive being read aloud —
-         * the honest text version of it is a table of counts, which is exactly
-         * what `AreaTable` already renders from the same `tally` on this same
-         * page. Two announcements of one dataset is worse than one good one.
-         *
-         * The condition is the part worth writing down: this is only correct
-         * while an accessible table of the same numbers is on screen beside it.
-         * If a step ever renders the star alone, this attribute has to go and
-         * be replaced with a real `role="img"` and a summary.
-         */
-        aria-hidden="true"
+        // Size comes from the card. This is the whole reason the geometry is
+        // written in invented units: the drawing is resolution-independent for
+        // free, and no code anywhere asks how wide the card is.
+        className="h-full w-full"
       >
         {/* The rings, outermost first — they're the graph paper, so everything
             else is drawn over them. */}
@@ -130,19 +117,27 @@ export function LifeStar(props: Props) {
         />
 
         {/* A dot per vertex, in the area's own colour. Drawn after the polygon
-            so the stroke doesn't cut across them. */}
+            so the stroke doesn't cut across them.
+
+            No stroke of its own. These carried a ring through three versions —
+            cream, then hairline, then cream again — and every one of them was
+            answering a question the ramp has since answered: a 28% tint had no
+            edge, so the ring supplied one. At 48% the fill is its own edge, and
+            a ring on a 8px dot reads as an outline drawn round it rather than
+            as the gap it was meant to be.
+
+            What the ring also did was keep two dots apart on a pinched
+            (near-zero) polygon, where vertices crowd toward the centre. That
+            case is now carried by hue alone — adjacent areas are different
+            colours, and at this depth they separate. Worth a look if a range
+            ever puts two near-empty areas side by side. */}
         {areas.map((area, i) => (
           <circle
             key={area.areaId}
             cx={vertices[i].x}
             cy={vertices[i].y}
             r={4}
-            className={ramp(area.colorKey).fill}
-            // The ring in the card's own colour is what keeps two adjacent
-            // dots on a pinched (near-zero) polygon from reading as one blob.
-            stroke="var(--surface)"
-            strokeWidth={1.5}
-            vectorEffect="non-scaling-stroke"
+            className={ramp(area.colorKey).softFill}
           />
         ))}
 
@@ -176,6 +171,6 @@ export function LifeStar(props: Props) {
           );
         })}
       </svg>
-    </figure>
+    </ChartCard>
   );
 }
