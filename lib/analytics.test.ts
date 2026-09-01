@@ -5,11 +5,16 @@ import { describe, it } from "node:test";
 // path directly; `@/lib/analytics` would be a bundler alias with no bundler.
 import {
   inBounds,
+  leaders,
+  moodTally,
   percent,
+  rangePhrase,
   resolveBounds,
+  takeaway,
   tally,
   type Bounds,
 } from "./analytics.ts";
+import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
 
@@ -354,5 +359,257 @@ describe("percent", () => {
     // decimal. The count column beside it says 1, so the table stays honest —
     // "0.0%" is a statement about share, not about whether it happened.
     assert.equal(percent(1, 5000), 0);
+  });
+});
+
+/**
+ * Days carrying a mood and nothing else.
+ *
+ * A separate helper rather than a parameter on `days`, because the two fixtures
+ * are testing opposite things: `days` hard-codes `mood: null` so that every
+ * `tally` assertion is about activities alone, and this one carries no
+ * activities so that every `moodTally` assertion is about moods alone. A single
+ * helper doing both would let a bug in either count hide inside the other's
+ * numbers.
+ */
+function moodDays(entries: Record<string, Mood>): StickersByDay {
+  const map: StickersByDay = new Map();
+  for (const [day, mood] of Object.entries(entries)) {
+    map.set(day, { mood, activities: [] });
+  }
+  return map;
+}
+
+describe("moodTally", () => {
+  it("counts days per mood", () => {
+    const result = moodTally(
+      moodDays({
+        "2026-08-01": "great",
+        "2026-08-02": "good",
+        "2026-08-03": "good",
+      }),
+      ALL,
+    );
+
+    assert.equal(result.total, 3);
+    assert.deepEqual(
+      result.moods.map((m) => [m.mood, m.count]),
+      [
+        ["great", 1],
+        ["good", 2],
+        ["okay", 0],
+        ["low", 0],
+        ["rough", 0],
+      ],
+    );
+  });
+
+  it("returns all five in the scale's order, never sorted", () => {
+    // "rough" is the biggest count and the last mood. A version that ranked
+    // these would put it first and turn a scale into a leaderboard.
+    const result = moodTally(
+      moodDays({
+        "2026-08-01": "rough",
+        "2026-08-02": "rough",
+        "2026-08-03": "great",
+      }),
+      ALL,
+    );
+
+    assert.deepEqual(result.moods.map((m) => m.mood), MOODS);
+  });
+
+  it("labels each mood from MOOD_LABEL", () => {
+    const result = moodTally(moodDays({}), ALL);
+    assert.deepEqual(
+      result.moods.map((m) => m.label),
+      MOODS.map((mood) => MOOD_LABEL[mood]),
+    );
+  });
+
+  it("counts only days inside the bounds", () => {
+    const result = moodTally(
+      moodDays({
+        "2026-07-31": "great",
+        "2026-08-01": "good",
+        "2026-08-23": "low",
+      }),
+      { from: "2026-08-01", to: TODAY },
+    );
+
+    assert.equal(result.total, 1);
+    assert.equal(result.moods.find((m) => m.mood === "good")?.count, 1);
+  });
+
+  it("ignores days with no mood — a day with stickers is not a feeling", () => {
+    const result = moodTally(days({ "2026-08-01": ["act-gym", "act-walk"] }), ALL);
+
+    assert.equal(result.total, 0);
+    assert.deepEqual(result.moods.map((m) => m.count), [0, 0, 0, 0, 0]);
+  });
+
+  it("counts days, not marks — one mood per day however busy it was", () => {
+    const map = days({ "2026-08-01": ["act-gym", "act-walk", "act-med"] });
+    map.set("2026-08-01", { ...map.get("2026-08-01")!, mood: "okay" });
+
+    assert.equal(moodTally(map, ALL).total, 1);
+  });
+});
+
+describe("leaders", () => {
+  it("returns the single biggest area", () => {
+    const result = leaders(
+      tally(
+        days({
+          "2026-08-01": ["act-gym", "act-walk"],
+          "2026-08-02": ["act-med"],
+        }),
+        GROUPS,
+        ALL,
+      ),
+    );
+
+    assert.deepEqual(result.map((a) => a.areaName), ["Health"]);
+  });
+
+  it("returns every area tied at the top", () => {
+    const result = leaders(
+      tally(
+        days({ "2026-08-01": ["act-gym", "act-med"] }),
+        GROUPS,
+        ALL,
+      ),
+    );
+
+    // Both on 1. Picking one would name Health and quietly not name
+    // Spirituality, which has exactly as good a claim — the same mistake Step
+    // 12's percentage column made with equal counts.
+    assert.deepEqual(result.map((a) => a.areaName), ["Health", "Spirituality"]);
+  });
+
+  it("keeps ties in library order, not sorted", () => {
+    const result = leaders(tally(days({ "2026-08-01": ["act-med", "act-gym"] }), GROUPS, ALL));
+    assert.deepEqual(result.map((a) => a.areaId), ["area-health", "area-spirit"]);
+  });
+
+  it("is empty when nothing is in range", () => {
+    // Every area at zero. Without the explicit guard, `Math.max` of an empty
+    // list is -Infinity, which matches no area and returns [] by luck; with
+    // areas present at zero it would return all of them, which is a lie.
+    assert.deepEqual(leaders(tally(days({}), GROUPS, ALL)), []);
+  });
+
+  it("is empty when there are no areas at all", () => {
+    assert.deepEqual(leaders(tally(days({}), [], ALL)), []);
+  });
+});
+
+describe("rangePhrase", () => {
+  it("reads as an adverbial, not as the dropdown's label", () => {
+    assert.equal(rangePhrase({ kind: "month" }), "this month");
+    assert.equal(rangePhrase({ kind: "year" }), "this year");
+    assert.equal(rangePhrase({ kind: "all" }), "so far");
+    assert.equal(
+      rangePhrase({ kind: "custom", from: "2026-08-01", to: "2026-08-22" }),
+      "in this range",
+    );
+  });
+});
+
+describe("takeaway", () => {
+  const phrase = "this month";
+
+  it("names one leader", () => {
+    const result = takeaway(
+      tally(
+        days({
+          "2026-08-01": ["act-gym", "act-walk"],
+          "2026-08-02": ["act-med"],
+        }),
+        GROUPS,
+        ALL,
+      ),
+      phrase,
+    );
+
+    assert.equal(
+      result?.lead,
+      "Health held the greatest share of your attention this month.",
+    );
+    assert.equal(result?.support, "3 marks in all, across 2 of your 3 areas.");
+  });
+
+  it("names two tied leaders", () => {
+    const result = takeaway(
+      tally(days({ "2026-08-01": ["act-gym", "act-med"] }), GROUPS, ALL),
+      phrase,
+    );
+
+    assert.equal(
+      result?.lead,
+      "Health and Spirituality tied for the greatest share of your attention this month.",
+    );
+  });
+
+  it("counts leaders instead of listing them past three", () => {
+    const groups: LibraryGroup[] = [
+      ...GROUPS,
+      {
+        areaId: "area-play",
+        areaName: "Play",
+        colorKey: "yellow",
+        stickers: [{ id: "act-piano", name: "Piano", mark: "P", colorKey: "yellow" }],
+      },
+      {
+        areaId: "area-rest",
+        areaName: "Rest",
+        colorKey: "purple",
+        stickers: [{ id: "act-nap", name: "Nap", mark: "N", colorKey: "purple" }],
+      },
+    ];
+    // Four areas on 1, Work on 0 — so it's a four-way tie, not a flat range.
+    const result = takeaway(
+      tally(
+        days({ "2026-08-01": ["act-gym", "act-med", "act-piano", "act-nap"] }),
+        groups,
+        ALL,
+      ),
+      phrase,
+    );
+
+    assert.equal(
+      result?.lead,
+      "4 areas tied for the greatest share of your attention this month.",
+    );
+  });
+
+  it("calls a fully flat range spread, not a tie for the lead", () => {
+    const result = takeaway(
+      tally(
+        days({ "2026-08-01": ["act-gym", "act-med"] }),
+        GROUPS.slice(0, 2),
+        ALL,
+      ),
+      phrase,
+    );
+
+    assert.equal(
+      result?.lead,
+      "Your attention was spread evenly across every area this month.",
+    );
+    assert.equal(result?.support, "2 marks in all, across every area.");
+  });
+
+  it("is null when nothing is in range — the page has an empty state already", () => {
+    assert.equal(takeaway(tally(days({}), GROUPS, ALL), phrase), null);
+  });
+
+  it("counts one mark in the singular", () => {
+    const result = takeaway(
+      tally(days({ "2026-08-01": ["act-med"] }), GROUPS, ALL),
+      phrase,
+    );
+
+    assert.equal(result?.support, "1 mark in all, across 1 of your 3 areas.");
   });
 });

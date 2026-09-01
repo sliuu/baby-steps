@@ -2,15 +2,18 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 
-import { AreaTable } from "./AreaTable";
 import { Bars } from "./Bars";
 import { ChartSwitcher } from "./ChartSwitcher";
 import { Donut } from "./Donut";
 import { LifeStar } from "./LifeStar";
 import { RangePicker } from "./RangePicker";
+import { MoodStrip, Readout } from "./Readout";
 import {
   RANGE_LABEL,
+  moodTally,
+  rangePhrase,
   resolveBounds,
+  takeaway,
   tally,
   type Bounds,
   type Range,
@@ -98,7 +101,29 @@ export function TrendsBoard(props: Props) {
     [props.stickersByDay, props.groups, bounds],
   );
 
+  /**
+   * A second pass over the same map, memoized for the same reason `totals` is.
+   * Separate from `tally` because they count different units — placements
+   * against days — see the note on `moodTally`.
+   */
+  const moods = useMemo(
+    () => moodTally(props.stickersByDay, bounds),
+    [props.stickersByDay, bounds],
+  );
+
   const span = spanLabel(range, bounds);
+
+  /**
+   * The range as an adverbial, used twice: once inside the takeaway sentence and
+   * once in the mood heading. Computed here so the two can't drift into saying
+   * "this month" and "across the month" about the same fortnight.
+   */
+  const phrase = rangePhrase(range);
+
+  // Cheap, but it takes `totals` as input, so it re-derives on every render of
+  // a component that re-renders on every keystroke in the date picker. Free to
+  // memoize, and it keeps `Readout`'s props stable.
+  const summary = useMemo(() => takeaway(totals, phrase), [totals, phrase]);
 
   return (
     // No PAGE_WIDTH here. `AppShell`'s <main> already carries it, and applying
@@ -137,23 +162,44 @@ export function TrendsBoard(props: Props) {
         </div>
       </header>
 
-      {/* Wide enough to read, not so wide the eye loses the row it's on. Three
-          columns of short values don't need the whole page.
+      {/* Two columns: the picture on the left, what it says on the right.
 
-          Step 15 turns this into two columns — the chart card on the left, the
-          readout on the page ground to its right. Stacked for now, because the
-          column split is that step's subject and guessing at it here would mean
-          building the layout twice. */}
-      <section className="flex max-w-2xl flex-col gap-8">
+          `lg` and not `md`. The break is set by what the right column needs
+          rather than by a device — a three-column table plus a wrapping mood
+          strip stops being readable somewhere around 22rem, and at `md` each
+          half is narrower than that. Below it they stack, chart first, which is
+          the reading order the page already has on a phone.
+
+          `items-start` matters more than it looks: without it the grid stretches
+          both columns to the taller one's height, and the chart card — which is
+          a fixed ratio by design — would be pulled out of shape by however long
+          the table happens to be.
+
+          `min-w-0` on the chart column for the reason `Bars` needs it on its
+          name cell: a grid column's default minimum is its content, and the
+          card would otherwise refuse to shrink past its own contents' width and
+          push the readout off the page. */}
+      <section className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
         {totals.total === 0 ? (
-          <Empty range={range} />
+          // One column, full width — the empty state is a sentence, and a
+          // sentence in half a page with nothing beside it looks like something
+          // failed to load. `lg:col-span-2` puts it back across both tracks.
+          <div className="flex flex-col gap-10 lg:col-span-2">
+            <Empty range={range} />
+
+            {/* Moods survive an empty tally. A range can hold days you rated
+                and never placed a sticker on, and those are still an answer to
+                "how was this month" — hiding them because the chart has nothing
+                to draw would throw away real data. */}
+            {moods.total > 0 && <MoodStrip moods={moods} phrase={phrase} />}
+          </div>
         ) : (
           <>
             {/* The switcher sits above the card it changes, not inside it —
                 a control that redraws a panel belongs next to the panel, and
                 putting it in the card's own padding would make it look like
                 part of the chart. */}
-            <div className="flex flex-col gap-4">
+            <div className="flex min-w-0 flex-col gap-4">
               <ChartSwitcher value={chart} onChange={setChart} />
 
               {/* One tally, three lenses, and this is the line the Step 12/13
@@ -171,7 +217,13 @@ export function TrendsBoard(props: Props) {
               {chart === "bars" && <Bars tally={totals} />}
             </div>
 
-            <AreaTable tally={totals} caption={tableCaption(range, bounds)} />
+            <Readout
+              tally={totals}
+              moods={moods}
+              takeaway={summary}
+              caption={tableCaption(range, bounds)}
+              phrase={phrase}
+            />
           </>
         )}
 
@@ -179,12 +231,13 @@ export function TrendsBoard(props: Props) {
             once something can archive a sticker, marks that stop being
             attributable say so instead of quietly leaving the total. */}
         {totals.unattributed > 0 && (
-          <p className="mt-4 text-[0.9rem] text-ink-muted">
+          <p className="text-[0.9rem] text-ink-muted lg:col-span-2">
             {totals.unattributed} mark{totals.unattributed === 1 ? "" : "s"} came
             from stickers that are no longer in your tray, so they aren&rsquo;t
             counted under any area.
           </p>
         )}
+
       </section>
     </div>
   );

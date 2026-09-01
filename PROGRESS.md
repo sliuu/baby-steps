@@ -2,7 +2,46 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 14 of 17 is written and green, not yet looked at in a browser and uncommitted. Step 15 (the readout panel) is next — three steps left after this one.
+**Now:** Step 15 of 17 is written and green, uncommitted, and not yet looked at in a browser. Step 16 (motion) is next — two steps left after this one.
+
+---
+
+## 2026-08-31 · Step 15 · The readout panel
+
+**Decisions**
+
+- **The right column is not a card, and that's the visual argument of the step.** A card is a frame, and a frame says "this is a picture, take it as a unit" — true of the chart, false of a sentence followed by a table followed by a strip. Two cards side by side would also give the page two panels and no hierarchy, when the real relationship is that one side is the picture and the other is what the picture says. So the readout sits on the page ground and behaves like the rest of the app's text.
+- **The takeaway sentence is a pure function in `lib/analytics.ts`, not JSX.** All the interesting behaviour is branching — one leader, two tied, four tied, a flat range, nothing at all — and that is tedious to check by rendering and trivial to check with `assert`. `Readout.tsx` composes and computes nothing; every number, including the sentence, arrives as a prop.
+- **`leaders()` returns a list, because ties are the normal result of small counts.** Sorting and taking `[0]` is how you name Exercise, quietly don't name Friends & Family, and ship a sentence that's wrong invisibly — both are on 11 this month. Same lesson as Step 12's percentage column, which tried to break a tie and produced 18% and 17% for equal counts. A function that resolves a tie before the caller sees it takes away the caller's ability to be honest about it.
+- **The sentence's four shapes are four different claims, not one template with different nouns.** One name; two or three names plus "tied"; a *count* above three, because a sentence listing five life areas is a list wearing a sentence's clothes; and "spread evenly across every area" when every area is level, because a fully flat range is not a tie for the lead and calling it one is technically true and useless.
+- **`Math.max` of an empty list is guarded explicitly.** It returns `-Infinity`, which matches no area and yields `[]` by luck rather than by logic — and with areas present at zero it would match all of them, which is a lie. There's a test for each.
+- **`rangePhrase` exists rather than reusing `RANGE_LABEL`.** "All time" is a fine label for a dropdown and a bad thing to paste mid-clause — "…your attention All time." Same four ranges, written as adverbials, computed once in `TrendsBoard` so the sentence and the mood heading can't drift into describing the same fortnight two ways. A custom range says "in this range" rather than printing dates that are already on screen twice.
+- **`moodTally` is a second pass over the same map, deliberately not folded into `tally`.** They count different units: `tally` counts *placements*, of which a day holds many, and this counts *days*, of which each holds at most one mood. Merging them would give one function returning two unrelated shapes and every caller taking half. The cost is one more walk over a map already in memory.
+- **The mood strip shows all five, always, in the scale's order — never ranked, never filtered.** Stronger version of the rule the Life Star follows. These are an ordered scale running great → rough, so the sequence *is* data: 4, 9, 2, 1, 0 says the month leaned good at a glance, and the same five numbers ranked say nothing. And a zero is one of the better things the strip can report — "no rough days" is a measurement.
+- **The strip's "dot" is the mood's face, which is a stated deviation from the plan's wording.** The plan asked for "a dot + name + count". A coloured dot is the one thing this app has refused to give a mood in three separate files — `MoodMark` ("no colour at all… never compete with the six area hues"), `wash()` in `palette.ts`, and `highlight.ts`. Six hues mean six life areas everywhere, and Trends is the one page where moods and areas appear together, so this is exactly where that rule would break. `MoodMark` is wrapped in `aria-hidden` here and only here: it carries its own "Mood: Great" for the calendar, where the face is alone, and the strip prints the word right beside it.
+- **The empty state covers the numbers, not the page.** A range can hold moods and no marks — somebody who rates a day without placing a sticker on it — so `MoodStrip` is exported and rendered next to `Empty`. An empty state that hides data the page actually has is a bug wearing a design's clothes.
+- **`items-start` on the grid, and it's load-bearing.** Without it both columns stretch to the taller one, and the chart card is a fixed `aspectRatio` by design — it would get pulled out of shape by however long the table happens to be that month. `min-w-0` on the chart column for the same reason `Bars` needs it on its name cell.
+- **The break is `lg`, not `md`, and it's set by content.** The right column stops being readable somewhere around 22rem — a three-column table plus a wrapping mood strip — and at `md` each half is narrower than that. Below the break they stack chart-first, which is the order the page already reads in on a phone.
+
+**Changed**
+
+- `lib/analytics.ts` — `moodTally`, `MoodTally`, `MoodCount`, `leaders`, `takeaway`, `Takeaway`, `rangePhrase`, `listNames`; first value import (`./moods.ts`), header comment updated
+- `lib/analytics.test.ts` — 21 new cases and a `moodDays` fixture; 183 total across the suite
+- `components/trends/Readout.tsx` — new; `Readout`, `Sentence`, `MoodStrip`
+- `components/trends/TrendsBoard.tsx` — two-column grid, memoized `moods` and `summary`, `phrase` computed once
+- `learning/README.md` — Step 15 card, seven new symptom rows
+
+**Also**
+
+- **`./moods.ts` is the first value import `lib/analytics.ts` has taken, and the header comment that said "there are none" was updated rather than left to rot.** It's safe because `moods.ts` imports nothing itself — the rule that bites under `node --test` is depth, not count. The type imports stay on the `@/` alias, because those are erased.
+- **A separate `moodDays` fixture rather than a parameter on `days`.** The existing helper hard-codes `mood: null` so every `tally` assertion is about activities alone; the new one carries no activities so every `moodTally` assertion is about moods alone. One helper doing both would let a bug in either count hide inside the other's numbers.
+
+**What to look for.** This month is 63 marks with Romance & Adventure on 14, so the sentence should read "Romance & Adventure held the greatest share of your attention this month." over "63 marks in all, across every area." Exercise and Friends & Family are both on 11 — if a range ever puts *them* on top, the sentence must name both and say "tied". The chart card and the readout should sit side by side above 1024px with their tops aligned, and the card must stay square-ish regardless of how many rows the table has.
+
+**Open**
+
+- **Not yet seen in a browser**, and this step is more layout than the last one was. The two-column balance, where the sentence's line length lands next to the chart, and whether the mood strip wraps to two rows at a real column width are all things only rendering will answer.
+- **Step 14's browser check is still outstanding too** — the deepened ramp across a full calendar month, and dark mode, which remains derived by calculation and unlooked-at.
 
 ---
 

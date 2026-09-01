@@ -1,7 +1,12 @@
-// Every value import here is relative with its extension, and there are none:
-// this module does no date maths and touches no library. `lib/analytics.test.ts`
-// runs it under `node --test`, where nothing resolves `@/` — that alias belongs
-// to the bundler. The type imports below are erased and cross freely.
+// Every value import here is relative with its extension. `lib/analytics.test.ts`
+// runs this module under `node --test`, where nothing resolves `@/` — that alias
+// belongs to the bundler. The type imports below are erased and cross freely,
+// which is why they can keep the alias.
+//
+// `./moods.ts` is the only value import, and it is safe to take because that
+// module imports nothing itself. A module with no imports can always be pulled
+// into a tested one; the rule that bites is depth, not count.
+import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { DayString } from "@/lib/dates";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
@@ -236,4 +241,191 @@ export function percent(count: number, total: number): number {
   // Round at tenths, then bring the decimal point back. Doing it in that order
   // keeps the result a number the caller can add up, rather than a string.
   return Math.round((count / total) * 1000) / 10;
+}
+
+/** One mood and how many days in range carried it. */
+export type MoodCount = {
+  mood: Mood;
+  /** The word the strip prints. From `MOOD_LABEL`, so it can't drift. */
+  label: string;
+  count: number;
+};
+
+export type MoodTally = {
+  /**
+   * All five, always, in the picker's order — never sorted, never filtered.
+   *
+   * The same rule the Life Star follows and for a stronger reason. The moods are
+   * a fixed, ordered scale running great → rough, so their sequence *is* data:
+   * a strip that reads 4, 9, 2, 1, 0 tells you the month leaned good at a
+   * glance, and the same five numbers ranked biggest-first tell you nothing.
+   * Dropping the zeroes would be worse still, because a gap in a scale is a
+   * measurement — "no rough days" is one of the better things this strip can
+   * say.
+   */
+  moods: MoodCount[];
+  /** Days in range carrying any mood. Not days in range. */
+  total: number;
+};
+
+/**
+ * How the days in range felt.
+ *
+ * A second pass over the same map `tally` walks, deliberately not folded into
+ * it. They answer different questions about different units — `tally` counts
+ * *placements*, of which a day can hold many, and this counts *days*, of which
+ * each holds at most one mood (a `UNIQUE` on `day_moods`, written into
+ * `DayStickers.mood` as one value or null). Merging them would produce one
+ * function returning two unrelated shapes, and every caller would take half.
+ *
+ * The cost is one extra walk over a map that's already in memory, which is the
+ * same trade `tally` documents and the same size of nothing.
+ */
+export function moodTally(
+  stickersByDay: StickersByDay,
+  bounds: Bounds,
+): MoodTally {
+  const counts = new Map<Mood, number>();
+  let total = 0;
+
+  for (const [day, stickers] of stickersByDay) {
+    if (!inBounds(day, bounds)) continue;
+    if (!stickers.mood) continue;
+
+    counts.set(stickers.mood, (counts.get(stickers.mood) ?? 0) + 1);
+    total++;
+  }
+
+  return {
+    moods: MOODS.map((mood) => ({
+      mood,
+      label: MOOD_LABEL[mood],
+      count: counts.get(mood) ?? 0,
+    })),
+    total,
+  };
+}
+
+/**
+ * The areas tied at the top, in library order.
+ *
+ * A list rather than one area, because ties are real and this app has already
+ * been bitten by pretending otherwise. Step 12's percentage column tried to
+ * break a tie between two areas at 11 marks and produced 18% and 17% for equal
+ * counts; the fix was to stop breaking ties. Same shape here: picking `areas[0]`
+ * after a sort would name Exercise and quietly not name Friends & Family, which
+ * has exactly as good a claim. The sentence can say "tied" — but only if the
+ * function that feeds it doesn't decide first.
+ *
+ * Empty when there is nothing to lead: no areas, no marks, or every area at
+ * zero. `Math.max()` of nothing is `-Infinity`, which would otherwise sail
+ * through the filter and match nobody, so the guard is explicit.
+ */
+export function leaders(tally: Tally): AreaTally[] {
+  if (tally.areas.length === 0) return [];
+
+  const top = Math.max(...tally.areas.map((area) => area.count));
+  if (top === 0) return [];
+
+  return tally.areas.filter((area) => area.count === top);
+}
+
+/**
+ * How the range is named inside a sentence.
+ *
+ * Not `RANGE_LABEL`, which is what the dropdown says. "This month" is a fine
+ * thing for a control to be labelled and a bad thing to paste into the middle of
+ * a clause — "All time" would give "…your attention All time." These are the
+ * same four ranges written as adverbials.
+ *
+ * A custom range says "in this range" rather than printing its dates. They are
+ * already on screen twice by then, on the picker's own button and beside it, and
+ * a sentence is the wrong third place for two more numbers.
+ */
+export function rangePhrase(range: Range): string {
+  switch (range.kind) {
+    case "month":
+      return "this month";
+    case "year":
+      return "this year";
+    case "all":
+      return "so far";
+    case "custom":
+      return "in this range";
+  }
+}
+
+/** The two muted lines above the table. */
+export type Takeaway = {
+  /** What the range says, in one sentence. */
+  lead: string;
+  /** What it's out of. Always a second sentence, never a clause on the first. */
+  support: string;
+};
+
+/**
+ * The chart, in words.
+ *
+ * A chart shows a shape and leaves the reading to you; this states the reading
+ * so that the answer is on the page for someone who doesn't want to do it. It's
+ * also the version a screen reader gets first, which is why it is generated from
+ * the tally rather than written once and left to go stale.
+ *
+ * Every branch here exists because the honest sentence changes shape, not just
+ * its nouns:
+ *
+ * - One leader is the ordinary case.
+ * - Two or three tied leaders get named, because "tied" is more informative
+ *   than a coin flip and the names still fit in a line.
+ * - Four or more get counted instead of named. A sentence listing five life
+ *   areas is a list wearing a sentence's clothes.
+ * - Every area tied is not a tie at all, it's a flat month, and calling that a
+ *   tie for the lead would be technically true and useless.
+ *
+ * Returns null when nothing is in range. The caller doesn't render the panel at
+ * all in that case, and a sentence about zero marks would be a second empty
+ * state competing with the one already on the page.
+ */
+export function takeaway(tally: Tally, phrase: string): Takeaway | null {
+  const top = leaders(tally);
+  if (top.length === 0) return null;
+
+  const names = top.map((area) => area.areaName);
+  const everyArea = top.length === tally.areas.length && tally.areas.length > 1;
+
+  let lead: string;
+  if (everyArea) {
+    lead = `Your attention was spread evenly across every area ${phrase}.`;
+  } else if (names.length === 1) {
+    lead = `${names[0]} held the greatest share of your attention ${phrase}.`;
+  } else if (names.length <= 3) {
+    lead = `${listNames(names)} tied for the greatest share of your attention ${phrase}.`;
+  } else {
+    lead = `${names.length} areas tied for the greatest share of your attention ${phrase}.`;
+  }
+
+  // How many areas got anything at all — the number that says whether the range
+  // was spread or concentrated, which is the one thing the lead sentence can't
+  // carry without becoming two sentences anyway.
+  const touched = tally.areas.filter((area) => area.count > 0).length;
+  const marks = `${tally.total} ${tally.total === 1 ? "mark" : "marks"} in all`;
+  const support =
+    touched === tally.areas.length
+      ? `${marks}, across every area.`
+      : `${marks}, across ${touched} of your ${tally.areas.length} areas.`;
+
+  return { lead, support };
+}
+
+/**
+ * "A", "A and B", "A, B and C".
+ *
+ * No serial comma before the "and", matching the prose everywhere else in this
+ * app. Only ever called with two or three names — `takeaway` counts first and
+ * switches to a number above that, so this doesn't have to be good at long
+ * lists.
+ */
+function listNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }

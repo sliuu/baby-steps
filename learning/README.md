@@ -214,6 +214,28 @@ The selector list is worth copying, because "just style `button`" misses half of
 
 ---
 
+## Step 15 · The readout panel
+
+1. The page is two columns now: the chart card on the left, and on the right — sitting straight on the page ground, no card — a sentence, the table, and a strip of moods.
+2. The sentence is **generated from the data**, not written once. "Romance & Adventure held the greatest share of your attention this month." Change the range and it changes.
+3. It's a pure function in `lib/analytics.ts`, not JSX, so the awkward cases (a two-way tie, a four-way tie, a completely flat month) are `assert` lines instead of things you'd have to reproduce in a browser.
+4. `moodTally` is a **second pass** over the same map `tally` walks, on purpose — one counts placements, of which a day has many, and the other counts days, of which each has one mood.
+5. The mood strip shows all five, always, in the scale's order — never ranked, never filtered. A zero is one of the better things it can tell you.
+
+**Design consequence:** the right column deliberately isn't a card, and that's the whole visual argument of the step. A card is a frame, and a frame says "this is a picture, take it as a unit" — which is exactly right for the chart and exactly wrong for reading matter. Two cards side by side would have made the page a pair of panels with no hierarchy, when the actual relationship is that **one side is the picture and the other side is what the picture says.** The grid needs `items-start` for the same reason: without it both columns stretch to the taller one, and the chart card — a fixed ratio by design — gets pulled out of shape by however long the table happens to be that month.
+
+**Second one, and it's the point of the step:** a chart shows a shape and leaves the reading to you. This sentence does the reading. It's the accessibility answer too — all three charts are `aria-hidden`, so for a screen reader these two lines *are* the summary, and they arrive before the table rather than instead of it. **A generated sentence is the one part of a chart that survives being spoken.**
+
+**Third, and it's the same tie that bit in Step 12:** the obvious way to find the biggest area is to sort and take the first one. That's how you name Exercise, quietly don't name Friends & Family, and ship a sentence that's wrong in a way nobody can see — both are on 11. So `leaders()` returns a *list*, and the sentence branches on its length: one name, two or three names and the word "tied", a count above that, and "spread evenly across every area" when every area is level. **Ties aren't an edge case in counted data, they're the normal result of small numbers** — and a function that breaks one before the caller sees it takes away the caller's ability to be honest about it.
+
+Each of those branches exists because the honest sentence changes *shape*, not just its nouns. A list of five life areas inside a sentence is a list wearing a sentence's clothes, which is why four or more get counted instead of named. And a completely flat month is not a tie for the lead — calling it one would be technically true and useless.
+
+**Fourth:** the plan for this step asked for "a dot + name + count" in the mood strip, and it got a face instead. Not a liberty — a coloured dot is the one thing this app has consistently refused to give a mood, and three separate files say so in their own comments. Six hues mean six life areas, *everywhere*, and this is the single page where moods and areas appear at once, so spending a hue on "good" is where that rule would break. **When a plan's wording collides with a rule the codebase has been keeping, the rule is usually the older decision** — and the fix is to say so in the file, not to quietly do something else.
+
+**Fifth:** a range can hold moods and no marks. Somebody rates how a day felt and never places a sticker, and then the chart and the table have nothing to draw while the mood strip still does. The empty state covers the numbers, not the page, so `MoodStrip` is exported and rendered beside it. **An empty state that hides data you actually have is a bug wearing a design's clothes** — worth checking any time one component's emptiness gates another's.
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -334,6 +356,13 @@ Read left to right. Nothing here needs to be memorized.
 | A ring meant to separate two shapes stops separating them | its contrast was against the *old* fill — a separator has to contrast with both sides | `LifeStar.tsx` → vertex dots |
 | The same thing is two different colours on two pages | one page used the ramp's full end and the other its soft end; the hue mapping was never the problem | `lib/palette.ts` |
 | You want to prove a style is really gone | check the class *left* the compiled CSS — Tailwind only ships what it still finds in source | `.next/static/chunks/*.css` |
+| A summary sentence names one winner when two are tied | it sorted and took the first; return the tied list and let the caller say "tied" | `lib/analytics.ts` → `leaders` |
+| `Math.max()` of an empty list matches nothing and looks fine | it's `-Infinity`, so the filter passes cleanly and returns `[]` by luck, not by logic | same |
+| A range label reads wrong inside a sentence | "All time" is a control's label; a clause needs an adverbial — they're different strings | same → `rangePhrase` |
+| Two columns in a grid stretch to the taller one and distort a chart | `items-start`; a fixed-ratio card can't survive being stretched to a table's height | `TrendsBoard.tsx` |
+| An empty state hides data the page actually has | one component's emptiness gated another's — moods can exist with no marks | same → `MoodStrip` |
+| A screen reader says a mood's name twice | the icon carries its own accessible name and the strip prints it again — hide one | `Readout.tsx` |
+| A scale comes out ranked biggest-first | order *is* data when the values are a scale; only a ranking should be sorted | `lib/analytics.ts` → `MoodTally` |
 
 ---
 
