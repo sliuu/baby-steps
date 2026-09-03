@@ -128,12 +128,18 @@ export type Tally = {
   /**
    * Marks in range whose activity isn't in the library any more.
    *
-   * Always 0 today, because nothing archives a sticker yet. It exists so that
-   * the day something does, the totals get a visible hole instead of a silent
-   * one: `getStickerLibrary` filters `archived`, so an archived activity's past
-   * placements would stop being attributable to an area and would simply stop
-   * being counted. A number nobody can see going quietly wrong is the failure
-   * mode worth spending a field on.
+   * Still 0 in normal use, and archiving is the reason it stayed that way.
+   * `getStickerLibrary` deliberately doesn't filter `archived` — the archived
+   * stickers come back carrying the flag, and each list decides for itself
+   * whether to draw them — so a retired sticker's past marks are still
+   * attributable to an area and still counted here. Retiring a habit doesn't
+   * rewrite the months you did it.
+   *
+   * What can land in this field is a mark whose activity was *deleted*, in the
+   * window between the delete and the refetch. The row is gone from
+   * `day_activities` by cascade, so the number settles at 0 again — but during
+   * that window the total says so out loud instead of quietly shrinking. A
+   * number nobody can see going wrong is the failure mode worth a field.
    */
   unattributed: number;
 };
@@ -355,14 +361,6 @@ export function rangePhrase(range: Range): string {
   }
 }
 
-/** The two muted lines above the table. */
-export type Takeaway = {
-  /** What the range says, in one sentence. */
-  lead: string;
-  /** What it's out of. Always a second sentence, never a clause on the first. */
-  support: string;
-};
-
 /**
  * The chart, in words.
  *
@@ -385,36 +383,31 @@ export type Takeaway = {
  * Returns null when nothing is in range. The caller doesn't render the panel at
  * all in that case, and a sentence about zero marks would be a second empty
  * state competing with the one already on the page.
+ *
+ * One sentence, not two. It used to return a second line as well — "4 marks in
+ * all, across 2 of your 6 areas" — on the theory that a reading should say what
+ * it's out of. On the page that turned out to be a number you have to hold in
+ * your head to use, printed directly above a table that gives you the same
+ * totals broken down and doesn't ask you to hold anything. The lead is the part
+ * that says something the table can't.
  */
-export function takeaway(tally: Tally, phrase: string): Takeaway | null {
+export function takeaway(tally: Tally, phrase: string): string | null {
   const top = leaders(tally);
   if (top.length === 0) return null;
 
   const names = top.map((area) => area.areaName);
   const everyArea = top.length === tally.areas.length && tally.areas.length > 1;
 
-  let lead: string;
   if (everyArea) {
-    lead = `Your attention was spread evenly across every area ${phrase}.`;
-  } else if (names.length === 1) {
-    lead = `${names[0]} held the greatest share of your attention ${phrase}.`;
-  } else if (names.length <= 3) {
-    lead = `${listNames(names)} tied for the greatest share of your attention ${phrase}.`;
-  } else {
-    lead = `${names.length} areas tied for the greatest share of your attention ${phrase}.`;
+    return `Your attention was spread evenly across every area ${phrase}.`;
   }
-
-  // How many areas got anything at all — the number that says whether the range
-  // was spread or concentrated, which is the one thing the lead sentence can't
-  // carry without becoming two sentences anyway.
-  const touched = tally.areas.filter((area) => area.count > 0).length;
-  const marks = `${tally.total} ${tally.total === 1 ? "mark" : "marks"} in all`;
-  const support =
-    touched === tally.areas.length
-      ? `${marks}, across every area.`
-      : `${marks}, across ${touched} of your ${tally.areas.length} areas.`;
-
-  return { lead, support };
+  if (names.length === 1) {
+    return `${names[0]} held the greatest share of your attention ${phrase}.`;
+  }
+  if (names.length <= 3) {
+    return `${listNames(names)} tied for the greatest share of your attention ${phrase}.`;
+  }
+  return `${names.length} areas tied for the greatest share of your attention ${phrase}.`;
 }
 
 /**

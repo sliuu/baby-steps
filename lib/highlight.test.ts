@@ -22,15 +22,20 @@ const GROUPS: LibraryGroup[] = [
     areaName: "Health",
     colorKey: "green",
     stickers: [
-      { id: "act-gym", name: "Gym", mark: "G", colorKey: "green" },
-      { id: "act-sleep", name: "Sleep", mark: "Z", colorKey: "green" },
+      { id: "act-gym", name: "Gym", mark: "G", colorKey: "green", archived: false },
+      // Retired, and still highlightable. Clicking "Health" has to light the
+      // days Sleep is on — those marks are still Health's, which is the same
+      // position `tally` takes about counting them.
+      { id: "act-sleep", name: "Sleep", mark: "Z", colorKey: "green", archived: true },
     ],
   },
   {
     areaId: "area-spirit",
     areaName: "Spirituality",
     colorKey: "red",
-    stickers: [{ id: "act-med", name: "Meditation", mark: "🕯️", colorKey: "red" }],
+    stickers: [
+      { id: "act-med", name: "Meditation", mark: "🕯️", colorKey: "red", archived: false },
+    ],
   },
 ];
 

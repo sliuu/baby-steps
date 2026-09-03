@@ -18,6 +18,7 @@ import { useEffect, useMemo, useOptimistic, useState, useTransition } from "reac
 
 import {
   clearDayMood,
+  moveActivity,
   placeActivity,
   removeActivity,
   setDayMood,
@@ -50,6 +51,8 @@ function runChange(change: CalendarChange): Promise<PlaceResult> {
       return placeActivity(change.day, change.activityId);
     case "remove":
       return removeActivity(change.day, change.activityId);
+    case "move":
+      return moveActivity(change.from, change.to, change.activityId);
     case "mood":
       return setDayMood(change.day, change.mood);
     case "clearMood":
@@ -58,7 +61,7 @@ function runChange(change: CalendarChange): Promise<PlaceResult> {
 }
 
 /**
- * Pointer first, centres as the fallback.
+ * The pointer's rule for a pointer, the keyboard's rule for a keyboard.
  *
  * `closestCenter` compares the centre of the *dragged* thing to the centre of
  * each day. That's wrong for a pointer here: the overlay is a whole tray row,
@@ -66,14 +69,28 @@ function runChange(change: CalendarChange): Promise<PlaceResult> {
  * lights up. `pointerWithin` asks the only question a mouse user is asking —
  * which cell is under the tip? — and it's exact.
  *
- * But a keyboard drag has no pointer at all, and `pointerWithin` returns
- * nothing forever. So it falls through to `closestCenter`, which needs no
- * cursor. One line, and both input methods get the rule that suits them.
+ * This used to be written as a *fallback*: `pointerWithin`, and `closestCenter`
+ * whenever it came back empty. That reads as "cover the keyboard case too", and
+ * it quietly did something else — `pointerWithin` returns empty every time the
+ * cursor is outside the grid, so the fallback fired there as well and handed
+ * back the nearest square. Releasing over the tray, the header, or the margin
+ * dropped a sticker on whichever border cell happened to be closest. There was
+ * no way to abandon a drag with the mouse, and the one you thought you'd
+ * abandoned had already landed somewhere.
+ *
+ * The discriminator is `pointerCoordinates`, which is null for exactly one
+ * reason: dnd-kit derives it from the activator event's `clientX`/`clientY`, and
+ * a `KeyboardEvent` has neither, so `getEventCoordinates` returns null. Checked
+ * in `@dnd-kit/utilities`, not assumed. So the two branches are now "is there a
+ * pointer at all" rather than "did the pointer find anything" — and an empty
+ * result from `pointerWithin` means what it says: nothing here to drop on.
+ *
+ * A keyboard drag keeps `closestCenter` and can never be "outside", which is
+ * right — there's no cursor to be outside with, and Escape is already its way
+ * out.
  */
-const collisionDetection: CollisionDetection = (args) => {
-  const underPointer = pointerWithin(args);
-  return underPointer.length > 0 ? underPointer : closestCenter(args);
-};
+const collisionDetection: CollisionDetection = (args) =>
+  args.pointerCoordinates ? pointerWithin(args) : closestCenter(args);
 
 /**
  * The drag arena, and the reason this component exists at all.
@@ -100,6 +117,15 @@ export function CalendarBoard(props: Props) {
   const [dragging, setDragging] = useState<DragPayload | null>(null);
   const [openDay, setOpenDay] = useState<DayString | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Whether the thing in the air is currently over a day.
+   *
+   * Only the overlay reads it, and only to say so. `over` lives inside dnd-kit
+   * and the `DragOverlay`'s children aren't given it, so it gets mirrored out
+   * here — one boolean rather than the id, because "which day" is already
+   * answered by that day lighting up underneath.
+   */
+  const [overDay, setOverDay] = useState(false);
   const [, startTransition] = useTransition();
 
   /**
@@ -140,8 +166,31 @@ export function CalendarBoard(props: Props) {
   );
 
   /**
-   * Escape clears it, which is the third way out after clicking the lit row
-   * again and the "clear" link in the tray header.
+   * How many days each sticker is on, for the delete confirmation in the tray.
+   *
+   * Built from the optimistic Map rather than the prop, so a mark dropped a
+   * second ago is already in the number the warning quotes. One pass over data
+   * this component is holding anyway — the same argument `tally` makes for
+   * grouping in the browser instead of asking Postgres for a `group by`.
+   */
+  const markCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const [, day] of stickersByDay) {
+      for (const sticker of day.activities) {
+        // The activity, not the placement. Counting `sticker.id` would count
+        // every mark as its own sticker and report 1 for all of them.
+        counts.set(
+          sticker.activityId,
+          (counts.get(sticker.activityId) ?? 0) + 1,
+        );
+      }
+    }
+    return counts;
+  }, [stickersByDay]);
+
+  /**
+   * Escape clears it, which is the third way out after pressing the lit row's
+   * eye again and the "clear" link in the tray header.
    *
    * Bound only while something is lit *and* the modal is shut. Escape is
    * heavily subscribed here — Radix closes the dialog with it, dnd-kit cancels
@@ -163,10 +212,13 @@ export function CalendarBoard(props: Props) {
     // — the tray row want that click.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
-      // Space lifts, Enter selects. Both start a drag by default, which left a
-      // keyboard user no way to reach the highlight at all: the sensor calls
-      // `preventDefault()` on activation, so the button's own click never
-      // fires. Dropping Enter from `start` hands it back to the button.
+      // Space lifts, Enter opens. Both start a drag by default, and the sensor
+      // calls `preventDefault()` on activation, so the button's own click never
+      // fires — which left a keyboard user unable to reach whatever the row's
+      // click meant. Dropping Enter from `start` hands it back to the button.
+      // In Step 11 that was the highlight; it's the editor now, and the swap
+      // needed no change here, which is the sign the seam was in the right
+      // place.
       //
       // Space is the one that stayed with the drag because dnd-kit's built-in
       // screen-reader instructions — read out on focus — say "to pick up a
@@ -200,28 +252,82 @@ export function CalendarBoard(props: Props) {
 
   function handleDragStart(event: DragStartEvent) {
     setDragging(readDragPayload(event.active.data.current));
+    // Every drag starts in the tray, which is not a day. Set explicitly rather
+    // than left over from last time: `onDragOver` fires on *changes*, so a drag
+    // that begins and ends outside the grid never fires it at all.
+    setOverDay(false);
   }
 
+  /**
+   * Where it was dropped, and where it came from, decide between four things.
+   *
+   * The grid became a drag *source* as well as a target in Step 16, and that one
+   * change doubled this function. The same two questions now have four answers:
+   *
+   *                     from the tray        from a day
+   *   onto a day        place                move
+   *   onto nothing      cancel               remove
+   *
+   * Which is why `from` travels in the payload. Note the diagonal: releasing over
+   * empty space is a no-op in one column and a deletion in the other, so it is
+   * the only gesture on the page whose meaning depends on where it began. The
+   * overlay has to say which one is about to happen, because by the time you find
+   * out from the calendar it has already happened.
+   */
   function handleDragEnd(event: DragEndEvent) {
     setDragging(null);
 
     const payload = readDragPayload(event.active.data.current);
-    // Released over nothing. `over` is null, and that is the whole check.
-    if (!payload || typeof event.over?.id !== "string") return;
-    const day = event.over.id;
+    if (!payload) return;
+    const over = typeof event.over?.id === "string" ? event.over.id : null;
+
+    // Released over nothing. Dragged off the calendar, that's the delete gesture
+    // — the sticker was carried out of the month and let go. Out of the tray it
+    // is still just a change of mind.
+    if (!over) {
+      if (payload.kind === "activity" && payload.from) {
+        commit({
+          kind: "remove",
+          day: payload.from,
+          activityId: payload.activityId,
+        });
+      }
+      return;
+    }
 
     // A drag says what was dropped where; `commit` decides what that means.
+    if (payload.kind === "mood") {
+      commit({ kind: "mood", day: over, mood: payload.mood });
+      return;
+    }
+
     commit(
-      payload.kind === "mood"
-        ? { kind: "mood", day, mood: payload.mood }
+      payload.from
+        ? {
+            kind: "move",
+            from: payload.from,
+            to: over,
+            activityId: payload.activityId,
+            face: payload.face,
+          }
         : {
             kind: "place",
-            day,
+            day: over,
             activityId: payload.activityId,
             face: payload.face,
           },
     );
   }
+
+  /**
+   * The overlay is about to be a deletion rather than a cancellation.
+   *
+   * Two facts, and neither is enough alone: the thing in the air came off a day
+   * (`from`), and it is currently over nothing. Derived at render rather than
+   * stored, because both halves are already state — a third piece of state
+   * holding their conjunction is a thing that can disagree with them.
+   */
+  const leaving = !overDay && dragging?.kind === "activity" && !!dragging.from;
 
   return (
     <DndContext
@@ -238,6 +344,7 @@ export function CalendarBoard(props: Props) {
       collisionDetection={collisionDetection}
       accessibility={{ announcements, screenReaderInstructions }}
       onDragStart={handleDragStart}
+      onDragOver={(event) => setOverDay(event.over !== null)}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setDragging(null)}
     >
@@ -252,6 +359,7 @@ export function CalendarBoard(props: Props) {
             initialMonth={toMonthString(new Date())}
             stickersByDay={stickersByDay}
             onOpenDay={setOpenDay}
+            onCommit={commit}
             highlight={highlight}
           />
         </div>
@@ -276,6 +384,8 @@ export function CalendarBoard(props: Props) {
             onSelect={setSelection}
             onClear={() => setSelection(null)}
             label={highlight?.label ?? null}
+            markCounts={markCounts}
+            onError={setError}
           />
 
           {/* Rendered always, filled sometimes. A live region the browser only
@@ -310,7 +420,33 @@ export function CalendarBoard(props: Props) {
           <div
             // Same inset and same vertical padding as the row it was lifted
             // from, so the copy under the cursor is the size of the original.
-            className={`${TRAY_INSET} flex w-fit items-center gap-2.5 rounded-md border border-hairline bg-surface py-1 shadow-lg`}
+            //
+            // Over a day it's a solid card with a shadow: a thing about to be
+            // put down. Outside, it goes translucent, loses the shadow, and its
+            // border turns dashed — the same vocabulary a placeholder uses,
+            // which is the point. Nothing here will land.
+            //
+            // That's the whole cue now. It shipped with "Let go to cancel"
+            // printed under the card as well, and the words turned out to be
+            // one thing too many to read while your hand is moving: the card
+            // going pale and dashed says it faster than a sentence you have to
+            // parse. The line lives on in the drag announcement, where there is
+            // no dashed border to see.
+            //
+            // With one exception, and it's the reason the words couldn't simply
+            // come back. Outside the grid means two different things now — put
+            // it back for a sticker from the tray, throw it away for one lifted
+            // off a day — so the dashed state splits in two: grey for nothing
+            // happens, red for this is a deletion. Same border width, same
+            // opacity, same box; only the hue moves. A card that changed size
+            // mid-drag would shift under the cursor at the moment you're aiming.
+            className={`${TRAY_INSET} flex w-fit items-center gap-2.5 rounded-md border bg-surface py-1 transition-opacity ${
+              overDay
+                ? "border-hairline shadow-lg"
+                : `border-dashed opacity-60 ${
+                    leaving ? "border-ramp-red" : "border-ink-muted/50"
+                  }`
+            }`}
           >
             {dragging.kind === "mood" ? (
               <TrayRowFace
@@ -347,15 +483,19 @@ export function CalendarBoard(props: Props) {
 /**
  * What a screen reader is told the moment a tray row takes focus.
  *
- * dnd-kit ships this sentence and it's good, but as of Step 11 it's no longer
- * the whole truth: the same button now does two things depending on which key
- * you press. Overriding it is the only way that second thing is discoverable
- * without sight — the highlight is pure colour, and a keyboard user who never
- * learns about Enter never finds the feature at all.
+ * This used to open with "To highlight every day this appears on, press Enter",
+ * because in Step 11 that was the only way anyone without sight could find the
+ * highlight: it was a feature made of colour, triggered by a key nothing
+ * mentioned. The sentence was a workaround for a missing affordance.
+ *
+ * The eye button beside each row is that affordance, and it's a labelled toggle
+ * one Tab away — so the instruction had nothing left to teach and went back to
+ * dnd-kit's own, which covers the part that really is invisible. Worth noticing
+ * as a pattern: **prose that explains an interaction is usually a control that
+ * hasn't been built yet.**
  */
 const screenReaderInstructions = {
   draggable: `
-    To highlight every day this appears on, press Enter. Press Enter again to clear it.
     To pick up a draggable item, press the space bar.
     While dragging, use the arrow keys to move the item.
     Press space again to drop the item in its new position, or press escape to cancel.
@@ -368,32 +508,47 @@ const screenReaderInstructions = {
  * dnd-kit announces by default, but it only knows ids — and ours are uuids and
  * date strings, so the default reads out "draggable item
  * 8f3c…-…-…". These say the sticker's name and the day in words.
+ *
+ * Each one branches on origin for the same reason the overlay's border does:
+ * releasing over nothing cancels a tray drag and deletes a placed mark, and
+ * "let go to cancel" said over a deletion would be a lie told at the exact
+ * moment it can't be checked. The sighted version of this warning is a red
+ * dashed border; this is that border, in words.
  */
 const announcements: Announcements = {
-  onDragStart: ({ active }) => describe(active.data.current, "Picked up"),
+  onDragStart: ({ active }) => {
+    const payload = readDragPayload(active.data.current);
+    if (!payload) return;
+    return payload.kind === "activity" && payload.from
+      ? `Picked up ${payloadName(payload)} from ${formatDayLong(payload.from)}.`
+      : `Picked up ${payloadName(payload)}.`;
+  },
   onDragOver: ({ active, over }) => {
-    const name = nameOf(active.data.current);
-    if (!name) return;
-    return over
-      ? `${name} is over ${formatDayLong(String(over.id))}.`
-      : `${name} is not over a day.`;
+    const payload = readDragPayload(active.data.current);
+    if (!payload) return;
+    const name = payloadName(payload);
+    if (over) return `${name} is over ${formatDayLong(String(over.id))}.`;
+    return payload.kind === "activity" && payload.from
+      ? `${name} is not over a day. Let go to take it off ${formatDayLong(payload.from)}.`
+      : `${name} is not over a day. Let go to cancel.`;
   },
   onDragEnd: ({ active, over }) => {
-    const name = nameOf(active.data.current);
-    if (!name) return;
-    return over
-      ? `${name} dropped on ${formatDayLong(String(over.id))}.`
+    const payload = readDragPayload(active.data.current);
+    if (!payload) return;
+    const name = payloadName(payload);
+    const from = payload.kind === "activity" ? payload.from : undefined;
+
+    if (over) {
+      const day = formatDayLong(String(over.id));
+      return from ? `${name} moved to ${day}.` : `${name} dropped on ${day}.`;
+    }
+    return from
+      ? `${name} taken off ${formatDayLong(from)}.`
       : `${name} returned to the tray.`;
   },
-  onDragCancel: ({ active }) => describe(active.data.current, "Cancelled;"),
+  onDragCancel: ({ active }) => {
+    const payload = readDragPayload(active.data.current);
+    if (!payload) return;
+    return `Cancelled; ${payloadName(payload)}.`;
+  },
 };
-
-function nameOf(data: unknown): string | undefined {
-  const payload = readDragPayload(data);
-  return payload ? payloadName(payload) : undefined;
-}
-
-function describe(data: unknown, verb: string): string | undefined {
-  const name = nameOf(data);
-  return name && `${verb} ${name}.`;
-}

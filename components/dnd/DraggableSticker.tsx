@@ -14,7 +14,25 @@ type Props = {
   selected: boolean;
   /** The class that paints a selected row — the same wash its days get. */
   wash: string;
-  onSelect: () => void;
+  /**
+   * What a click means. Opening the sticker's editor, for the fifteen rows that
+   * have one.
+   *
+   * Optional, and the five moods are why: a mood has nothing behind it to open,
+   * so its row is a drag handle and only that. It stays a focusable `<button>`
+   * regardless — that isn't decoration either, it's what lets Space pick the
+   * mood up without a mouse.
+   */
+  onActivate?: () => void;
+  /**
+   * The accessible name, when the visible text isn't the whole story.
+   *
+   * "Gym" is what the row says; "Edit Gym" is what the button does. Passing the
+   * longer phrase is allowed precisely because it still *contains* the visible
+   * word — that's the Label in Name rule, and it's what keeps "click Gym"
+   * working for someone driving the page by voice.
+   */
+  label?: string;
   children: ReactNode;
 };
 
@@ -33,13 +51,17 @@ type Props = {
  * Under 4px of travel no drag ever starts, so the browser's click fires
  * normally. At 4px dnd-kit's `handleStart` adds a capture-phase `click`
  * listener on the document that stops propagation for the rest of the gesture —
- * so a drag that happens to end back over its own row does *not* also toggle
- * the highlight. Verified in `@dnd-kit/core`, not assumed; it's the kind of
- * overlap that would otherwise need a "did we just drag?" ref.
+ * so a drag that happens to end back over its own row does *not* also open the
+ * editor. Verified in `@dnd-kit/core`, not assumed; it's the kind of overlap
+ * that would otherwise need a "did we just drag?" ref.
  *
- * `aria-pressed` rather than a `role` change: this is a toggle button, and it
- * keeps the `aria-roledescription` of "draggable" that dnd-kit puts on it. Both
- * are true at once.
+ * What the click *means* changed after Step 16. It used to toggle the
+ * highlight, and the row carried `aria-pressed` to say so. Both moved to the
+ * eye button beside it: a row named "Gym" that opens Gym is the ordinary
+ * reading of a click on a named thing, and the highlight — which was the
+ * feature with no affordance at all — got a real one. The row keeps `wash`,
+ * because being lit is still something it looks like; it just isn't something
+ * it does any more.
  *
  * `touch-none` is not decoration. Without `touch-action: none` the browser
  * claims the gesture for scrolling before dnd-kit sees enough of it to know a
@@ -62,8 +84,8 @@ export function DraggableSticker(props: Props) {
       type="button"
       {...listeners}
       {...attributes}
-      onClick={props.onSelect}
-      aria-pressed={props.selected}
+      onClick={props.onActivate}
+      aria-label={props.label}
       // TRAY_INSET rather than a local px-2, and no negative margin to cancel
       // it. The padding is what keeps the highlight off the circle; the group
       // label above and the tray header carry the same value, so nothing ends

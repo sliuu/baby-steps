@@ -129,77 +129,71 @@ export function TrendsBoard(props: Props) {
     // No PAGE_WIDTH here. `AppShell`'s <main> already carries it, and applying
     // it again would nest one max-width inside an identical one and pay the
     // horizontal padding twice — the page would look inset from itself.
-    <div className="flex flex-col gap-8">
-      {/* The range control sits under the title, left-aligned with it, rather
-          than opposite it across the page. Pushed to the far right it reads as
-          page furniture — the same slot the nav's controls occupy — when it is
-          actually the first thing you set before reading anything below. Under
-          the heading and above the numbers, it sits in the order you use it. */}
-      <header className="flex flex-col items-start gap-5">
-        <h1 className="font-heading text-5xl font-medium tracking-tight">
-          Trends
-        </h1>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <RangePicker value={range} onChange={setRange} />
-
-          {/* The dates the rule resolved to, right where the rule is set. The
-              dropdown says what you picked; this says what that means today,
-              and the pair is only useful side by side — a rule and its
-              resolution separated by a heading is two facts you have to hold
-              at once. */}
-          {span && (
-            <p
-              // The dates change when the dropdown changes but the dropdown
-              // doesn't announce them, so a screen reader would hear the new
-              // rule and never the new period.
-              aria-live="polite"
-              className="tabular text-[0.9rem] text-ink-muted"
-            >
-              {span}
-            </p>
-          )}
-        </div>
-      </header>
+    <div className="flex flex-col gap-5">
+      <h1 className="font-heading text-5xl font-medium tracking-tight">
+        Trends
+      </h1>
 
       {/* Two columns: the picture on the left, what it says on the right.
+
+          The controls moved *into* the left column, and that's the layout
+          decision worth recording. They used to sit in a full-width header
+          above the grid, which meant the right half of that band was empty and
+          the readout began a whole control row lower than the page's first real
+          content — the sentence, which is the answer, started below the
+          picture's furniture. Now the grid's first row is "the range you picked"
+          against "what it says", and the two columns start on the same line.
+
+          The cost is honest and worth naming: the range picker governs both
+          columns but now sits in one of them, so it reads a little like it only
+          filters the chart. What keeps that from misleading is that everything
+          on this page is the same range — there is nothing here it *doesn't*
+          filter — and the dates beside it are the same dates the table is
+          counting.
 
           `lg` and not `md`. The break is set by what the right column needs
           rather than by a device — a three-column table plus a wrapping mood
           strip stops being readable somewhere around 22rem, and at `md` each
-          half is narrower than that. Below it they stack, chart first, which is
-          the reading order the page already has on a phone.
+          half is narrower than that. Below it they stack, controls and chart
+          first, which is the reading order the page already has on a phone.
 
           `items-start` matters more than it looks: without it the grid stretches
           both columns to the taller one's height, and the chart card — which is
           a fixed ratio by design — would be pulled out of shape by however long
-          the table happens to be.
+          the table happens to be. */}
+      <section className="grid items-start gap-x-14 gap-y-10 lg:grid-cols-2">
+        {/* `min-w-0` for the reason `Bars` needs it on its name cell: a grid
+            column's default minimum is its content, and the card would
+            otherwise refuse to shrink past its own contents' width and push the
+            readout off the page. */}
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <RangePicker value={range} onChange={setRange} />
 
-          `min-w-0` on the chart column for the reason `Bars` needs it on its
-          name cell: a grid column's default minimum is its content, and the
-          card would otherwise refuse to shrink past its own contents' width and
-          push the readout off the page. */}
-      <section className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
-        {totals.total === 0 ? (
-          // One column, full width — the empty state is a sentence, and a
-          // sentence in half a page with nothing beside it looks like something
-          // failed to load. `lg:col-span-2` puts it back across both tracks.
-          <div className="flex flex-col gap-10 lg:col-span-2">
-            <Empty range={range} />
-
-            {/* Moods survive an empty tally. A range can hold days you rated
-                and never placed a sticker on, and those are still an answer to
-                "how was this month" — hiding them because the chart has nothing
-                to draw would throw away real data. */}
-            {moods.total > 0 && <MoodStrip moods={moods} phrase={phrase} />}
+            {/* The dates the rule resolved to, right where the rule is set. The
+                dropdown says what you picked; this says what that means today,
+                and the pair is only useful side by side — a rule and its
+                resolution separated by a heading is two facts you have to hold
+                at once. */}
+            {span && (
+              <p
+                // The dates change when the dropdown changes but the dropdown
+                // doesn't announce them, so a screen reader would hear the new
+                // rule and never the new period.
+                aria-live="polite"
+                className="tabular text-[0.9rem] text-ink-muted"
+              >
+                {span}
+              </p>
+            )}
           </div>
-        ) : (
-          <>
-            {/* The switcher sits above the card it changes, not inside it —
-                a control that redraws a panel belongs next to the panel, and
-                putting it in the card's own padding would make it look like
-                part of the chart. */}
-            <div className="flex min-w-0 flex-col gap-4">
+
+          {totals.total > 0 && (
+            <>
+              {/* The switcher sits above the card it changes, not inside it —
+                  a control that redraws a panel belongs next to the panel, and
+                  putting it in the card's own padding would make it look like
+                  part of the chart. */}
               <ChartSwitcher value={chart} onChange={setChart} />
 
               {/* One tally, three lenses, and this is the line the Step 12/13
@@ -209,22 +203,39 @@ export function TrendsBoard(props: Props) {
 
                   Mounted one at a time rather than all three with two hidden.
                   Hidden charts would still be in the accessibility tree and in
-                  the DOM, and Step 16 is going to animate this — a thing that
+                  the DOM, and Step 17 is going to animate this — a thing that
                   enters is far easier to animate than a thing that was always
                   there wearing `display: none`. */}
               {chart === "star" && <LifeStar tally={totals} />}
               {chart === "donut" && <Donut tally={totals} />}
               {chart === "bars" && <Bars tally={totals} />}
-            </div>
+            </>
+          )}
+        </div>
 
-            <Readout
-              tally={totals}
-              moods={moods}
-              takeaway={summary}
-              caption={tableCaption(range, bounds)}
-              phrase={phrase}
-            />
-          </>
+        {totals.total === 0 ? (
+          // Beside the control rather than across both tracks, which is what it
+          // used to be. A lone sentence in half an empty page reads as something
+          // that failed to load — but the other half isn't empty any more, it's
+          // the dropdown that would fix this, and "no results" directly beside
+          // "here's the filter" is the pairing that explains itself.
+          <div className="flex flex-col gap-8">
+            <Empty range={range} />
+
+            {/* Moods survive an empty tally. A range can hold days you rated
+                and never placed a sticker on, and those are still an answer to
+                "how was this month" — hiding them because the chart has nothing
+                to draw would throw away real data. */}
+            {moods.total > 0 && <MoodStrip moods={moods} phrase={phrase} />}
+          </div>
+        ) : (
+          <Readout
+            tally={totals}
+            moods={moods}
+            takeaway={summary}
+            caption={tableCaption(range, bounds)}
+            phrase={phrase}
+          />
         )}
 
         {/* Zero today, and it stays invisible while it is. It exists so that

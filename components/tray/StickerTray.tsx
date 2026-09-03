@@ -1,14 +1,18 @@
 "use client";
 
-import { MoodMark } from "@/components/calendar/MoodMark";
+import { ChevronRight } from "lucide-react";
+import { useState } from "react";
+
 import { StickerMark } from "@/components/calendar/StickerMark";
+import { EditStickerForm } from "@/components/tray/EditStickerForm";
+import { MoodPicker } from "@/components/tray/MoodPicker";
 import { NewStickerForm } from "@/components/tray/NewStickerForm";
-import { TrayGroup, TrayRow } from "@/components/tray/TrayGroup";
+import { RestoreStickerButton } from "@/components/tray/RestoreStickerButton";
+import { ArchivedRow, TrayGroup, TrayRow } from "@/components/tray/TrayGroup";
 import { sameSelection, type Selection } from "@/lib/highlight";
 import { TRAY_INSET } from "@/lib/layout";
-import { MOOD_LABEL, MOODS } from "@/lib/moods";
 import { wash } from "@/lib/palette";
-import type { LibraryGroup } from "@/lib/queries/activities";
+import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
 
 type Props = {
   groups: LibraryGroup[];
@@ -27,11 +31,21 @@ type Props = {
    * where something is selected but no longer exists.
    */
   label: string | null;
+  /**
+   * Activity id → how many days it's on. Only the delete confirmation reads it.
+   *
+   * Built by the board, which is already holding every placement for the grid.
+   * Counting here would mean the tray taking the whole calendar as a prop to
+   * answer a question about six numbers.
+   */
+  markCounts: Map<string, number>;
+  /** Archiving, restoring and deleting report failures through the board's line. */
+  onError: (message: string) => void;
 };
 
 /**
- * The palette beside the calendar: every sticker you own, grouped by life area,
- * with the five moods last.
+ * The palette beside the calendar: the five moods, then every sticker you own,
+ * grouped by life area.
  *
  * Still presentational, and Step 11 kept it that way on purpose. It renders the
  * selection it's handed and reports clicks upward; it doesn't decide that
@@ -47,7 +61,67 @@ type Props = {
 export function StickerTray(props: Props) {
   const { selection, onSelect } = props;
 
-  /** Lit when it's what's selected, and clicking it again clears it. */
+  /**
+   * Which sticker's editor is open, as an id rather than the sticker itself.
+   *
+   * One editor for the whole tray, since the swap: the row body opens it, so
+   * there is no per-row trigger left to hang fifteen dialogs off. Holding the
+   * id and looking the sticker up again on every render is the part that
+   * matters — `refresh()` after a save hands down new groups, and a stored copy
+   * of the object would keep showing the old name. It also means deleting the
+   * sticker closes the dialog on its own: the lookup stops finding anything, so
+   * there's nothing left to render.
+   */
+  const [editing, setEditing] = useState<string | null>(null);
+
+  /**
+   * The six areas in the shape both dialogs want.
+   *
+   * Built once here rather than inside each row, because the edit form needs
+   * the same list the `+` does and there are fifteen rows. The tray hands it
+   * down rather than the forms fetching it: they're the same six rows already
+   * on screen, and two queries for one list is how a dropdown and the groups it
+   * describes end up disagreeing.
+   */
+  const areas = props.groups.map((group) => ({
+    id: group.areaId,
+    name: group.areaName,
+    colorKey: group.colorKey,
+  }));
+
+  /**
+   * The retired ones, from every area at once.
+   *
+   * Flattened rather than left under their headings, because six areas each
+   * with an "Archived" fold under it is six folds to open to find one sticker,
+   * and the reason you're looking is usually that you don't remember where you
+   * put it. They keep their area's colour, so the grouping is still legible
+   * without being structural.
+   *
+   * `getStickerLibrary` returns these alongside the active ones now — the query
+   * stopped filtering so that `tally` could keep counting their marks. Which
+   * means every list that draws stickers has to say which kind it wants, and
+   * this is the tray saying it.
+   */
+  const archived = props.groups.flatMap((group) =>
+    group.stickers.filter((sticker) => sticker.archived),
+  );
+
+  /**
+   * The sticker being edited, and the area it sits under, found together.
+   *
+   * The area comes from the group it's drawn in rather than from a lookup on
+   * the sticker, which is the same rule the pencil followed: the grouping is
+   * what's on screen, and if those two ever disagreed the dropdown should open
+   * on the one you can see.
+   */
+  const open = props.groups.flatMap((group) =>
+    group.stickers
+      .filter((sticker) => sticker.id === editing)
+      .map((sticker) => ({ sticker, lifeAreaId: group.areaId })),
+  )[0];
+
+  /** Lit when it's what's selected, and pressing the eye again clears it. */
   function toggle(next: Selection) {
     if (sameSelection(selection, next)) props.onClear();
     else onSelect(next);
@@ -65,13 +139,7 @@ export function StickerTray(props: Props) {
               it is already grouped by, rather than the form fetching them:
               they're the same six rows, and two queries for one list is how
               the dropdown and the groups end up disagreeing. */}
-          <NewStickerForm
-            areas={props.groups.map((group) => ({
-              id: group.areaId,
-              name: group.areaName,
-              colorKey: group.colorKey,
-            }))}
-          />
+          <NewStickerForm areas={areas} />
         </div>
 
         {/* The line under the heading does double duty, because a mode with no
@@ -107,11 +175,40 @@ export function StickerTray(props: Props) {
           the stickers inside them, so a label always sits directly above the
           stickers it names. */}
       <div className="grid grid-cols-2 items-start gap-x-8 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-1">
+        {/* First, and not from the database: the five moods are fixed by the
+            CHECK constraint on day_moods, so there is nothing to fetch.
+
+            They sat at the bottom until recently, on the ordering "the things
+            you own, then the things that come with the app". Moving them up is
+            the other ordering, the one that matches how a day gets filled in:
+            how it felt is the thing you always have to say, and the six areas
+            below are the ones you say something about only if you did them.
+            Being fixed is what makes them a good first row rather than a
+            leftover — the list above the areas is the one list in the tray that
+            never changes shape.
+
+            And now literally a row. `col-span-full` so the five columns get the
+            page's width in the stacked layout rather than one cell of it; in
+            the rail the grid is one column and this does nothing. */}
+        <MoodPicker
+          className="col-span-full"
+          selected={selection?.kind === "mood" ? selection.mood : null}
+          onToggle={(mood) => toggle({ kind: "mood", mood })}
+        />
+
         {props.groups.map((group) => {
           const areaSelection: Selection = {
             kind: "area",
             areaId: group.areaId,
           };
+
+          // The rows you can still reach for. Clicking the heading above them
+          // still lights the archived ones' days too, which is right: the
+          // highlight is a question about the *area*, and those marks are
+          // still that area's.
+          const stickers = group.stickers.filter(
+            (sticker) => !sticker.archived,
+          );
 
           return (
             <TrayGroup
@@ -123,6 +220,12 @@ export function StickerTray(props: Props) {
               onSelect={() => toggle(areaSelection)}
               selected={sameSelection(selection, areaSelection)}
               wash={wash(group.colorKey)}
+              // The same form the header's `+` opens, with one field already
+              // answered. Six more triggers and no second component, because
+              // the only thing that differs is a value.
+              action={
+                <NewStickerForm areas={areas} defaultAreaId={group.areaId} />
+              }
             >
               {/* An area with nothing in it was a bare label with a gap under it
                   until Step 10 — which read as something failing to load. Now
@@ -130,13 +233,13 @@ export function StickerTray(props: Props) {
                   get out of, so it says so. Sits inside the <ul> as a real <li>,
                   because an empty list with a paragraph next to it is a lie a
                   screen reader repeats. */}
-              {group.stickers.length === 0 && (
+              {stickers.length === 0 && (
                 <li className={`${TRAY_INSET} py-1 text-[0.9rem] text-ink-muted`}>
                   Nothing here yet
                 </li>
               )}
 
-              {group.stickers.map((sticker) => {
+              {stickers.map((sticker) => {
                 const stickerSelection: Selection = {
                   kind: "activity",
                   activityId: sticker.id,
@@ -156,6 +259,12 @@ export function StickerTray(props: Props) {
                     selected={sameSelection(selection, stickerSelection)}
                     wash={wash(sticker.colorKey)}
                     onSelect={() => toggle(stickerSelection)}
+                    onActivate={() => setEditing(sticker.id)}
+                    // "Gym" is what the row shows; "Edit Gym" is what it does.
+                    // The longer phrase still contains the visible word, which
+                    // is what keeps it a legal accessible name — and what keeps
+                    // "click Gym" working for someone using voice control.
+                    label={`Edit ${sticker.name}`}
                   />
                 );
               })}
@@ -163,33 +272,88 @@ export function StickerTray(props: Props) {
           );
         })}
 
-        {/* Last, and not from the database: the five moods are fixed by the
-            CHECK constraint on day_moods, so there is nothing to fetch.
-
-            No `onSelect` on the group. "Mood" isn't a thing you can highlight —
-            it names five things that each are, and a heading that lit nothing
-            would be a control that does nothing. */}
-        <TrayGroup label="Mood">
-          {MOODS.map((mood) => {
-            const moodSelection: Selection = { kind: "mood", mood };
-
-            return (
-              <TrayRow
-                key={mood}
-                dragId={mood}
-                payload={{ kind: "mood", mood }}
-                visual={<MoodMark mood={mood} />}
-                name={MOOD_LABEL[mood]}
-                selected={sameSelection(selection, moodSelection)}
-                // Ink, not a ramp — the same null that `MoodMark` has always
-                // meant by refusing to carry a colour.
-                wash={wash(null)}
-                onSelect={() => toggle(moodSelection)}
-              />
-            );
-          })}
-        </TrayGroup>
+        {/* Only once there is something in it. An empty "Archived (0)" fold is
+            a permanent invitation to open a drawer with nothing in it. */}
+        {archived.length > 0 && (
+          <ArchivedGroup
+            stickers={archived}
+            onError={props.onError}
+            className="col-span-full"
+          />
+        )}
       </div>
+
+      {/* The one editor, mounted only while a sticker is open in it. Outside
+          the grid, because a dialog isn't laid out — it's portaled to the end
+          of the document by Radix and would otherwise be a phantom grid cell
+          taking up a column. */}
+      {open && (
+        <EditStickerForm
+          key={open.sticker.id}
+          sticker={open.sticker}
+          lifeAreaId={open.lifeAreaId}
+          areas={areas}
+          markCount={props.markCounts.get(open.sticker.id) ?? 0}
+          open
+          onOpenChange={(next) => {
+            if (!next) setEditing(null);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * The fold at the bottom of the rail.
+ *
+ * `<details>` rather than a button and a piece of state, and it's the rare case
+ * where the platform element is simply better: it opens and closes with no
+ * JavaScript, it's a disclosure to a screen reader without a single ARIA
+ * attribute, and browser find-in-page opens it to show you a match inside. The
+ * one thing it can't do is animate, which is the thing this doesn't need.
+ *
+ * Closed by default. These are stickers you decided to stop seeing, and a fold
+ * that remembers being open would undo that decision every time the page
+ * reloaded.
+ */
+function ArchivedGroup(props: {
+  stickers: LibrarySticker[];
+  onError: (message: string) => void;
+  className?: string;
+}) {
+  return (
+    <details className={`group/fold ${props.className ?? ""}`}>
+      <summary
+        className={`${TRAY_INSET} eyebrow flex cursor-pointer list-none items-center gap-1.5 rounded-md py-0.5 hover:bg-ink/5`}
+      >
+        {/* Rotates a quarter turn when the fold opens. `list-none` above kills
+            the browser's own triangle, which sits on a different baseline in
+            every engine and can't be styled to match this one. */}
+        <ChevronRight
+          strokeWidth={1.5}
+          className="size-3.5 transition-transform group-open/fold:rotate-90"
+          aria-hidden="true"
+        />
+        Archived ({props.stickers.length})
+      </summary>
+
+      <ul className="mt-2 flex flex-col gap-0.5">
+        {props.stickers.map((sticker) => (
+          <ArchivedRow
+            key={sticker.id}
+            visual={<StickerMark sticker={sticker} />}
+            name={sticker.name}
+            action={
+              <RestoreStickerButton
+                activityId={sticker.id}
+                name={sticker.name}
+                onError={props.onError}
+              />
+            }
+          />
+        ))}
+      </ul>
+    </details>
   );
 }

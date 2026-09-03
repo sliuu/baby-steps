@@ -8,11 +8,16 @@ import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
 /**
  * Same shape as `PlaceResult` in `stickers.ts`, plus which field to point at.
  *
+ * Shared by both writers below rather than one type each. They fail in exactly
+ * the same ways — a bad draft, a name already taken, an area that isn't yours —
+ * and the form that renders the failure is literally the same component, so two
+ * identical types would be two places to remember to change.
+ *
  * `field` is null when the failure belongs to no particular input — signed out,
  * or Postgres declining for a reason the form can't help with. The form still
  * prints the sentence; it just doesn't mark a box red.
  */
-export type CreateResult =
+export type SaveResult =
   | { ok: true }
   | { ok: false; field: DraftField | null; message: string };
 
@@ -45,7 +50,7 @@ const INVALID_TEXT_REPRESENTATION = "22P02";
  */
 export async function createActivity(
   formData: FormData,
-): Promise<CreateResult> {
+): Promise<SaveResult> {
   const check = validateDraft(readDraft(formData));
   if (!check.ok) {
     return { ok: false, field: check.field, message: check.message };
@@ -107,6 +112,217 @@ export async function createActivity(
   // of truth on screen for the length of a round trip, and the only thing it
   // would buy is a sticker appearing a beat sooner in a list you're not
   // looking at while the dialog is still open.
+  refresh();
+  return { ok: true };
+}
+
+/**
+ * Change a sticker you already have.
+ *
+ * The same three fields as `createActivity`, the same validator, the same error
+ * mapping — the only real difference is `update … eq(id)` instead of `insert`,
+ * and the extra check below that the update actually hit something.
+ *
+ * `activityId` is a plain argument rather than a hidden input in the form. A
+ * hidden field would arrive in the same `FormData` as everything else, which
+ * means `readDraft` would have to know about it and `validateDraft` would have
+ * to ignore it — and it isn't part of the draft. It's which row to write. Those
+ * are different questions and they stay in different places.
+ *
+ * Not checked here: that the row belongs to you. RLS's "update own activities"
+ * policy is the gate, and it's a better one than an `eq("user_id", …)` written
+ * out here, because it applies to every query anyone ever writes rather than to
+ * the ones that remembered. Same reasoning as `lib/queries/`.
+ */
+export async function updateActivity(
+  activityId: string,
+  formData: FormData,
+): Promise<SaveResult> {
+  const check = validateDraft(readDraft(formData));
+  if (!check.ok) {
+    return { ok: false, field: check.field, message: check.message };
+  }
+  const { name, mark, lifeAreaId } = check.draft;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, field: null, message: "You're signed out." };
+  }
+
+  const { data, error } = await supabase
+    .from("activities")
+    .update({ life_area_id: lifeAreaId, name, mark })
+    .eq("id", activityId)
+    // The rows that were actually written. This is the part an update needs and
+    // an insert doesn't: under RLS, a row that isn't yours doesn't raise — the
+    // policy filters it out of the statement's scope, and Postgres reports a
+    // successful update of nothing. Without asking for the rows back, "saved"
+    // and "silently did nothing" are the same response, and the dialog would
+    // close on both.
+    .select("id");
+
+  if (error) {
+    // The unique constraint is (user_id, life_area_id, name), so this fires on
+    // a rename *and* on a move into an area that already has that name — which
+    // is why the sentence names the area rather than just the sticker.
+    if (error.code === UNIQUE_VIOLATION) {
+      return {
+        ok: false,
+        field: "name",
+        message: `You already have a sticker called “${name}” in that area.`,
+      };
+    }
+    if (
+      error.code === FOREIGN_KEY_VIOLATION ||
+      error.code === INVALID_TEXT_REPRESENTATION
+    ) {
+      return {
+        ok: false,
+        field: "lifeArea",
+        message: "That life area isn't one of yours.",
+      };
+    }
+    return {
+      ok: false,
+      field: null,
+      message: "That sticker didn't save. Try again.",
+    };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      ok: false,
+      field: null,
+      message: "That sticker isn't there any more.",
+    };
+  }
+
+  // Wider than the insert's `refresh()` has to be, and worth saying why. A new
+  // sticker only ever appears in the tray. An edited one is already *on days* —
+  // its mark and colour are drawn on the calendar grid, its name is in the day
+  // modal, and its area decides which bar it lands in on Trends. All of those
+  // come from the same server render, so one `refresh()` still covers it; the
+  // point is that the blast radius is the whole page rather than one list.
+  refresh();
+  return { ok: true };
+}
+
+/**
+ * Retire a sticker, or bring one back.
+ *
+ * One action for both directions rather than `archiveActivity` and
+ * `unarchiveActivity`, because the two would be the same eleven lines with one
+ * boolean different — and a pair of near-identical writers is how the check
+ * below ends up in only one of them.
+ *
+ * What archiving does *not* do is the point of it. The row stays, every
+ * `day_activities` row pointing at it stays, and `getStickerLibrary` still
+ * returns it. The marks you already placed keep being drawn on the calendar and
+ * keep counting under their life area in Trends. All that changes is that the
+ * tray stops offering it: you can't drag it onto a day and you can't tick it in
+ * the day modal. Archiving is a statement about the future, and the alternative
+ * — dropping its history out of the totals — would mean the number for a life
+ * area changed because of a decision about a tray.
+ */
+export async function setArchived(
+  activityId: string,
+  archived: boolean,
+): Promise<SaveResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, field: null, message: "You're signed out." };
+  }
+
+  // `.select("id")` for the same reason `updateActivity` needs it: under RLS a
+  // row that isn't yours is filtered out of the statement rather than refused,
+  // and Postgres reports a successful update of nothing.
+  const { data, error } = await supabase
+    .from("activities")
+    .update({ archived })
+    .eq("id", activityId)
+    .select("id");
+
+  if (error) {
+    return {
+      ok: false,
+      field: null,
+      message: archived
+        ? "That sticker didn't archive. Try again."
+        : "That sticker didn't come back. Try again.",
+    };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      ok: false,
+      field: null,
+      message: "That sticker isn't there any more.",
+    };
+  }
+
+  refresh();
+  return { ok: true };
+}
+
+/**
+ * Delete a sticker and every mark ever made with it. There is no undo.
+ *
+ * The cascade is the schema's, not this function's: `day_activities` references
+ * `activities (id, user_id)` with `on delete cascade`, so removing the one row
+ * here removes every placement of it in the same statement. Worth knowing that
+ * the deletion of months of calendar is happening in a line that doesn't
+ * mention days at all.
+ *
+ * This is the reason archiving exists, and the reason both are offered
+ * together. Almost every "I'm done with this habit" is an archive — the tray
+ * gets tidier and the history survives. Delete is for the other case, the
+ * sticker made by mistake or the one you'd rather nobody saw, and it is the
+ * only destructive thing in the app. The confirmation lives in the dialog and
+ * says how many marks are about to go, because a count is the one piece of
+ * information that makes this decision different from the archive above it.
+ *
+ * Nothing about ownership is checked here, and it isn't an omission: the RLS
+ * "delete own activities" policy is what stands between this `eq("id", …)` and
+ * someone else's row, and the zero-rows check below is what turns "the policy
+ * filtered it out" into a sentence rather than a silent success.
+ */
+export async function deleteActivity(activityId: string): Promise<SaveResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, field: null, message: "You're signed out." };
+  }
+
+  const { data, error } = await supabase
+    .from("activities")
+    .delete()
+    .eq("id", activityId)
+    .select("id");
+
+  if (error) {
+    return {
+      ok: false,
+      field: null,
+      message: "That sticker didn't delete. Try again.",
+    };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      ok: false,
+      field: null,
+      message: "That sticker isn't there any more.",
+    };
+  }
+
   refresh();
   return { ok: true };
 }

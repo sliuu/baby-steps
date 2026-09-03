@@ -1,10 +1,12 @@
 import { useDroppable } from "@dnd-kit/core";
+import { Pencil } from "lucide-react";
 
-import { MoodMark } from "./MoodMark";
-import { StickerMark } from "./StickerMark";
+import { DayMoodButton } from "./DayMoodButton";
+import { DraggableMark } from "@/components/dnd/DraggableMark";
+import { Button } from "@/components/ui/button";
+import type { CalendarChange } from "@/lib/changes";
 import { formatDayLong, type DayCellData, type DayString } from "@/lib/dates";
 import type { Highlight } from "@/lib/highlight";
-import { MOOD_LABEL } from "@/lib/moods";
 import { wash } from "@/lib/palette";
 import type { DayStickers } from "@/lib/stickers";
 
@@ -12,6 +14,12 @@ type Props = {
   cell: DayCellData;
   stickers: DayStickers;
   onOpen: (day: DayString) => void;
+  /**
+   * The mood popover's way back to the board — the same `commit` the modal and
+   * every drop go through, so a mood set from the face and a mood set from the
+   * modal are indistinguishable by the time anything acts on them.
+   */
+  onCommit: (change: CalendarChange) => void;
   /**
    * What's selected in the tray, or null when nothing is. The cell reads it to
    * decide which of *its own marks* are the selected one — a per-sticker
@@ -42,40 +50,22 @@ function numeralClasses(cell: DayCellData): string {
 }
 
 /**
- * One sentence naming the whole cell, because the cell is now one control.
+ * A day, and the things on it are its own controls now.
  *
- * Everything inside it — the numeral, each sticker, the mood — already carries
- * its own accessible name, which was right when the cell was a plain container.
- * As a button those names would be concatenated into its label, and "20 Gym
- * Meditation Great" is not a sentence. `aria-label` takes precedence over
- * contents, so this replaces all of it with something a person would say.
+ * The cell used to be a single `<button>` carrying one long `aria-label` — "20
+ * August. Gym, Meditation. feeling Great" — because that was the only honest way
+ * to name a control whose contents were drawings. It isn't a control any more.
+ * Every mark is a draggable in its own right, and opening the day is a pencil in
+ * the corner, so each thing in here names itself and the concatenated sentence
+ * has nothing left to describe.
  *
- * A lit day says so. The tint is the entire point of highlight mode and it is
- * pure colour, so without this sentence the feature simply doesn't exist for
- * anyone reading the page rather than looking at it.
+ * What that sentence carried and nothing else did is the highlight, which is
+ * pure colour: an `sr-only` line keeps it, because a feature made entirely of
+ * tint doesn't exist for anyone reading the page rather than looking at it.
+ * That was the whole lesson of `dayLabel()`, and it outlived the function.
  */
-function dayLabel(
-  cell: DayCellData,
-  stickers: DayStickers,
-  litBy: string | null,
-): string {
-  const parts = [formatDayLong(cell.day)];
-
-  if (stickers.activities.length > 0) {
-    parts.push(stickers.activities.map((sticker) => sticker.name).join(", "));
-  }
-  if (stickers.mood) {
-    parts.push(`feeling ${MOOD_LABEL[stickers.mood]}`);
-  }
-  if (parts.length === 1) parts.push("empty");
-  if (litBy) parts.push(`highlighted for ${litBy}`);
-
-  return parts.join(". ");
-}
-
-
 export function DayCell(props: Props) {
-  const { cell, stickers, onOpen, highlight, lit } = props;
+  const { cell, stickers, onOpen, onCommit, highlight, lit } = props;
 
   /**
    * One rule, and it covers every mark on the page: a mark stays at full
@@ -99,44 +89,36 @@ export function DayCell(props: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: cell.day });
 
   return (
-    // A real button, not a div with an onClick. It has to be reachable by tab,
-    // fire on Enter and Space, and announce itself as something that does
-    // something — all of which a button is, for free and correctly, and none of
-    // which a div gets without reimplementing them by hand.
+    // A plain `<div>`, and going back to one is the point of the change. A
+    // whole-cell button meant the calendar had exactly one gesture — click
+    // anywhere, open the modal — and it swallowed the two that a calendar of
+    // draggable marks actually wants: picking a mark up, and putting it down
+    // somewhere else. Nested controls inside a button aren't allowed either, so
+    // as long as the cell was one, the marks in it could only ever be pictures.
     //
-    // Nothing inside is interactive, so there are no nested controls: the
-    // stickers are drawings, and editing them is what the modal is for.
-    <button
+    // `group/day` is named rather than bare: the pencil reveals off *this* cell,
+    // and the grid renders 42 of them.
+    <div
       ref={setNodeRef}
-      type="button"
-      // The machine-readable date, the droppable id, and now also the argument.
+      // The machine-readable date, and the droppable id.
       data-day={cell.day}
-      onClick={() => onOpen(cell.day)}
-      aria-label={dayLabel(cell, stickers, lit && highlight ? highlight.label : null)}
-      // `flex flex-col justify-start` is not a layout choice, it's a correction.
-      // A button centres its own contents vertically — that behaviour is built
-      // into how the browser lays a button out, and `display: block` does not
-      // turn it off. With `min-h-32` making every cell taller than its contents,
-      // the date and stickers floated to the middle the moment this stopped
-      // being a div. Declaring a real layout replaces the built-in one.
-      // `items-stretch` keeps the date row full width so its mood stays pinned
-      // right.
-      //
-      // The focus ring is an outline pulled inward rather than a ring. The grid
-      // clips its children (`overflow-hidden` is what makes the 1px hairlines),
-      // so a ring drawn outside the cell's box would be shaved off along every
-      // shared edge.
+      // `isolate` gives the cell its own stacking context, so the negative
+      // z-index on the wash below can't escape and paint behind the grid.
       //
       // The hover wash is the same ink-at-low-opacity trick the tray rows use,
       // but not the same number. 5% reads as a light touch across a 28px band
       // and as a grey square across a 150px cell — tint is perceived by area, so
       // the larger the surface the lower the number has to go to mean the same
-      // thing.
+      // thing. It no longer means "click me"; it means "the pencil is here".
+      // A flex column of two things: a header, and everything that happened.
       //
-      // `isolate` is what makes the wash layer below safe. It gives the button
-      // its own stacking context, so a negative z-index inside can't escape and
-      // paint behind the grid.
-      className={`relative isolate flex min-h-32 w-full flex-col items-stretch justify-start p-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink ${
+      // The marks briefly wrapped *around* the date and the mood, using floats,
+      // which is the only layout mode that can do that — and it's the wrong
+      // thing to want here. The top line is a header: this is the 20th, and the
+      // day felt like this. A sticker landing between those two turns a label
+      // into a shelf, and the two facts stop reading as a pair. The capacity it
+      // bought was one mark, and the price was the cell's own structure.
+      className={`group/day relative isolate flex min-h-32 w-full flex-col items-stretch justify-start p-2.5 transition-colors ${
         cell.inMonth
           ? "bg-surface hover:bg-ink/2"
           : "bg-surface-sunken hover:bg-ink/2"
@@ -147,7 +129,7 @@ export function DayCell(props: Props) {
           That difference is the whole reason they're two elements rather than
           one shared "overlay" helper.
 
-          A negative z-index paints after the button's own background and before
+          A negative z-index paints after the cell's own background and before
           its in-flow children, which is exactly what a wash should do: an
           opaque `bg-ramp-red-soft` in front of the marks would hide the very
           stickers it's pointing at, while the drop highlight is a 6% tint that
@@ -156,16 +138,20 @@ export function DayCell(props: Props) {
           Keeping the base surface underneath is also what makes the ink wash
           work at all. `bg-ink/10` is translucent, so it needs a real surface
           beneath it — laid straight onto the cell it would show the grid's
-          hairline colour through the gaps.
-
-          Cost, stated plainly: on a lit cell the `hover:bg-ink/2` above is now
-          under an opaque tint and barely reads. The tint is louder feedback
-          than the hover ever was, so it stands in for it. */}
+          hairline colour through the gaps. */}
       {lit && highlight && (
         <div
           aria-hidden="true"
           className={`pointer-events-none absolute inset-0 -z-10 ${wash(highlight.colorKey)}`}
         />
+      )}
+
+      {/* The tint said out loud. The only part of the old `dayLabel` sentence
+          with no element of its own to live in. */}
+      {lit && highlight && (
+        <span className="sr-only">
+          {formatDayLong(cell.day)} is highlighted for {highlight.label}.
+        </span>
       )}
 
       {/* The highlight is its own layer rather than a swapped background class,
@@ -183,9 +169,16 @@ export function DayCell(props: Props) {
         />
       )}
 
-      {/* The day's own line: number left, mood right. The mood is a summary of
-          the whole day, so it sits with the date rather than in the row of
-          things that happened. */}
+      {/* The day's own line: number left, mood right, nothing between them.
+          Two facts about the day as a whole, and the gap between them is what
+          makes them read as a header rather than as the first two items of a
+          list.
+
+          The mood is still not a draggable. It has nowhere to be moved *to* —
+          `unique (user_id, day)` means a day holds one, so "carrying it to
+          Thursday" would be a replace wearing a move's gesture. What it is
+          instead is a button: a mood is the one thing on a day you *revise*,
+          and the pencil is a heavy way to change one field. */}
       <div className="flex items-center justify-between gap-2">
         <time
           dateTime={cell.day}
@@ -195,36 +188,85 @@ export function DayCell(props: Props) {
         </time>
 
         {stickers.mood && (
-          <span
-            className={`transition-opacity ${selected(highlight?.mood === stickers.mood)}`}
-          >
-            <MoodMark mood={stickers.mood} />
-          </span>
+          <DayMoodButton
+            day={cell.day}
+            mood={stickers.mood}
+            faded={selected(highlight?.mood === stickers.mood)}
+            onCommit={onCommit}
+          />
         )}
       </div>
 
       {/* Wraps rather than scrolls or truncates: a day with eight stickers is a
           good day, and hiding some of them would be lying about it. The cell's
-          min-height is a floor, so a busy day simply makes its row taller. */}
-      {stickers.activities.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {stickers.activities.map((sticker) => (
-            // The wrapper is what fades, not StickerMark itself. Four other
-            // places draw that component — the tray, the drag overlay, the
-            // modal, the new-sticker preview — and none of them has any notion
-            // of a highlight. A `faded` prop would push this step's concern
-            // into all five.
-            <span
-              key={sticker.id}
-              className={`transition-opacity ${selected(
-                highlight?.activityIds.has(sticker.activityId) ?? false,
-              )}`}
-            >
-              <StickerMark sticker={sticker} />
-            </span>
-          ))}
-        </div>
-      )}
-    </button>
+          min-height is a floor, so a busy day simply makes its row taller.
+
+          `mt-2` is the breathing room, and it's what makes the line above read
+          as a header. Without it the date, the mood and the marks are one
+          undifferentiated pile.
+
+          Inline flow rather than `flex-wrap`, which matters for one reason: the
+          pencil at the end has to sit in the same run as the marks, and it is a
+          different height. In a flex row that's a stretch/align problem; in a
+          line of inline-blocks it's just the next box.
+
+          `mr-0.5` and not `mr-1`, and this is arithmetic against an 85px cell —
+          744px of calendar over seven columns, less `p-2.5` either side. Three
+          26px marks with 4px between them come to 86px, one pixel over, so the
+          row broke at two and the right-hand column of every cell stayed empty.
+          Two-pixel gaps make it 82.
+
+          `leading-[30px]` is what separates the rows, because a vertical margin
+          on an inline-level box does nothing to the line box around it — the
+          gap between wrapped rows has to come from line-height. 26px of mark
+          plus 4px of air, matching the horizontal rhythm. */}
+      <div className="mt-2 leading-[30px] [&>button]:mr-0.5 [&>button]:align-top">
+        {stickers.activities.map((sticker) => (
+          <DraggableMark
+            key={sticker.id}
+            sticker={sticker}
+            day={cell.day}
+            faded={selected(
+              highlight?.activityIds.has(sticker.activityId) ?? false,
+            )}
+          />
+        ))}
+
+        {/* The way in to the modal, and now the only one.
+
+            It takes a mark's slot at the end of the run rather than floating
+            over the corner. That's the whole fix for a problem the corner
+            version had: absolutely positioned, it sat on top of whatever mark
+            reached the bottom right, and a mark you can't see is a mark you
+            can't pick up. Reserving a slot costs one sticker's worth of room on
+            a busy day and costs nothing at all on a quiet one, which is most of
+            them.
+
+            Hidden until the cell is hovered, so 42 pencils don't compete with
+            the marks on a page that is mostly read rather than edited. `opacity-0`
+            and not `hidden`, because the slot has to stay held either way — a
+            control that appears and reflows the row it's in is worse than one
+            that was always visible.
+
+            The hiding is behind `@media (hover: hover)`, which is the rule this
+            project has had to learn twice: a touch device never fires hover, so
+            an `opacity-0` that only lifts on `:hover` is a tap target you can't
+            see and can still hit. On a phone every pencil is simply visible. */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => onOpen(cell.day)}
+          aria-label={`Edit ${formatDayLong(cell.day)}`}
+          title="Edit this day"
+          className={`opacity-100
+            [@media(hover:hover)]:opacity-0
+            [@media(hover:hover)]:group-hover/day:opacity-100
+            [@media(hover:hover)]:focus-visible:opacity-100`}
+        >
+          <Pencil strokeWidth={1.5} />
+        </Button>
+      </div>
+    </div>
   );
 }

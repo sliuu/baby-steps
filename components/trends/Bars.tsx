@@ -40,29 +40,41 @@ export function Bars(props: Props) {
 
   return (
     <ChartCard>
-      {/* `h-full` plus `justify-between` is what makes six rows fill a box
-          sized for a circle: the first row sits at the top, the last at the
-          bottom, and the slack is shared out between them. `gap-4` stays as the
-          floor, so a range with two areas spreads instead of stretching two
-          rows to the corners. */}
-      <ul className="flex h-full flex-col justify-between gap-4">
+      {/* One grid for the whole chart, not one per row, and that is the thing
+          that stopped the names cropping.
+
+          They used to be a fixed `8.5rem` column, because six separate grids
+          have no way to agree on a width and a guessed number was the only way
+          to keep the bars starting in one vertical line. "Friends & Family"
+          lands a hair over that guess, so it wore an ellipsis at every range.
+
+          Now the <ul> owns the columns and each row opts into them with
+          `grid-cols-subgrid`, so the first column is `max-content` — as wide as
+          the longest name that's actually there, measured rather than
+          predicted. Nothing crops, the bars still line up, and a renamed area
+          resizes the column instead of getting trimmed.
+
+          `content-between` does what `justify-between` did before: first row at
+          the top, last at the bottom, slack shared out between them, with
+          `gap-4` as the floor so two areas spread instead of being stretched to
+          the corners. */}
+      <ul className="grid h-full grid-cols-[max-content_1fr_2.5rem] content-between gap-4">
         {ranked.map((area, i) => (
           <li
             key={area.areaId}
-            // Three columns: a name that may be long, a track that takes what's
-            // left, and a count that takes exactly what it needs. `minmax(0,…)`
-            // on the name is the part that isn't obvious — a grid column's
-            // default minimum is its content, so without it a long area name
-            // refuses to shrink and pushes the track off the card instead of
-            // truncating.
-            className="grid grid-cols-[minmax(0,8.5rem)_1fr_2.5rem] items-center gap-4"
+            // `col-span-3` puts the row across all three parent columns, and
+            // `grid-cols-subgrid` makes its own children land in those same
+            // three rather than in a fresh grid of its own. The <li> stays a
+            // real element — `display: contents` would have done the same job
+            // and dropped the list semantics on the way.
+            className="col-span-3 grid grid-cols-subgrid items-center"
           >
-            {/* EB Garamond, matching the area names elsewhere. `truncate` is
-                the honest failure for a name too long for its column: an
-                ellipsis says there's more, where wrapping would make one row
-                twice the height of its neighbours and break the comb of bars
-                this chart is read as. */}
-            <span className="truncate font-heading text-[1.05rem]">
+            {/* EB Garamond, matching the area names elsewhere. No `truncate`
+                any more and no wrapping either: the column is sized to the
+                longest name, so there is nothing to trim and no row that comes
+                out twice the height of its neighbours and breaks the comb of
+                bars this chart is read as. */}
+            <span className="font-heading text-[1.05rem]">
               {area.areaName}
             </span>
 

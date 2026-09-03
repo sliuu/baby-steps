@@ -1,5 +1,5 @@
 import { MoodMark } from "@/components/calendar/MoodMark";
-import type { MoodTally, Takeaway, Tally } from "@/lib/analytics";
+import type { MoodTally, Tally } from "@/lib/analytics";
 
 import { AreaTable } from "./AreaTable";
 
@@ -7,7 +7,7 @@ type Props = {
   tally: Tally;
   moods: MoodTally;
   /** The sentence, already composed. Null when there's nothing to say. */
-  takeaway: Takeaway | null;
+  takeaway: string | null;
   /** `AreaTable`'s accessible name. See the prop's note there. */
   caption: string;
   /** "this month", "so far" — from `rangePhrase`, for the mood heading. */
@@ -36,8 +36,15 @@ type Props = {
  */
 export function Readout(props: Props) {
   return (
-    <div className="flex flex-col gap-8">
-      {props.takeaway && <Sentence takeaway={props.takeaway} />}
+    // `gap-6`, tightened from 8, and the reason is the column beside it. The
+    // chart card is a fixed ratio, so its height is set by how wide the column
+    // is — it can't be stretched to meet this one, and this one is the taller of
+    // the two by about the height of two gaps. Closing the two gaps and shaving
+    // the table's row padding is what brings the bottoms to roughly the same
+    // line. Roughly is the honest word: six areas with marks and five moods on
+    // one row is the common case, and a range with fewer of either ends higher.
+    <div className="flex flex-col gap-6">
+      {props.takeaway && <Sentence text={props.takeaway} />}
 
       <AreaTable tally={props.tally} caption={props.caption} />
 
@@ -51,25 +58,22 @@ export function Readout(props: Props) {
  *
  * A chart shows a shape and leaves you to read it. This says the reading out
  * loud, which is a real accessibility feature and not only a nicety: the three
- * charts are `aria-hidden`, so for a screen reader these two lines *are* the
- * summary, arriving before the table rather than instead of it.
+ * charts are `aria-hidden`, so for a screen reader this line *is* the summary,
+ * arriving before the table rather than instead of it.
  *
- * Two elements rather than one sentence with a clause, because they answer
- * different questions — "what led" and "out of how much" — and a reader who
- * only wants the first should be able to stop after a line. The lead carries the
- * page's body size in the heading face; the support drops to muted, which is
- * what makes the pair read as a statement and a footnote instead of a paragraph.
+ * One line. A muted second line under it used to give the totals — "4 marks in
+ * all, across 2 of your 6 areas" — and it sat directly above a table of the
+ * same numbers, laid out so you can read any of them without doing arithmetic
+ * from memory. Two versions of one fact, and the sentence kept the version that
+ * says something the table can't.
  */
-function Sentence(props: { takeaway: Takeaway }) {
+function Sentence(props: { text: string }) {
   return (
     // `max-w-prose` even though the column is already narrow. The column's width
     // is set by the grid and can change; a line length is a fact about reading.
-    <div className="flex max-w-prose flex-col gap-1.5">
-      <p className="font-heading text-[1.35rem] leading-snug">
-        {props.takeaway.lead}
-      </p>
-      <p className="text-[0.95rem] text-ink-muted">{props.takeaway.support}</p>
-    </div>
+    <p className="max-w-prose font-heading text-[1.35rem] leading-snug">
+      {props.text}
+    </p>
   );
 }
 
@@ -99,8 +103,13 @@ export function MoodStrip(props: { moods: MoodTally; phrase: string }) {
   const { moods, total } = props.moods;
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="font-heading text-[1.35rem]">Mood {props.phrase}</h2>
+    <section className="flex flex-col gap-3">
+      {/* Plural, because it counts five of them. "Mood this month" read as a
+          label for a single value — the month's mood — which is exactly what
+          this isn't: it's the distribution, and the zero rows are part of the
+          answer. `phrase` is shared with the takeaway sentence so the two can't
+          drift into describing the same fortnight two different ways. */}
+      <h2 className="font-heading text-[1.35rem]">Moods {props.phrase}</h2>
 
       {total === 0 ? (
         // Not five dashes. A row of empty counts looks like a broken strip; a
@@ -115,7 +124,13 @@ export function MoodStrip(props: { moods: MoodTally; phrase: string }) {
         // strip read better than five squeezed columns. `gap-y` is smaller than
         // `gap-x` on purpose: the wrap should look like one strip that turned a
         // corner, not like two lists.
-        <ul className="flex flex-wrap gap-x-6 gap-y-3">
+        //
+        // `gap-x-5` rather than 6, and this is the one gap here that buys
+        // vertical space by getting narrower. Five items either fit on one line
+        // or they don't; 4px off each of four gaps is 16px of width, which is
+        // roughly the margin the strip was missing at this column width. When
+        // it fits, the whole strip is one row shorter.
+        <ul className="flex flex-wrap gap-x-5 gap-y-3">
           {moods.map((entry) => (
             <li key={entry.mood} className="flex items-center gap-2">
               {/* Hidden from the reader, and only here. `MoodMark` carries its

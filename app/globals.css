@@ -16,6 +16,14 @@
   --font-sans: var(--font-eb-garamond), Georgia, "Times New Roman", serif;
   --font-heading: var(--font-cormorant), Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  /* Emoji first, and that ordering is the whole point — see `StickerMark`. A
+     line box is sized by the *first available* font, not by the font that ends
+     up drawing the character, so a sticker mark set in the body serif gets a
+     serif's baseline with an emoji's ink hanging off it. Naming the emoji font
+     first makes the two agree. The serif stays on the end for marks that are
+     letters. */
+  --font-emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+    var(--font-eb-garamond), Georgia, serif;
 
   /* shadcn's contract — its components read only these names. */
   --color-background: var(--background);
@@ -54,15 +62,26 @@
   --color-ramp-green: var(--ramp-green);
   --color-ramp-purple: var(--ramp-purple);
 
-  /* The pastel end of each ramp — what a sticker is actually filled with. The
-     full hue stays for anything that needs to carry at a distance: chart
-     vertices, the highlight tint, the dots beside labels. */
+  /* The pastel end of each ramp — the highlight wash, and the fill of every
+     swatch in Trends. The full hue stays for anything that needs to carry at a
+     distance: chart vertices, the dots beside labels, a sticker's outline. */
   --color-ramp-red-soft: var(--ramp-red-soft);
   --color-ramp-blue-soft: var(--ramp-blue-soft);
   --color-ramp-orange-soft: var(--ramp-orange-soft);
   --color-ramp-yellow-soft: var(--ramp-yellow-soft);
   --color-ramp-green-soft: var(--ramp-green-soft);
   --color-ramp-purple-soft: var(--ramp-purple-soft);
+
+  /* The palest end — what a sticker is filled with, under an outline in the
+     full hue. A third rung rather than `bg-ramp-red-soft/40`, because a
+     sticker sits on the surface in the tray and on a sunken day cell in the
+     grid, and a translucent fill would be a different colour in each. */
+  --color-ramp-red-tint: var(--ramp-red-tint);
+  --color-ramp-blue-tint: var(--ramp-blue-tint);
+  --color-ramp-orange-tint: var(--ramp-orange-tint);
+  --color-ramp-yellow-tint: var(--ramp-yellow-tint);
+  --color-ramp-green-tint: var(--ramp-green-tint);
+  --color-ramp-purple-tint: var(--ramp-purple-tint);
 
   --color-area-spirituality: var(--area-spirituality);
   --color-area-exercise: var(--area-exercise);
@@ -134,6 +153,24 @@
   --ramp-yellow-soft: #eeda9e;
   --ramp-green-soft: #a8c6a4;
   --ramp-purple-soft: #cbaddd;
+
+  /* Each hue at 20% over the surface cream — the fill a sticker wears now that
+     it also wears an outline.
+
+     The outline is what carries the hue, so the fill stopped having to. At 48%
+     a mark drawn in dark ink had to compete with a mid-tone circle behind it,
+     and an emoji — which brings its own colours and can't be recoloured —
+     competed worst. At 20% every hue clears 12.8:1 under --ink, and the ring
+     around it names the area more clearly than the old fill did.
+
+     Same mix as the soft rung, one step less of it, for the same reason: seven
+     hues later this is arithmetic rather than six more guesses. */
+  --ramp-red-tint: #f2d8d2;
+  --ramp-blue-tint: #d4e2eb;
+  --ramp-orange-tint: #f6e1cf;
+  --ramp-yellow-tint: #f7eed2;
+  --ramp-green-tint: #dae5d5;
+  --ramp-purple-tint: #e8dbed;
 
   /* The default six, by name. Aliases — the ramp above is the real value. */
   --area-spirituality: var(--ramp-red);
@@ -215,6 +252,19 @@
   --ramp-yellow-soft: #786a35;
   --ramp-green-soft: #3d5939;
   --ramp-purple-soft: #5b416b;
+
+  /* 20% here too, and this is the rung where the two themes *can* move
+     together. The soft pair couldn't: mixing further from the surface means
+     brighter in the light theme and darker in this one, so the step that helped
+     --ink there hurt it here, and yellow pinned this side at 42%. Mixing *less*
+     moves both toward their own surface, which adds contrast under the mark in
+     both directions at once. The floor is 8.5:1, on dark yellow. */
+  --ramp-red-tint: #462c26;
+  --ramp-blue-tint: #2a363f;
+  --ramp-orange-tint: #4a3523;
+  --ramp-yellow-tint: #4a4127;
+  --ramp-green-tint: #2f3a29;
+  --ramp-purple-tint: #3d2f40;
 
   --background: var(--bg);
   --foreground: var(--ink);

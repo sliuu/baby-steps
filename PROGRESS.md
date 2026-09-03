@@ -2,7 +2,402 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 15 of 17 is written and green, uncommitted, and not yet looked at in a browser. Step 16 (motion) is next — two steps left after this one.
+**Now:** Step 16 of 18 is written and green, uncommitted, and *partly* looked at in a browser at last — nine changes deep. The newest reshapes the day cell: a header line (date left, mood right), a gap, then the marks, with the pencil holding the last slot in the run instead of floating over the corner. Capacity before a cell grows went from 2 marks to 5. Step 15 shipped as `bfb2e2a`. Step 17 (motion) is next — two steps left after this one.
+
+The plan grew a step: editing a sticker was inserted as Step 16, so motion and deploy became 17 and 18.
+
+---
+
+## 2026-09-03 · Step 16, continued · Header, then the marks, and the pencil takes a slot
+
+"The stickers should be able to fill the third column (like where the mood and the pencil are) and the bottom column." Then, after looking at it: "I don't want stickers between the date and the mood, in the top row. I want it more like header [number space mood] then stickers, with edit taking one sticker's spot in the last row. Make sure there is some breathing room between header and the list of stickers too."
+
+**Decisions**
+
+- **The gap went `mr-1` → `mr-0.5`, and that alone was the "third column".** The cell's inner width is ~85px (744px of calendar over seven columns, less `p-2.5`). Three 26px marks with 4px gaps is 86px — one pixel over, so the row broke at two and the right-hand column of every cell stayed empty. Two-pixel gaps make it 82. A rounding loss that read as a design decision.
+- **Row spacing comes from `leading-[30px]`, not margin.** The marks are inline-blocks now, and a vertical margin on an inline-level box does nothing to the line box around it. 26px of mark plus 4px of air, matching the horizontal rhythm.
+- **The top line is a header and stays one.** Marks briefly wrapped *around* the date and the mood using floats — the one layout mode that can do that — and it was the wrong thing to want. "This is the 20th, and the day felt like this" is a pair; a sticker landing between them turns a label into a shelf. It bought one mark of capacity and cost the cell its structure. Backed out; the header is `flex justify-between` again.
+- **`mt-2` between the header and the marks.** Without it the date, the mood and the marks are one undifferentiated pile, and the header stops reading as a header.
+- **The pencil holds the last slot in the run instead of floating over the corner.** Absolutely positioned it sat on top of whatever mark reached the bottom right — and a mark you can't see is a mark you can't pick up. In the flow it can never overlap. It costs one sticker's worth of room on a busy day and nothing at all on a quiet one, which is most of them.
+- **That also retires `pb-6` and the background chip.** Both existed only to manage the overlap. Reserving a real slot is the thing that made them unnecessary, which is the usual shape: the fix removes the workarounds rather than tuning them.
+- **`opacity-0`, not `hidden`.** The slot has to stay held whether or not the pencil is showing — a control that appears and reflows the row it's in is worse than one that was always visible.
+- **Capacity:** the min-height held 2 marks before the row grew. It now holds 5 — a row of three, then two more beside the pencil.
+
+**Changed**
+
+- `components/calendar/DayCell.tsx` — header row restored; the mark list is inline flow with `mt-2 leading-[30px] [&>button]:mr-0.5 [&>button]:align-top`; the pencil moved inside that list as its last child and lost `absolute`, `bg-*` and `border-hairline`
+
+**State:** `tsc`, `eslint`, 188 tests, `npm run build` all green. `mt-2`, `leading-[30px]`, `mr-0.5` and `align-top` all present in the compiled CSS. Uncommitted.
+
+**What to look for.** A busy day: date and mood on their own line, a clear gap, then a row of three marks and a second row that ends in the pencil. Hover it and check the pencil appears without anything moving.
+
+**Open**
+
+- **Three marks per row has ~3px of slack.** 82px of marks in 85px of cell. Any change to the rail width, the page width, or the mark size takes the third column away again, silently. The kind of number that should probably be derived rather than typed.
+- **With exactly three marks the pencil starts a second row on its own.** Predictable, but it means a three-sticker day is as tall as a five-sticker one.
+- A dead `color: 0` rule reached the bundle from a code *comment* explaining a utility that hadn't worked. Tailwind scans source text — comments included, and `.md` files too, so writing the class name into `learning/README.md` put it straight back. Both reworded to describe the class rather than spell it. A class name written in prose still ships.
+
+## 2026-09-02 · Step 16, continued · Two columns that start and end together
+
+"I'd like the 'Exercise was the greatest share…' to start higher on the right column, more in line with where the filter dropdown is. It feels unreasonably low right now. And call it 'Moods this month', and try to have both columns end roughly at the same place by removing spacing has necessary."
+
+**Decisions**
+
+- **The full-width header band is gone; the controls moved into the left column.** Both columns already started on the same grid line — the band above them is what made that line low. Its right half held nothing, and everything under it started below it, so the sentence (the page's actual answer) began a control row beneath the furniture that filters it.
+- **Stephanie picked this over the alternative,** which was leaving the band and giving the right column a heading of its own to fill the same vertical space. That would have equalised the tops by adding, not removing.
+- **The known cost:** the range picker governs both columns but now sits in one of them. It holds up only because nothing on this page escapes the range — one rule, one set of numbers. If a control ever filtered half the page, the band comes back.
+- **The right column is the one that can give.** The chart card is a fixed aspect ratio, so its height follows the column's width and can't be stretched to meet anything. The readout is a sentence, a table and a strip — all stretchy. A mismatch where only one side can move isn't a bug to fix, it's a length to choose.
+- **The space came from the biggest multiplier, not the biggest number.** Table rows `py-2.5` → `py-2` is 4px on eight rows ≈ 32px; the readout's `gap-8` → `gap-6` is 8px on two gaps = 16px; the mood heading's gap gives 4px. The change nobody notices moved twice what the obvious one did.
+- **One horizontal change bought vertical space.** The mood strip's `gap-x-6` → `gap-x-5` is 16px of width across four gaps, which is roughly what the five items needed to stop wrapping. A row that fits on one line is a line shorter.
+- **"Moods this month", plural.** Singular read as a label for a single value — *the* month's mood — when the strip is five counts and the zeros are part of the answer. `phrase` is still computed once in `TrendsBoard` and shared with the takeaway sentence.
+- **`items-start` stays and is load-bearing.** Without it the grid stretches both columns to the taller one, and the fixed-ratio chart card is pulled out of shape by however long the table happens to be — which would turn this whole exercise inside out.
+
+**Changed**
+
+- `components/trends/TrendsBoard.tsx` — `<header>` removed; `RangePicker`, the span dates and `ChartSwitcher` now live in the left grid column; the empty state sits beside them instead of spanning both
+- `components/trends/Readout.tsx` — wrapper `gap-8` → `gap-6`; `MoodStrip` heading is "Moods {phrase}"; section `gap-4` → `gap-3`; strip `gap-x-6` → `gap-x-5`
+- `components/trends/AreaTable.tsx` — every `py-2.5` → `py-2`
+
+**State:** `tsc`, `eslint`, 188 tests, `npm run build` all green. `gap-x-5`, `gap-6`, `gap-3`, `py-2`, `gap-x-14`, `gap-y-10` confirmed in the compiled CSS. Uncommitted.
+
+**What to look for.** Open Trends. The sentence should start on the same line as the dropdown, not below the chart pill. Then look at the two columns' bottoms — the mood strip should finish within about a line of the chart card.
+
+**Open**
+
+- The column heights are estimates from the type scale, not measured in a browser. "Roughly" is doing real work: six areas and five moods on one row is the common case, and a range with fewer of either ends higher.
+- Below `lg` the columns stack and none of this applies — unlooked-at.
+- Whether the mood strip actually fits on one line at this column width is the one thing `gap-x-5` was chosen for and the one thing that hasn't been seen.
+
+## 2026-09-02 · Step 16, continued · A narrower page, and the last half pixel
+
+"Let's increase the left and right margin (decrease the width and center the column all the content sits on a bit), and apply the fix for the emoji centering."
+
+**Decisions**
+
+- **Both numbers in `PAGE_WIDTH` moved, because they bind at different sizes.** `max-w-*` is what stops the content on a wide screen and the gutter is the leftover; on a laptop the max-width never applies and `px-*` *is* the margin. Changing one widens the page in half the windows it's viewed in. Now `max-w-6xl px-10`, was `max-w-7xl px-8`.
+- **The calendar grid gives up the 8rem.** 7xl was picked so the grid kept roughly its pre-rail width. A month is a fixed 7 columns — it doesn't need the width, it fills whatever it's given — so the margin is the better owner of it.
+- **One constant, so the nav and the page body can't drift.** The wordmark sits directly above the calendar's left edge; that alignment is the entire reason `PAGE_WIDTH` exists rather than being written twice.
+- **The emoji nudge is `translate-y-[0.5px]`, and it stays a magic number.** Naming the emoji font first fixed *which* box the glyph is centred in. It can't fix that a box isn't ink: what gets centred is ascent-plus-descent, and an emoji font reserves descent its glyphs barely use, so the box's midpoint sits below the ink's. There is no `align-items: optical`.
+- **It works because the glyph span is a grid item.** `translate` doesn't apply to non-replaced inline elements — but a direct child of a `grid` container is blockified, so it does. Confirmed in the compiled CSS: Tailwind v4 emits the `translate` property, not a `transform`.
+
+**Changed**
+
+- `lib/layout.ts` — `PAGE_WIDTH` is `mx-auto w-full max-w-6xl px-10`
+- `components/calendar/StickerMark.tsx` — `translate-y-[0.5px]` on the glyph span
+
+**State:** `tsc`, `eslint`, 188 tests, `npm run build` all green. `max-w-6xl`, `px-10` and `translate-y-[0.5px]` confirmed in the compiled CSS. Uncommitted.
+
+**What to look for.** More air either side of the whole page, nav included — the wordmark should still line up with the calendar's left edge. Then the book sticker: dead centre, or a hair either way, which is the number to tune.
+
+**Open**
+
+- The 0.5px was chosen by reasoning, not by looking. It's the right *direction*; the magnitude is a guess until someone sees it.
+- Letter marks (`✎`) take the same strut and move with it. Whether that's an improvement or a new problem is unlooked-at.
+
+---
+
+## 2026-09-02 · Step 16, continued · The mood row, and the mood popover
+
+Two from Stephanie, plus a question about the book emoji. "Let's put the moods (if there is enough width) on one row, with the labels below, so they take up less vertical space." Then: "Clicking on a mood on the calendar should bring up an option to just change the mood and nothing else."
+
+**Decisions**
+
+- **The moods are five columns, not five rows.** `grid grid-cols-5`, face over label, `col-span-full` so the stacked layout gives them the page width rather than one cell of it. Saves about 120px of rail, which the six life areas get.
+- **Fixed columns, not `flex-wrap`.** Wrapping breaks 4 + 1 at the first width that doesn't fit, and a lone "Rough" on its own line reads as a different kind of thing. Equal columns just narrow; the longest label is five characters.
+- **`MoodPicker` is its own component, not `TrayGroup` with a prop.** Same argument `ArchivedRow` settled: no eye, no editor, no hover band, no name beside the face — a `variant` would be switching off nearly all of `TrayRow` and then relaying it vertically. What they still share is `DragPayload`.
+- **Clicking a mood in the tray now lights it.** A sticker row has three verbs, so the third (highlight) needs its own control — that's the eye. A mood has two, and its body's click did nothing at all. Handing that click to the highlight is what lets the eye go, which is what makes five columns fit.
+- **`TrayGroup.onSelect` stopped being optional.** The moods were the only caller that omitted it, and the component carried a whole second heading branch for that case. An optional prop nothing omits is a branch you can't check by using the app.
+- **The mood on a day is a popover, not the modal.** A mood is the one field on a day you *revise*, and opening a dialog with fifteen sticker checkboxes to move one value one notch is the wrong weight. A popover is anchored to the face, closes on Escape or an outside click, and leaves the month visible while you decide.
+- **It exists only where a mood already does.** Hanging the trigger off the face means an empty day has no trigger; adding a day's first mood is still the pencil's job. The alternative was 42 permanent empty circles, which would make the empty days look like unfinished ones.
+- **"Clear mood" is in the popover.** Same reason the modal has it: most days have no mood, so "none" is a state you must be able to get back to.
+
+**Changed**
+
+- `components/tray/MoodPicker.tsx` — new; the five moods as a row of columns
+- `components/tray/StickerTray.tsx` — the `TrayGroup`/`TrayRow` mood block replaced by it
+- `components/tray/TrayGroup.tsx` — `onSelect`/`selected`/`wash` required; the headingless branch gone
+- `components/calendar/DayMoodButton.tsx` — new; the face as a popover trigger
+- `components/calendar/DayCell.tsx` — the mood `<span>` became that button; takes `onCommit`
+- `components/calendar/MonthGrid.tsx` + `components/dnd/CalendarBoard.tsx` — `onCommit` threaded through to the cells
+
+**State:** `tsc`, `eslint`, 188 tests, `npm run build` all green. `grid-cols-5` confirmed in the compiled CSS. Uncommitted.
+
+**What to look for.** The tray: one row of five faces with words under them, and clicking one lights its days (no eye any more). The calendar: click any face, get a small panel of five faces and "Clear mood", pick one, it changes with the panel closing behind it.
+
+**Open**
+
+- ~~The book emoji still sits high.~~ Applied in the entry above.
+- A day with no mood has no mood control. Only the pencil adds the first one.
+- The mood popover has no error path of its own — a failed write surfaces in the tray's line at the bottom of the rail, which may be off screen.
+
+---
+
+## 2026-09-02 · Step 16, continued · The cell stops being a button
+
+Stephanie, after the restyle: "Let's not make the entire calendar section clickable. instead the highlight still happens, but you can actually move stickers around (and move them off the calendar to delete them), and there's a tiny edit button that pops up at the bottom right of that calendar square to edit manually."
+
+**Decisions**
+
+- **The cell is a `<div>` again, and the pencil is the only control in it.** A whole-cell button spent the interaction budget of everything inside it — HTML forbids a control inside a control, so for as long as the cell was a button, every mark in it could only be a picture. The click target shrank from 150px square to 24px, and the calendar gained two gestures for it.
+- **The pencil reveals on hover, behind `@media (hover: hover)`.** Second time this project has needed that guard. A touch screen never fires hover, so an `opacity-0` lifted only by `:hover` is a target you can't see and can still hit; on a phone all 42 are just visible.
+- **The cell's long `aria-label` is gone and one line of it survives as `sr-only`.** "20 August. Gym, Meditation. feeling Great" existed because a control full of drawings had to name itself. Now each thing names itself — the `<time>`, each mark ("Gym, 20 August"), the pencil ("Edit 20 August"). The exception is the highlight, which is pure tint and had no element to live in. A feature made of colour doesn't exist for a screen reader, so deleting the label would have deleted the feature.
+- **A move is one `UPDATE`, not a delete and an insert.** The row exists and only its `day` is wrong. Updating keeps `day_activities.id`, so React moves the circle instead of unmounting one and mounting another — and it can't half-fail across two round trips. `applyChange` mirrors it exactly: it carries the existing sticker object across rather than minting a `pending:` id.
+- **`UPDATE` is the statement RLS filters rather than rejects.** Not-yours rows fall out of scope and Postgres reports success on zero rows. `.select("id")` plus a length check is the only tell — same trap `updateActivity` documents.
+- **`23505` on a move is a merge, not an error.** Dragging Monday's Gym onto a Tuesday that already has Gym has nowhere to land, so the conflict falls through to deleting the source row. That's what the optimistic redraw already drew.
+- **Dropping outside means two different things now, and only paint says which.** Cancel from the tray, delete from a day. The overlay's dashed border goes red for the second — same box, same width, same opacity, only the hue moves, because the card is under a cursor that's aiming and must not change size. The announcements split the same way ("let go to take it off 20 August" vs "let go to cancel"), which is the one place words are still right.
+- **Each mark is a `<button>` keyed by its placement id.** `useDraggable` hands back `tabIndex`, `role` and key listeners that do nothing on a `<span>`; the cost is one tab stop per mark. The id is the placement, not the activity, because two days holding Gym would otherwise register the same id twice in one `DndContext`.
+- **Clicking a mark does nothing, on purpose.** Its body is a drag handle. A thing you can both grab and press is a thing where a press is a coin flip.
+
+**Changed**
+
+- `components/calendar/DayCell.tsx` — `<div class="group/day">`, `DraggableMark` per sticker, hover-revealed pencil, `dayLabel()` deleted, `sr-only` highlight line
+- `components/dnd/DraggableMark.tsx` — new; a placed mark as a draggable button
+- `components/dnd/payload.ts` — optional `from` on the activity branch
+- `components/dnd/CalendarBoard.tsx` — four-way `handleDragEnd`, `move` in `runChange`, `leaving` overlay state, origin-aware announcements
+- `app/actions/stickers.ts` — `moveActivity`
+- `lib/changes.ts` + `lib/changes.test.ts` — the `move` change and six tests for it
+- `learning/README.md` — card, seven symptom rows, two stale `Where` pointers corrected
+
+**State:** `tsc`, `eslint`, 188 tests, `npm run build` all green. `group-hover/day`, the `hover:hover` guard and `border-ramp-red` confirmed in the compiled CSS. Uncommitted.
+
+**What to look for.** Drag a mark from one day to another — it should move, not duplicate. Drag one onto a day that already has it: the source loses it, the target keeps one. Drag one out over the tray: the card goes red-dashed and the mark comes off. Then hover a cell for the pencil, and check the tray drag still cancels grey.
+
+**Open**
+
+- Dropping outside is still one gesture with two meanings. Colour is the whole distinction, and it's untested on anyone but us.
+- One tab stop per mark. A busy month is a long tab sequence with no way to skip it.
+- Keyboard drag exists but has no way to say "off the calendar" — `closestCenter` always finds a day, so a keyboard user can move a mark but not delete one. The modal still can.
+- Nothing here has been looked at in a browser.
+
+## 2026-09-02 · Step 16, continued · The sticker gets an outline, and three lines go
+
+Four from Stephanie in two messages. A lighter sticker fill with an outline in the area's colour, "since some of the emojis are hard to see against this strong background" — plus "for some reason the book emoji is also not centered in the sticker". Then: remove "Let go to cancel", remove the "4 marks in all, across 2 of your 6 areas" line on Trends, and put the moods at the top of the tray.
+
+**Decisions**
+
+- **The fill dropped to a new `-tint` rung and the hue moved to a 1px border.** 20% of the hue over the surface, against the soft rung's 48%. The mark is `--ink` and always cleared contrast on the old fill — the marks that didn't are the ones this app can't recolour. An emoji brings its own palette, and a mid-tone circle competes with all of it. **A fill and the thing drawn on it want the same pixels; an outline doesn't.**
+- **A third solid token, not `bg-ramp-red-soft/40`.** A sticker sits on `--surface` in the tray and on a sunken cell in the grid; a translucent fill would be two different colours in the two places.
+- **It's the one rung where both themes use the same number.** The `-soft` pair are 48%/42% because mixing *toward* the hue brightens one theme and darkens the other. Mixing *less* moves each toward its own surface, which adds contrast under the mark in both at once. Floor is 8.5:1 (dark yellow); the light theme is 12.8:1 or better.
+- **The book emoji was a font-metrics bug, not a layout one.** A line box takes its height and baseline from the **first available font** — the first family installed, whether or not it has the character. The mark was set in the body serif, so the box came from EB Garamond while the ink came from Apple Color Emoji. `place-items-center` centred the box perfectly and the glyph hung low inside it. Fixed with a `--font-emoji` stack that names the emoji families first, so box and ink share one set of metrics. The serif stays at the end for marks that are letters.
+- **"Let go to cancel" was one thing too many to read mid-gesture.** Written a day ago as the part that "turns a dead zone into a way out" — but the dashed, translucent card is that part, and it lands without being parsed. The overlay lost its `relative` wrapper with it and went back to being one box.
+- **The sentence survives in the drag announcement.** There's no dashed border to see there. The two channels only had to agree while both were the only way in.
+- **The Trends support line was a second copy of the table under it.** `takeaway` now returns a `string` rather than a `{ lead, support }`, so the `Takeaway` type and the singular/plural mark counting went with it — along with the one test that only asserted `support`.
+- **Moods went to the top of the tray.** The old order was "what you own, then what ships with the app". The new one matches how a day gets filled in: how it felt, then what you did. Being fixed by the CHECK constraint is what makes it a good first group — it's the one list in the rail that never changes shape.
+
+**Changed**
+
+- `app/globals.css` — `--font-emoji`; the `--ramp-*-tint` rung in both themes
+- `lib/palette.ts` — `tint` on all six ramps
+- `components/calendar/StickerMark.tsx` — tint fill, full-hue border, `font-emoji` on the glyph
+- `components/dnd/CalendarBoard.tsx` — the cancel line and its wrapper removed
+- `lib/analytics.ts` + `lib/analytics.test.ts` — `takeaway` returns a string; `support` gone
+- `components/trends/Readout.tsx` — one `<p>` instead of two
+- `components/tray/StickerTray.tsx` — the mood group moved above the areas
+- `learning/README.md` — card and five symptom rows
+
+**State:** `tsc`, `eslint`, 182 tests, `npm run build` all green. `bg-ramp-*-tint`, `border-ramp-*` and `font-emoji` confirmed in the compiled CSS. Uncommitted.
+
+**What to look for.** Every sticker, in all four places it's drawn: pale circle, coloured ring, emoji you can actually read. Check the book one specifically — it should sit dead centre now. Then Trends (one sentence, no totals line under it), a drag off the calendar (dashed card, no caption), and the tray (Mood first).
+
+**Open**
+
+- **Yellow's ring is faint against its own fill** — 1.67:1, where the other five are 3.2–3.7:1. Yellow is a low-contrast hue against cream generally; the ring's real job is separating the sticker from the page, which it still does. Worth an eye on the Creativity & Play stickers.
+- **Letter marks now get the emoji font's metrics too**, since the strut comes from the first available family regardless of what draws the glyph. Apple Color Emoji has no Latin, so a "G" still renders in the serif — but its vertical position may have shifted slightly. Nothing in the seed uses a letter; `✎` does.
+- **Still unlooked-at in a browser**, five changes deep.
+
+---
+
+## 2026-09-01 · Step 16, continued · Dropping outside, and a `+` per area
+
+Two more from Stephanie, an hour apart: dropping a sticker outside the calendar was landing it on a border square anyway ("i dont like that — let dropping outside the calendar be a 'ditch this action' affordance"), and each life area should get its own `+` that opens the create dialog already set to that area.
+
+**Decisions**
+
+- **The collision fallback was the bug, and it was hiding in a sentence that sounded right.** `collisionDetection` was `pointerWithin`, falling through to `closestCenter` whenever it came back empty. Written as "cover the keyboard case too" — and `pointerWithin` also returns empty every single time the cursor is outside the grid, so the fallback fired there too and handed back the nearest square. Release over the tray, the page margin, the month header: it landed on a border cell. **A fallback keyed on "the first strategy found nothing" answers a different question from "the first strategy doesn't apply here"**, and the two coincide often enough to look correct.
+- **The discriminator is `pointerCoordinates`, and it was read rather than guessed.** dnd-kit derives it from the activator event's `clientX`/`clientY` via `getEventCoordinates`, and a `KeyboardEvent` has neither, so it's null for keyboard drags and only for those. Verified in `@dnd-kit/utilities`. The branch is now "is there a pointer at all" instead of "did the pointer find anything", and an empty `pointerWithin` finally means what it says.
+- **`handleDragEnd` needed no change.** It already returned early on a null `over` — the check had simply never been reachable with a mouse. Two lines of comment there had been describing behaviour that couldn't happen.
+- **Cancelling is stated, not just permitted.** Making the drop a no-op is the correctness half; on its own it's a dead zone, and a dead zone and a broken app feel the same. Outside the grid the overlay goes translucent, loses its shadow and turns its border dashed — placeholder vocabulary, meaning nothing here will land — and a small line reads **"Let go to cancel"**. The screen-reader announcement gained the same three words.
+- **The cue is absolutely positioned under the card, not appended inside it.** The overlay is `w-fit` and sits under the cursor; adding a few words inline would widen it, so it would jump sideways at the exact moment you cross the grid's edge — which is the moment it most needs to hold still. Paint changes, geometry doesn't.
+- **`overDay` is a boolean mirrored out of dnd-kit, not the over id.** `DragOverlay`'s children aren't handed `over`, so it has to be lifted. Which day is already answered by that day lighting up underneath.
+- **`onDragStart` sets `overDay` false explicitly.** `onDragOver` fires on *changes*, so a drag that starts and ends outside the grid never fires it once — leaving the flag on whatever the last drag ended as.
+- **The per-area `+` is `NewStickerForm` with one extra prop, not a second component.** `defaultAreaId` seeds the dropdown. It's a starting value and not a lock — the dropdown still works, because this is a shortcut through one field rather than a different form.
+- **And it broke `StickerFields`'s "am I moving past marks" rule, which is the interesting part.** That warning was gated on `initial.lifeAreaId !== ""`, documented as self-answering: only an edit arrives with an area already chosen, so no `mode` prop was needed. A create that opens pre-filled is precisely the case that assumption excluded, and the symptom would have been a brand-new sticker warning you that its nonexistent past marks would move. Replaced with an explicit `historyArea`, which is still not a mode flag — it's a value, only the edit dialog has one, and it names the thing the sentence is actually about. **A self-answering condition is an inference, and it stays correct exactly as long as nobody adds the case it inferred from.**
+- **The heading's `+` sits between the label and the eye**, so the eye stays on the same right-hand line every row in the tray puts it on. It's `icon-xs` ghost to match, and it fades in on hover off the same `group/row`. The header's `+` keeps its outline and stays always-visible — hiding the one unconditional way to add a sticker behind a hover would be hiding the feature.
+- **The dialog says which area it's making a sticker in** ("A mark and a name, in Health."), because the button you pressed was the one on Health and the dialog should agree with it.
+
+**Changed**
+
+- `components/dnd/CalendarBoard.tsx` — collision detection rewritten; `overDay`; the overlay's two states and the cancel cue; announcement
+- `components/tray/NewStickerForm.tsx` — `defaultAreaId`, heading-sized ghost trigger, area-aware label and description
+- `components/tray/StickerFields.tsx` — `historyArea` replaces the derived `moving` test
+- `components/tray/EditStickerForm.tsx` — passes `historyArea`
+- `components/tray/TrayGroup.tsx` — heading `action` slot
+- `components/tray/StickerTray.tsx` — a `+` per life area
+- `learning/README.md` — card and four symptom rows
+
+**State:** `tsc`, `eslint`, 183 tests, `npm run build` all green; `border-dashed`, `top-full`, `whitespace-nowrap`, `opacity-60` confirmed in the compiled CSS. Uncommitted.
+
+**Note to self about the checks:** one round of these was run from inside `node_modules/@dnd-kit/core/dist`, because `cd` in a shell command persists between calls. `tsc` and `eslint` both exited 0 having looked at nothing. Re-run from the repo root, everything genuinely passes — but a green check from the wrong directory is worse than a red one.
+
+**What to look for.** Pick up a sticker and move it off the calendar: the card goes translucent with a dashed edge and "Let go to cancel" appears under it, and letting go there does nothing at all. Over a day it goes solid again. Then hover any life-area heading: a `+` appears beside the eye, and it opens the create dialog with that area already chosen and the subtitle naming it. Change the dropdown while you're in there — no warning about past marks, because there aren't any.
+
+**Open**
+
+- **Still unlooked-at in a browser**, now four changes deep.
+- **The cue sits below the card**, which puts it near the bottom of the viewport if you drag to the very bottom of the window. It may want to flip above the card there.
+- **Keyboard drags keep `closestCenter` and can't be "outside"**, so there's no keyboard equivalent of this cancel other than Escape. That's probably right, but it means the two input methods now have different ways out.
+
+---
+
+## 2026-09-01 · Step 16, continued · Swapping the row's two meanings
+
+Stephanie's call, straight after archiving landed: "clicking on a sticker brings up the edit page, and then on the right there's an interaction that signals that it will highlight this sticker everywhere." Both halves are in.
+
+**Decisions**
+
+- **The row body opens the editor; an eye at the right edge lights the days.** Exactly the reverse of Step 11 + 16. The reason it's the better way round: a click on a thing with a name conventionally opens that thing, and highlighting was the meaning nothing announced — it was a feature made entirely of its own result, discoverable only by clicking a row and noticing the calendar change. **The interaction that needs a control is the one with no natural gesture, not the one with an obvious one.**
+- **The pencil is gone.** This is the payoff and it wasn't obvious in advance: the swap looked like it would add a control, and it removed one. Fifteen rows now carry one button instead of two, so the rail is less crowded than before the change, not more.
+- **Eye / eye-off, from four options offered.** The eye is the only one of the four that everybody already reads as "show me this", and swapping to eye-off while lit gives the *on* state its own icon rather than making the row's wash the sole indicator.
+- **Stable accessible name plus `aria-pressed`, not a label that changes.** "Show Gym's days" whether it's on or off; `aria-pressed` carries the state. Changing the label to "Stop showing…" would say the state twice, once through the name and once through the attribute, and those two are easy to get pointing in opposite directions. The icon swap is the sighted half of the same split.
+- **Every row and every area heading gets the same eye — including the headings.** So the rule is airtight: the body opens, the right edge highlights. The cost is that the area heading stopped being a giant click target and went back to a plain `<h3>`, which is also a small win: it's a heading again, a landmark for anyone navigating by headings, with no hover tint implying a click that no longer happens.
+- **The heading's eye is `icon-xs`, the rows' are `icon-sm`.** 1.5rem against 1.75rem. A heading is a 0.7rem eyebrow, so a row-sized button there would set the heading's height by itself and push the six areas further apart than the stickers inside them.
+- **Mood rows get the eye and no `onActivate`.** There's nothing behind a mood to open — they're fixed by the CHECK constraint on `day_moods` — so their body is a drag handle and only that. It stays a focusable `<button>`, because that's what lets Space pick a mood up without a mouse.
+- **`EditStickerForm` became one dialog for the whole tray instead of fifteen.** With the trigger gone it had no reason to exist per row. `StickerTray` holds `editing: string | null` and mounts exactly one. The id rather than the sticker object is deliberate: `refresh()` after a save hands down new groups, and a stored copy would keep showing the old name — and deleting a sticker now closes the dialog by itself, because the lookup stops finding anything to render.
+- **The row's accessible name is "Edit Gym" while its visible text is "Gym".** Legal because the longer phrase contains the visible word — that's the Label in Name rule — and it's what keeps "click Gym" working for someone driving the page by voice.
+- **The screen-reader instructions shrank back to dnd-kit's default.** Step 11 prepended "To highlight every day this appears on, press Enter", because that was the only way anyone without sight could find a feature made of colour and triggered by an unannounced key. The eye is a labelled toggle one Tab away, so the sentence had nothing left to teach. **Prose explaining an interaction is usually a control that hasn't been built yet.**
+- **The `keyboardCodes` config needed no change at all.** Enter was already handed back to the row's button; it used to fire the highlight and now fires the editor. A swap of this size touching nothing in the sensor is the sign the seam was in the right place.
+- **The archived fold was left alone.** No eye, no body click — it's a holding pen, not a working list, and adding two controls to a dimmed row you rarely open is noise. Consequence to watch: deleting an archived sticker still means restoring it first.
+
+**Changed**
+
+- `components/tray/HighlightToggle.tsx` — new; the eye
+- `components/dnd/DraggableSticker.tsx` — `onSelect` → optional `onActivate`; `aria-pressed` out, `aria-label` in
+- `components/tray/TrayGroup.tsx` — `TrayRow` renders the eye itself; the heading is a plain `<h3>` beside one
+- `components/tray/StickerTray.tsx` — holds `editing`; mounts one `EditStickerForm`
+- `components/tray/EditStickerForm.tsx` — controlled, no trigger, no pencil
+- `components/dnd/CalendarBoard.tsx` — instructions trimmed; two stale comments corrected
+- `learning/README.md` — Step 16 card extended, five new symptom rows
+
+**State:** `tsc`, `eslint`, 183 tests, `npm run build` all green. Uncommitted.
+
+**What to look for.** Hover a sticker: one eye fades in at the right edge, where the pencil used to be. Click the row itself and the edit dialog opens. Click the eye and its days light up, the eye turns to eye-off and stays visible with the row washed. Every area heading has the same eye, smaller. The five moods have one too, and clicking a mood's name does nothing — it only drags.
+
+**Open**
+
+- **Still not looked at in a browser** — this, archiving, and Steps 14–16 all at once.
+- **Clicking a row now opens a dialog, and rows are also drag handles.** The 4px threshold has always separated the two, but a mis-registered drag used to cost you a stray highlight and now costs you a dialog. Worth feeling on a trackpad.
+- **Two ways to clear remain** (the eye again, the header's "clear" link) plus Escape. That may be one too many now that the eye is visible.
+
+---
+
+## 2026-09-01 · Step 16, continued · Retiring a sticker
+
+Asked for straight after editing landed, and in two halves an hour apart: first "we need to be able to archive stickers", then "stickers should also have an option to actually be deleted along with all their data, and not be able to be brought back or seen again". Both are in. They are deliberately not the same control.
+
+**Decisions**
+
+- **An archived sticker's past marks keep counting.** Stephanie's call, from three options. The marks stay on the calendar *and* keep counting under their life area in Trends — you stopped doing the habit, you didn't stop having done it, and a Trends page that quietly re-wrote April because you retired something in September would be lying about a month you can remember. The whole implementation follows from this one answer.
+- **So `getStickerLibrary` stopped filtering, and every list now says which kind it wants.** The obvious version — `.eq("archived", false)` in the query — would have made archiving *also* mean "un-count the history", because `tally` reads an activity's area from the library and an activity that isn't in the library has no area. Instead the query returns everything with the flag attached, and the four consumers each answer for themselves: `tally` and `buildHighlight` want all of them, the tray splits them into two sections, and the day modal wants the active ones plus whatever is already on that day. Four different answers to "which stickers" is the cost of the decision above, and the query's doc comment lists them so the next person doesn't add a filter back.
+- **The day modal's rule is `!archived || placed.has(id)`, and the second half is the load-bearing one.** An archived sticker can't be ticked onto a new day — that's what retiring means. But a mark you placed *before* retiring it is still sitting on the calendar, and the checkbox is the only control anywhere that can take it off. Hiding it outright would have stranded marks with no way to remove them. An area whose stickers are all archived and all unused drops out of the modal entirely, rather than showing a heading over an empty list.
+- **Archive is one click; delete asks twice.** The asymmetry is the design. Archiving is reversible, so a confirmation would be a dialog protecting you from something you can undo — and restoring is the reverse of a reversible thing, so it needs one even less. Deleting is the only irreversible control in the app, and it's the only one that asks.
+- **The delete confirmation replaces the row it's in.** "Archive · 🗑" becomes "Keep it · Delete forever", so the destructive button lands where a harmless one wasn't, and the pointer that was on Archive isn't already sitting on Delete. The warning itself goes *above* the fields rather than beside the buttons, so the thing meant to stop you is the width of the dialog instead of the width of a gap in a footer. It names the sticker and counts its marks: "Painting and its 12 marks", not "this item".
+- **The mark count comes from the board, not a new query.** `CalendarBoard` is already holding every placement to draw the grid, so counting is one pass over a map that's already in memory. It's built from the *optimistic* map on purpose — a sticker you just dropped counts immediately, which is the number that matches what's on screen.
+- **`confirming` lives in `EditStickerForm`, not in `StickerRetire`.** The confirmation shows up in two places — the warning over the fields and the buttons in the footer — so the flag belongs to the component containing both. Same lifting-up as the highlight in `CalendarBoard`, and for the same reason: two siblings needed one value.
+- **`StickerFields` grew a `footerStart` slot rather than a `showDelete` prop.** Same argument that kept `mode` out of it in the first half of the step: the fields don't know whether they're creating or editing, and "is there a delete button" is exactly the question a mode flag would smuggle back in. A `ReactNode` in the footer is not the fields' business.
+- **`ArchivedRow` is a new component, not `TrayRow` with `disabled`.** `TrayRow` *is* a `DraggableSticker` — dragging and highlighting aren't features it has, they're what it is — so a disabled version would be a component whose entire body is switched off by a flag. What's left when you remove them is a face, a name, and one button. The payoff is structural: there is no code path where an archived sticker can be dropped on a day, because the thing that does the dropping was never rendered.
+- **The archived section is one fold at the bottom, not one per life area.** Six folds to open to find one sticker, when the reason you're looking is usually that you don't remember which area you put it in. They keep their area's colour, so the grouping still reads without being structural.
+- **It's a native `<details>`.** Opens and closes with no JavaScript, is a disclosure to a screen reader with no ARIA at all, and find-in-page opens it to show a match inside — which no hand-built version does. It can't animate, which is the one thing it doesn't need. Closed by default: these are stickers you decided to stop seeing, and a fold that remembered being open would undo that decision on every reload.
+- **`deleteActivity` and `setArchived` both ask for their rows back.** The Step 16 lesson, applied without being re-learned: under RLS a delete that matches nothing is not an error. `.select("id")` and a length check is the difference between "deleted" and "silently did nothing".
+- **`day_activities` cascades, and that's what makes "along with all their data" true.** The FK was written `on delete cascade` back in Step 6, so deleting the activity takes every placement with it in one statement. Nothing in the app deletes placements by hand.
+- **No optimistic update on restore.** Unlike a drop, restoring changes *where a row is* — from the fold at the bottom to its life area — not what it looks like. Faking that would mean rendering the row in two places for the length of a round trip.
+- **The test fixtures now ship one archived sticker each.** `analytics.test.ts` retires Walk and `highlight.test.ts` retires Sleep, and every existing count and highlight expectation still includes them. That makes "archived marks keep counting" an assertion rather than a comment — the day someone filters `archived` out of the library, these break.
+
+**Changed**
+
+- `lib/queries/activities.ts` — `LibrarySticker.archived`; the query stopped filtering
+- `app/actions/activities.ts` — `setArchived`, `deleteActivity`
+- `components/tray/StickerRetire.tsx` — new; the archive/delete row and its warning
+- `components/tray/RestoreStickerButton.tsx` — new
+- `components/tray/EditStickerForm.tsx` — holds `confirming`, renders the warning, passes `footerStart`
+- `components/tray/StickerFields.tsx` — `footerStart` slot in the dialog footer
+- `components/tray/TrayGroup.tsx` — `ArchivedRow`
+- `components/tray/StickerTray.tsx` — splits active from archived; the `<details>` fold
+- `components/dnd/CalendarBoard.tsx` — `markCounts` from the optimistic map
+- `components/calendar/DayModal.tsx` — `!archived || placed.has(id)`
+- `lib/analytics.ts` — `unattributed`'s doc rewritten; archiving no longer the thing it's guarding against
+- `lib/analytics.test.ts`, `lib/highlight.test.ts` — fixtures gained `archived`
+- `learning/README.md` — Step 16 card extended, six new symptom rows
+
+**State:** `tsc`, `eslint`, `npm test` (183 pass), and `npm run build` all green. `group-open/fold:rotate-90`, `opacity-55`, `col-span-full` and `sm:mr-auto` confirmed in the compiled CSS. Uncommitted.
+
+**What to look for.** Open the pencil on any sticker: the footer now has **Archive** on the left and a trash icon beside it. Archive one and it drops out of its area into an **Archived (1)** fold at the bottom of the rail, dimmed, undraggable, with a restore button — and its old marks are still on the calendar and still in the Trends numbers. Open a day it's on: it's still listed and still tickable *off*. Open a day it isn't on: it's gone from the list. Then open the pencil again and hit the trash: the row turns into "Keep it · Delete forever" and a red line appears over the fields naming the sticker and its mark count. Confirm, and it and every mark it ever made are gone from the calendar.
+
+**Open**
+
+- **Nothing here has been looked at in a browser yet**, along with Steps 14, 15 and the first half of 16.
+- **Archiving the last sticker in an area** leaves "Nothing here yet" under that heading, which is the empty state written for a brand-new area. It's not wrong, but it says the wrong thing about an area you've just emptied on purpose.
+- **The fold is `col-span-full`**, so at the wide breakpoints it runs the width of the grid under all six areas. Worth seeing whether that reads as "below everything" or just as a stray wide row.
+
+---
+
+## 2026-08-31 · Step 16 · Editing a sticker
+
+Inserted into the plan at Stephanie's request, after the app had real data in it — which is exactly when a typo in a sticker name starts to matter. Scoped to edit only: no archive, no life-area renaming, both of which were offered and declined.
+
+**Decisions**
+
+- **The pencil is its own control, not a second meaning on the row.** The tray row was already spoken for twice: it's a drag handle, and since Step 11 a click toggles highlight mode. A third meaning would have made all three ambiguous, and the one that suffers is the drag — telling "clicked" from "started to drag" is already a distance threshold rather than a certainty. The cost is one more tab stop per sticker, which is the right price. The alternatives most apps reach for — long-press, right-click — have no keyboard equivalent anyone discovers.
+- **`StickerFields` moved to its own file the moment the second caller arrived.** Standing rule in this project, same as `firstGrapheme` in Step 10 and `lib/charts.ts` in Step 14. What makes the sharing honest here is that create and edit genuinely *are* the same form — same three inputs, same validator, same error mapping, same preview, same unique constraint to bump into. The tell is that the only differences left are two strings and a bound argument.
+- **The action is a prop; there is no `mode` and no `if (editing)` anywhere in the fields.** `createActivity` takes `(formData)` and `updateActivity` takes `(activityId, formData)`, and reconciling those is the caller's business — it closes over the id and hands down one shape. A `mode: "new" | "edit"` prop would have put the same branch in four places inside one component.
+- **`activityId` is an argument, not a hidden input.** A hidden field arrives in the same `FormData` as everything else, so `readDraft` would have to know about it and `validateDraft` would have to ignore it — and it isn't part of the draft. It's *which row to write*. Different question, different place.
+- **The update asks for its rows back, and the insert doesn't.** This is the real lesson of the step. Under RLS, updating a row that isn't yours is not an error — the policy filters it out of the statement's scope and Postgres reports a successful update of nothing. Without `.select("id")` and a length check, "saved" and "silently did nothing" are the same response and the dialog closes on both.
+- **`ERROR_ID` became `useId()`.** It was a module constant while there was one dialog that could only ever exist once. Two components generate it now, and a duplicate `id` in a document sends `aria-describedby` to whichever one the browser found first. The field ids are derived from it for the same reason.
+- **Changing the life area shows a different sentence under the dropdown, and only once you've changed it.** Moving a sticker moves its whole history: `tally` reads an activity's area as it stands *now*, so last month's Trends page redraws. That was decided in Step 12 ("you reclassified the habit, not the days") and it's right, but nobody would guess it from a dropdown. It appears only when the value actually differs from where it started, because a warning about a thing you haven't done is noise the other 90% of the time. The check is self-answering — a new sticker starts with an empty `lifeAreaId`, so it can never fire during a create, which is why there's still no `mode` prop.
+- **The preview does more work when editing than it ever did when creating.** Change the area and the circle changes colour before you commit to anything. On a create that's a nicety; on an edit it's the only way to see a recategorisation before it happens.
+- **The pencil is visible by default and hidden only where hovering is possible.** `[@media(hover:hover)]` rather than a bare `opacity-0` + `group-hover`. On a touch screen there is no hover, so the plain version would leave an invisible tap target on every row.
+- **The keyboard reveal is `focus-visible` on the pencil, not `focus-within` on the row.** The first attempt used `group-focus-within/row` and it was wrong on sight: the row is a button, clicking it turns highlight mode on, and focus then *stays* there — so every row you had ever lit kept its pencil showing after the pointer left. `focus-visible` on the button itself draws the line the row can't: a mouse click sets `:focus`, only a keyboard sets `:focus-visible`. Tabbing still works, because the pencil is the next tab stop after the row and reveals itself when focus arrives.
+- **The emoji picker went from 48 hand-picked to all 1,914, in eight tabs.** The curated list was only friendly while the thing you wanted was in it; the moment it wasn't, the mark field quietly became letters-only, because typing an emoji means finding a system picker most people have never opened. `lib/emoji.ts` is generated from Unicode's own `emoji-test.txt` by `scripts/build-emoji.mjs` — fully-qualified rows only (the other two statuses are the same characters with the variation selector missing, so keeping them would show visible duplicates), no `Component` group, no skin-tone variants. 63KB of source, 17KB gzipped, checked in so a clean checkout doesn't need the network. Each button carries Unicode's name as `title` and `aria-label`, which is the only thing that makes 559 near-identical faces navigable.
+- **Tabs are also what makes the popover open instantly.** Radix mounts one panel at a time, so it renders one tab's buttons rather than 1,914. The panel is a fixed height rather than one that fits the tab, because the tabs run from 85 emoji to 559 and a resizing panel would slide the tab strip out from under the pointer on every switch.
+- **It took two failures to show 1,914 of anything in a popover, and both were about the edge of the list rather than the list.** First a scrolling 8×8 grid read as "not more than 200" — macOS hides its scrollbars until you're already scrolling, so a window onto a long list and a short list look identical when both are still. Then making the grid taller made it worse: a fixed-height scroller inside a popover inside a dialog has three ancestors that can run out of room, and when one did the list didn't scroll, it was simply cut off, with no scrollbar to say anything had been.
+- **So there is no scroll container at all now — it's paged.** 9 × 6 = 54 per page, an explicitly-rowed grid built to hold exactly 54, and the same panel height on every tab and every page. Nothing can overflow it, so there is no edge to hide. What the scrollbar was failing to communicate is a sentence instead: **"559 · 1 / 11"** — how much there is, and where you are. The search box says the total in its placeholder for the same reason. This is the lesson worth keeping: a scrollbar is a *drawing* of the size of a list, and on a platform that hides it by default, the size has to be written down.
+- **Explicit `grid-rows-6` plus a fixed height, so a half-full last page is the same size as a full one.** Without it the panel shrinks on the last page of every tab and the pager controls jump up to meet the pointer that was about to click them.
+- **Unmounting is the page reset, twice over.** Radix mounts one tab panel at a time, so switching tabs starts at page one with no code; the search pager is keyed by the query, so a new search does the same. Same trick the dialogs use for their fields, and cheaper than an effect watching for changes to push the page back to zero.
+- **Search matches on Unicode's names, which the data already carried for the tooltips.** Every word you type has to appear, so "flag japan" works and so does "japan flag". `found` is `null` while browsing and an array while searching — one value, not a second `mode` flag beside it, the same shape argument as `StickerFields`. Closing the popover clears the query, for the reason the dialogs unmount their fields: reopening onto a filtered picker with no visible cause is worse than starting over.
+- **The group is named `group/row`.** The tray nests groups inside groups, and a bare `group-hover` binds to the nearest one — which would light every pencil in a life area at once.
+- **`EditStickerForm` takes a `LibrarySticker`, and tsc caught the first attempt taking an `ActivitySticker`.** They both have an `id`, both describe the same circle, and they are not interchangeable: an `ActivitySticker` is a *placement*, whose `id` is the row on a particular day. Editing writes to `activities`, so it needs the library's id. Third time this exact confusion has come up — `lib/highlight.ts` documents it and `analytics.test.ts`'s fixtures are built so a mix-up can't pass.
+- **`TrayRow` took a `ReactNode` slot, not an `onEdit` callback.** What goes in the slot owns a dialog. A callback would have meant the row also held the open state and rendered the dialog, and the tray would end up knowing about forms.
+- **The six areas are built once in `StickerTray` rather than per row.** Fifteen rows, one list. It's the same list the `+` already needed, and the tray hands it down rather than the forms fetching it — two queries for one list is how a dropdown and the groups it describes end up disagreeing.
+
+**Changed**
+
+- `ProjectPlan.md` — Step 16 inserted at the end of Phase D; motion and deploy renumbered to 17 and 18
+- `components/tray/StickerFields.tsx` — new; the shared form, extracted from `NewStickerForm`
+- `components/tray/EmojiPicker.tsx` — new; all of Unicode's emoji behind eight tabs
+- `lib/emoji.ts` — new; generated, 1,914 emoji with their Unicode names
+- `scripts/build-emoji.mjs` — new; regenerates the above from unicode.org
+- `components/ui/tabs.tsx` — new; shadcn, unmodified
+- `components/tray/EditStickerForm.tsx` — new; the pencil and its dialog
+- `components/tray/NewStickerForm.tsx` — trimmed to a trigger, a title, and an action
+- `components/tray/TrayGroup.tsx` — `TrayRow` gained an `action` slot and `group/row`
+- `components/tray/StickerTray.tsx` — builds `areas` once, hands each row its pencil
+- `app/actions/activities.ts` — `updateActivity`; `CreateResult` became `SaveResult`, shared by both
+- `learning/README.md` — Step 16 card, seven new symptom rows
+
+**Also**
+
+- **The compiled CSS was checked rather than assumed**, following the four false-MISSING greps of Step 14. `[@media(hover:hover)]:group-hover/row:opacity-100` compiles to `@media (hover:hover){…:is(:where(.group\/row):hover *){opacity:1}}`, and the `focus-visible` variant is there beside it. Arbitrary media variants do compose with named groups; it was worth confirming rather than believing.
+- **No test file.** Nothing new is pure — `updateActivity` is a database call and the rest is JSX. `validateDraft`, which is the part with rules in it, is already covered from Step 10 and is called unchanged by both actions.
+- **Before this step there was no way to rename a sticker at all**, so "Drawing" became "Painting" by hand in SQL earlier today. That's the last time that should be necessary.
+- **`Bars` stopped cropping its area names**, which was a Step 12 bug that only showed once the real names were on screen. Each row was its own grid, and six independent grids can't agree where a column starts, so the name column was a guessed `minmax(0, 8.5rem)` — and "Friends & Family" is a hair wider than the guess. The fix is `grid-cols-subgrid`: the `<ul>` owns one set of columns, each `<li>` opts into them, and the first column is `max-content` — measured from the longest name that's actually there instead of predicted. `display: contents` on the rows would have worked too and would have thrown away the list semantics; subgrid keeps the `<li>` a real element.
+
+**What to look for.** Hover any sticker in the tray and a pencil fades in at the right edge, lined up with the `+` in the header above. Tab through the rail and it appears on focus. Open it on Painting: mark `✎`, name `Painting`, area `Creativity & Play`, and the preview circle already the right green. Change the area to Work and the circle turns blue *and* the muted line under the dropdown changes to the one about past marks moving. Rename it to `Piano` while it's still under Creativity & Play and it should refuse with "You already have a sticker called “Piano” in that area."
+
+**Open**
+
+- **Not yet seen in a browser.** The hover reveal, where the pencil sits against a long truncated name, and whether it crowds the rail at 18rem are all things only rendering answers.
+- **The tray is now two tab stops per sticker, fifteen stickers deep.** That's correct and it is also a longer rail to tab through than it was. Worth feeling before deciding it's fine.
+- **`scripts/seed.sql` still says `('creativity', 'Drawing', '✎')`.** Re-running `npm run seed` would add Drawing back alongside Painting. Left alone deliberately — it's committed scaffolding — but it's now a trap with a name.
+- **Step 14 and 15 have still never been looked at in a browser**, dark mode included.
 
 ---
 

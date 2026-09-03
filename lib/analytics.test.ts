@@ -21,11 +21,17 @@ import type { StickersByDay } from "@/lib/stickers";
 const TODAY = "2026-08-22";
 
 /**
- * A library of three areas, one of them empty.
+ * A library of three areas, one of them empty, one sticker retired.
  *
  * The empty one is not padding: an area with no stickers has to survive into the
  * output as a zero row, because the Life Star in Step 13 draws a spoke per area
  * and a missing one would silently change the shape of the chart.
+ *
+ * Walk is archived, and that's load-bearing too. `tally` is supposed to keep
+ * counting a retired sticker's past marks under its area — you stopped doing
+ * the habit, you didn't stop having done it — so the fixture is built with one
+ * already retired. Every count below includes it, which means the day anyone
+ * "helpfully" filters archived stickers out of the library, these break.
  */
 const GROUPS: LibraryGroup[] = [
   {
@@ -33,15 +39,17 @@ const GROUPS: LibraryGroup[] = [
     areaName: "Health",
     colorKey: "green",
     stickers: [
-      { id: "act-gym", name: "Gym", mark: "G", colorKey: "green" },
-      { id: "act-walk", name: "Walk", mark: "W", colorKey: "green" },
+      { id: "act-gym", name: "Gym", mark: "G", colorKey: "green", archived: false },
+      { id: "act-walk", name: "Walk", mark: "W", colorKey: "green", archived: true },
     ],
   },
   {
     areaId: "area-spirit",
     areaName: "Spirituality",
     colorKey: "red",
-    stickers: [{ id: "act-med", name: "Meditation", mark: "M", colorKey: "red" }],
+    stickers: [
+      { id: "act-med", name: "Meditation", mark: "M", colorKey: "red", archived: false },
+    ],
   },
   { areaId: "area-work", areaName: "Work", colorKey: "blue", stickers: [] },
 ];
@@ -533,10 +541,9 @@ describe("takeaway", () => {
     );
 
     assert.equal(
-      result?.lead,
+      result,
       "Health held the greatest share of your attention this month.",
     );
-    assert.equal(result?.support, "3 marks in all, across 2 of your 3 areas.");
   });
 
   it("names two tied leaders", () => {
@@ -546,7 +553,7 @@ describe("takeaway", () => {
     );
 
     assert.equal(
-      result?.lead,
+      result,
       "Health and Spirituality tied for the greatest share of your attention this month.",
     );
   });
@@ -558,13 +565,17 @@ describe("takeaway", () => {
         areaId: "area-play",
         areaName: "Play",
         colorKey: "yellow",
-        stickers: [{ id: "act-piano", name: "Piano", mark: "P", colorKey: "yellow" }],
+        stickers: [
+          { id: "act-piano", name: "Piano", mark: "P", colorKey: "yellow", archived: false },
+        ],
       },
       {
         areaId: "area-rest",
         areaName: "Rest",
         colorKey: "purple",
-        stickers: [{ id: "act-nap", name: "Nap", mark: "N", colorKey: "purple" }],
+        stickers: [
+          { id: "act-nap", name: "Nap", mark: "N", colorKey: "purple", archived: false },
+        ],
       },
     ];
     // Four areas on 1, Work on 0 — so it's a four-way tie, not a flat range.
@@ -578,7 +589,7 @@ describe("takeaway", () => {
     );
 
     assert.equal(
-      result?.lead,
+      result,
       "4 areas tied for the greatest share of your attention this month.",
     );
   });
@@ -594,22 +605,12 @@ describe("takeaway", () => {
     );
 
     assert.equal(
-      result?.lead,
+      result,
       "Your attention was spread evenly across every area this month.",
     );
-    assert.equal(result?.support, "2 marks in all, across every area.");
   });
 
   it("is null when nothing is in range — the page has an empty state already", () => {
     assert.equal(takeaway(tally(days({}), GROUPS, ALL), phrase), null);
-  });
-
-  it("counts one mark in the singular", () => {
-    const result = takeaway(
-      tally(days({ "2026-08-01": ["act-med"] }), GROUPS, ALL),
-      phrase,
-    );
-
-    assert.equal(result?.support, "1 mark in all, across 1 of your 3 areas.");
   });
 });

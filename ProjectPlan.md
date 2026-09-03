@@ -352,21 +352,33 @@ Each step is one sitting, one learning doc, one reviewable change.
 **Files:** `components/trends/Readout.tsx`
 **Doc:** `15-readouts-and-accessible-tables`
 
+#### Step 16 · Editing a sticker
+**Goal:** Change a sticker you already made — its name, its mark, and which life area it belongs to.
+**You'll see:** A pencil that fades in on a tray row when you hover it, and is always there when you tab to it. It opens the same dialog the `+` opens, titled **Edit sticker**, with the three fields already filled in. Change the life area and the preview changes colour before you save.
+**New concepts:**
+- *A form is two callers, not one shape* — create and edit want identical fields and different verbs, so `StickerFields` moves to its own file and takes the action as a prop. Same rule that moved `firstGrapheme` in Step 10 and `charts.ts` in Step 14: it moves when the second caller arrives.
+- *An update with RLS reports nothing when it matches nothing* — a row that isn't yours isn't an error, it's zero rows. You have to ask for the affected rows back to tell "saved" from "silently did nothing".
+- *Recategorising rewrites history, on purpose* — `tally` reads an activity's area as it is *now*, so moving a sticker moves every mark it ever made. That was decided in Step 12; this is the step where a person can actually trigger it, so the form says so.
+**Files:** `components/tray/{StickerFields,EditStickerForm}.tsx`, `app/actions/activities.ts`
+**Doc:** `16-editing-and-the-second-caller`
+
+*Sequenced here rather than beside Step 10, which is where it belongs by subject. It was asked for once the app had real data in it — which is exactly when a typo in a sticker name starts to matter.*
+
 ---
 
 ### Phase E — Finish
 
-#### Step 16 · Motion and states
+#### Step 17 · Motion and states
 **Goal:** Make it feel finished.
 **You'll see:** Stickers settle with a spring, the modal fades, months cross-fade, empty states say something kind, and skeletons appear instead of blank space.
 **New concepts:** easing and why 150–250ms is the sweet spot; `prefers-reduced-motion`; loading and empty states as real design work.
-**Doc:** `16-motion-and-empty-states`
+**Doc:** `17-motion-and-empty-states`
 
-#### Step 17 · Deploy
+#### Step 18 · Deploy
 **Goal:** A URL you can open on your phone.
 **You'll see:** Baby Steps live on Vercel.
 **New concepts:** build vs dev; environment variables in production; adding the production callback URL to Google, GitHub, and Supabase — the step everyone forgets.
-**Doc:** `17-deployment`
+**Doc:** `18-deployment`
 
 ---
 

@@ -4,6 +4,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { DayCell } from "./DayCell";
 import { MonthHeader } from "./MonthHeader";
+import type { CalendarChange } from "@/lib/changes";
 import {
   fromMonthString,
   monthGrid,
@@ -26,6 +27,8 @@ type Props = {
   stickersByDay: StickersByDay;
   /** Passed straight through to every cell. The grid itself owns no selection. */
   onOpenDay: (day: DayString) => void;
+  /** Also straight through, for the mood popover on a day. See `CalendarBoard.commit`. */
+  onCommit: (change: CalendarChange) => void;
   /**
    * The resolved selection, or null. Also not owned here — it belongs to the
    * board, because the tray is what sets it and the tray is the grid's sibling.
@@ -103,6 +106,7 @@ export function MonthGrid(props: Props) {
                 cell={cell}
                 stickers={stickers}
                 onOpen={props.onOpenDay}
+                onCommit={props.onCommit}
                 highlight={props.highlight}
                 // The cell is told whether it's lit; it never works it out. The
                 // stickers are already in hand from the lookup above, so asking

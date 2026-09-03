@@ -151,6 +151,108 @@ describe("applyChange · remove", () => {
   });
 });
 
+describe("applyChange · move", () => {
+  it("carries the mark to the other day", () => {
+    const before = calendar({
+      [DAY]: { activities: [placed("gym", GYM), placed("read", READ)], mood: "okay" },
+    });
+    const after = applyChange(before, {
+      kind: "move",
+      from: DAY,
+      to: OTHER,
+      activityId: "gym",
+      face: GYM,
+    });
+
+    assert.deepEqual(
+      after.get(DAY)?.activities.map((s) => s.activityId),
+      ["read"],
+    );
+    assert.deepEqual(
+      after.get(OTHER)?.activities.map((s) => s.activityId),
+      ["gym"],
+    );
+    // A move is about one mark. The day it left keeps everything else it had.
+    assert.equal(after.get(DAY)?.mood, "okay");
+  });
+
+  // The placement keeps its row id because the server keeps it too — a move is
+  // an `update`, not a delete and an insert. If this ever became a rebuild,
+  // React would unmount the circle and mount a different one, which is a
+  // flicker in the exact frame the drop is supposed to feel continuous.
+  it("keeps the placement's id rather than minting a pending one", () => {
+    const after = applyChange(
+      calendar({ [DAY]: { activities: [placed("gym", GYM)], mood: null } }),
+      { kind: "move", from: DAY, to: OTHER, activityId: "gym", face: GYM },
+    );
+
+    assert.equal(after.get(OTHER)?.activities[0].id, "row-gym");
+  });
+
+  it("lands on a day that has never been drawn before", () => {
+    const after = applyChange(
+      calendar({ [DAY]: { activities: [placed("gym", GYM)], mood: null } }),
+      { kind: "move", from: DAY, to: OTHER, activityId: "gym", face: GYM },
+    );
+
+    assert.equal(after.get(OTHER)?.mood, null);
+  });
+
+  // `unique (user_id, day, activity_id)` again, one day over: the target can't
+  // hold two, so the honest answer is that the source loses its mark and the
+  // target keeps the one it already had.
+  it("merges rather than duplicating when the target already has it", () => {
+    const before = calendar({
+      [DAY]: { activities: [placed("gym", GYM)], mood: null },
+      [OTHER]: { activities: [placed("gym", GYM)], mood: null },
+    });
+    const after = applyChange(before, {
+      kind: "move",
+      from: DAY,
+      to: OTHER,
+      activityId: "gym",
+      face: GYM,
+    });
+
+    assert.deepEqual(after.get(DAY)?.activities, []);
+    assert.equal(after.get(OTHER)?.activities.length, 1);
+  });
+
+  it("changes nothing when the mark is dropped back where it started", () => {
+    const before = calendar({
+      [DAY]: { activities: [placed("gym", GYM)], mood: null },
+    });
+
+    assert.equal(
+      applyChange(before, {
+        kind: "move",
+        from: DAY,
+        to: DAY,
+        activityId: "gym",
+        face: GYM,
+      }),
+      before,
+    );
+  });
+
+  it("changes nothing when the source doesn't have that mark", () => {
+    const before = calendar({
+      [DAY]: { activities: [placed("read", READ)], mood: null },
+    });
+
+    assert.equal(
+      applyChange(before, {
+        kind: "move",
+        from: DAY,
+        to: OTHER,
+        activityId: "gym",
+        face: GYM,
+      }),
+      before,
+    );
+  });
+});
+
 describe("applyChange · mood", () => {
   it("sets a mood on a day that had none", () => {
     const after = applyChange(calendar({}), {
@@ -213,6 +315,13 @@ describe("applyChange · doesn't touch what it was given", () => {
     });
     applyChange(before, { kind: "mood", day: DAY, mood: "great" });
     applyChange(before, { kind: "remove", day: DAY, activityId: "read" });
+    applyChange(before, {
+      kind: "move",
+      from: DAY,
+      to: OTHER,
+      activityId: "read",
+      face: READ,
+    });
 
     assert.equal(before.get(DAY), day, "the day object was swapped in place");
     assert.equal(day.activities.length, 1, "the array was pushed to");

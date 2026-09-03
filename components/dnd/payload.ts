@@ -1,3 +1,4 @@
+import type { DayString } from "@/lib/dates";
 import { MOOD_LABEL, isMood, type Mood } from "@/lib/moods";
 import type { StickerFace } from "@/lib/stickers";
 
@@ -21,6 +22,19 @@ export type DragPayload =
       activityId: string;
       /** The three fields needed to draw it while it's in the air. */
       face: StickerFace;
+      /**
+       * The day this mark was picked up from, when it came off the calendar
+       * rather than out of the tray.
+       *
+       * One optional field rather than a third `kind`, because everything else
+       * about the two is identical: same circle in the air, same activity id,
+       * same thing on the other end. What it changes is what the *drop* means —
+       * with a `from`, landing on a day is a move and landing on nothing is a
+       * removal; without one, landing on a day is a placement and landing on
+       * nothing is a cancel. The handler branches on this one field, which is
+       * why it's worth carrying rather than looking up.
+       */
+      from?: DayString;
     }
   | { kind: "mood"; mood: Mood };
 
@@ -34,9 +48,16 @@ export function readDragPayload(data: unknown): DragPayload | null {
   const value = data as Partial<DragPayload>;
 
   if (value.kind === "activity") {
-    return typeof value.activityId === "string" && value.face
-      ? { kind: "activity", activityId: value.activityId, face: value.face }
-      : null;
+    if (typeof value.activityId !== "string" || !value.face) return null;
+    return {
+      kind: "activity",
+      activityId: value.activityId,
+      face: value.face,
+      // Absent is a meaning here, not a missing value — it says the tray. So an
+      // origin that isn't a string is dropped rather than passed along, and the
+      // drag reads as one that started in the rail.
+      ...(typeof value.from === "string" ? { from: value.from } : {}),
+    };
   }
   if (value.kind === "mood") {
     return typeof value.mood === "string" && isMood(value.mood)

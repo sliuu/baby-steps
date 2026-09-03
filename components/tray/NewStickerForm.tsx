@@ -1,81 +1,61 @@
 "use client";
 
-import { Plus, SmilePlus } from "lucide-react";
-import { useActionState, useState } from "react";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 
 import { createActivity } from "@/app/actions/activities";
-import { StickerMark } from "@/components/calendar/StickerMark";
-import { TrayRowFace } from "@/components/tray/TrayGroup";
+import { StickerFields, type FormArea } from "@/components/tray/StickerFields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ramp } from "@/lib/palette";
-import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
-
-/** Ties the failing input to the sentence explaining it. */
-const ERROR_ID = "new-sticker-error";
-
-/**
- * A starting point, not a keyboard.
- *
- * Typing an emoji takes a system picker most people have never opened, so the
- * mark field would in practice be letters only. Forty-eight covering roughly
- * what the six life areas are about is enough to make the field feel like a
- * choice; the input beside it still accepts anything you can type or paste.
- */
-const EMOJI = [
-  "🏃", "🚴", "🏋️", "🧘", "🏊", "🥾", "⚽", "🎯",
-  "💤", "💧", "🥗", "🍎", "🌱", "🧹", "⏰", "📿",
-  "🙏", "🕯️", "✨", "🌅", "🌙", "🍀", "🪶", "☮️",
-  "💼", "💻", "📈", "📝", "📞", "📊", "✉️", "🗂️",
-  "🎨", "🎸", "🎹", "📷", "✏️", "📚", "🎭", "🧩",
-  "❤️", "🌹", "🗺️", "✈️", "🏕️", "☕", "🎉", "🐕",
-];
-
-/** The life areas, as the form needs them: an id, a name, and a colour. */
-export type FormArea = {
-  id: string;
-  name: string;
-  colorKey: string;
-};
 
 type Props = {
   areas: FormArea[];
+  /**
+   * Which area the dropdown opens on. Omitted by the tray's header `+`, which
+   * has no area to guess.
+   *
+   * A starting value, not a lock — the dropdown is still there and still works.
+   * The `+` on a life area is a shortcut through one field, not a different
+   * form, and pinning the area would make it one.
+   */
+  defaultAreaId?: string;
 };
 
 /**
- * The tray's `+`, and the dialog behind it.
+ * A `+` and the dialog behind it. One in the tray header, one per life area.
  *
- * Split in two on purpose. Everything the form knows — what you've typed, what
- * went wrong — lives in `StickerFields`, which Radix mounts when the dialog
- * opens and unmounts when it closes. So closing the dialog *is* the reset:
- * there is no clearing code, no effect watching `open`, and no chance of
- * reopening onto last time's half-filled form or a stale error message.
+ * The per-area ones came after the header's, and they're the same component
+ * with one prop rather than a second: what changes is which area the form opens
+ * on, which is a value. (The near miss is instructive — the pre-filled area
+ * broke `StickerFields`'s rule for when to warn about moving past marks, because
+ * that rule was inferring "this is an edit" from "an area is already chosen".
+ * See `historyArea` there.)
+ *
+ * Split in two on purpose, and the split is what made editing cheap. Everything
+ * the form knows — what you've typed, what went wrong — lives in
+ * `StickerFields`, which Radix mounts when the dialog opens and unmounts when
+ * it closes. So closing the dialog *is* the reset: there is no clearing code,
+ * no effect watching `open`, and no chance of reopening onto last time's
+ * half-filled form or a stale error message.
+ *
+ * What's left here is a trigger, a title, and which action to call. `EditStickerForm`
+ * is the same three things with different values, which is why the fields moved
+ * to their own file rather than growing a `mode` prop.
  */
 export function NewStickerForm(props: Props) {
   const [open, setOpen] = useState(false);
+
+  /** The area's name, when there is one, for the label and the sentence. */
+  const area = props.areas.find(
+    (candidate) => candidate.id === props.defaultAreaId,
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -87,10 +67,26 @@ export function NewStickerForm(props: Props) {
             Georgia while the webfont is still loading. Drawn, it's centred by
             geometry in any font. */}
         <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label="New sticker"
-          title="New sticker"
+          // Ghost and smaller on a heading, matching the eye beside it. The
+          // header's `+` keeps its outline: it's the one you're meant to find
+          // without hovering anything, and it has no neighbour to match.
+          variant={area ? "ghost" : "outline"}
+          size={area ? "icon-xs" : "icon-sm"}
+          // Six of these in a rail, all identical to a screen reader unless the
+          // area is in the name. Same problem the pencil had, same fix.
+          aria-label={area ? `New sticker in ${area.name}` : "New sticker"}
+          title={area ? `New sticker in ${area.name}` : "New sticker"}
+          // On a heading it fades in with the eye, off the same `group/row`.
+          // The header's `+` is always there — hiding the only unconditional
+          // way to add a sticker behind a hover would be hiding the feature.
+          className={
+            area
+              ? `shrink-0 self-center opacity-100
+                 [@media(hover:hover)]:opacity-0
+                 [@media(hover:hover)]:group-hover/row:opacity-100
+                 [@media(hover:hover)]:focus-visible:opacity-100`
+              : undefined
+          }
         >
           <Plus strokeWidth={1.5} />
         </Button>
@@ -99,248 +95,30 @@ export function NewStickerForm(props: Props) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">New sticker</DialogTitle>
+          {/* Says the area rather than leaving you to read it back off the
+              dropdown. The `+` you pressed was the one on Health; the dialog
+              should agree with the button that opened it. */}
           <DialogDescription>
-            A mark, a name, and where it belongs.
+            {area
+              ? `A mark and a name, in ${area.name}.`
+              : "A mark, a name, and where it belongs."}
           </DialogDescription>
         </DialogHeader>
 
-        <StickerFields areas={props.areas} onDone={() => setOpen(false)} />
+        <StickerFields
+          areas={props.areas}
+          action={createActivity}
+          // Only the area is seeded; `historyArea` stays undefined, which is
+          // what keeps this a create — a new sticker has no past marks to warn
+          // about moving, however its dropdown started out.
+          initial={
+            area ? { name: "", mark: "", lifeAreaId: area.id } : undefined
+          }
+          submitLabel="Add sticker"
+          pendingLabel="Adding…"
+          onDone={() => setOpen(false)}
+        />
       </DialogContent>
     </Dialog>
-  );
-}
-
-type FieldsProps = Props & {
-  onDone: () => void;
-};
-
-/** What went wrong, and which input it belongs to. `null` is "nothing yet". */
-type Problem = { field: DraftField | null; message: string } | null;
-
-function StickerFields(props: FieldsProps) {
-  const { areas, onDone } = props;
-
-  const [name, setName] = useState("");
-  const [mark, setMark] = useState("");
-  const [lifeAreaId, setLifeAreaId] = useState("");
-  const [pickerOpen, setPickerOpen] = useState(false);
-
-  /**
-   * The form's action: both checks, three lines apart.
-   *
-   * `useActionState` gives back the action's last return value, a function to
-   * hand to `<form action={…}>`, and a pending flag that lasts exactly as long
-   * as the round trip. The function here is *ours* — a client function that
-   * wraps the Server Action — which buys two things:
-   *
-   * 1. The friendly check. `validateDraft` runs on the same FormData the
-   *    server would receive, so an empty name never leaves the browser and the
-   *    message appears with no round trip at all. It is the same function the
-   *    action calls, so the two can't drift and the sentence is identical.
-   * 2. Somewhere to put "and then close". The success path is a UI decision,
-   *    not the server's, so it belongs on this side.
-   *
-   * It also means `createActivity` keeps a plain `(formData) => result`
-   * signature rather than the `(previousState, formData)` shape `useActionState`
-   * would otherwise impose on it — the previous state is only ever consulted
-   * here, and here it isn't consulted at all.
-   */
-  const [problem, submit, pending] = useActionState<Problem, FormData>(
-    async (_previous, formData) => {
-      const check = validateDraft(readDraft(formData));
-      if (!check.ok) return { field: check.field, message: check.message };
-
-      const result = await createActivity(formData);
-      if (!result.ok) return { field: result.field, message: result.message };
-
-      onDone();
-      return null;
-    },
-    null,
-  );
-
-  const area = areas.find((candidate) => candidate.id === lifeAreaId);
-
-  /**
-   * Mark the field the complaint is about, and point it at the sentence.
-   *
-   * `aria-invalid` is what turns an input's border red — shadcn styles it — and
-   * `aria-describedby` is what makes a screen reader read the message when
-   * focus lands on the field, rather than leaving it stranded in the live
-   * region at the bottom.
-   */
-  function fieldProps(field: DraftField) {
-    const invalid = problem?.field === field;
-    return {
-      "aria-invalid": invalid,
-      "aria-describedby": invalid ? ERROR_ID : undefined,
-    };
-  }
-
-  return (
-    <form action={submit} className="flex flex-col gap-5">
-      {/* The sticker as it will look in the rail, drawn by the same two
-          components that draw it there — so this is a preview in the literal
-          sense rather than an impression of one. Before an area is chosen the
-          circle shows `ramp()`'s fallback, which is the same thing the grid
-          would show for an unrecognised colour: one fallback, one appearance.
-
-          Hidden from screen readers: every word in it is something the user
-          just typed into a field two inches below, and the empty state says
-          "Your sticker", which is a placeholder rather than information. */}
-      <div
-        aria-hidden="true"
-        className="flex items-center gap-2.5 rounded-md border border-dashed border-hairline px-2 py-1.5"
-      >
-        <TrayRowFace
-          visual={
-            <StickerMark
-              sticker={{
-                name: name.trim(),
-                mark,
-                colorKey: area?.colorKey ?? "",
-              }}
-            />
-          }
-          name={name.trim() || "Your sticker"}
-        />
-      </div>
-
-      <div className="flex items-end gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="sticker-mark">Mark</Label>
-          <div className="flex items-center gap-1.5">
-            {/* No maxLength, and that's the whole lesson of this field: the
-                attribute counts UTF-16 code units, so maxLength={1} accepts
-                "A" and silently truncates every emoji into half a surrogate
-                pair. The rule "one character" can only be enforced by counting
-                graphemes, which is what validateDraft does on both sides. */}
-            <Input
-              id="sticker-mark"
-              name="mark"
-              value={mark}
-              onChange={(event) => setMark(event.target.value)}
-              autoComplete="off"
-              placeholder="G"
-              className="w-12 text-center"
-              {...fieldProps("mark")}
-            />
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                {/* type="button", and it is load-bearing. A <button> inside a
-                    <form> submits by default, so without this, opening the
-                    emoji picker would post a half-filled form. */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label="Pick an emoji"
-                  title="Pick an emoji"
-                >
-                  <SmilePlus strokeWidth={1.5} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-fit">
-                <div className="grid grid-cols-8 gap-0.5">
-                  {EMOJI.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => {
-                        setMark(emoji);
-                        setPickerOpen(false);
-                      }}
-                      className="grid size-7 place-items-center rounded-md text-base transition-colors hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink/40"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <Label htmlFor="sticker-name">Name</Label>
-          <Input
-            id="sticker-name"
-            name="name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            autoComplete="off"
-            autoFocus
-            placeholder="Gym"
-            {...fieldProps("name")}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="sticker-area">Life area</Label>
-        {/* `name` is what makes a Radix Select part of the form: given one, it
-            renders a hidden native <select> alongside the button, so the value
-            arrives in FormData like any other field. Without it the trigger is
-            just a button and `lifeArea` would always be empty. */}
-        <Select name="lifeArea" value={lifeAreaId} onValueChange={setLifeAreaId}>
-          <SelectTrigger
-            id="sticker-area"
-            className="w-full"
-            {...fieldProps("lifeArea")}
-          >
-            <SelectValue placeholder="Choose one" />
-          </SelectTrigger>
-          <SelectContent>
-            {areas.map((option) => (
-              <SelectItem key={option.id} value={option.id}>
-                {/* The soft end. This dot used to be the full ramp, because
-                    tint is perceived by area and 10px is no area at all. That
-                    was right about the problem and wrong about the fix — the
-                    answer was to deepen the ramp rather than to saturate one
-                    dot, and now the swatch matches both the sticker it will
-                    produce and the identical dot in Trends' area table. Three
-                    places, one dot, one meaning. */}
-                <span
-                  aria-hidden="true"
-                  className={`size-2.5 rounded-full ${ramp(option.colorKey).soft}`}
-                />
-                {option.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-[0.8rem] text-ink-muted">
-          It takes that area&rsquo;s colour, and names are unique within it.
-        </p>
-      </div>
-
-      {/* Rendered always, filled sometimes — a live region the browser only
-          discovers at the moment it gains text often doesn't announce. Same
-          pattern, and the same red as, the tray's error line. */}
-      <div role="status" aria-live="polite" className="empty:hidden">
-        {problem && (
-          <p
-            id={ERROR_ID}
-            className="rounded-md bg-ramp-red-soft px-2 py-1.5 text-[0.9rem]"
-          >
-            {problem.message}
-          </p>
-        )}
-      </div>
-
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline">
-            Cancel
-          </Button>
-        </DialogClose>
-        {/* Disabled for the length of the round trip, which is what stops a
-            double-click becoming two inserts — the second of which would hit
-            the unique constraint and report a name clash with itself. */}
-        <Button type="submit" disabled={pending}>
-          {pending ? "Adding…" : "Add sticker"}
-        </Button>
-      </DialogFooter>
-    </form>
   );
 }

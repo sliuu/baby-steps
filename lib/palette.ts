@@ -24,13 +24,19 @@
  * paint an SVG in a full-strength hue without adding one back, which is a change
  * big enough to notice in review.
  */
+/*
+ * `tint` is the third rung, added when the sticker grew an outline. It is the
+ * palest of the three and it only ever appears *under* `border`, which is why
+ * they were added as a pair rather than as one more colour to pick from: the
+ * fill on its own no longer says which area a sticker belongs to.
+ */
 export const RAMP = {
-  red: { bg: "bg-ramp-red", soft: "bg-ramp-red-soft", text: "text-ramp-red", border: "border-ramp-red", softFill: "fill-ramp-red-soft", softStroke: "stroke-ramp-red-soft" },
-  blue: { bg: "bg-ramp-blue", soft: "bg-ramp-blue-soft", text: "text-ramp-blue", border: "border-ramp-blue", softFill: "fill-ramp-blue-soft", softStroke: "stroke-ramp-blue-soft" },
-  orange: { bg: "bg-ramp-orange", soft: "bg-ramp-orange-soft", text: "text-ramp-orange", border: "border-ramp-orange", softFill: "fill-ramp-orange-soft", softStroke: "stroke-ramp-orange-soft" },
-  yellow: { bg: "bg-ramp-yellow", soft: "bg-ramp-yellow-soft", text: "text-ramp-yellow", border: "border-ramp-yellow", softFill: "fill-ramp-yellow-soft", softStroke: "stroke-ramp-yellow-soft" },
-  green: { bg: "bg-ramp-green", soft: "bg-ramp-green-soft", text: "text-ramp-green", border: "border-ramp-green", softFill: "fill-ramp-green-soft", softStroke: "stroke-ramp-green-soft" },
-  purple: { bg: "bg-ramp-purple", soft: "bg-ramp-purple-soft", text: "text-ramp-purple", border: "border-ramp-purple", softFill: "fill-ramp-purple-soft", softStroke: "stroke-ramp-purple-soft" },
+  red: { bg: "bg-ramp-red", soft: "bg-ramp-red-soft", tint: "bg-ramp-red-tint", text: "text-ramp-red", border: "border-ramp-red", softFill: "fill-ramp-red-soft", softStroke: "stroke-ramp-red-soft" },
+  blue: { bg: "bg-ramp-blue", soft: "bg-ramp-blue-soft", tint: "bg-ramp-blue-tint", text: "text-ramp-blue", border: "border-ramp-blue", softFill: "fill-ramp-blue-soft", softStroke: "stroke-ramp-blue-soft" },
+  orange: { bg: "bg-ramp-orange", soft: "bg-ramp-orange-soft", tint: "bg-ramp-orange-tint", text: "text-ramp-orange", border: "border-ramp-orange", softFill: "fill-ramp-orange-soft", softStroke: "stroke-ramp-orange-soft" },
+  yellow: { bg: "bg-ramp-yellow", soft: "bg-ramp-yellow-soft", tint: "bg-ramp-yellow-tint", text: "text-ramp-yellow", border: "border-ramp-yellow", softFill: "fill-ramp-yellow-soft", softStroke: "stroke-ramp-yellow-soft" },
+  green: { bg: "bg-ramp-green", soft: "bg-ramp-green-soft", tint: "bg-ramp-green-tint", text: "text-ramp-green", border: "border-ramp-green", softFill: "fill-ramp-green-soft", softStroke: "stroke-ramp-green-soft" },
+  purple: { bg: "bg-ramp-purple", soft: "bg-ramp-purple-soft", tint: "bg-ramp-purple-tint", text: "text-ramp-purple", border: "border-ramp-purple", softFill: "fill-ramp-purple-soft", softStroke: "stroke-ramp-purple-soft" },
 } as const;
 
 export type RampKey = keyof typeof RAMP;

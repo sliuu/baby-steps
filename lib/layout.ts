@@ -6,10 +6,19 @@
  * misalignment you see immediately and hunt for a while. It was duplicated in
  * two files until the calendar grew a right rail and needed a wider page.
  *
- * max-w-7xl rather than 5xl so the grid keeps roughly its old width once the
- * rail takes its 16rem out of the row.
+ * Two numbers, and they bind at different sizes — which is why changing the
+ * margin means changing both. On a wide screen `max-w-*` is what stops the
+ * content, and the gutter is whatever's left over; on a laptop the max-width
+ * never comes into play and `px-*` is the entire margin. Moving only one of
+ * them widens the page in half the windows it's viewed in.
+ *
+ * It was 7xl and px-8, chosen so the calendar grid kept roughly its pre-rail
+ * width once the rail took 18rem out of the row. 6xl gives 8rem of that back to
+ * the margin — the grid is correspondingly narrower, which is the trade being
+ * made on purpose: a month is a fixed 7 columns, so it doesn't need the width,
+ * it just fills it.
  */
-export const PAGE_WIDTH = "mx-auto w-full max-w-7xl px-8";
+export const PAGE_WIDTH = "mx-auto w-full max-w-6xl px-10";
 
 /**
  * The tray's own gutter, and the same problem one level down.

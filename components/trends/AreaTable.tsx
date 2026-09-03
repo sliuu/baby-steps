@@ -94,12 +94,19 @@ export function AreaTable(props: Props) {
         </tr>
       </thead>
 
+      {/* Rows are `py-2`, the same as the header, and they used to be a notch
+          looser. Eight rows is where a small number gets big: dropping 2px a
+          row takes about thirty off the column, which is most of what this side
+          had to lose to finish level with the chart beside it. It's also the
+          cheapest place to take it — a table is a grid of short strings, and
+          the thing that separates its rows is the rule between them rather than
+          the air around them. */}
       <tbody>
         {ranked.map((area) => (
           <tr key={area.areaId} className="border-b border-hairline">
             {/* The area name heads its own row, which is what lets a screen
                 reader say the name again beside each number in it. */}
-            <th scope="row" className="py-2.5 font-normal">
+            <th scope="row" className="py-2 font-normal">
               <span className="flex items-center gap-2.5">
                 {/* Bare. This dot briefly wore a hairline ring, because at
                     28% a 10px tint on cream was 1.19:1 and genuinely
@@ -117,7 +124,7 @@ export function AreaTable(props: Props) {
             {/* `tabular` so the digits stop jittering as the range changes.
                 Proportional figures re-space the whole column when a 1 becomes
                 a 7, which reads as the table twitching. */}
-            <td className="tabular py-2.5 text-right">
+            <td className="tabular py-2 text-right">
               {/* An area with nothing in it gets a dash, not a 0. Zero is a
                   measurement; a dash is "nothing here", and at a glance the
                   eye skips it instead of counting it. */}
@@ -128,7 +135,7 @@ export function AreaTable(props: Props) {
               )}
             </td>
 
-            <td className="tabular py-2.5 text-right">
+            <td className="tabular py-2 text-right">
               {area.count === 0 ? (
                 <span className="text-ink-muted">—</span>
               ) : (
@@ -145,13 +152,13 @@ export function AreaTable(props: Props) {
 
       <tfoot>
         <tr>
-          <th scope="row" className="py-2.5 font-normal text-ink-muted">
+          <th scope="row" className="py-2 font-normal text-ink-muted">
             Total
           </th>
-          <td className="tabular py-2.5 text-right text-ink-muted">
+          <td className="tabular py-2 text-right text-ink-muted">
             {tally.total}
           </td>
-          <td className="tabular py-2.5 text-right text-ink-muted">
+          <td className="tabular py-2 text-right text-ink-muted">
             {tally.total === 0 ? "—" : `${columnTotal.toFixed(1)}%`}
           </td>
         </tr>

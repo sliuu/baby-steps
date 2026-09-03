@@ -27,6 +27,27 @@ import type { StickersByDay, StickerFace } from "@/lib/stickers";
 export type CalendarChange =
   | { kind: "place"; day: DayString; activityId: string; face: StickerFace }
   | { kind: "remove"; day: DayString; activityId: string }
+  /**
+   * One mark, carried from one day to another.
+   *
+   * Not a `remove` followed by a `place`, and the difference is a row id. In the
+   * database this is an `update … set day = $to` on the placement that already
+   * exists, so the mark keeps its identity — which matters here for the same
+   * reason it matters there: React keys off `id`, and a delete-then-insert would
+   * unmount the circle and mount a different one in the next cell. Two writes
+   * would also be two round trips that can half-fail, leaving a mark on both
+   * days or on neither.
+   *
+   * It carries `face` for the same reason `place` does — the target day may
+   * never have been drawn before.
+   */
+  | {
+      kind: "move";
+      from: DayString;
+      to: DayString;
+      activityId: string;
+      face: StickerFace;
+    }
   | { kind: "mood"; day: DayString; mood: Mood }
   | { kind: "clearMood"; day: DayString };
 
@@ -56,6 +77,11 @@ export function applyChange(
   byDay: StickersByDay,
   change: CalendarChange,
 ): StickersByDay {
+  // Taken first because it is the one change about *two* days — every branch
+  // below reads a single `change.day`, and a move has a `from` and a `to`
+  // instead. Splitting it out is what keeps the other four one-liners.
+  if (change.kind === "move") return moveSticker(byDay, change);
+
   const current = byDay.get(change.day) ?? { activities: [], mood: null };
   const next = new Map(byDay);
 
@@ -98,4 +124,49 @@ export function applyChange(
       return next;
     }
   }
+}
+
+/**
+ * A mark leaving one day for another.
+ *
+ * The sticker object itself is carried across rather than rebuilt, so the
+ * placement keeps its real `id` — the server is doing an update, not a delete
+ * and an insert, and this is that fact drawn. There is no `pending:` id here
+ * because nothing new is coming into existence.
+ *
+ * Two no-ops, both reachable by hand: dropping a mark back on the day it came
+ * from, and dragging one onto a day that already has it. The second is the
+ * `unique (user_id, day, activity_id)` rule again, and the honest answer is
+ * that the source loses its mark and the target keeps the one it had — a merge,
+ * not a rejection. Same shape as `place`'s duplicate branch, one day over.
+ */
+function moveSticker(
+  byDay: StickersByDay,
+  change: Extract<CalendarChange, { kind: "move" }>,
+): StickersByDay {
+  const { from, to, activityId } = change;
+  if (from === to) return byDay;
+
+  const source = byDay.get(from);
+  const moving = source?.activities.find(
+    (sticker) => sticker.activityId === activityId,
+  );
+  if (!source || !moving) return byDay;
+
+  const target = byDay.get(to) ?? { activities: [], mood: null };
+  const duplicate = target.activities.some(
+    (sticker) => sticker.activityId === activityId,
+  );
+
+  const next = new Map(byDay);
+  next.set(from, {
+    ...source,
+    activities: source.activities.filter(
+      (sticker) => sticker.activityId !== activityId,
+    ),
+  });
+  if (!duplicate) {
+    next.set(to, { ...target, activities: [...target.activities, moving] });
+  }
+  return next;
 }

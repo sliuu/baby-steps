@@ -109,14 +109,35 @@ export function DayModal(props: Props) {
             <div
               className={`${SCROLL_PAD} flex max-h-[60vh] flex-col gap-6 overflow-y-auto py-1`}
             >
-              {groups.map((group) => (
+              {groups.map((group) => {
+                /**
+                 * What you can tick here: everything still in use, plus any
+                 * archived sticker that's already on this day.
+                 *
+                 * The second half is the whole rule. Archiving takes a sticker
+                 * out of circulation, so it must not be addable — but a mark
+                 * you put on a day before you retired it is still on that day,
+                 * and the checkbox is the only way to take it off. Hiding it
+                 * outright would leave a mark on the calendar with no control
+                 * anywhere that can remove it.
+                 */
+                const visible = group.stickers.filter(
+                  (sticker) => !sticker.archived || placed.has(sticker.id),
+                );
+
+                // A life area whose stickers are all archived and all unused
+                // today has nothing to say. The heading would be the only
+                // thing in it.
+                if (visible.length === 0) return null;
+
+                return (
                 <section key={group.areaId}>
                   <h3 className="eyebrow">{group.areaName}</h3>
                   {/* Tight, because each row now carries its own vertical
                       padding — it's a hover band, not a line of text. Same
                       adjustment the tray made for the same reason. */}
                   <ul className="mt-1.5 flex flex-col gap-0.5">
-                    {group.stickers.map((sticker) => {
+                    {visible.map((sticker) => {
                       const inputId = `day-activity-${sticker.id}`;
                       return (
                         <li key={sticker.id} className={ROW}>
@@ -156,7 +177,8 @@ export function DayModal(props: Props) {
                     })}
                   </ul>
                 </section>
-              ))}
+                );
+              })}
 
               <section>
                 <h3 className="eyebrow">Mood</h3>

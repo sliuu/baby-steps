@@ -120,6 +120,57 @@ export async function removeActivity(
 }
 
 /**
+ * Carry a placement from one day to another.
+ *
+ * One `update`, not a delete and an insert. The row already exists and only its
+ * `day` is wrong, so updating it is both fewer statements and — the part that
+ * shows on screen — identity-preserving: the placement keeps its id, so React
+ * moves the circle rather than unmounting one and mounting another.
+ *
+ * Two failures worth naming, because they don't look like failures:
+ *
+ * `update` is the statement RLS filters rather than rejects. A row that isn't
+ * yours is simply not in scope, so Postgres updates nothing and reports success
+ * — the same trap `updateActivity` documents. `.select("id")` is the only way to
+ * tell: no rows back means nothing moved, whatever the absent error says.
+ *
+ * `23505` is the unique violation, and it is a real thing to do by hand: drag
+ * Monday's Gym onto a Tuesday that already has Gym. There is nowhere for the row
+ * to land, and the honest result is a merge — the mark leaves Monday and Tuesday
+ * keeps the one it had. So the conflict falls through to a delete of the source
+ * row, which is exactly what `applyChange` drew optimistically a moment earlier.
+ */
+export async function moveActivity(
+  from: DayString,
+  to: DayString,
+  activityId: string,
+): Promise<PlaceResult> {
+  if (!DAY_PATTERN.test(from) || !DAY_PATTERN.test(to)) {
+    return { ok: false, message: "That isn't a day." };
+  }
+  if (from === to) return { ok: true };
+
+  const { supabase, user } = await signedInClient();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const { data, error } = await supabase
+    .from("day_activities")
+    .update({ day: to })
+    .eq("day", from)
+    .eq("activity_id", activityId)
+    .select("id");
+
+  if (error?.code === "23505") return removeActivity(from, activityId);
+
+  if (error || data === null || data.length === 0) {
+    return { ok: false, message: "That sticker wouldn't move. Try again." };
+  }
+
+  refresh();
+  return { ok: true };
+}
+
+/**
  * Set the day's mood, replacing whatever was there.
  *
  * A true upsert this time, and the reason "mood replaces mood" needs no branch
