@@ -1,8 +1,10 @@
 import { useDroppable } from "@dnd-kit/core";
 import { Pencil } from "lucide-react";
+import { Fragment } from "react";
 
 import { DayMoodButton } from "./DayMoodButton";
 import { DraggableMark } from "@/components/dnd/DraggableMark";
+import { DropSlot } from "@/components/dnd/DropSlot";
 import { Button } from "@/components/ui/button";
 import type { CalendarChange } from "@/lib/changes";
 import { formatDayLong, type DayCellData, type DayString } from "@/lib/dates";
@@ -32,6 +34,23 @@ type Props = {
    * lookup, so it asks `dayMatches` there and passes the answer down.
    */
   lit: boolean;
+  /**
+   * Whether the thing in the air is over this day.
+   *
+   * Passed down rather than read from `useDroppable`'s own `isOver`, and the
+   * reason is the caret. The gaps between marks are droppables too now, so on a
+   * pointer drag the thing dnd-kit reports as `over` is a slot *inside* this
+   * cell and the cell's own `isOver` is false — the drop highlight would switch
+   * off the moment the drop got more precise. The board knows which day either
+   * kind of target belongs to, so it answers.
+   */
+  over: boolean;
+  /**
+   * Which gap the caret is in, or null when the drag isn't a mark aimed at this
+   * day. An index, not an element: the cell renders one slot per gap regardless
+   * and lights exactly one of them.
+   */
+  caretIndex: number | null;
 };
 
 /**
@@ -65,7 +84,7 @@ function numeralClasses(cell: DayCellData): string {
  * That was the whole lesson of `dayLabel()`, and it outlived the function.
  */
 export function DayCell(props: Props) {
-  const { cell, stickers, onOpen, onCommit, highlight, lit } = props;
+  const { cell, stickers, onOpen, onCommit, highlight, lit, caretIndex } = props;
 
   /**
    * One rule, and it covers every mark on the page: a mark stays at full
@@ -86,7 +105,9 @@ export function DayCell(props: Props) {
   //
   // The day string is the id. That's the whole reason `over` is enough to know
   // where a sticker landed — no lookup table, no data payload on this side.
-  const { setNodeRef, isOver } = useDroppable({ id: cell.day });
+  //
+  // `isOver` is deliberately not taken from here; see the `over` prop.
+  const { setNodeRef } = useDroppable({ id: cell.day });
 
   return (
     // A plain `<div>`, and going back to one is the point of the change. A
@@ -162,7 +183,7 @@ export function DayCell(props: Props) {
           both themes: dark ink darkens the cream, light ink lightens the
           charcoal. A fixed grey would have needed two values, and the same
           trick already runs the scrollbars. */}
-      {isOver && (
+      {props.over && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 border-2 border-ink/40 bg-ink/6"
@@ -219,18 +240,39 @@ export function DayCell(props: Props) {
           `leading-[30px]` is what separates the rows, because a vertical margin
           on an inline-level box does nothing to the line box around it — the
           gap between wrapped rows has to come from line-height. 26px of mark
-          plus 4px of air, matching the horizontal rhythm. */}
+          plus 4px of air, matching the horizontal rhythm.
+
+          The marks are interleaved with `DropSlot`s — one before each mark and
+          one after the last — which is what makes a drop land *somewhere* in
+          the day rather than merely *on* it. They take no width, so none of the
+          arithmetic above changes; see `DropSlot` for why that's the whole
+          trick. */}
       <div className="mt-2 leading-[30px] [&>button]:mr-0.5 [&>button]:align-top">
-        {stickers.activities.map((sticker) => (
-          <DraggableMark
-            key={sticker.id}
-            sticker={sticker}
-            day={cell.day}
-            faded={selected(
-              highlight?.activityIds.has(sticker.activityId) ?? false,
-            )}
-          />
+        {stickers.activities.map((sticker, index) => (
+          <Fragment key={sticker.id}>
+            <DropSlot
+              day={cell.day}
+              index={index}
+              active={caretIndex === index}
+            />
+            <DraggableMark
+              sticker={sticker}
+              day={cell.day}
+              faded={selected(
+                highlight?.activityIds.has(sticker.activityId) ?? false,
+              )}
+            />
+          </Fragment>
         ))}
+
+        {/* The last gap, and the only one that exists on an empty day — which
+            is why it's here rather than folded into the loop as an off-by-one.
+            A day with nothing on it still has one place to put something. */}
+        <DropSlot
+          day={cell.day}
+          index={stickers.activities.length}
+          active={caretIndex === stickers.activities.length}
+        />
 
         {/* The way in to the modal, and now the only one.
 

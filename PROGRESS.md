@@ -2,11 +2,56 @@
 
 Newest first. One entry per step.
 
-**Now:** Step 16 of 18 is written and green, uncommitted, and *partly* looked at in a browser at last — nine changes deep. The newest reshapes the day cell: a header line (date left, mood right), a gap, then the marks, with the pencil holding the last slot in the run instead of floating over the corner. Capacity before a cell grows went from 2 marks to 5. Step 15 shipped as `bfb2e2a`. Step 17 (motion) is next — two steps left after this one.
+**Now:** A day's marks have an order you choose. Drag one along its own day, or drop one from the tray or another day into a gap, and a caret shows where it will land. The overlay under the cursor is now just the circle, centred on the pointer. **Uncommitted.** The migration is applied on the linked project — `position` exists and the backfill ran — but `lib/database.types.ts` still holds the three lines added by hand, so `npm run types:db` is worth running to confirm it regenerates the same file. Step 17 (motion) is next — two steps left.
+
+Most of Step 16 still hasn't been looked at in a browser; the open items under each entry below are the list.
 
 The plan grew a step: editing a sticker was inserted as Step 16, so motion and deploy became 17 and 18.
 
 ---
+
+## 2026-09-03 · Step 16, continued · A caret between the marks
+
+"Let's also make it possible to rearrange stickers and be able to choose where to slot a sticker, and when a sticker is picked up from the drawer, have it just be the circle sticker (without the description), just like if you picked one up from the calendar." Scope confirmed as marks on a day, not the tray's own order. Insert cue: "A line between stickers to show inserting between them, kinda like in a text field."
+
+**Decisions**
+
+- **The gaps between marks are droppables; the marks aren't.** The alternative was to register each mark and then work out from the pointer whether you meant before it or after it — pointer coordinates, the mark's rect, a midpoint test, all in the drop handler. Registering the gaps means dnd-kit's own hit-testing hands back an index directly, and the thing that gets *found* is the same thing that gets *drawn*.
+- **A caret slot has zero width.** Four carets at 2px each would take a whole mark's worth of space back out of the 85px row we spent Step 16 fitting. The box occupies nothing; the 2px line is painted absolutely over the 2px gap that's already there. The side effect is the design Stephanie asked for — aiming at a gap doesn't make the gap open, the same way a text caret doesn't push the letters apart.
+- **Collision detection asks two questions, not one.** `pointerWithin` over cells only ("which day"), then nearest-centre among that day's slots ("where in it"). One pass over everything would happily return a slot in the cell next door when the cursor sat in a margin.
+- **Vertical distance counts quadruple.** A day's marks wrap; 30px of line height is small next to 85px of width, so plain distance lets the last gap on the line above win while the cursor is clearly on the line below.
+- **`position integer`, dense 0..n-1, no fractional gaps.** The clever version stores 0/100/200 and inserts by averaging, so a reorder is one UPDATE. It's right at a scale this table will never see: a day holds a handful of marks, renumbering all of them is one round trip either way, and halving intervals eventually needs a rebalance pass nobody remembers to write.
+- **No unique constraint on `(user_id, day, position)`.** A non-deferrable unique index checks per row, so a swap trips over itself halfway through even though the final state is valid. The query orders by `position` *then* `created_at` for exactly that reason — with ties possible, one key isn't a total sort, and a day would quietly reshuffle between page loads.
+- **A same-day drop is a `move`, not a new `reorder` variant.** Every caller builds the same thing either way; the gesture is identical and the cursor decides which one it was. A separate variant would make the drag handler branch on a distinction the user never makes.
+- **The index is read against the day as it's drawn, dragged mark included.** So a slot to the right of where the mark started counts one position that's about to stop existing, and both `applyChange` and the action subtract it. They have to agree, or the optimistic draw and the row that comes back differ by one.
+- **Both carets touching a mark mean "leave it alone".** That's how a drag gets abandoned — pick it up, think better of it, put it down. Same Map back, and the action skips the round trip too.
+- **`index` is required, not optional.** An optional one would make "the end" the silent default, and the point of the field is that the caller looked. The day modal's checkbox says `stickers.activities.length` out loud.
+- **The overlay lost its card.** It was a copy of the tray row, which was right while the tray was the only drag source. Once marks could be lifted off the calendar it was drawing a labelled card in place of a 26px circle four times smaller — and a wide box under a cursor is a lie about where the cursor is, which is what forced `pointerWithin` in the first place. The three states survive without the border: full strength + shadow over a day, pale outside, pale + a red ring when letting go would delete.
+- **Shrinking the overlay meant re-anchoring it (bug, found and fixed).** Stephanie: "If I pull up a sticker for a day and then try to pull up the same sticker for a different day, the sticker doesn't pull up at all." dnd-kit sizes and positions the overlay from the box you picked *from* — a 288px tray row — and the new 26px circle sat at that box's left edge. Grab a row by its name and the mark lifts a hand's width to the left of your cursor, which reads as nothing lifting at all. Fixed with `width/height: max-content` on the overlay plus a `snapToCursor` modifier that centres it on the pointer. A mark lifted off the calendar is already 26px and already grabbed near its middle, so the same rule moves it a pixel or two and the two drags finally are the same gesture.
+- **The cell's drop highlight is a prop now, not `useDroppable`'s `isOver`.** On a pointer drag `over` is a slot *inside* the cell, so the cell's own `isOver` is false — the square would go dark the moment the drop got more precise.
+
+**Changed**
+
+- `supabase/migrations/20260903120000_day_activity_position.sql` — new: `position` column, backfill by `created_at`, index on `(user_id, day, position)`
+- `lib/database.types.ts` — `position` added to `day_activities` by hand, to match what `npm run types:db` will generate
+- `lib/queries/stickers.ts` — `.order("position").order("created_at")`
+- `lib/changes.ts` — `index` on `place` and `move`; `spliced()` with its clamp; `moveSticker` handles `from === to`
+- `lib/changes.test.ts` — 7 new tests (caret slot, clamping, four reorder cases)
+- `app/actions/stickers.ts` — `placeActivity`/`moveActivity` take an index; `readDay` + `writeOrder` helpers; the `23505` fallback became an ordinary branch off the read
+- `components/dnd/DropSlot.tsx`, `components/dnd/dropTarget.ts`, `components/dnd/snapToCursor.ts` — new
+- `components/dnd/CalendarBoard.tsx` — two-stage collision detection; `overDay` boolean → `target: DropTarget | null`; bare-circle overlay, shrunk to `max-content` and snapped to the cursor; announcements read the day through `readDropTarget`
+- `components/calendar/DayCell.tsx`, `MonthGrid.tsx`, `DayModal.tsx` — slots interleaved with marks; `over` and `caretIndex` passed down; the modal names its index
+
+**State:** `tsc`, `eslint`, 195 tests, `npm run build` all green. `w-0`, `h-[26px]`, `-left-px`, `w-0.5`, `opacity-50`, `ring-2`, `ring-ramp-red` and `drop-shadow-md` all present in the compiled CSS. Uncommitted. The drag itself has now been exercised in the browser — that's how the overlay anchoring came out.
+
+**What to look for.** Pick up a mark and move it along its own day — a thin line should appear in the gap you're aiming at, without the marks shifting. Drag one from the tray into the middle of a busy day. Check the thing under the cursor is a plain circle in all cases, that it goes pale off the grid, and that a mark lifted off a day gets a red ring out there.
+
+**Open**
+
+- **The types haven't been regenerated.** The migration is applied — `position` is on the table and the backfill ran — but `lib/database.types.ts` was edited by hand so the build would pass. `npm run types:db` should produce the same three lines.
+- **Keyboard drags can't choose a slot.** No cursor means no gaps to aim at, so `readDropTarget` reads a bare cell as the end of the day. Honest, but it means reordering is a pointer-only gesture.
+- **~200 slot droppables in a busy month,** all measured on drag start. Not noticeably slow, but it's the number to watch if a drag ever feels heavy.
+- **The caret is `bg-ink` at 2px.** Unverified against the highlight wash and against a sunken out-of-month cell.
 
 ## 2026-09-03 · Step 16, continued · Header, then the marks, and the pencil takes a slot
 

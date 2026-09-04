@@ -152,6 +152,15 @@ export function DayModal(props: Props) {
                                       day,
                                       activityId: sticker.id,
                                       face: sticker,
+                                      // The end of the day's run. A checkbox
+                                      // has no caret to read — the ordering
+                                      // gesture is the drag, and this door only
+                                      // says whether the mark is there at all.
+                                      // Naming the index anyway rather than
+                                      // letting it default is the point of it
+                                      // being required: "the end" is a choice
+                                      // this list made, not one it inherited.
+                                      index: stickers.activities.length,
                                     }
                                   : {
                                       kind: "remove",

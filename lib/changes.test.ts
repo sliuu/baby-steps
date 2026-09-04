@@ -19,6 +19,7 @@ import type { DayStickers, StickersByDay } from "./stickers.ts";
 
 const GYM = { name: "Gym", mark: "G", colorKey: "blue" };
 const READ = { name: "Reading", mark: "R", colorKey: "green" };
+const SWIM = { name: "Swimming", mark: "S", colorKey: "amber" };
 
 const DAY = "2026-08-20";
 const OTHER = "2026-08-21";
@@ -40,6 +41,7 @@ describe("applyChange · place", () => {
       day: DAY,
       activityId: "gym",
       face: GYM,
+      index: 0,
     });
 
     assert.deepEqual(
@@ -60,12 +62,69 @@ describe("applyChange · place", () => {
       day: DAY,
       activityId: "gym",
       face: GYM,
+      index: 1,
     });
 
     assert.equal(after.get(DAY)?.mood, "great");
     assert.deepEqual(
       after.get(DAY)?.activities.map((s) => s.activityId),
       ["read", "gym"],
+    );
+  });
+
+  it("drops into the slot the caret was in, not onto the end", () => {
+    const before = calendar({
+      [DAY]: {
+        activities: [placed("read", READ), placed("swim", SWIM)],
+        mood: null,
+      },
+    });
+    const after = applyChange(before, {
+      kind: "place",
+      day: DAY,
+      activityId: "gym",
+      face: GYM,
+      index: 1,
+    });
+
+    assert.deepEqual(
+      after.get(DAY)?.activities.map((s) => s.activityId),
+      ["read", "gym", "swim"],
+    );
+  });
+
+  // An index arrives from a pointer over a grid, and the day underneath it can
+  // have changed since the drag started — a second tab, a write rolling back.
+  // Past the end has to mean the end. Negative especially matters: `splice`
+  // would count backwards and put the mark second-to-last, which is a wrong
+  // answer that looks deliberate.
+  it("clamps an index that no longer fits the day", () => {
+    const before = calendar({
+      [DAY]: { activities: [placed("read", READ)], mood: null },
+    });
+
+    const past = applyChange(before, {
+      kind: "place",
+      day: DAY,
+      activityId: "gym",
+      face: GYM,
+      index: 9,
+    });
+    const under = applyChange(before, {
+      kind: "place",
+      day: DAY,
+      activityId: "swim",
+      face: SWIM,
+      index: -3,
+    });
+
+    assert.deepEqual(
+      past.get(DAY)?.activities.map((s) => s.activityId),
+      ["read", "gym"],
+    );
+    assert.deepEqual(
+      under.get(DAY)?.activities.map((s) => s.activityId),
+      ["swim", "read"],
     );
   });
 
@@ -82,6 +141,7 @@ describe("applyChange · place", () => {
       day: DAY,
       activityId: "gym",
       face: GYM,
+      index: 0,
     });
 
     assert.equal(after, before, "expected the very same Map back, not a copy");
@@ -93,6 +153,7 @@ describe("applyChange · place", () => {
       day: DAY,
       activityId: "gym",
       face: GYM,
+      index: 0,
     });
 
     // React needs a key now; the server's real row id arrives a moment later.
@@ -162,6 +223,7 @@ describe("applyChange · move", () => {
       to: OTHER,
       activityId: "gym",
       face: GYM,
+      index: 0,
     });
 
     assert.deepEqual(
@@ -176,6 +238,29 @@ describe("applyChange · move", () => {
     assert.equal(after.get(DAY)?.mood, "okay");
   });
 
+  it("lands in the slot it was aimed at on the other day", () => {
+    const before = calendar({
+      [DAY]: { activities: [placed("gym", GYM)], mood: null },
+      [OTHER]: {
+        activities: [placed("read", READ), placed("swim", SWIM)],
+        mood: null,
+      },
+    });
+    const after = applyChange(before, {
+      kind: "move",
+      from: DAY,
+      to: OTHER,
+      activityId: "gym",
+      face: GYM,
+      index: 1,
+    });
+
+    assert.deepEqual(
+      after.get(OTHER)?.activities.map((s) => s.activityId),
+      ["read", "gym", "swim"],
+    );
+  });
+
   // The placement keeps its row id because the server keeps it too — a move is
   // an `update`, not a delete and an insert. If this ever became a rebuild,
   // React would unmount the circle and mount a different one, which is a
@@ -183,7 +268,14 @@ describe("applyChange · move", () => {
   it("keeps the placement's id rather than minting a pending one", () => {
     const after = applyChange(
       calendar({ [DAY]: { activities: [placed("gym", GYM)], mood: null } }),
-      { kind: "move", from: DAY, to: OTHER, activityId: "gym", face: GYM },
+      {
+        kind: "move",
+        from: DAY,
+        to: OTHER,
+        activityId: "gym",
+        face: GYM,
+        index: 0,
+      },
     );
 
     assert.equal(after.get(OTHER)?.activities[0].id, "row-gym");
@@ -192,7 +284,14 @@ describe("applyChange · move", () => {
   it("lands on a day that has never been drawn before", () => {
     const after = applyChange(
       calendar({ [DAY]: { activities: [placed("gym", GYM)], mood: null } }),
-      { kind: "move", from: DAY, to: OTHER, activityId: "gym", face: GYM },
+      {
+        kind: "move",
+        from: DAY,
+        to: OTHER,
+        activityId: "gym",
+        face: GYM,
+        index: 0,
+      },
     );
 
     assert.equal(after.get(OTHER)?.mood, null);
@@ -212,27 +311,11 @@ describe("applyChange · move", () => {
       to: OTHER,
       activityId: "gym",
       face: GYM,
+      index: 0,
     });
 
     assert.deepEqual(after.get(DAY)?.activities, []);
     assert.equal(after.get(OTHER)?.activities.length, 1);
-  });
-
-  it("changes nothing when the mark is dropped back where it started", () => {
-    const before = calendar({
-      [DAY]: { activities: [placed("gym", GYM)], mood: null },
-    });
-
-    assert.equal(
-      applyChange(before, {
-        kind: "move",
-        from: DAY,
-        to: DAY,
-        activityId: "gym",
-        face: GYM,
-      }),
-      before,
-    );
   });
 
   it("changes nothing when the source doesn't have that mark", () => {
@@ -247,6 +330,109 @@ describe("applyChange · move", () => {
         to: OTHER,
         activityId: "gym",
         face: GYM,
+        index: 0,
+      }),
+      before,
+    );
+  });
+});
+
+// A move onto the day it came from, which used to be the one thing a move
+// couldn't be. The index is read against the day as it's drawn — the dragged
+// mark included — because that's what the caret was sitting between when you
+// let go. Every case here is really one question: does the mark end up where
+// the line was?
+describe("applyChange · move within a day", () => {
+  const THREE = () =>
+    calendar({
+      [DAY]: {
+        activities: [placed("gym", GYM), placed("read", READ), placed("swim", SWIM)],
+        mood: "okay",
+      },
+    });
+
+  function order(byDay: StickersByDay) {
+    return byDay.get(DAY)?.activities.map((s) => s.activityId);
+  }
+
+  it("carries a mark rightwards past its neighbour", () => {
+    const after = applyChange(THREE(), {
+      kind: "move",
+      from: DAY,
+      to: DAY,
+      activityId: "gym",
+      face: GYM,
+      index: 2,
+    });
+
+    assert.deepEqual(order(after), ["read", "gym", "swim"]);
+  });
+
+  it("carries a mark leftwards to the front", () => {
+    const after = applyChange(THREE(), {
+      kind: "move",
+      from: DAY,
+      to: DAY,
+      activityId: "swim",
+      face: SWIM,
+      index: 0,
+    });
+
+    assert.deepEqual(order(after), ["swim", "gym", "read"]);
+  });
+
+  it("carries a mark to the end", () => {
+    const after = applyChange(THREE(), {
+      kind: "move",
+      from: DAY,
+      to: DAY,
+      activityId: "gym",
+      face: GYM,
+      index: 3,
+    });
+
+    assert.deepEqual(order(after), ["read", "swim", "gym"]);
+  });
+
+  it("keeps the placement's id, so nothing remounts", () => {
+    const after = applyChange(THREE(), {
+      kind: "move",
+      from: DAY,
+      to: DAY,
+      activityId: "gym",
+      face: GYM,
+      index: 3,
+    });
+
+    assert.equal(after.get(DAY)?.activities[2].id, "row-gym");
+    assert.equal(after.get(DAY)?.mood, "okay");
+  });
+
+  // Both carets touching a mark describe the slot it's already in, and landing
+  // on one is how an abandoned drag ends. Same Map back means the cell doesn't
+  // repaint at all.
+  it("changes nothing when the mark is dropped back in its own slot", () => {
+    const before = THREE();
+
+    assert.equal(
+      applyChange(before, {
+        kind: "move",
+        from: DAY,
+        to: DAY,
+        activityId: "read",
+        face: READ,
+        index: 1,
+      }),
+      before,
+    );
+    assert.equal(
+      applyChange(before, {
+        kind: "move",
+        from: DAY,
+        to: DAY,
+        activityId: "read",
+        face: READ,
+        index: 2,
       }),
       before,
     );
@@ -312,6 +498,7 @@ describe("applyChange · doesn't touch what it was given", () => {
       day: DAY,
       activityId: "gym",
       face: GYM,
+      index: 0,
     });
     applyChange(before, { kind: "mood", day: DAY, mood: "great" });
     applyChange(before, { kind: "remove", day: DAY, activityId: "read" });
@@ -321,6 +508,7 @@ describe("applyChange · doesn't touch what it was given", () => {
       to: OTHER,
       activityId: "read",
       face: READ,
+      index: 0,
     });
 
     assert.equal(before.get(DAY), day, "the day object was swapped in place");
@@ -348,6 +536,7 @@ describe("applyChange · doesn't touch what it was given", () => {
       day: DAY,
       activityId: "gym",
       face: GYM,
+      index: 0,
     });
 
     // Same object, not merely equal: 41 of the 42 cells should skip rendering.

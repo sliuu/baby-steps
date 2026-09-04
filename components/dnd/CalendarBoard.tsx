@@ -29,14 +29,14 @@ import { MonthGrid } from "@/components/calendar/MonthGrid";
 import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { StickerTray } from "@/components/tray/StickerTray";
-import { TrayRowFace } from "@/components/tray/TrayGroup";
 import { applyChange, type CalendarChange } from "@/lib/changes";
 import { formatDayLong, toMonthString, type DayString } from "@/lib/dates";
 import { buildHighlight, type Selection } from "@/lib/highlight";
 import { TRAY_INSET } from "@/lib/layout";
-import { MOOD_LABEL } from "@/lib/moods";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
+import { readDropTarget, type DropTarget } from "./dropTarget";
+import { snapToCursor } from "./snapToCursor";
 import { payloadName, readDragPayload, type DragPayload } from "./payload";
 
 type Props = {
@@ -48,11 +48,16 @@ type Props = {
 function runChange(change: CalendarChange): Promise<PlaceResult> {
   switch (change.kind) {
     case "place":
-      return placeActivity(change.day, change.activityId);
+      return placeActivity(change.day, change.activityId, change.index);
     case "remove":
       return removeActivity(change.day, change.activityId);
     case "move":
-      return moveActivity(change.from, change.to, change.activityId);
+      return moveActivity(
+        change.from,
+        change.to,
+        change.activityId,
+        change.index,
+      );
     case "mood":
       return setDayMood(change.day, change.mood);
     case "clearMood":
@@ -88,9 +93,66 @@ function runChange(change: CalendarChange): Promise<PlaceResult> {
  * A keyboard drag keeps `closestCenter` and can never be "outside", which is
  * right — there's no cursor to be outside with, and Escape is already its way
  * out.
+ *
+ * What's new is the second half. There are two kinds of droppable in this
+ * context now — days, and the gaps between the marks on a day — and they answer
+ * different questions. `pointerWithin` still answers the first, over cells
+ * only, because a gap has no width and so contains no pointer ever. The gaps
+ * are then measured directly: nearest centre inside the day the cursor is
+ * actually in.
+ *
+ * Two rules rather than one pass over everything, because "which day" and
+ * "where in it" fail differently. Nearest-gap alone would happily hand back a
+ * slot in the cell next door when the cursor sat in a margin; asking the day
+ * first means the answer is always inside the square that's lit up.
  */
-const collisionDetection: CollisionDetection = (args) =>
-  args.pointerCoordinates ? pointerWithin(args) : closestCenter(args);
+const collisionDetection: CollisionDetection = (args) => {
+  const cells = args.droppableContainers.filter(
+    (container) => container.data.current?.kind !== "slot",
+  );
+
+  if (!args.pointerCoordinates) {
+    // No cursor, so no gaps to aim at: a keyboard drag picks whole squares and
+    // `readDropTarget` reads a bare cell as the end of the day.
+    return closestCenter({ ...args, droppableContainers: cells });
+  }
+
+  const [cell] = pointerWithin({ ...args, droppableContainers: cells });
+  if (!cell) return [];
+
+  const pointer = args.pointerCoordinates;
+  let nearest = null;
+  let shortest = Infinity;
+
+  for (const container of args.droppableContainers) {
+    const data = container.data.current;
+    if (data?.kind !== "slot" || data.day !== cell.id) continue;
+
+    // `droppableRects`, not the container's own `rect.current`. The map is what
+    // dnd-kit measured when this drag began, and it's the same source both
+    // built-in algorithms read — taking the rect from anywhere else is how the
+    // caret and the lit square end up disagreeing after the page scrolls.
+    const rect = args.droppableRects.get(container.id);
+    if (!rect) continue;
+
+    // `rect.left` is the centre, because the box has no width.
+    const dx = pointer.x - rect.left;
+    // Vertical distance counts quadruple. A day's marks wrap onto several
+    // lines, and 30px of line height is small next to 85px of width — so plain
+    // distance lets the last gap on the line above win while the cursor is
+    // clearly on the line below. Weighting the axis that separates rows keeps
+    // the caret on the row you're pointing at.
+    const dy = (pointer.y - (rect.top + rect.height / 2)) * 4;
+
+    const distance = dx * dx + dy * dy;
+    if (distance < shortest) {
+      shortest = distance;
+      nearest = container;
+    }
+  }
+
+  return nearest ? [{ id: nearest.id }] : [cell];
+};
 
 /**
  * The drag arena, and the reason this component exists at all.
@@ -118,14 +180,17 @@ export function CalendarBoard(props: Props) {
   const [openDay, setOpenDay] = useState<DayString | null>(null);
   const [error, setError] = useState<string | null>(null);
   /**
-   * Whether the thing in the air is currently over a day.
+   * Where a release would land right now, or null when it would land nowhere.
    *
-   * Only the overlay reads it, and only to say so. `over` lives inside dnd-kit
-   * and the `DragOverlay`'s children aren't given it, so it gets mirrored out
-   * here — one boolean rather than the id, because "which day" is already
-   * answered by that day lighting up underneath.
+   * `over` lives inside dnd-kit and the `DragOverlay`'s children aren't given
+   * it, so it gets mirrored out here. It used to be a bare boolean, for the
+   * overlay's benefit only — the day itself lit up from its own `isOver`, so
+   * nothing out here needed to know *which* day. Slots changed that: on a
+   * pointer drag the thing dnd-kit calls `over` is a gap inside a cell, and the
+   * cell's own `isOver` goes false. So this is now the single answer that the
+   * overlay, the lit square, and the caret all read.
    */
-  const [overDay, setOverDay] = useState(false);
+  const [target, setTarget] = useState<DropTarget | null>(null);
   const [, startTransition] = useTransition();
 
   /**
@@ -252,10 +317,11 @@ export function CalendarBoard(props: Props) {
 
   function handleDragStart(event: DragStartEvent) {
     setDragging(readDragPayload(event.active.data.current));
-    // Every drag starts in the tray, which is not a day. Set explicitly rather
-    // than left over from last time: `onDragOver` fires on *changes*, so a drag
-    // that begins and ends outside the grid never fires it at all.
-    setOverDay(false);
+    // A drag starts over nothing — even one lifted off a day, because dnd-kit
+    // hasn't hit-tested yet. Cleared explicitly rather than left over from last
+    // time: `onDragOver` fires on *changes*, so a drag that begins and ends
+    // outside the grid never fires it at all.
+    setTarget(null);
   }
 
   /**
@@ -276,15 +342,16 @@ export function CalendarBoard(props: Props) {
    */
   function handleDragEnd(event: DragEndEvent) {
     setDragging(null);
+    setTarget(null);
 
     const payload = readDragPayload(event.active.data.current);
     if (!payload) return;
-    const over = typeof event.over?.id === "string" ? event.over.id : null;
+    const landed = readDropTarget(event.over);
 
     // Released over nothing. Dragged off the calendar, that's the delete gesture
     // — the sticker was carried out of the month and let go. Out of the tray it
     // is still just a change of mind.
-    if (!over) {
+    if (!landed) {
       if (payload.kind === "activity" && payload.from) {
         commit({
           kind: "remove",
@@ -296,8 +363,10 @@ export function CalendarBoard(props: Props) {
     }
 
     // A drag says what was dropped where; `commit` decides what that means.
+    // A mood ignores the slot half of the answer: `unique (user_id, day)` means
+    // a day holds one, so there is nowhere in a day for it to be.
     if (payload.kind === "mood") {
-      commit({ kind: "mood", day: over, mood: payload.mood });
+      commit({ kind: "mood", day: landed.day, mood: payload.mood });
       return;
     }
 
@@ -306,15 +375,17 @@ export function CalendarBoard(props: Props) {
         ? {
             kind: "move",
             from: payload.from,
-            to: over,
+            to: landed.day,
             activityId: payload.activityId,
             face: payload.face,
+            index: landed.index,
           }
         : {
             kind: "place",
-            day: over,
+            day: landed.day,
             activityId: payload.activityId,
             face: payload.face,
+            index: landed.index,
           },
     );
   }
@@ -327,7 +398,7 @@ export function CalendarBoard(props: Props) {
    * stored, because both halves are already state — a third piece of state
    * holding their conjunction is a thing that can disagree with them.
    */
-  const leaving = !overDay && dragging?.kind === "activity" && !!dragging.from;
+  const leaving = !target && dragging?.kind === "activity" && !!dragging.from;
 
   return (
     <DndContext
@@ -344,9 +415,12 @@ export function CalendarBoard(props: Props) {
       collisionDetection={collisionDetection}
       accessibility={{ announcements, screenReaderInstructions }}
       onDragStart={handleDragStart}
-      onDragOver={(event) => setOverDay(event.over !== null)}
+      onDragOver={(event) => setTarget(readDropTarget(event.over))}
       onDragEnd={handleDragEnd}
-      onDragCancel={() => setDragging(null)}
+      onDragCancel={() => {
+        setDragging(null);
+        setTarget(null);
+      }}
     >
       <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
         {/* min-w-0 is doing real work: a flex child defaults to refusing to
@@ -361,6 +435,11 @@ export function CalendarBoard(props: Props) {
             onOpenDay={setOpenDay}
             onCommit={commit}
             highlight={highlight}
+            target={target}
+            // A mood lands on the day, not in it. The square lights up either
+            // way; the caret only appears when there is really an order about
+            // to change.
+            caret={dragging?.kind === "activity"}
           />
         </div>
 
@@ -415,49 +494,51 @@ export function CalendarBoard(props: Props) {
           because it renders at the top of the arena rather than inside the
           rail. A sticker dragged out of a scrolling container would otherwise
           be clipped at its edge. */}
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay
+        dropAnimation={null}
+        // The overlay's box is dnd-kit's copy of the box you picked *from*, and
+        // a tray row is ten times the width of the circle inside it. Left at
+        // that size the wrapper is a 288px invisible slab with a 26px mark
+        // pinned to its left edge. `max-content` shrinks it to the mark, which
+        // is what makes the modifier below able to centre it: you can't put the
+        // middle of a box under the cursor while the box is mostly empty.
+        style={{ width: "max-content", height: "max-content" }}
+        modifiers={[snapToCursor]}
+      >
         {dragging && (
           <div
-            // Same inset and same vertical padding as the row it was lifted
-            // from, so the copy under the cursor is the size of the original.
+            // Just the mark. No card, no border, no name — whatever you picked
+            // up, what's under the cursor is the thing itself.
             //
-            // Over a day it's a solid card with a shadow: a thing about to be
-            // put down. Outside, it goes translucent, loses the shadow, and its
-            // border turns dashed — the same vocabulary a placeholder uses,
-            // which is the point. Nothing here will land.
+            // It used to be a copy of the tray row, name and all, and that was
+            // right while the tray was the only place a drag could start. Once
+            // a mark could be lifted off the calendar the same overlay was
+            // drawing two different gestures: a labelled card for one, and for
+            // the other a labelled card standing in for a 26px circle four
+            // times smaller than it. The card was also the reason the collision
+            // rule had to move to `pointerWithin` in the first place — a wide
+            // box under a cursor is a lie about where the cursor is. Dropping
+            // it makes the two drags identical, which they always were, and
+            // makes the thing in the air the size of the hole it's going into.
             //
-            // That's the whole cue now. It shipped with "Let go to cancel"
-            // printed under the card as well, and the words turned out to be
-            // one thing too many to read while your hand is moving: the card
-            // going pale and dashed says it faster than a sentence you have to
-            // parse. The line lives on in the drag announcement, where there is
-            // no dashed border to see.
-            //
-            // With one exception, and it's the reason the words couldn't simply
-            // come back. Outside the grid means two different things now — put
-            // it back for a sticker from the tray, throw it away for one lifted
-            // off a day — so the dashed state splits in two: grey for nothing
-            // happens, red for this is a deletion. Same border width, same
-            // opacity, same box; only the hue moves. A card that changed size
-            // mid-drag would shift under the cursor at the moment you're aiming.
-            className={`${TRAY_INSET} flex w-fit items-center gap-2.5 rounded-md border bg-surface py-1 transition-opacity ${
-              overDay
-                ? "border-hairline shadow-lg"
-                : `border-dashed opacity-60 ${
-                    leaving ? "border-ramp-red" : "border-ink-muted/50"
-                  }`
+            // The three states survive the loss of the border, because they
+            // were never really about the border. Over a day: full strength,
+            // with a shadow — a thing about to be put down. Outside: pale, no
+            // shadow, nothing will land. Outside *and* lifted off a day, which
+            // is the gesture that deletes: pale, plus a red ring. Same circle,
+            // same size, in all three; only weight and hue move, because
+            // anything that changed size mid-drag would shift under the cursor
+            // at the exact moment you're aiming it.
+            className={`rounded-full transition-opacity ${
+              target
+                ? "opacity-100 drop-shadow-md"
+                : `opacity-50 ${leaving ? "ring-2 ring-ramp-red" : ""}`
             }`}
           >
             {dragging.kind === "mood" ? (
-              <TrayRowFace
-                visual={<MoodMark mood={dragging.mood} />}
-                name={MOOD_LABEL[dragging.mood]}
-              />
+              <MoodMark mood={dragging.mood} />
             ) : (
-              <TrayRowFace
-                visual={<StickerMark sticker={dragging.face} />}
-                name={dragging.face.name}
-              />
+              <StickerMark sticker={dragging.face} />
             )}
           </div>
         )}
@@ -523,11 +604,17 @@ const announcements: Announcements = {
       ? `Picked up ${payloadName(payload)} from ${formatDayLong(payload.from)}.`
       : `Picked up ${payloadName(payload)}.`;
   },
+  // `over.id` is no longer the day. It's a slot id most of the time — the gaps
+  // between marks are droppables too — so the day comes back through
+  // `readDropTarget`, which is the same function the drop handler uses. Reading
+  // the id directly here would have kept compiling and started announcing
+  // "slot:2026-08-20:1" out loud.
   onDragOver: ({ active, over }) => {
     const payload = readDragPayload(active.data.current);
     if (!payload) return;
     const name = payloadName(payload);
-    if (over) return `${name} is over ${formatDayLong(String(over.id))}.`;
+    const landed = readDropTarget(over);
+    if (landed) return `${name} is over ${formatDayLong(landed.day)}.`;
     return payload.kind === "activity" && payload.from
       ? `${name} is not over a day. Let go to take it off ${formatDayLong(payload.from)}.`
       : `${name} is not over a day. Let go to cancel.`;
@@ -537,9 +624,10 @@ const announcements: Announcements = {
     if (!payload) return;
     const name = payloadName(payload);
     const from = payload.kind === "activity" ? payload.from : undefined;
+    const landed = readDropTarget(over);
 
-    if (over) {
-      const day = formatDayLong(String(over.id));
+    if (landed) {
+      const day = formatDayLong(landed.day);
       return from ? `${name} moved to ${day}.` : `${name} dropped on ${day}.`;
     }
     return from

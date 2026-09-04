@@ -469,6 +469,42 @@ It stays `opacity-0` rather than `hidden`, because **the slot has to be held whe
 
 ---
 
+## Step 16, continued · A caret between the marks
+
+1. Marks on a day have an **order you set**. Drag one along its own day and it stays where you put it.
+2. Dropping from the tray or another day **aims at a gap**, not at the square.
+3. The gap you're aiming at shows a **thin line**, like a text cursor — the marks don't part to make room.
+4. The thing under the cursor is now **just the circle**, whether you picked it up from the tray or off the calendar.
+5. Off the grid it goes pale; a mark lifted off a day also gets a **red ring**, because letting go there deletes it.
+
+**The gaps are the drop targets, not the marks.** The obvious build registers each mark and then decides, from the pointer, whether you meant before it or after it — which needs the pointer position, the mark's rectangle, and a midpoint test in the drop handler. Registering the *gaps* means the drag library's own hit-testing already returns an index, and there is no arithmetic to get wrong. **When a hit test needs a follow-up question, the wrong things are registered** — the thing you're actually choosing between should be the thing that exists.
+
+**Which also means the found thing and the drawn thing are the same element.** The caret isn't a separate overlay computed from the target; it's the target, lit. Two representations of one position is how a cursor ends up a slot away from where the drop lands.
+
+**The caret has zero width, and that's the whole trick.** The 85px row was fitted a pixel at a time last round; four carets at 2px each would take a mark's worth of space back out of it. So the box occupies nothing and the line is painted on top of the 2px gap already sitting there. The design falls out of the constraint: **aiming at a gap doesn't make the gap open.** A text caret doesn't push the letters apart either — it sits between them and the sentence holds still, which is what makes it readable while your hand is moving. The version that parts the marks is the version where the target moves as you approach it.
+
+**Nearest-gap needed a weighted axis.** Marks wrap, and a line is 30px tall in a cell 85px wide — so plain distance lets the last gap on the row *above* win while the cursor is plainly on the row below. Vertical distance counts four times. **When one axis is much shorter than the other, "nearest" doesn't mean what you think it means.**
+
+**Two questions, asked in order.** Which day (pointer inside a cell), then where in it (nearest gap *within that cell*). One combined pass would return a gap in the neighbouring square when the cursor sat in a margin — the caret would be somewhere the highlight wasn't.
+
+**A same-day drop is the same change as a cross-day drop.** It could have been a `reorder` variant of its own; it isn't, because every caller would build the identical thing and only the cursor decides which one happened. **Don't split a type on a distinction the user never makes** — the drag handler would have had to branch on something that isn't a difference in the gesture.
+
+**The index is read against the day as it looks, including the mark being dragged.** So a slot to the right of where a mark started counts one position that is about to stop existing, and both the optimistic redraw and the server subtract it. **Two copies of an off-by-one have to be the same off-by-one**; if they differ, the mark lands, then jumps a slot when the real answer arrives.
+
+**Required beats optional.** The insertion index isn't `index?: number`. An optional one would make "the end" the silent default, and the entire point of the field is that whoever built the change looked at where the cursor was. The day modal's checkbox — which has no caret to read — names the end of the day explicitly. **A default that's right for one caller is a default that hides the other callers' mistakes.**
+
+**Dense integers, not fractional gaps.** The clever ordering trick stores 0, 100, 200 and inserts between neighbours by averaging, so a reorder is a single write. It's correct at scale and wrong here: a day holds a handful of marks, so renumbering the whole day is one round trip either way — and halving intervals eventually runs out of room and needs a rebalance pass nobody remembers to write. **Take the boring version when the clever one's advantage doesn't apply at your size.**
+
+**And the position column deliberately has no unique constraint.** A reorder writes every position on the day in one statement, and a non-deferrable unique index checks *per row* — so a plain swap trips over itself halfway through even though the state it ends in is perfectly valid. The cost of leaving it off is that ties are possible, which is why the query sorts by position **and then** by creation time: with one key the sort isn't total, and a day would quietly reshuffle itself between page loads.
+
+**The overlay lost its card, and the reason is worth keeping.** It used to be a copy of the tray row — circle, name, border — which was right while the tray was the only place a drag could start. Once marks could be lifted off the calendar, the same overlay was standing in for a 26px circle with a box four times its size. That box is also *why* the collision rule had to become pointer-based two steps ago: **a wide thing under the cursor is a lie about where the cursor is.** Dropping it made the two drags identical, which they always were.
+
+**Three states survived losing the border they were painted on.** Over a day: full strength with a shadow. Off the grid: pale. Off the grid having come off a day — the gesture that deletes: pale, plus a red ring. Same circle, same size, in all three, because anything that changed size mid-drag would shift under the cursor at the exact moment you're aiming it. **A state vocabulary lives in the contrast between its states, not in the specific property carrying it.**
+
+**A precise drop target broke the imprecise highlight.** The cell used to light up from its own "is something over me?" flag. Now the thing over it is a gap *inside* it, so that flag reads false and the square went dark the moment the drop got more accurate. The answer is that the day and the slot are one target with two levels of detail, resolved in one place and handed down. **When you subdivide a target, everything that asked the old target a question needs re-asking.**
+
+---
+
 ## The three things that carry across all of it
 
 **Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
@@ -522,6 +558,14 @@ Read left to right. Nothing here needs to be memorized.
 | A joined query drops rows that have no children | the embed was `!inner`, or a filter on it made it behave that way | `lib/queries/activities.ts` |
 | `maxLength={1}` accepts `A` but mangles `🏋️` | the attribute counts UTF-16 code units, so it truncates an emoji mid-surrogate-pair | `NewStickerForm.tsx` → the mark input |
 | `"🏋️".length` is 3 and the database says 2 | three different questions: code units, code points, and characters as people see them | `lib/graphemes.ts` |
+| A drop lands one slot away from where the caret was | the index was read against the list *without* the dragged item, or the two copies of that adjustment disagree | `lib/changes.ts` → `moveSticker` |
+| The drop caret jumps to the row above | vertical distance wasn't weighted; a wrapped row is much shorter than it is wide | `CalendarBoard.tsx` → `collisionDetection` |
+| A day stops lighting up once the drop gets more precise | the real target is a child of the cell, so the cell's own `isOver` is false | `DayCell.tsx` → the `over` prop |
+| A drag announcement reads out an internal id | `over.id` stopped being the day when a second kind of droppable was added | `CalendarBoard.tsx` → `announcements` |
+| A row that fit yesterday now wraps | something zero-width got a width, or a gap grew; the fit had a few pixels of slack | `DropSlot.tsx`, `DayCell.tsx` |
+| A one-statement reorder fails on a plain swap | a non-deferrable unique index checks per row, so the statement trips over its own intermediate state | `..._day_activity_position.sql` |
+| A list quietly reorders itself between page loads | the sort key isn't unique and there's no tiebreak, so ties come back in any order | `lib/queries/stickers.ts` |
+| Nothing appears to lift, or it lifts far from the cursor | the drag overlay is sized and anchored to the element you picked *from*; shrink it to its contents and snap it to the pointer | `CalendarBoard.tsx` → `DragOverlay`, `snapToCursor.ts` |
 | A `CHECK` constraint can't express "one character" | SQL `length()` counts code points; there is no grapheme in Postgres | `lib/stickers.ts` → `validateDraft` |
 | A dropdown's value never arrives in `FormData` | a Radix `Select` only renders its hidden native `<select>` when you give it `name` | `NewStickerForm.tsx` → the life-area `Select` |
 | Opening a picker submits the form | a `<button>` inside a `<form>` submits by default; `type="button"` is load-bearing | same |

@@ -4,6 +4,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { DayCell } from "./DayCell";
 import { MonthHeader } from "./MonthHeader";
+import type { DropTarget } from "@/components/dnd/dropTarget";
 import type { CalendarChange } from "@/lib/changes";
 import {
   fromMonthString,
@@ -34,6 +35,19 @@ type Props = {
    * board, because the tray is what sets it and the tray is the grid's sibling.
    */
   highlight: Highlight | null;
+  /**
+   * Where a release would land right now, or null between drags. One value
+   * doing two jobs: the day it names gets the drop highlight, and the index it
+   * names gets the caret.
+   */
+  target: DropTarget | null;
+  /**
+   * Whether that target should show a caret at all. False for a mood, which
+   * lands on the day as a whole and has no slot to sit in — the day still
+   * lights up, but no line appears between marks to promise an order that isn't
+   * about to change.
+   */
+  caret: boolean;
 };
 
 /** Today never changes mid-session, so there is nothing to subscribe to. */
@@ -99,6 +113,7 @@ export function MonthGrid(props: Props) {
             // object each time, so an empty day's props stay referentially
             // equal between renders and React can skip the work.
             const stickers = props.stickersByDay.get(cell.day) ?? NO_STICKERS;
+            const aimed = props.target?.day === cell.day;
 
             return (
               <DayCell
@@ -108,6 +123,12 @@ export function MonthGrid(props: Props) {
                 onOpen={props.onOpenDay}
                 onCommit={props.onCommit}
                 highlight={props.highlight}
+                over={aimed}
+                caretIndex={
+                  aimed && props.caret && props.target
+                    ? props.target.index
+                    : null
+                }
                 // The cell is told whether it's lit; it never works it out. The
                 // stickers are already in hand from the lookup above, so asking
                 // here costs nothing and keeps the rule in one function that a

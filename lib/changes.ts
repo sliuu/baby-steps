@@ -25,10 +25,23 @@ import type { StickersByDay, StickerFace } from "@/lib/stickers";
  * ingredients instead of one wide shape with three optional fields.
  */
 export type CalendarChange =
-  | { kind: "place"; day: DayString; activityId: string; face: StickerFace }
+  /**
+   * `index` is where in the day's row it lands — 0 is first, and the length of
+   * the day is last. It is not optional, and that's the deliberate part: an
+   * optional index would make "the end" the silent default, and the whole point
+   * of this field is that the caller looked at where the cursor was. A drop on
+   * a day's empty space still names an index; it just names the last one.
+   */
+  | {
+      kind: "place";
+      day: DayString;
+      activityId: string;
+      face: StickerFace;
+      index: number;
+    }
   | { kind: "remove"; day: DayString; activityId: string }
   /**
-   * One mark, carried from one day to another.
+   * One mark, carried to a slot — on another day, or on its own.
    *
    * Not a `remove` followed by a `place`, and the difference is a row id. In the
    * database this is an `update … set day = $to` on the placement that already
@@ -37,6 +50,15 @@ export type CalendarChange =
    * unmount the circle and mount a different one in the next cell. Two writes
    * would also be two round trips that can half-fail, leaving a mark on both
    * days or on neither.
+   *
+   * `from === to` is a rearrange rather than a no-op, which is the one change
+   * this variant grew. It used to return early on a same-day drop because there
+   * was nothing a move could mean within a day; now it means "put it in this
+   * slot". Keeping it in `move` rather than adding a `reorder` variant is not
+   * tidiness — it's that every caller builds the same thing either way. The
+   * gesture is identical, the cursor decides which one it was, and a separate
+   * variant would make the drag handler branch on a distinction the user never
+   * makes.
    *
    * It carries `face` for the same reason `place` does — the target day may
    * never have been drawn before.
@@ -47,6 +69,7 @@ export type CalendarChange =
       to: DayString;
       activityId: string;
       face: StickerFace;
+      index: number;
     }
   | { kind: "mood"; day: DayString; mood: Mood }
   | { kind: "clearMood"; day: DayString };
@@ -113,13 +136,14 @@ export function applyChange(
       }
       next.set(change.day, {
         ...current,
-        activities: [
-          ...current.activities,
+        activities: spliced(
+          current.activities,
+          change.index,
           // There is no day_activities row yet, so there is no real id to use.
           // This one only has to be unique among its siblings for React's key,
           // and only has to survive until the server's answer replaces the Map.
           { id: `pending:${change.day}:${activityId}`, activityId, ...face },
-        ],
+        ),
       });
       return next;
     }
@@ -127,25 +151,40 @@ export function applyChange(
 }
 
 /**
- * A mark leaving one day for another.
+ * `list` with `sticker` inserted at `index`, as a new array.
+ *
+ * The clamp is the whole reason this is a function. An index comes from a
+ * pointer somewhere over a grid, and by the time it arrives the day underneath
+ * may have fewer marks than it did when the drag started — another tab, a failed
+ * write rolling back. `splice` doesn't mind: past the end it appends, negative
+ * it counts backwards from the end, which is the one wrong answer of the three.
+ * Clamping makes both edges mean the same thing they mean in the caret: 0 is
+ * before everything, length is after everything.
+ */
+function spliced<T>(list: readonly T[], index: number, item: T): T[] {
+  const at = Math.max(0, Math.min(index, list.length));
+  return [...list.slice(0, at), item, ...list.slice(at)];
+}
+
+/**
+ * A mark taking a new slot — on another day, or further along its own.
  *
  * The sticker object itself is carried across rather than rebuilt, so the
  * placement keeps its real `id` — the server is doing an update, not a delete
  * and an insert, and this is that fact drawn. There is no `pending:` id here
  * because nothing new is coming into existence.
  *
- * Two no-ops, both reachable by hand: dropping a mark back on the day it came
- * from, and dragging one onto a day that already has it. The second is the
- * `unique (user_id, day, activity_id)` rule again, and the honest answer is
- * that the source loses its mark and the target keeps the one it had — a merge,
- * not a rejection. Same shape as `place`'s duplicate branch, one day over.
+ * One no-op left, reachable by hand: dragging a mark onto a day that already
+ * has it. That's the `unique (user_id, day, activity_id)` rule again, and the
+ * honest answer is that the source loses its mark and the target keeps the one
+ * it had — a merge, not a rejection. Same shape as `place`'s duplicate branch,
+ * one day over.
  */
 function moveSticker(
   byDay: StickersByDay,
   change: Extract<CalendarChange, { kind: "move" }>,
 ): StickersByDay {
-  const { from, to, activityId } = change;
-  if (from === to) return byDay;
+  const { from, to, activityId, index } = change;
 
   const source = byDay.get(from);
   const moving = source?.activities.find(
@@ -153,20 +192,46 @@ function moveSticker(
   );
   if (!source || !moving) return byDay;
 
+  const rest = source.activities.filter(
+    (sticker) => sticker.activityId !== activityId,
+  );
+
+  // Rearranging inside one day, where the mark is both the thing being placed
+  // and one of the things you're placing it between. The caret was drawn
+  // against the day as it looks right now — with the dragged mark still sitting
+  // in it — so an index past its old slot counts one position that is about to
+  // stop existing. Subtracting it is what makes "drop the caret here" land
+  // where the caret was. Skip the adjustment and every rightward drag stops one
+  // short, which reads as the mark refusing to pass its neighbour.
+  if (from === to) {
+    const was = source.activities.indexOf(moving);
+    // The two carets that mean "leave it alone": the one just before this mark
+    // and the one just after it. Both describe the slot it is already in, and
+    // both are easy to land on by accident — picking a mark up and putting it
+    // straight back down is how a drag gets abandoned. Same Map out means the
+    // cell doesn't repaint, so a cancelled drag costs nothing.
+    if (index === was || index === was + 1) return byDay;
+
+    const next = new Map(byDay);
+    next.set(from, {
+      ...source,
+      activities: spliced(rest, index > was ? index - 1 : index, moving),
+    });
+    return next;
+  }
+
   const target = byDay.get(to) ?? { activities: [], mood: null };
   const duplicate = target.activities.some(
     (sticker) => sticker.activityId === activityId,
   );
 
   const next = new Map(byDay);
-  next.set(from, {
-    ...source,
-    activities: source.activities.filter(
-      (sticker) => sticker.activityId !== activityId,
-    ),
-  });
+  next.set(from, { ...source, activities: rest });
   if (!duplicate) {
-    next.set(to, { ...target, activities: [...target.activities, moving] });
+    next.set(to, {
+      ...target,
+      activities: spliced(target.activities, index, moving),
+    });
   }
   return next;
 }

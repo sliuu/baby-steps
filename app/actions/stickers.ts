@@ -43,17 +43,94 @@ async function signedInClient() {
 }
 
 /**
- * Put an activity sticker on a day.
+ * One `day_activities` row, cut down to what ordering needs.
  *
- * `upsert` with `ignoreDuplicates`, not `insert`. `unique (user_id, day,
- * activity_id)` means the same sticker twice on one Tuesday is already
- * impossible; the only question is what happens when you try. Ignoring the
- * conflict makes a second drop a no-op instead of an error the UI has to
- * explain, so the drag stays forgiving — which is the whole point of a drag.
+ * `activity_id` rides along with `id` because a renumber is written as an
+ * upsert, and an upsert is an insert first — every not-null column without a
+ * default has to be in the payload, even on rows that only want a new position.
+ */
+type Placement = { id: string; day: DayString; activity_id: string };
+
+/** A slot number from a pointer, made safe for `splice`. */
+function clamp(index: number, length: number) {
+  return Math.max(0, Math.min(index, length));
+}
+
+/**
+ * Write a day's order back as dense positions, 0 upwards.
+ *
+ * One statement for the whole day rather than an update per row — a day holds a
+ * handful of marks, and a single upsert means the order can't end up half
+ * applied if the connection drops in the middle. `onConflict` is left to the
+ * primary key on purpose: these rows all exist, and a cross-day move is exactly
+ * the case where matching on `(user_id, day, activity_id)` would insert a
+ * second row instead of updating the one that moved.
+ *
+ * `.select("id")` for the reason `moveActivity` already documented: RLS filters
+ * an UPDATE rather than rejecting it, so a payload that touched nothing at all
+ * comes back as success. Counting the rows is the only tell.
+ */
+async function writeOrder(
+  supabase: Awaited<ReturnType<typeof signedInClient>>["supabase"],
+  userId: string,
+  days: { day: DayString; rows: Placement[] }[],
+) {
+  const payload = days.flatMap(({ day, rows }) =>
+    rows.map((row, position) => ({
+      id: row.id,
+      user_id: userId,
+      day,
+      activity_id: row.activity_id,
+      position,
+    })),
+  );
+  if (payload.length === 0) return true;
+
+  const { data, error } = await supabase
+    .from("day_activities")
+    .upsert(payload)
+    .select("id");
+
+  return !error && data !== null && data.length === payload.length;
+}
+
+/** A day's marks in the order they're drawn, which is the order they're numbered. */
+async function readDay(
+  supabase: Awaited<ReturnType<typeof signedInClient>>["supabase"],
+  days: DayString[],
+): Promise<Placement[] | null> {
+  const { data, error } = await supabase
+    .from("day_activities")
+    .select("id, day, activity_id")
+    .in("day", days)
+    .order("position")
+    .order("created_at");
+
+  return error || data === null ? null : (data as Placement[]);
+}
+
+/**
+ * Put an activity sticker on a day, in a chosen slot.
+ *
+ * Read the day, then write the whole day back. The tempting shortcut is one
+ * insert with `position = index`, but positions have to stay dense and unique
+ * per day for the next index to mean anything, so every mark from `index`
+ * onwards needs a new number too. Since they're all being written anyway, the
+ * new row rides along in the same upsert — insert and renumber as one
+ * statement, not two that can half-happen.
+ *
+ * The duplicate branch stays a no-op, as `ignoreDuplicates` used to make it:
+ * `unique (user_id, day, activity_id)` means the same sticker twice on one
+ * Tuesday is impossible, and a second drop should be forgiving rather than an
+ * error the UI has to explain. It's checked from the read now instead of being
+ * left to the conflict — and if a racing tab beats us to it, `onConflict` on
+ * that same triple turns the collision into a position update rather than a
+ * failure, which is the same forgiving answer one layer down.
  */
 export async function placeActivity(
   day: DayString,
   activityId: string,
+  index: number,
 ): Promise<PlaceResult> {
   if (!DAY_PATTERN.test(day)) {
     return { ok: false, message: "That isn't a day." };
@@ -62,9 +139,23 @@ export async function placeActivity(
   const { supabase, user } = await signedInClient();
   if (!user) return { ok: false, message: "You're signed out." };
 
+  const existing = await readDay(supabase, [day]);
+  if (existing === null) {
+    return { ok: false, message: "That sticker didn't stick. Try again." };
+  }
+  if (existing.some((row) => row.activity_id === activityId)) return { ok: true };
+
+  const order = existing.map((row) => row.activity_id);
+  order.splice(clamp(index, order.length), 0, activityId);
+
   const { error } = await supabase.from("day_activities").upsert(
-    { user_id: user.id, day, activity_id: activityId },
-    { onConflict: "user_id,day,activity_id", ignoreDuplicates: true },
+    order.map((id, position) => ({
+      user_id: user.id,
+      day,
+      activity_id: id,
+      position,
+    })),
+    { onConflict: "user_id,day,activity_id" },
   );
 
   if (error) {
@@ -93,6 +184,12 @@ export async function placeActivity(
  * `(select auth.uid()) = user_id`, so Postgres has already narrowed this to
  * rows that are yours. Repeating it here would suggest the safety lives in
  * this file — and if it did, forgetting it once would be a very bad day.
+ *
+ * It leaves a gap in the day's positions — 0, 2, 3 after taking the second mark
+ * off — and that's fine on purpose. Only the *order* of the numbers is read;
+ * their values never are. The next drop onto that day reads it, splices, and
+ * writes the whole thing back dense, so the gap closes itself the moment it
+ * would matter. Renumbering here would be a second round trip to fix nothing.
  */
 export async function removeActivity(
   day: DayString,
@@ -120,51 +217,97 @@ export async function removeActivity(
 }
 
 /**
- * Carry a placement from one day to another.
+ * Carry a placement into a slot — on another day, or further along its own.
  *
- * One `update`, not a delete and an insert. The row already exists and only its
- * `day` is wrong, so updating it is both fewer statements and — the part that
- * shows on screen — identity-preserving: the placement keeps its id, so React
- * moves the circle rather than unmounting one and mounting another.
+ * Still one write, and still not a delete and an insert. The row already exists
+ * and only its `day` and `position` are wrong, so updating it is both fewer
+ * statements and — the part that shows on screen — identity-preserving: the
+ * placement keeps its id, so React moves the circle rather than unmounting one
+ * and mounting another.
  *
- * Two failures worth naming, because they don't look like failures:
+ * What's new is the read in front of it. A move now has to say *where* in the
+ * day it lands, and a position is only meaningful next to the day's other
+ * positions — so the days involved are read, spliced in memory, and written
+ * back whole. That also turns the old `23505` fallback into an ordinary branch:
+ * dragging Monday's Gym onto a Tuesday that already has Gym is spotted in the
+ * read rather than discovered by a constraint, and the answer is the same merge
+ * it always was — the mark leaves Monday and Tuesday keeps the one it had.
  *
- * `update` is the statement RLS filters rather than rejects. A row that isn't
- * yours is simply not in scope, so Postgres updates nothing and reports success
- * — the same trap `updateActivity` documents. `.select("id")` is the only way to
- * tell: no rows back means nothing moved, whatever the absent error says.
+ * `from === to` used to return early. It's the rearrange case now, and the only
+ * thing that distinguishes it is which day gets rewritten: one, not two.
  *
- * `23505` is the unique violation, and it is a real thing to do by hand: drag
- * Monday's Gym onto a Tuesday that already has Gym. There is nowhere for the row
- * to land, and the honest result is a merge — the mark leaves Monday and Tuesday
- * keeps the one it had. So the conflict falls through to a delete of the source
- * row, which is exactly what `applyChange` drew optimistically a moment earlier.
+ * The failure that doesn't look like one is unchanged, and it moved into
+ * `writeOrder`: RLS *filters* an UPDATE rather than rejecting it, so a payload
+ * that touched nothing at all comes back as success.
  */
 export async function moveActivity(
   from: DayString,
   to: DayString,
   activityId: string,
+  index: number,
 ): Promise<PlaceResult> {
   if (!DAY_PATTERN.test(from) || !DAY_PATTERN.test(to)) {
     return { ok: false, message: "That isn't a day." };
   }
-  if (from === to) return { ok: true };
 
   const { supabase, user } = await signedInClient();
   if (!user) return { ok: false, message: "You're signed out." };
 
-  const { data, error } = await supabase
-    .from("day_activities")
-    .update({ day: to })
-    .eq("day", from)
-    .eq("activity_id", activityId)
-    .select("id");
+  const failed = { ok: false, message: "That sticker wouldn't move. Try again." } as const;
 
-  if (error?.code === "23505") return removeActivity(from, activityId);
+  const rows = await readDay(supabase, from === to ? [from] : [from, to]);
+  if (rows === null) return failed;
 
-  if (error || data === null || data.length === 0) {
-    return { ok: false, message: "That sticker wouldn't move. Try again." };
+  const source = rows.filter((row) => row.day === from);
+  const was = source.findIndex((row) => row.activity_id === activityId);
+  if (was === -1) return failed;
+
+  const moving = source[was];
+  const rest = source.filter((row) => row !== moving);
+
+  if (from === to) {
+    // The index was read against the day as it's drawn, dragged mark included,
+    // so a slot to the right of where it started counts one position that's
+    // about to stop existing. Same adjustment `applyChange` makes, for the same
+    // reason — and it has to match, or the optimistic draw and the row that
+    // comes back disagree by one.
+    rest.splice(clamp(was < index ? index - 1 : index, rest.length), 0, moving);
+
+    // Both carets touching a mark describe the slot it's already in, and
+    // landing on one is how a drag gets abandoned — pick a mark up, think
+    // better of it, put it back. `applyChange` returns the same Map for those
+    // so the cell never repaints; this is the other half, so the round trip
+    // doesn't happen either. Compared rather than special-cased, because the
+    // clamp above can also collapse two different indexes onto one order.
+    const unchanged = rest.every((row, at) => row.id === source[at].id);
+    if (unchanged) return { ok: true };
+
+    if (!(await writeOrder(supabase, user.id, [{ day: from, rows: rest }]))) {
+      return failed;
+    }
+    refresh();
+    return { ok: true };
   }
+
+  const target = rows.filter((row) => row.day === to);
+
+  // The merge: nowhere for the row to land, so the source loses its mark and
+  // the target keeps the one it had. `removeActivity` refreshes for us; the
+  // source still needs closing up behind the gap.
+  if (target.some((row) => row.activity_id === activityId)) {
+    const removed = await removeActivity(from, activityId);
+    if (!removed.ok) return removed;
+    await writeOrder(supabase, user.id, [{ day: from, rows: rest }]);
+    refresh();
+    return { ok: true };
+  }
+
+  target.splice(clamp(index, target.length), 0, moving);
+  const written = await writeOrder(supabase, user.id, [
+    { day: from, rows: rest },
+    { day: to, rows: target },
+  ]);
+  if (!written) return failed;
 
   refresh();
   return { ok: true };

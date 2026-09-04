@@ -33,6 +33,13 @@ export async function getStickersByDay(): Promise<StickersByDay> {
     supabase
       .from("day_activities")
       .select("id, day, activities(id, name, mark, life_areas(color_key))")
+      // `position` first, `created_at` as the tiebreak. Two orderings rather
+      // than one because `position` carries no unique constraint — see the
+      // migration for why a swap can't have one — so equal values are possible
+      // and the sort has to stay total. Without a second key Postgres is free
+      // to return ties in any order it likes, and a day would quietly reshuffle
+      // itself between page loads.
+      .order("position")
       .order("created_at"),
     supabase.from("day_moods").select("id, day, mood"),
   ]);
