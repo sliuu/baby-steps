@@ -39,7 +39,17 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        // The timing is split in two on purpose: `data-open:` classes apply
+        // while the dialog is arriving, `data-closed:` while it's leaving, and
+        // leaving is faster. See the `--dur-*` tokens in globals.css.
+        //
+        // These land on a Radix animation rather than a transition, which works
+        // because `tw-animate-css` writes its keyframe shorthand as
+        // `enter var(--tw-duration, .15s) var(--tw-ease, ease)` — and
+        // `duration-*` and `ease-*` are exactly the utilities that set those
+        // two variables. So the ordinary Tailwind timing classes steer the
+        // enter/exit animations with nothing custom in between.
+        "fixed inset-0 isolate z-50 bg-black/10 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-open:duration-[var(--dur-panel-in)] data-open:ease-enter data-closed:animate-out data-closed:fade-out-0 data-closed:duration-[var(--dur-panel-out)] data-closed:ease-exit",
         className
       )}
       {...props}
@@ -61,7 +71,11 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Same enter/exit split as the overlay, and the same durations, so
+          // the dimmed backdrop and the panel move as one thing. The panel is
+          // the largest surface the app animates, which is why it draws the
+          // longest entrance in the token set.
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-open:duration-[var(--dur-panel-in)] data-open:ease-enter data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:duration-[var(--dur-panel-out)] data-closed:ease-exit",
           className
         )}
         {...props}

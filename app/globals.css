@@ -101,6 +101,29 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
+
+  /* Two curves, and the difference between them is the whole idea.
+
+     Something arriving should decelerate: fast at the start, easing to a stop,
+     the way a thing set down settles. Something leaving should accelerate:
+     it is on its way out, and lingering over the exit makes the interface feel
+     like it's holding you up. Symmetric easing — the `ease` default — gives
+     both halves the same soft start, which is why a dismissed dialog reads as
+     sluggish even at 100ms.
+
+     `--ease-enter` is a strong ease-out (it covers 60% of the distance in the
+     first quarter of its time). `--ease-exit` is its opposite. `--ease-deck`
+     is a single in-and-out curve for the month deck, where two pages move
+     together and any difference between them would open a gap. */
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-deck: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* A mark arriving in a day cell — see `DraggableMark`. Scales up past its
+     final size and settles back, which is what reads as "placed" rather than
+     "appeared". The overshoot is small (8%) because a mark is 26px; the same
+     proportion on a large element would look like a bounce. */
+  --animate-land: land var(--dur-land) var(--ease-enter) both;
 }
 
 /* ---------------------------------------------------------------------------
@@ -113,6 +136,31 @@
   color-scheme: light;
 
   --radius: 0.625rem;
+
+  /* Durations, in pairs: in, then out.
+
+     Two rules generate all of them. First, an exit is faster than the matching
+     entrance — roughly two-thirds — because arriving is information ("here is a
+     dialog, here is what's in it") and leaving is just clearing the way.
+     Second, the bigger the thing, the longer it takes: a dialog covers the page
+     and gets 260ms, a dropdown covers a corner of it and gets 180.
+
+     Everything here used to be 100ms, which is below the threshold where motion
+     reads as motion at all — fast enough that you see the before and the after
+     but not the movement between them, which is indistinguishable from a jump
+     cut with extra frames. 180–260ms is the band where a transition reads as
+     deliberate without making you wait for it.
+
+     These are real custom properties rather than `@theme` entries because the
+     reduced-motion block at the bottom of this file rewrites them. A theme
+     value declared `inline` is substituted into the utility at build time and
+     there is nothing left to override. */
+  --dur-panel-in: 260ms;
+  --dur-panel-out: 160ms;
+  --dur-menu-in: 180ms;
+  --dur-menu-out: 120ms;
+  --dur-deck: 340ms;
+  --dur-land: 420ms;
 
   --bg: #f7f4ed;
   --surface: #fdfcf8;
@@ -316,6 +364,124 @@
   color: var(--ink-label);
 }
 
+/* ---------------------------------------------------------------------------
+   Motion.
+
+   Keyframes live at the top level rather than inside `@theme` so they are
+   emitted whether or not a utility happens to reference them — the view
+   transition rules below are hand-written CSS, not Tailwind classes, and
+   Tailwind has no way to see that they need `deck-slide`.
+--------------------------------------------------------------------------- */
+
+/* A mark landing in a day cell. */
+@keyframes land {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+  60% {
+    opacity: 1;
+    scale: 1.08;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* The month deck. One keyframe pair drives all four cases — old and new,
+   forward and back — by reading `--deck-offset`, which each rule sets to a
+   different sign. Written once and steered by a variable, because four
+   near-identical keyframe blocks drift apart the first time one is tuned. */
+@keyframes deck-slide {
+  from {
+    translate: var(--deck-offset);
+  }
+  to {
+    translate: 0;
+  }
+}
+
+@keyframes deck-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Month deck — see `MonthGrid`.
+
+   These pseudo-elements are the browser's screenshots of the outgoing and
+   incoming month, painted over the page for the length of the transition. They
+   are attached to the document root no matter where in the tree the element
+   lives, which is why these selectors are unnested and why they are matched by
+   class: `<ViewTransition enter={{ "month-next": "deck-next" }}>` puts
+   `deck-next` on the pseudo-element, and `::view-transition-new(.deck-next)`
+   is how CSS gets at it.
+
+   `reverse` on the outgoing side is doing real work: it means one keyframe
+   describes arriving, and leaving is that same motion played backwards. The
+   offsets are percentages of the grid's own width, so the movement stays
+   proportional from a phone to a wide monitor.
+
+   The offset is deliberately small — 8%, not a full page width. A calendar
+   grid isn't a page you're flipping away from; it's the same grid holding
+   different days. Enough sideways motion to say which direction you went, and
+   the fade does the rest. Small also keeps the snapshots from sweeping visibly
+   across the rest of the layout, since a view-transition pseudo-element is not
+   clipped by whatever box its source element lived in.
+
+   A fade-free version was built and rejected: a full-width slide with a
+   `clip-path` cutting each page off at the frame's edge, so it read like
+   turning a page in a book. It worked, and it was too much event for stepping
+   between two views of the same grid.
+--------------------------------------------------------------------------- */
+::view-transition-old(.deck-next) {
+  --deck-offset: -8%;
+  animation:
+    130ms var(--ease-exit) both deck-fade reverse,
+    var(--dur-deck) var(--ease-deck) both deck-slide reverse;
+}
+
+::view-transition-new(.deck-next) {
+  --deck-offset: 8%;
+  animation:
+    190ms var(--ease-enter) 120ms both deck-fade,
+    var(--dur-deck) var(--ease-deck) both deck-slide;
+}
+
+::view-transition-old(.deck-previous) {
+  --deck-offset: 8%;
+  animation:
+    130ms var(--ease-exit) both deck-fade reverse,
+    var(--dur-deck) var(--ease-deck) both deck-slide reverse;
+}
+
+::view-transition-new(.deck-previous) {
+  --deck-offset: -8%;
+  animation:
+    190ms var(--ease-enter) 120ms both deck-fade,
+    var(--dur-deck) var(--ease-deck) both deck-slide;
+}
+
+/* The month name, which sits above the grid and swaps at the same moment.
+
+   It gets a fade and no slide. Two elements sliding the same distance side by
+   side looks like one plane moving, which is right for a deck of days but wrong
+   for a title — the title is a label *on* the deck, not part of it. The arrows
+   beside it are outside the transition entirely and never move, so there is
+   always one fixed thing to aim at while the rest changes. */
+::view-transition-old(.deck-label) {
+  animation: 120ms var(--ease-exit) both deck-fade reverse;
+}
+
+::view-transition-new(.deck-label) {
+  animation: 200ms var(--ease-enter) 100ms both deck-fade;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -387,5 +553,68 @@
   h2,
   h3 {
     @apply font-heading;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion.
+
+   "Reduce" is an accessibility setting, not a preference for a plainer look.
+   For some people motion on screen causes actual nausea and dizziness —
+   vestibular disorders respond to large sliding and scaling movement much the
+   way motion sickness responds to a car — and for others it's an attention
+   cost they've chosen not to pay. Either way the request is specific: cut the
+   movement, keep the interface.
+
+   So this doesn't hide anything or change a layout. Everything still appears
+   and disappears at the same moments; it just stops travelling to get there.
+
+   Three things to know about how it's written:
+
+   1. The durations are rewritten at the source. Every timing in this app comes
+      from one of the `--dur-*` tokens, so setting them here reaches the dialog,
+      the menus, the deck and the landing mark in one place. The blanket `*`
+      rules underneath are a backstop for anything that hardcodes a duration —
+      a third-party component, or a class someone adds later without reading
+      this comment.
+
+   2. 1ms, never 0s. Radix keeps a closing dialog mounted until its animation
+      fires `animationend`, and an animation with no duration is entitled not
+      to fire that event at all. Zero out the durations and the dialog closes
+      visually but its overlay stays in the DOM, holding focus and blocking
+      clicks. 1ms is imperceptible and still emits the event.
+
+   3. `!important` and `*`, which are usually a smell, are correct here: this
+      has to beat every utility class in the app, including ones that don't
+      exist yet.
+
+   The `::view-transition-*` pseudo-elements need their own rules because they
+   are not elements in the document and `*` does not reach them. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-panel-in: 1ms;
+    --dur-panel-out: 1ms;
+    --dur-menu-in: 1ms;
+    --dur-menu-out: 1ms;
+    --dur-deck: 1ms;
+    --dur-land: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 1ms !important;
+    animation-delay: 0s !important;
   }
 }

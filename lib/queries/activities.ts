@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import type { StickerFace } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
 
@@ -55,8 +57,18 @@ export type LibraryGroup = {
  * Four questions, one row, so the row carries the fact and each caller answers
  * for itself. The rule this is an instance of: a query filters on what is
  * *true*, not on what any one screen wants to show.
+ *
+ * `cache` because two callers ask for this on every page load — both tabs are
+ * rendered on the server even though one of them is off screen — and Step 17
+ * put each behind its own Suspense boundary, which is what made the second call
+ * visible. `cache` memoizes for the life of one request: the two views share a
+ * single promise, and the second caller awaits the first one's answer instead
+ * of opening its own round trip. It lasts exactly one request, so a Server
+ * Action that writes and revalidates still gets fresh rows.
  */
-export async function getStickerLibrary(): Promise<LibraryGroup[]> {
+export const getStickerLibrary = cache(async function getStickerLibrary(): Promise<
+  LibraryGroup[]
+> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -87,4 +99,4 @@ export async function getStickerLibrary(): Promise<LibraryGroup[]> {
       colorKey: area.color_key,
     })),
   }));
-}
+});

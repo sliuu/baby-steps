@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import type { DayString } from "@/lib/dates";
 import { isMood } from "@/lib/moods";
 import type { DayStickers, StickersByDay } from "@/lib/stickers";
@@ -23,8 +25,12 @@ import { createClient } from "@/lib/supabase/server";
  * changes.
  *
  * No .eq("user_id", …) in either query. See lib/queries/lifeAreas.ts.
+ *
+ * `cache` for the same reason `getStickerLibrary` has it: both tabs render on
+ * every request and both want this map, so without it the page opens four
+ * queries where two would do. See that function for the full note.
  */
-export async function getStickersByDay(): Promise<StickersByDay> {
+export const getStickersByDay = cache(async function getStickersByDay(): Promise<StickersByDay> {
   const supabase = await createClient();
 
   // Both requests leave together. Awaiting them one after the other would make
@@ -84,4 +90,4 @@ export async function getStickersByDay(): Promise<StickersByDay> {
   }
 
   return byDay;
-}
+});

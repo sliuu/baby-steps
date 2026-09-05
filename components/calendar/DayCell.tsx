@@ -51,6 +51,13 @@ type Props = {
    * and lights exactly one of them.
    */
   caretIndex: number | null;
+  /**
+   * The activity whose mark just arrived on *this* day, or null — which is what
+   * it is for 41 of the 42 cells, and for all 42 most of the time. The grid
+   * narrows the board's one `landed` value down to a single day before passing
+   * it here, so a cell never has to compare dates.
+   */
+  landed: string | null;
 };
 
 /**
@@ -249,7 +256,15 @@ export function DayCell(props: Props) {
           trick. */}
       <div className="mt-2 leading-[30px] [&>button]:mr-0.5 [&>button]:align-top">
         {stickers.activities.map((sticker, index) => (
-          <Fragment key={sticker.id}>
+          // Keyed by activity, not by the sticker's row id, and the difference
+          // is visible. A placed sticker renders first under an optimistic
+          // `pending:…` id and then again under the uuid the server hands back
+          // — same mark, two identities, a fraction of a second apart. Keyed by
+          // id that's an unmount and a remount, which restarts the landing
+          // animation from the top halfway through itself. The activity is
+          // unique within a day, so it's just as good a key and it doesn't
+          // change underneath the element.
+          <Fragment key={sticker.activityId}>
             <DropSlot
               day={cell.day}
               index={index}
@@ -261,6 +276,7 @@ export function DayCell(props: Props) {
               faded={selected(
                 highlight?.activityIds.has(sticker.activityId) ?? false,
               )}
+              landing={props.landed === sticker.activityId}
             />
           </Fragment>
         ))}

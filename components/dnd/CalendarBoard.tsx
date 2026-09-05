@@ -25,7 +25,7 @@ import {
   type PlaceResult,
 } from "@/app/actions/stickers";
 import { DayModal } from "@/components/calendar/DayModal";
-import { MonthGrid } from "@/components/calendar/MonthGrid";
+import { MonthGrid, type Landed } from "@/components/calendar/MonthGrid";
 import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { StickerTray } from "@/components/tray/StickerTray";
@@ -43,6 +43,38 @@ type Props = {
   groups: LibraryGroup[];
   stickersByDay: StickersByDay;
 };
+
+/**
+ * How long a mark's landing animation runs, matching `--dur-land` in
+ * globals.css.
+ *
+ * Written twice, in two languages, which is worth being honest about: CSS owns
+ * the animation and JavaScript owns the cleanup, and neither can read the
+ * other's value without either a `getComputedStyle` call on every placement or
+ * a stylesheet generated from a module. Both cost more than they're worth for
+ * one number. The failure if they drift is mild and self-correcting — too short
+ * and the animation is cut off, too long and the class lingers on a finished
+ * element — so the comment on each is the link between them.
+ */
+const LANDING_MS = 420;
+
+/**
+ * Where a change puts a mark, or null if it doesn't put one anywhere.
+ *
+ * `move` reads `to` rather than `from`: the animation belongs to the arrival.
+ * Removals and mood changes get nothing — a mood is painted on the day as a
+ * whole and has no mark to land, and a removal is the opposite of an arrival.
+ */
+function arrivalOf(change: CalendarChange): Landed | null {
+  switch (change.kind) {
+    case "place":
+      return { day: change.day, activityId: change.activityId };
+    case "move":
+      return { day: change.to, activityId: change.activityId };
+    default:
+      return null;
+  }
+}
 
 /** Which action a change is. The only place the two are matched up. */
 function runChange(change: CalendarChange): Promise<PlaceResult> {
@@ -191,6 +223,23 @@ export function CalendarBoard(props: Props) {
    * overlay, the lit square, and the caret all read.
    */
   const [target, setTarget] = useState<DropTarget | null>(null);
+  /**
+   * The mark that just arrived, so it can be animated into place — and nothing
+   * else on the calendar with it.
+   *
+   * This is state rather than dnd-kit's own drop animation on purpose. dnd-kit
+   * flies the overlay back to the element it was picked *up* from, which is
+   * right for a reorder and wrong for everything else here: a sticker dragged
+   * out of the tray would sail back into the rail at the exact moment it should
+   * be settling onto a Tuesday. `dropAnimation={null}` turns that off, and this
+   * puts the motion where the result is instead of where the gesture was.
+   *
+   * It also covers the arrivals that were never a drag at all. Ticking an
+   * activity in the day modal places a sticker with no gesture behind it, and
+   * that mark should land the same way the dragged one does — the animation is
+   * about the outcome, not the input.
+   */
+  const [landed, setLanded] = useState<Landed | null>(null);
   const [, startTransition] = useTransition();
 
   /**
@@ -308,12 +357,37 @@ export function CalendarBoard(props: Props) {
    * frame in between where it's missing.
    */
   function commit(change: CalendarChange) {
+    // Outside the transition, so the flag is set in the same render as the
+    // optimistic sticker rather than a frame later — the class has to be on the
+    // element the first time it paints, or the animation starts from a mark
+    // that's already sitting there.
+    setLanded(arrivalOf(change));
+
     startTransition(async () => {
       apply(change);
       const result = await runChange(change);
       setError(result.ok ? null : result.message);
     });
   }
+
+  /**
+   * Clear the flag once the animation has had time to finish.
+   *
+   * A timer rather than `onAnimationEnd`, because the element the animation
+   * runs on may not survive it — a cross-month move unmounts the mark
+   * mid-flight, and an event that fires on a removed node never arrives. The
+   * timer is owned by the effect, so a second placement before the first has
+   * expired cancels the old one on the way in.
+   *
+   * Slightly longer than the animation so it's the animation that ends the
+   * motion, not the cleanup. Both come from the same token, so a change to
+   * either stays in step.
+   */
+  useEffect(() => {
+    if (!landed) return;
+    const timer = window.setTimeout(() => setLanded(null), LANDING_MS + 80);
+    return () => window.clearTimeout(timer);
+  }, [landed]);
 
   function handleDragStart(event: DragStartEvent) {
     setDragging(readDragPayload(event.active.data.current));
@@ -440,6 +514,7 @@ export function CalendarBoard(props: Props) {
             // way; the caret only appears when there is really an order about
             // to change.
             caret={dragging?.kind === "activity"}
+            landed={landed}
           />
         </div>
 

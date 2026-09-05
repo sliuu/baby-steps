@@ -1,6 +1,13 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import {
+  addTransitionType,
+  startTransition,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  ViewTransition,
+} from "react";
 
 import { DayCell } from "./DayCell";
 import { MonthHeader } from "./MonthHeader";
@@ -17,6 +24,18 @@ import {
 } from "@/lib/dates";
 import { dayMatches, type Highlight } from "@/lib/highlight";
 import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
+
+/**
+ * The one mark that just arrived, if any.
+ *
+ * Keyed by activity rather than by sticker row id, because the id changes. A
+ * placed sticker is optimistic first — it renders under `pending:…` while the
+ * insert is in flight, then swaps to the real uuid when the server answers.
+ * Watching the id would mean the mark is a different mark halfway through its
+ * own landing animation, and the animation restarts. The activity is unique
+ * within a day (the table's own constraint says so) and doesn't move.
+ */
+export type Landed = { day: DayString; activityId: string };
 
 type Props = {
   /** "2026-08", computed on the server so first paint isn't blank. */
@@ -48,6 +67,8 @@ type Props = {
    * about to change.
    */
   caret: boolean;
+  /** Set for roughly half a second after a mark is placed, then back to null. */
+  landed: Landed | null;
 };
 
 /** Today never changes mid-session, so there is nothing to subscribe to. */
@@ -87,62 +108,111 @@ export function MonthGrid(props: Props) {
 
   const cells = useMemo(() => monthGrid(month, todayString), [month, todayString]);
   const labels = useMemo(() => weekdayLabels(), []);
+  const monthKey = toMonthString(month);
+
+  /**
+   * Step a month, and tell the browser which way we went.
+   *
+   * Three things have to be true for the deck animation to run, and each of
+   * them is easy to lose:
+   *
+   * 1. `startTransition`. `<ViewTransition>` only participates in transitions —
+   *    a bare `setState` swaps the months with no animation at all, and there
+   *    is no warning when it does.
+   *
+   * 2. `addTransitionType`, because direction cannot be a prop. React reads the
+   *    *exit* animation off the outgoing month, and the outgoing month rendered
+   *    before you clicked anything, so its props can't know which arrow you
+   *    just pressed. A transition type is metadata on the update itself, which
+   *    both sides can see.
+   *
+   * 3. A changed `key` and no `name`. With a name, React treats the two months
+   *    as the same element and morphs one into the other. Without one, it sees
+   *    an unmount and a mount — the enter/exit pair the deck needs.
+   */
+  const step = (by: number) => {
+    startTransition(() => {
+      addTransitionType(by > 0 ? "month-next" : "month-previous");
+      setChosenMonth(stepMonth(month, by));
+    });
+  };
 
   return (
-    <section className="flex flex-col gap-8" data-month={toMonthString(month)}>
-      <MonthHeader
-        month={month}
-        onStep={(by) => setChosenMonth(stepMonth(month, by))}
-      />
+    <section className="flex flex-col gap-8" data-month={monthKey}>
+      <MonthHeader month={month} onStep={step} />
 
-      {/* The hairlines are the 1px gaps, showing the container's background
-          through them. One rule instead of per-cell borders that double up. */}
-      <div className="overflow-hidden rounded-md border border-hairline bg-hairline">
-        <div className="grid grid-cols-7 gap-px">
-          {labels.map((label) => (
-            <div
-              key={label}
-              className="eyebrow bg-surface py-3 text-center"
-            >
-              {label}
-            </div>
-          ))}
+      {/* `default="none"` is load-bearing, not tidiness. Every sticker change
+          in this app commits inside a `startTransition` — see
+          `CalendarBoard.commit` — and a `<ViewTransition>` with no default
+          animates on *any* transition that touches it. Without this, dropping a
+          sticker on a Tuesday would slide the whole month sideways. */}
+      <ViewTransition
+        key={monthKey}
+        enter={{
+          "month-next": "deck-next",
+          "month-previous": "deck-previous",
+          default: "none",
+        }}
+        exit={{
+          "month-next": "deck-next",
+          "month-previous": "deck-previous",
+          default: "none",
+        }}
+        default="none"
+      >
+        {/* The hairlines are the 1px gaps, showing the container's background
+            through them. One rule instead of per-cell borders that double up. */}
+        <div className="overflow-hidden rounded-md border border-hairline bg-hairline">
+          <div className="grid grid-cols-7 gap-px">
+            {labels.map((label) => (
+              <div key={label} className="eyebrow bg-surface py-3 text-center">
+                {label}
+              </div>
+            ))}
 
-          {cells.map((cell) => {
-            // One lookup per cell. A shared empty value rather than a fresh
-            // object each time, so an empty day's props stay referentially
-            // equal between renders and React can skip the work.
-            const stickers = props.stickersByDay.get(cell.day) ?? NO_STICKERS;
-            const aimed = props.target?.day === cell.day;
+            {cells.map((cell) => {
+              // One lookup per cell. A shared empty value rather than a fresh
+              // object each time, so an empty day's props stay referentially
+              // equal between renders and React can skip the work.
+              const stickers = props.stickersByDay.get(cell.day) ?? NO_STICKERS;
+              const aimed = props.target?.day === cell.day;
 
-            return (
-              <DayCell
-                key={cell.day}
-                cell={cell}
-                stickers={stickers}
-                onOpen={props.onOpenDay}
-                onCommit={props.onCommit}
-                highlight={props.highlight}
-                over={aimed}
-                caretIndex={
-                  aimed && props.caret && props.target
-                    ? props.target.index
-                    : null
-                }
-                // The cell is told whether it's lit; it never works it out. The
-                // stickers are already in hand from the lookup above, so asking
-                // here costs nothing and keeps the rule in one function that a
-                // test can reach.
-                lit={
-                  props.highlight
-                    ? dayMatches(props.highlight, stickers)
-                    : false
-                }
-              />
-            );
-          })}
+              return (
+                <DayCell
+                  key={cell.day}
+                  cell={cell}
+                  stickers={stickers}
+                  onOpen={props.onOpenDay}
+                  onCommit={props.onCommit}
+                  highlight={props.highlight}
+                  over={aimed}
+                  caretIndex={
+                    aimed && props.caret && props.target
+                      ? props.target.index
+                      : null
+                  }
+                  // The cell is told whether it's lit; it never works it out.
+                  // The stickers are already in hand from the lookup above, so
+                  // asking here costs nothing and keeps the rule in one
+                  // function that a test can reach.
+                  lit={
+                    props.highlight
+                      ? dayMatches(props.highlight, stickers)
+                      : false
+                  }
+                  // Non-null only for the mark that was just placed, and only
+                  // for about half a second. See `CalendarBoard.landed`.
+                  landed={
+                    props.landed?.day === cell.day
+                      ? props.landed.activityId
+                      : null
+                  }
+                />
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </ViewTransition>
     </section>
   );
 }

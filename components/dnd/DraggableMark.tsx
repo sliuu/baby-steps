@@ -12,6 +12,14 @@ type Props = {
   day: DayString;
   /** The fade a highlight puts on every mark it didn't select. */
   faded: string;
+  /**
+   * True for about half a second after this mark is placed or moved here.
+   *
+   * The board decides, not this component: a mark has no way to tell "I have
+   * just arrived" from "I have been here since March", because both look
+   * exactly the same from inside a render.
+   */
+  landing: boolean;
 };
 
 /**
@@ -70,7 +78,20 @@ export function DraggableMark(props: Props) {
       //
       // `rounded-full` matches the circle inside, so the focus ring traces the
       // sticker rather than boxing it.
+      // `animate-land` is a scale-up-and-settle defined in globals.css. It runs
+      // on this button rather than on the circle inside it so the focus ring
+      // travels with the mark, and it's a transform, so nothing in the line box
+      // around it moves while the mark grows past its final size and back.
+      //
+      // This is the piece that replaces dnd-kit's drop animation, which is
+      // switched off at the `DragOverlay`. That one animates the *overlay* back
+      // to wherever the drag started — the tray, for most placements — so the
+      // sticker's last movement was away from the day it had just been put on.
+      // Animating the result instead means the same motion plays whether the
+      // mark arrived by drag or by a checkbox in the day modal.
       className={`touch-none rounded-full transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+        props.landing ? "animate-land" : ""
+      } ${
         isDragging ? "opacity-35" : `cursor-grab active:cursor-grabbing ${props.faded}`
       }`}
     >
