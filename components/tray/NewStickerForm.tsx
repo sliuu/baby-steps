@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -52,7 +51,7 @@ type Props = {
 export function NewStickerForm(props: Props) {
   const [open, setOpen] = useState(false);
 
-  /** The area's name, when there is one, for the label and the sentence. */
+  /** The area, when there is one, for the trigger's label and the seeded form. */
   const area = props.areas.find(
     (candidate) => candidate.id === props.defaultAreaId,
   );
@@ -92,17 +91,16 @@ export function NewStickerForm(props: Props) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
+      {/* No description, and `aria-describedby={undefined}` is what says that on
+          purpose — Radix warns about a dialog with no description, on the
+          assumption that a missing one is an oversight. It isn't here. The
+          subtitle used to name the area you'd opened the `+` on, and the area is
+          now the first field in the form, already filled in. A sentence
+          describing the control directly beneath it is a sentence to read
+          before you can start. */}
+      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="text-xl">New sticker</DialogTitle>
-          {/* Says the area rather than leaving you to read it back off the
-              dropdown. The `+` you pressed was the one on Health; the dialog
-              should agree with the button that opened it. */}
-          <DialogDescription>
-            {area
-              ? `A mark and a name, in ${area.name}.`
-              : "A mark, a name, and where it belongs."}
-          </DialogDescription>
         </DialogHeader>
 
         <StickerFields

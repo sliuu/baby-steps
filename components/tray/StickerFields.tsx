@@ -3,9 +3,7 @@
 import { useActionState, useId, useState, type ReactNode } from "react";
 
 import type { SaveResult } from "@/app/actions/activities";
-import { StickerMark } from "@/components/calendar/StickerMark";
 import { EmojiPicker } from "@/components/tray/EmojiPicker";
-import { TrayRowFace } from "@/components/tray/TrayGroup";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -90,7 +88,14 @@ type Props = {
 type Problem = { field: DraftField | null; message: string } | null;
 
 /**
- * The three fields, the preview, and the buttons — shared by both dialogs.
+ * The three fields and the buttons — shared by both dialogs.
+ *
+ * There used to be a preview above them: the sticker as the tray would draw it,
+ * updating as you typed. It went when the area moved to the top, because at
+ * that point the mark field could wear the area's colour itself and the preview
+ * was a second copy of a thing already on screen. Two circles saying the same
+ * sentence, one of them hidden from screen readers because every word in it had
+ * been typed two inches below.
  *
  * It moved out of `NewStickerForm` the moment editing arrived, which is this
  * project's standing rule for shared code: it moves when the second caller
@@ -98,8 +103,8 @@ type Problem = { field: DraftField | null; message: string } | null;
  * `lib/charts.ts` in Step 14.
  *
  * What makes the sharing honest is that create and edit genuinely are the same
- * form. Same three inputs, same validator, same error mapping, same preview,
- * same unique constraint to bump into. If they had diverged anywhere real, two
+ * form. Same three inputs, same validator, same error mapping, same unique
+ * constraint to bump into. If they had diverged anywhere real, two
  * components would have been the right answer — the tell is that the only
  * differences left are two strings and a bound argument.
  *
@@ -164,6 +169,8 @@ export function StickerFields(props: Props) {
   );
 
   const area = areas.find((candidate) => candidate.id === lifeAreaId);
+  /** The chosen area's colours, worn by the mark field. `ramp` has a fallback. */
+  const { tint, border } = ramp(area?.colorKey ?? "");
 
   /**
    * Are we about to move an existing sticker's history to a different area?
@@ -191,81 +198,12 @@ export function StickerFields(props: Props) {
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-5">
-      {/* The sticker as it will look in the rail, drawn by the same two
-          components that draw it there — so this is a preview in the literal
-          sense rather than an impression of one. Before an area is chosen the
-          circle shows `ramp()`'s fallback, which is the same thing the grid
-          would show for an unrecognised colour: one fallback, one appearance.
-
-          It earns its keep twice over when editing: change the life area and
-          the circle changes colour before you commit to anything, which is the
-          part of a recategorisation you'd otherwise only find out about by
-          saving and looking at the tray.
-
-          Hidden from screen readers: every word in it is something the user
-          just typed into a field two inches below, and the empty state says
-          "Your sticker", which is a placeholder rather than information. */}
-      <div
-        aria-hidden="true"
-        className="flex items-center gap-2.5 rounded-md border border-dashed border-hairline px-2 py-1.5"
-      >
-        <TrayRowFace
-          visual={
-            <StickerMark
-              sticker={{
-                name: name.trim(),
-                mark,
-                colorKey: area?.colorKey ?? "",
-              }}
-            />
-          }
-          name={name.trim() || "Your sticker"}
-        />
-      </div>
-
-      <div className="flex items-end gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`${errorId}-mark`}>Mark</Label>
-          <div className="flex items-center gap-1.5">
-            {/* No maxLength, and that's the whole lesson of this field: the
-                attribute counts UTF-16 code units, so maxLength={1} accepts
-                "A" and silently truncates every emoji into half a surrogate
-                pair. The rule "one character" can only be enforced by counting
-                graphemes, which is what validateDraft does on both sides. */}
-            <Input
-              id={`${errorId}-mark`}
-              name="mark"
-              value={mark}
-              onChange={(event) => setMark(event.target.value)}
-              autoComplete="off"
-              placeholder="G"
-              className="w-12 text-center"
-              {...fieldProps("mark")}
-            />
-            {/* Sets the field rather than owning it. The input above is still
-                the value — you can type or paste a letter into it and never
-                open this — which is why the picker takes a setter and keeps no
-                idea of what's currently chosen. */}
-            <EmojiPicker onPick={setMark} />
-          </div>
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <Label htmlFor={`${errorId}-name`}>Name</Label>
-          <Input
-            id={`${errorId}-name`}
-            name="name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            autoComplete="off"
-            autoFocus
-            placeholder="Gym"
-            {...fieldProps("name")}
-          />
-        </div>
-      </div>
-
+    <form action={submit} className="flex flex-col gap-4">
+      {/* Life area first, and that ordering is what let the preview go. The
+          area decides the colour, so once it's chosen the mark field below can
+          simply *be* the sticker — same tint, same ring, same glyph the tray
+          will draw. A separate preview panel was showing you a copy of a thing
+          the form can just show you directly. */}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`${errorId}-area`}>Life area</Label>
         {/* `name` is what makes a Radix Select part of the form: given one, it
@@ -300,7 +238,7 @@ export function StickerFields(props: Props) {
           </SelectContent>
         </Select>
 
-        {/* Two sentences that swap, rather than one that's always right.
+        {/* One sentence, and only when it applies.
 
             Moving a sticker doesn't just change what colour it is from now on —
             `tally` reads an activity's area as it stands *now*, so every mark
@@ -308,14 +246,81 @@ export function StickerFields(props: Props) {
             redraws. That was decided deliberately back in Step 12 ("you
             reclassified the habit, not the days") and it is the right
             behaviour, but it is not a thing anyone would guess from a dropdown.
-            It only appears once you've actually changed the value, because a
-            warning about a thing you haven't done is noise the other 90% of the
-            time. */}
-        <p className="text-[0.8rem] text-ink-muted">
-          {moving
-            ? "Marks you've already placed move with it, so past months will show it under the new area."
-            : "It takes that area’s colour, and names are unique within it."}
-        </p>
+
+            It used to share the line with a resting sentence — "it takes that
+            area's colour, and names are unique within it" — which was a line of
+            permanent text explaining two things the form now demonstrates: the
+            mark below wears the colour the moment you pick an area, and the
+            uniqueness rule only matters at the moment you break it, when the
+            error says so in the same words. A warning that is only sometimes
+            true doesn't need a filler sentence to keep its seat warm. */}
+        {moving && (
+          <p className="text-[0.8rem] text-ink-muted">
+            Marks you’ve already placed move with it, so past months will show
+            it under the new area.
+          </p>
+        )}
+      </div>
+
+      <div className="flex items-end gap-3">
+        {/* The mark field *is* the preview: the same tint and ring
+            `StickerMark` draws in the tray, wrapped around the input you type
+            into. Before an area is chosen it wears `ramp()`'s fallback, which
+            is what the grid shows for an unrecognised colour too — one
+            fallback, one appearance.
+
+            The colour lives on this wrapper rather than on the input because
+            shadcn's input carries a `dark:` background of its own, and a
+            `dark:`-less tint would lose to it in dark mode. A ring and a fill
+            on the outside, a transparent field on the inside. */}
+        <div
+          className={`relative size-11 shrink-0 rounded-full border ${tint} ${border}`}
+        >
+          {/* No maxLength, and that's the whole lesson of this field: the
+              attribute counts UTF-16 code units, so maxLength={1} accepts "A"
+              and silently truncates every emoji into half a surrogate pair. The
+              rule "one character" can only be enforced by counting graphemes,
+              which is what validateDraft does on both sides.
+
+              `font-emoji` for the same reason `StickerMark` uses it: a line box
+              takes its metrics from the first available font, so a mark set in
+              the body serif sits low. Labelled by `aria-label` rather than a
+              <Label> — the circle is 44px across and a word above it would be
+              wider than the control it names. */}
+          <Input
+            name="mark"
+            value={mark}
+            onChange={(event) => setMark(event.target.value)}
+            autoComplete="off"
+            aria-label="Mark"
+            placeholder="G"
+            className="font-emoji size-full rounded-full border-0 bg-transparent px-0 text-center text-base dark:bg-transparent"
+            {...fieldProps("mark")}
+          />
+          {/* Sets the field rather than owning it. The input behind it is still
+              the value — you can type or paste a letter and never open this —
+              which is why the picker takes a setter and keeps no idea of what's
+              currently chosen. It sits on the circle's corner because picking a
+              mark and seeing the mark are one thing, not two. */}
+          <EmojiPicker
+            onPick={setMark}
+            className="absolute -right-1 -bottom-1 rounded-full"
+          />
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <Label htmlFor={`${errorId}-name`}>Name</Label>
+          <Input
+            id={`${errorId}-name`}
+            name="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            autoComplete="off"
+            autoFocus
+            placeholder="Gym"
+            {...fieldProps("name")}
+          />
+        </div>
       </div>
 
       {/* Rendered always, filled sometimes — a live region the browser only

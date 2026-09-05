@@ -244,7 +244,7 @@ Each of those branches exists because the honest sentence changes *shape*, not j
 2. The row couldn't do this itself — it's already a drag handle *and* a highlight toggle. A third meaning on one element makes all three ambiguous.
 3. `StickerFields` moved to its own file and takes the action as a **prop**, so there's no `mode` prop and no `if (editing)` anywhere inside it.
 4. An update under RLS that matches nothing is **not an error** — you have to ask for the rows back to tell "saved" from "silently did nothing".
-5. Change the life area and the preview circle changes colour before you save — and a different sentence appears warning that past marks move with it.
+5. Change the life area and the sticker's circle changes colour before you save — and a sentence appears warning that past marks move with it. (It was a separate preview panel at first; the last card in this file is why it isn't any more.)
 
 **Design consequence:** this is the first step that was inserted rather than planned, and the reason is worth keeping. Editing wasn't missing because it was hard; it was missing because with seeded data nobody cares what a sticker is called. It became urgent within an hour of the calendar holding real entries. **A feature's priority is set by the data, not by the feature list** — and the list was written before there was any data to have an opinion.
 
@@ -503,11 +503,80 @@ It stays `opacity-0` rather than `hidden`, because **the slot has to be held whe
 
 **A precise drop target broke the imprecise highlight.** The cell used to light up from its own "is something over me?" flag. Now the thing over it is a gap *inside* it, so that flag reads false and the square went dark the moment the drop got more accurate. The answer is that the day and the slot are one target with two levels of detail, resolved in one place and handed down. **When you subdivide a target, everything that asked the old target a question needs re-asking.**
 
+## Step 17 · Motion, waiting, and a way to turn it off
+
+1. Dialogs, popovers, menus and selects **arrive slower than they leave** — and everything is slower than it was.
+2. The month arrows now **cycle a deck**: the grid slides a little and cross-fades in the direction you pressed.
+3. The month's name **fades in place**, and the arrows never move, so there's a fixed thing to aim at.
+4. A sticker you place **scales into its square** — dragged from the tray or ticked in the day modal, same motion.
+5. With Reduce Motion on, all of it happens **instantly** and nothing about the layout changes.
+6. On a slow connection the page **paints straight away** — nav, frame, and a grey calendar the exact shape of the real one — instead of a white screen.
+
+**100ms wasn't a fast animation. It was a jump cut with extra frames.** Everything in the app opened and closed at a tenth of a second, which is below the point where movement registers as movement — you see the before and the after and nothing in between, so the transition costs you the frames without buying the continuity they were for. 180–260ms is the band where it reads as deliberate and still doesn't make you wait. **Under about 150ms you're paying for an animation and getting a cut.**
+
+**In and out are different events, so they get different timings.** An entrance is information — here is a dialog, here is what's in it — and it can afford to take its time. An exit is clearing the way, and every millisecond of it is you waiting to reach whatever was underneath. Roughly two-thirds either way. The same asymmetry runs the curves: **arrivals decelerate, departures accelerate.** The default easing is symmetric, which is why a dismissed dialog felt sluggish even at a tenth of a second — it spent its first frames barely moving, on its way out.
+
+**Duration should scale with the area covered.** A dialog covers the page and a dropdown covers a corner of it; the same number on both makes one feel slow and the other feel abrupt. Six tokens, all of them in one place, and each component asks for a named pair rather than a figure.
+
+**Which is what makes reduced motion six lines instead of an audit.** The preference isn't a taste for a plainer look — for some people large sliding and scaling movement causes real nausea, the way a car does — and honouring it means cutting the movement without cutting the interface. Because every timing in the app comes from a token, one media query rewriting those tokens reaches the dialog, all four menus, the deck and the landing mark at once. **A design token's real payoff is the day you have to change all of them.**
+
+**But not to zero — to one millisecond.** A closing dialog stays mounted until its animation reports that it finished, and an animation with no duration is entitled never to report anything. Zero the durations and the dialog looks shut while its overlay sits in the DOM holding focus and swallowing clicks. **"Instant" and "no animation at all" are different instructions**, and only one of them keeps the event that something else is waiting on.
+
+**Animating something *out* is a different problem from animating it in.** Every exit in the app so far belonged to a component library, and it worked only because that library deliberately delays removing the element until its animation ends. Nothing does that for an ordinary state change: React takes the old month out of the tree before the new one paints, and you cannot animate an element that no longer exists. React's `<ViewTransition>` solves it from the other end — the browser screenshots the old tree and the new one and interpolates between them, so nothing needs to stay mounted.
+
+**Direction can't be a prop, and the reason is a small revelation about time.** The exit animation is read off the *outgoing* month — which rendered before you clicked anything. Its props cannot know which arrow you pressed, because the press hadn't happened yet. That's what transition types are for: metadata attached to the update rather than to either tree, which both sides can read. **When two renders need to agree about something that happened between them, it belongs to the event, not to the components.**
+
+**Three things have to be true for a view transition to run, and none of them warns you.** It has to happen inside a transition, not a bare state change. The direction has to be a transition type. And the element needs a changed key and *no* name — with a name the library treats the two months as the same element and morphs one into the other, which is a lovely effect and not this one. Miss any of the three and you get an instant swap and a silent console.
+
+**Opting out is the setting that matters.** A view transition with no stated default animates on *any* transition that touches it — and every sticker change in this app commits inside one. Without an explicit "none", dropping a sticker on a Tuesday would slide the whole month sideways. **A component that reacts to all updates needs to be told which updates it's for.**
+
+**A deck of days travels 8%, not a page width.** A calendar isn't a page you flip away from; it's the same grid holding different days. Enough sideways motion to name the direction, and the fade carries the rest. It's also the practical limit: the browser's screenshots are attached to the document root and are **not** clipped by the box the element lived in, so a big slide would sweep the old month across everything beside it.
+
+**Why "fade plus a small slide" is the default of every design system.** Two reasons. The mechanical one: opacity and transform are the only two properties a browser can animate purely on the GPU, without recomputing layout or repainting anything — so the standard vocabulary is the shape of a performance constraint. The expressive one: the two say different things. Opacity is about *existence* — arriving, leaving. Transform is about *relationship* — came from over there, belongs to that. A pure slide claims "the same thing moved," which is a lie whenever the content changed; a pure fade never says where anything came from. Pairing them also lets the movement be tiny, because the fade carries "this is going" and the slide only has to supply a direction. **Distance costs time**, so the fade is what buys a short travel and keeps the transition from feeling slow.
+
+**Dropping the fade was tried and reverted, and the reason it failed is the useful part.** A book has no fade because it has an *edge* — the page goes behind it, and occlusion does the work opacity usually does. On screen there's no edge, so removing the fade means the slide must carry the whole message, which means a full page width, which means building the edge back: a `clip-path` on each page that exactly cancels its own movement. That version worked. It was also far too much event for stepping between two views of the same grid — a page turn announces that you've *left* somewhere, and these are the same days in a different month. **Remove a property from an animation and something else has to take over its job; check that the job was worth doing first.**
+
+**The title fades and doesn't slide, on purpose.** Two elements moving the same distance side by side read as one plane moving, which is right for the grid and wrong for its label — the month name is written *on* the deck, not part of it. And the live region wraps the transition rather than sitting inside it: a screen reader announces changes *within* a region, so replacing the region along with its text can leave it with nothing to report.
+
+**The landing animation belongs to the result, not to the gesture.** A drag library's built-in drop animation flies the floating copy back to where the drag *started* — right for a reorder, and for a sticker dragged out of the tray it means sailing back into the rail at the moment it should be settling onto a Tuesday. Animating the placed mark instead means the same motion plays for a drag, for a keyboard drop, and for a checkbox in the day modal that had no gesture at all. **Animate what changed, not what moved.**
+
+**And that turned a key into a bug.** A placed sticker draws twice: once optimistically under a temporary id, then again under the real one a fraction of a second later. Keyed by that id it's an unmount and a remount — so the landing animation restarts halfway through itself, which looks like a stutter and has nothing to do with the animation. Keyed by the activity, which is unique within a day and doesn't change, the element survives its own arrival. **A key that changes when the data is confirmed is a key that remounts on success.**
+
+**Clean-up is on a timer, not on the animation's own end event.** The element may not outlive its animation — moving a mark to another month unmounts it mid-flight — and an event that fires on a removed node never arrives.
+
+**The other half of this step was waiting, and the empty states turned out to be finished already.** Trends has had three different "nothing here" sentences since Step 12 — one for a half-drawn custom range, one for a range that's simply too narrow, one for the day before your very first sticker — and the tray has its own. What the app had never had was anything to show in the gap *before the data existed at all*, which on a fast laptop is invisible and on a phone on a train is the whole first impression.
+
+**A Suspense boundary is a promise about space, and the page reflows when it's kept.** When the real content replaces the fallback the browser relays out everything below it, so a skeleton that's the wrong height is a lurch on every single load. That's why these ones copy the real layout's classes instead of being a tidy grey rectangle: six rows because the calendar is always six rows, the actual bordered box with the actual hairline gaps, the chart's real card so its fixed ratio can't be guessed wrong. **A skeleton isn't a loading indicator, it's a reservation.**
+
+**Where you put the boundary decides how much of the page is instant.** Everything *above* it — layouts, nav, the fallbacks themselves — is sent immediately as the static shell; everything below waits. A single boundary at the top of the route is legal and throws that away, because the framework stops at the first one it finds and the whole page becomes one skeleton. Two sibling boundaries, one per tab, means the frame paints as soon as the auth check returns and the two halves arrive independently.
+
+**But the redirect has to stay above them, and the reason is HTTP.** The moment a fallback renders, the response has committed to `200 OK` and sent its headers. A `redirect()` after that can't be an HTTP redirect any more — it degrades into a client-side one. So a fast check that might send you elsewhere goes *before* the first boundary, and only the slow work goes behind it. **Streaming is a one-way door: after the first chunk, the status code is spent.**
+
+**Two boundaries made a duplicate query visible.** Both tabs render on the server every request even though only one is on screen, so the page was asking Postgres the same two questions twice. React's `cache()` memoizes for exactly one request — the second caller awaits the first one's promise rather than opening its own connection — and expires with it, so a write that revalidates still reads fresh rows. The bug was always there; splitting the page into boundaries is what made it something you'd notice.
+
+---
+
+## Step 16, revisited · The form got smaller
+
+1. The new-sticker dialog is now a title, a **Life area** dropdown, a coloured circle you type your mark into, a name field, and two buttons. Nothing else.
+2. The **preview panel is gone.** The mark field wears the area's colour itself — same tint, same ring the tray draws — so picking Health paints the circle green while you're still typing in it.
+3. The **emoji picker is a badge on that circle's corner**, not a button beside it. One control instead of two.
+4. The subtitle went, and so did the resting sentence under the dropdown. The only line left there is the warning about past marks moving, which appears only when you've actually moved them.
+5. Both dialogs shrank, because create and edit are the same component. That was the point of Step 16.
+
+**Design consequence, and it's the one worth keeping:** the preview wasn't wrong, it was *displaced*. Its job was to answer "what will this look like?" while the form's own fields couldn't — the mark input was a plain white box and the colour lived three fields below it in a dropdown. Reordering the form so the area comes first put the answer inside the question. **A preview is often a sign that a field is showing you less than it knows.** Before you build a second copy of a thing, check whether the first copy could just be accurate.
+
+**Second:** the fields didn't lose anything. The circle is still an `<input>` — you can type or paste a letter and never open the picker — it's just an input with a fill and a ring around it, and the picker sits on its corner. Merging two controls is safe exactly when one of them was already the value and the other was a way of setting it. **If both controls write the same state, they were one control drawn twice.**
+
+**Third, a Tailwind detail that will bite again:** shadcn's `Input` carries `dark:bg-input/30`. `tailwind-merge` resolves conflicts *within* a variant, so passing `bg-ramp-green-tint` beats the base `bg-transparent` and loses to the `dark:` rule — the tint works in light mode and vanishes in dark. The fix here was to put the colour on a wrapper and leave the input transparent in both themes. **A `dark:` utility in a component's base classes is a rule your override has to match variant-for-variant, not just win on specificity.**
+
+**Fourth, on removing text:** two sentences came out — the dialog's subtitle and the always-there line under the dropdown. Both were true. Both described the control immediately beneath them. A permanent explanation of a visible thing is a sentence you have to read before you can start, every time, forever. The uniqueness rule it explained still gets said — at the only moment it matters, in the error. **Explain a rule when it's broken, not while it's being followed.**
+
 ---
 
 ## The three things that carry across all of it
 
-**Data arrives before the HTML does.** A server component awaits the database and sends finished markup. There's no spinner to design unless you deliberately add one.
+**Data arrives before the HTML does.** A server component awaits the database and sends finished markup, so there's no spinner to design — until you decide the wait itself needs a design, at which point a Suspense boundary splits the response and the skeleton above it is what gets sent first.
 
 **Browser-only knowledge is one frame late.** The clock, the theme, anything in `localStorage`. Design the first frame without it.
 
@@ -525,6 +594,7 @@ Read left to right. Nothing here needs to be memorized.
 | A class built from a variable does nothing | Tailwind scans source *text*; it never runs your code | `lib/palette.ts` |
 | An env var is `undefined` in the browser | `process.env.NEXT_PUBLIC_X` must appear literally — no helper function | `lib/supabase/env.ts` |
 | Two Tailwind classes fight and the wrong one wins | order is decided by the compiled stylesheet, not your template | `DayCell.tsx` → `numeralClasses()` |
+| A colour you passed in works in light mode and vanishes in dark | the component's base classes carry a `dark:` rule; `tailwind-merge` only resolves conflicts within a variant | `StickerFields.tsx` → the mark circle |
 | React warns about a hydration mismatch | something read the clock, the DOM, or storage during render | `MonthGrid.tsx` → `useSyncExternalStore` |
 | A hydration mismatch on an `id`-ish attribute, worse the longer the server runs | the value comes from a counter in a module variable — fresh on the client, but the server's copy survives every request | `CalendarBoard.tsx` → `DndContext id` |
 | A date lands one day off, but only at night | something used `toISOString()`, which converts to UTC first | `lib/dates.ts` → `toDayString` |
@@ -698,6 +768,17 @@ Read left to right. Nothing here needs to be memorized.
 | A control appearing on hover makes the row jump | `hidden` gives the space back; `opacity-0` holds the slot | same |
 | A class you deleted is still in the compiled CSS | you wrote its name in a comment — or in a doc. Tailwind scans text, `.md` included | same, and this file |
 | A `text-*` bracket holding a bare `0` sets no font size | an unsuffixed `0` there is read as a colour, so it emits `color: 0` | compiled CSS, not your code |
+| An element disappears with no animation while its entrance works fine | React unmounts before the browser can paint it; only a delayed-unmount library or a view transition can animate an exit | `MonthGrid.tsx` → `ViewTransition` |
+| A view transition does nothing and says nothing | the state change wasn't inside a transition, or the element has a `name` where it needs a changed `key` | same |
+| An animation runs on updates that have nothing to do with it | a view transition with no stated default fires on every transition that touches it | same → `default="none"` |
+| The exit animation can't tell which way you went | exit is read off the tree that rendered *before* the click; direction belongs to the update, not the props | same → `addTransitionType` |
+| A view-transition snapshot sweeps across unrelated parts of the page | the pseudo-elements hang off the document root and aren't clipped by the box the element was in — keep the travel small, or give each one a `clip-path` that cancels its own movement | `app/globals.css` → the deck rules |
+| The page jumps when a Suspense fallback is replaced | the skeleton and the real content are different heights — the swap causes a reflow, so the fallback has to reserve the same space | `CalendarSkeleton.tsx` → the six-row grid |
+| A `redirect()` sends the browser somewhere but the status code is 200 | it fired after streaming began; put it above every `<Suspense>` boundary and any `await` you can | `app/page.tsx` → `getUser()` first |
+| The same query runs twice on one page load | two components ask for it independently — wrap it in React `cache()` to share one promise per request | `lib/queries/stickers.ts` |
+| A dialog looks closed but still eats clicks under reduced motion | the durations were zeroed, so `animationend` never fired and the overlay never unmounted. Use `1ms` | `app/globals.css` → the reduced-motion block |
+| An animation restarts partway through, only on a successful write | the optimistic id became the real one and the key changed with it — key on something the server doesn't rewrite | `DayCell.tsx` → the marks' key |
+| An enter/exit animation ignores `duration-*` | it's a keyframe, not a transition — it only listens if the animation shorthand reads Tailwind's duration variable | `components/ui/dialog.tsx` |
 
 ---
 

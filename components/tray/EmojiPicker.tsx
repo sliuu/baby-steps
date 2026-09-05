@@ -67,6 +67,12 @@ function matches(name: string, terms: string[]) {
 type Props = {
   /** Called with the chosen emoji. The picker closes itself afterwards. */
   onPick: (emoji: string) => void;
+  /**
+   * Classes for the trigger button. The form draws it as a badge on the corner
+   * of the mark circle rather than as a button in a row, and where a control
+   * sits is the caller's business — the popover under it is the same either way.
+   */
+  className?: string;
 };
 
 /**
@@ -143,9 +149,10 @@ export function EmojiPicker(props: Props) {
         <Button
           type="button"
           variant="outline"
-          size="icon-sm"
+          size="icon-xs"
           aria-label="Pick an emoji"
           title="Pick an emoji"
+          className={props.className}
         >
           <SmilePlus strokeWidth={1.5} />
         </Button>
