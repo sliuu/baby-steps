@@ -1,8 +1,22 @@
 import { ramp } from "@/lib/palette";
 import type { StickerFace } from "@/lib/stickers";
+import { cn } from "@/lib/utils";
 
 type Props = {
   sticker: StickerFace;
+  /**
+   * Size and type-scale overrides. Nothing else — this is not a styling hook.
+   *
+   * It exists because the signed-out page draws stickers too, at 40–56px
+   * instead of 26. `cn` merges rather than concatenates, so `size-14` here
+   * replaces the `size-[26px]` below instead of racing it in the stylesheet.
+   *
+   * The point of the prop is that the *appearance* stays in one file. The tint,
+   * the ring, the fallback colour, the emoji-font correction — a change to any
+   * of those lands on the calendar, the tray, the day modal and the login page
+   * at once, because all four render this component rather than its recipe.
+   */
+  className?: string;
 };
 
 /**
@@ -32,7 +46,12 @@ export function StickerMark(props: Props) {
   return (
     <span
       title={sticker.name}
-      className={`grid size-[26px] shrink-0 place-items-center rounded-full border text-[0.8rem] leading-none text-ink ${tint} ${border}`}
+      className={cn(
+        "grid size-[26px] shrink-0 place-items-center rounded-full border text-[0.8rem] leading-none text-ink",
+        tint,
+        border,
+        props.className,
+      )}
     >
       {/* `font-emoji` is here to centre the glyph, not to choose a typeface.
           A line box takes its height and its baseline from the *first available

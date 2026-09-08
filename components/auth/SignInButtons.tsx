@@ -35,11 +35,19 @@ export function SignInButtons() {
     }
   }
 
+  // `size="lg"` only sets a height, not a type scale — every variant inherits
+  // `text-sm` from the base recipe — so the size that matches a 6xl heading has
+  // to be asked for here. The height goes with it: `h-9` around `text-base` is
+  // barely more than the cap height, and the button reads as cramped rather
+  // than as large. These two classes travel together; changing one alone looks
+  // like a mistake.
+  const scale = "h-12 w-full text-base";
+
   return (
     <div className="flex w-full flex-col gap-3">
       <Button
         size="lg"
-        className="w-full"
+        className={scale}
         disabled={pending !== null}
         onClick={() => signIn("google")}
       >
@@ -49,7 +57,7 @@ export function SignInButtons() {
       <Button
         size="lg"
         variant="outline"
-        className="w-full"
+        className={scale}
         disabled={pending !== null}
         onClick={() => signIn("github")}
       >

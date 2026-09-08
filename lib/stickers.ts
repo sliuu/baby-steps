@@ -22,6 +22,21 @@ export type StickerFace = {
   colorKey: string;
 };
 
+/**
+ * Just the three fields that draw a sticker, copied off something wider.
+ *
+ * Both things that can be dragged — a tray row and a placed mark — hold an id
+ * as well as a face, and both used to hand their whole selves to the drag
+ * payload as its `face`. That typechecks, because `StickerFace` is a subset of
+ * both and TypeScript only excess-property-checks fresh object literals. It is
+ * still wrong: the payload then carries an id that nothing reads and that any
+ * `{...face}` downstream can silently overwrite a real one with. See the note
+ * in `applyChange`, where exactly that cost a day's debugging.
+ */
+export function faceOf(sticker: StickerFace): StickerFace {
+  return { name: sticker.name, mark: sticker.mark, colorKey: sticker.colorKey };
+}
+
 export type ActivitySticker = StickerFace & {
   /**
    * The day_activities row — this placement, not the activity itself. The same

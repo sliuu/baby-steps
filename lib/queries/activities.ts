@@ -2,6 +2,7 @@ import { cache } from "react";
 
 import type { StickerFace } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
+import { whileTokenSettles } from "./settling";
 
 export type LibrarySticker = StickerFace & {
   /** The activities row — the sticker itself, not any placement of it. */
@@ -71,18 +72,22 @@ export const getStickerLibrary = cache(async function getStickerLibrary(): Promi
 > {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("life_areas")
-    .select(
-      "id, name, color_key, sort_order, activities(id, name, mark, archived)",
-    )
-    .order("sort_order")
-    // Ordering inside the embed needs saying so explicitly — without
-    // referencedTable this would try to sort life_areas by created_at.
-    .order("created_at", { referencedTable: "activities" });
+  const { data, error } = await whileTokenSettles(() =>
+    supabase
+      .from("life_areas")
+      .select(
+        "id, name, color_key, sort_order, activities(id, name, mark, archived)",
+      )
+      .order("sort_order")
+      // Ordering inside the embed needs saying so explicitly — without
+      // referencedTable this would try to sort life_areas by created_at.
+      .order("created_at", { referencedTable: "activities" }),
+  );
 
-  if (error) {
-    throw new Error(`Could not load your stickers: ${error.message}`);
+  if (error || !data) {
+    throw new Error(
+      `Could not load your stickers: ${error?.message ?? "no rows returned"}`,
+    );
   }
 
   return data.map((area) => ({

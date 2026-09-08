@@ -124,6 +124,58 @@
      "appeared". The overshoot is small (8%) because a mark is 26px; the same
      proportion on a large element would look like a bounce. */
   --animate-land: land var(--dur-land) var(--ease-enter) both;
+
+  /* The signed-out page's three text elements, which now rise as one block —
+     see `app/login/page.tsx`.
+
+     `both` is kept even though nothing on that page carries a delay any more.
+     It is what holds an element on its first keyframe through a delay instead
+     of leaving it fully visible until the animation starts, so it's the
+     difference between things arriving in order and things twitching in order.
+     Reintroduce a stagger without it and every element sits there at full
+     opacity and then jumps. Costs nothing to leave in. */
+  --animate-rise: rise var(--dur-hero) var(--ease-enter) both;
+
+  /* The stickers arriving on the signed-out page. Two animations rather than
+     one, because the fall and the reveal are different lengths: the fade is
+     over in the first third so that what you watch descend is a solid object
+     rather than one developing in mid-air. Comma-separated the same way the
+     `::view-transition-*` rules further down this file stack a slide on a fade.
+
+     `both` on each, for the reason `--animate-rise` documents just above: the
+     stagger only works if an element holds its first keyframe through its
+     delay.
+
+     No timing function in the shorthand — `fall` sets one per keyframe, because
+     a single curve cannot both accelerate into the impact and oscillate out of
+     it. */
+  --animate-fall:
+    fall var(--dur-fall) both,
+    sticker-fade calc(var(--dur-fall) * 0.3) linear both;
+
+  /* The stickers loitering behind the signed-out page once they have landed.
+     A slow bob and a small tilt, forever: the entrance is over, and this is
+     what is left of it.
+
+     Duration and delay are read from custom properties rather than baked in,
+     the same trick `deck-slide` uses for its offset: two dozen stickers all
+     drifting on the same six-second clock would pulse in unison, which reads
+     as one animated background rather than two dozen separate objects. Each
+     one sets its own `--drift-dur` and `--drift-delay` so they never line up.
+
+     `--drift-delay` is always *negative*, and that is not a typo. A positive
+     delay makes the element wait at its own natural position and then jump to
+     the animation's first keyframe when the clock runs out — here, 7px up and
+     3.5 degrees over — so every sticker landed, sat still for a second or two,
+     and then twitched into place a second time. A negative delay starts the
+     animation already in progress: at first paint each one is somewhere
+     different in its cycle, nothing waits, and nothing snaps.
+
+     `both` is belt and braces for the same failure. It only matters if someone
+     writes a positive delay here later, and then it holds the first keyframe
+     through the wait instead of jumping to it. */
+  --animate-drift: drift var(--drift-dur, 6s) ease-in-out var(--drift-delay, 0s)
+    infinite alternate both;
 }
 
 /* ---------------------------------------------------------------------------
@@ -161,6 +213,46 @@
   --dur-menu-out: 120ms;
   --dur-deck: 340ms;
   --dur-land: 420ms;
+
+  /* The entrance on the signed-out page — the heading, the tagline, the
+     buttons, and all twenty-six stickers behind them.
+
+     It was 700ms, on the theory that a page with nothing to do on it can
+     afford to take its time. The theory was half right: the page can afford
+     it, but the *buttons* can't. Combined with their delay, 700ms meant the
+     thing you came here to press wasn't fully on screen until a second in, and
+     the login page is not seen once — it's seen again on every sign-out, every
+     bookmark, and every OAuth round trip that comes back unhappy. A flourish
+     you sit through twice is a flourish that's too long.
+
+     420ms is comfortably slower than anything else in this file (a dropdown is
+     180ms), and that is the point: this is the one place where the arrival is
+     the content rather than an explanation of a change, so the words are
+     allowed to take their time coming up. It went 300ms -> 420ms because at
+     300ms the rise read as a page snapping into place next to stickers that
+     fall for 620ms; the two now belong to the same piece of motion.
+
+     It is still bounded by the same rule as everything else here: the visitor
+     should never be waiting on it. That used to be underwritten by the stagger
+     between the three elements — each one arrived early even if the last
+     finished late — and now that they rise together this token is the only
+     thing standing between the visitor and the buttons. Much past 500ms it
+     starts to feel like something you are waiting for. */
+  --dur-hero: 420ms;
+
+  /* The stickers dropping onto the signed-out page — see `--animate-fall`.
+
+     Longer than `--dur-hero`, and it has to be: this one is not a fade with a
+     nudge, it is a fall, an overshoot and two rebounds, and each of those needs
+     enough time to be seen as a separate event. Under 500ms the settle stops
+     reading as a settle and starts reading as a wobble.
+
+     The cost is paid entirely by decoration. The buttons start moving at 150ms
+     and the sticker layer is `pointer-events-none` from the first frame, so
+     nothing here is ever between the visitor and the thing they came to press.
+     The last sticker lands at the final `ENTER` delay + 620ms, on purpose —
+     see `ENTER` in `FloatingStickers.tsx` for the arithmetic. */
+  --dur-fall: 620ms;
 
   --bg: #f7f4ed;
   --surface: #fdfcf8;
@@ -320,6 +412,89 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
+  --primary: #221f1a;
+  --primary-foreground: #faf8f2;
+  --secondary: #ece7dc;
+  --secondary-foreground: var(--ink);
+  --muted: #ece7dc;
+  --muted-foreground: var(--ink-muted);
+  --accent: #ece7dc;
+  --accent-foreground: var(--ink);
+  --destructive: var(--area-spirituality);
+  --border: var(--hairline);
+  --input: var(--hairline);
+  --ring: #b8ac97;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark — warm charcoal, not blue-black. Area hues lift ~12% so they hold
+   their contrast against a dark ground.
+--------------------------------------------------------------------------- */
+.dark {
+  color-scheme: dark;
+
+  --bg: #1a1815;
+  --surface: #221f1b;
+  --surface-sunken: #141310;
+  --ink: #f0ebe0;
+  --ink-muted: #918a7c;
+  /* "Darker" inverts here, as the pastels did: more presence against a dark
+     ground means lighter, not darker. Same step away from --ink-muted, toward
+     --ink rather than away from it. */
+  --ink-label: #bcb4a4;
+  --hairline: #33302a;
+
+  /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
+     and the mood aliases follow automatically. */
+  --ramp-red: #d75f52;
+  --ramp-blue: #4a93ce;
+  --ramp-orange: #e88c42;
+  --ramp-yellow: #e8c755;
+  --ramp-green: #63a55f;
+  --ramp-purple: #a971d2;
+
+  /* "Pastel" inverts in the dark theme: a tint toward the surface is a *darker*
+     muted hue, not a lighter one. Same mix, opposite direction, so --ink still
+     reads on top.
+
+     42%, not the 48% the light theme uses, and the gap is the one place these
+     two ramps can't move together. Mixing further from the surface means
+     *toward the full hue*, which is brighter here and darker there — so the
+     same step that adds contrast under --ink in the light theme takes it away
+     in this one. --ramp-yellow is the binding constraint: at 48% the mark on a
+     Creativity & Play sticker falls to 4.03:1, under the 4.5 it has always
+     held. 42% is the furthest this side can travel and still clear it. */
+  --ramp-red-soft: #6f3a33;
+  --ramp-blue-soft: #32516a;
+  --ramp-orange-soft: #784e2d;
+  --ramp-yellow-soft: #786a35;
+  --ramp-green-soft: #3d5939;
+  --ramp-purple-soft: #5b416b;
+
+  /* The six fills follow from the mix in :root — only the percentage is
+     restated here, and it has to be, for the same reason the soft rung is 42%
+     on this side and 48% on the other.
+
+     Mixing further from the surface means *toward the full hue*, which is
+     brighter in the light theme and darker in this one. So the step that adds
+     contrast under --ink there takes it away here, and the two sides stopped
+     being able to share a number the moment this rung went from 20% (faint,
+     miles of headroom either way) to 45% (carrying the hue on its own).
+
+     --ramp-yellow is the binding constraint again: at 45% a mark on a
+     Creativity & Play sticker falls to 4.29:1 on the card, under the 4.5 this
+     app has always held. 40% puts it at 4.83 and costs the other five nothing
+     — the floor across the six is that same yellow, and red, the darkest, sits
+     at 7.60. The 5-point gap is invisible side by side; the failure it avoids
+     is not. */
+  --sticker-fill: 40%;
+
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
   --primary: #f0ebe0;
   --primary-foreground: #1a1815;
   --secondary: #2c2924;
@@ -386,6 +561,102 @@
   to {
     opacity: 1;
     scale: 1;
+  }
+}
+
+/* The signed-out page arriving, one element at a time.
+
+   Up rather than down, and only 14px of it. A thing that rises into place
+   reads as settling; the same distance downward reads as dropping, which
+   wants a bounce to finish it and this doesn't have one. The translate is
+   small because the fade is doing most of the work — far enough to give the
+   opacity somewhere to happen, not so far that the text is legibly in the
+   wrong place first. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* A sticker dropping onto the signed-out page and settling like something
+   landing on water: it falls, plunges past where it belongs, and rocks back
+   twice before it stops. The heading and the paragraph still `rise` — the
+   content asserts itself upward, the decoration drops in around it.
+
+   The distance is `--fall-drop` rather than a literal, the same way
+   `deck-slide` reads `--deck-offset`, so the big stickers can fall further than
+   the small ones without four near-identical keyframe blocks drifting apart.
+   Every other stop is a fraction of it, so re-tuning the drop re-tunes the
+   whole bounce in proportion.
+
+   The per-keyframe `animation-timing-function` is the load-bearing part, and it
+   is worth knowing that a keyframe's timing function governs the segment that
+   *starts* at it, not the one that ends there. The first segment is the fall
+   and accelerates — ease-in-quad is the displacement curve of a falling body,
+   and it is the one place in this app where an ease-in is correct rather than a
+   mistake. Do not "fix" it to an ease-out. The three after it are half-swings
+   of an oscillation, so they take a symmetric sine-like curve instead, and they
+   get equal slices of time because a damped oscillator has a constant period.
+
+   Reduced motion needs no rule of its own: the blanket block at the bottom of
+   this file flattens the duration to 1ms, and `both` holds the final keyframe,
+   which is the resting position. */
+@keyframes fall {
+  0% {
+    translate: 0 calc(var(--fall-drop, 28px) * -1);
+    animation-timing-function: cubic-bezier(0.11, 0, 0.5, 0);
+  }
+  35% {
+    translate: 0 calc(var(--fall-drop, 28px) * 0.21);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  }
+  58% {
+    translate: 0 calc(var(--fall-drop, 28px) * -0.11);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  }
+  78% {
+    translate: 0 calc(var(--fall-drop, 28px) * 0.045);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+/* The sticker becoming visible, on its own clock so it can finish long before
+   the fall does. Separate from `fall` rather than an extra pair of stops inside
+   it, because an opacity keyframe in the middle of the descent would split the
+   gravity curve into two shallower ones. */
+@keyframes sticker-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The decorative stickers, breathing. `alternate` rather than a loop back to
+   the start, so there is no seam — the animation reverses instead of jumping
+   home. Small numbers on purpose: this runs forever behind a page someone is
+   trying to read a sentence on, and anything you can *watch* is too much.
+
+   Reduced motion needs no rule of its own: the blanket block at the bottom of
+   this file flattens the duration and caps the iteration count at one, which
+   leaves the stickers still. */
+@keyframes drift {
+  from {
+    translate: 0 -11px;
+    rotate: -5deg;
+  }
+  to {
+    translate: 0 11px;
+    rotate: 5deg;
   }
 }
 
@@ -598,6 +869,8 @@
     --dur-menu-out: 1ms;
     --dur-deck: 1ms;
     --dur-land: 1ms;
+    --dur-hero: 1ms;
+    --dur-fall: 1ms;
   }
 
   *,

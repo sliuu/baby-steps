@@ -4,6 +4,7 @@ import type { DayString } from "@/lib/dates";
 import { isMood } from "@/lib/moods";
 import type { DayStickers, StickersByDay } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
+import { whileTokenSettles } from "./settling";
 
 // The shapes this returns live in `lib/stickers.ts`, not here. This module
 // reaches `next/headers` through the Supabase server client, so anything
@@ -36,25 +37,33 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
   // Both requests leave together. Awaiting them one after the other would make
   // the page wait for the sum rather than the slower of the two.
   const [placed, moods] = await Promise.all([
-    supabase
-      .from("day_activities")
-      .select("id, day, activities(id, name, mark, life_areas(color_key))")
-      // `position` first, `created_at` as the tiebreak. Two orderings rather
-      // than one because `position` carries no unique constraint — see the
-      // migration for why a swap can't have one — so equal values are possible
-      // and the sort has to stay total. Without a second key Postgres is free
-      // to return ties in any order it likes, and a day would quietly reshuffle
-      // itself between page loads.
-      .order("position")
-      .order("created_at"),
-    supabase.from("day_moods").select("id, day, mood"),
+    whileTokenSettles(() =>
+      supabase
+        .from("day_activities")
+        .select("id, day, activities(id, name, mark, life_areas(color_key))")
+        // `position` first, `created_at` as the tiebreak. Two orderings rather
+        // than one because `position` carries no unique constraint — see the
+        // migration for why a swap can't have one — so equal values are
+        // possible and the sort has to stay total. Without a second key
+        // Postgres is free to return ties in any order it likes, and a day
+        // would quietly reshuffle itself between page loads.
+        .order("position")
+        .order("created_at"),
+    ),
+    whileTokenSettles(() =>
+      supabase.from("day_moods").select("id, day, mood"),
+    ),
   ]);
 
-  if (placed.error) {
-    throw new Error(`Could not load placed stickers: ${placed.error.message}`);
+  if (placed.error || !placed.data) {
+    throw new Error(
+      `Could not load placed stickers: ${placed.error?.message ?? "no rows returned"}`,
+    );
   }
-  if (moods.error) {
-    throw new Error(`Could not load moods: ${moods.error.message}`);
+  if (moods.error || !moods.data) {
+    throw new Error(
+      `Could not load moods: ${moods.error?.message ?? "no rows returned"}`,
+    );
   }
 
   const byDay: StickersByDay = new Map();

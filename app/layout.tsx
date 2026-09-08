@@ -20,7 +20,11 @@ const ebGaramond = EB_Garamond({
 
 export const metadata: Metadata = {
   title: "Baby Steps",
-  description: "A quiet ledger of days.",
+  // The same sentence the signed-out page leads with. It's the link preview
+  // and the browser tab, so the two drifting apart would mean the app
+  // describes itself one way in a shared link and another way on arrival.
+  description:
+    "Build habits slowly over time, watch and track your progress, and keep life balanced through the things that matter.",
 };
 
 export default function RootLayout({

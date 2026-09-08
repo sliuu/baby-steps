@@ -11,6 +11,7 @@ import { RestoreStickerButton } from "@/components/tray/RestoreStickerButton";
 import { ArchivedRow, TrayGroup, TrayRow } from "@/components/tray/TrayGroup";
 import { sameSelection, type Selection } from "@/lib/highlight";
 import { TRAY_INSET } from "@/lib/layout";
+import { faceOf } from "@/lib/stickers";
 import { wash } from "@/lib/palette";
 import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
 
@@ -252,7 +253,7 @@ export function StickerTray(props: Props) {
                     payload={{
                       kind: "activity",
                       activityId: sticker.id,
-                      face: sticker,
+                      face: faceOf(sticker),
                     }}
                     visual={<StickerMark sticker={sticker} />}
                     name={sticker.name}

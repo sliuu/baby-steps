@@ -4,7 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { formatDayLong, type DayString } from "@/lib/dates";
-import type { ActivitySticker } from "@/lib/stickers";
+import { faceOf, type ActivitySticker } from "@/lib/stickers";
 
 type Props = {
   sticker: ActivitySticker;
@@ -55,7 +55,7 @@ export function DraggableMark(props: Props) {
     data: {
       kind: "activity",
       activityId: props.sticker.activityId,
-      face: props.sticker,
+      face: faceOf(props.sticker),
       from: props.day,
     },
   });

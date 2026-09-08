@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { applyChange } from "./changes.ts";
-import type { DayStickers, StickersByDay } from "./stickers.ts";
+import type { DayStickers, StickerFace, StickersByDay } from "./stickers.ts";
 
 const GYM = { name: "Gym", mark: "G", colorKey: "blue" };
 const READ = { name: "Reading", mark: "R", colorKey: "green" };
@@ -542,4 +542,43 @@ describe("applyChange · doesn't touch what it was given", () => {
     // Same object, not merely equal: 41 of the 42 cells should skip rendering.
     assert.equal(after.get(OTHER), untouched);
   });
+});
+
+// The regression that cost a day: an optimistic mark taking the same drag id as
+// the tray row it was dragged from. dnd-kit keys its draggable map by that id,
+// so when the server's real row id replaced the pending one, the mark's cleanup
+// deleted the entry the tray row still needed — and that sticker could never be
+// dragged again until a reload, while still looking perfectly draggable.
+//
+// `face` is deliberately built here the way the tray built it, as a whole
+// LibrarySticker rather than a bare StickerFace. That is what made this
+// invisible to TypeScript — `face` is typed `StickerFace`, which declares no
+// `id`, and a value assigned from a variable gets no excess-property check — so
+// a test using a clean three-field face would pass with the bug still in place.
+it("never gives an optimistic mark the activity's own id", () => {
+  const activityId = "activity-uuid";
+  const face = {
+    id: activityId,
+    archived: false,
+    name: "Gym",
+    mark: "G",
+    colorKey: "green",
+  };
+
+  const next = applyChange(new Map(), {
+    kind: "place",
+    day: "2026-09-05",
+    activityId,
+    face: face as StickerFace,
+    index: 0,
+  });
+
+  const [mark] = next.get("2026-09-05")!.activities;
+  assert.equal(mark.activityId, activityId);
+  assert.notEqual(mark.id, activityId);
+  assert.equal(mark.id, `pending:2026-09-05:${activityId}`);
+  // The face still has to survive the reorder, or the circle draws blank.
+  assert.equal(mark.name, "Gym");
+  assert.equal(mark.mark, "G");
+  assert.equal(mark.colorKey, "green");
 });

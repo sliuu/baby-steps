@@ -142,7 +142,21 @@ export function applyChange(
           // There is no day_activities row yet, so there is no real id to use.
           // This one only has to be unique among its siblings for React's key,
           // and only has to survive until the server's answer replaces the Map.
-          { id: `pending:${change.day}:${activityId}`, activityId, ...face },
+          //
+          // `...face` comes FIRST and that is the whole point. It used to come
+          // last, and because `face` arrives from the tray as a whole
+          // `LibrarySticker` it carries an `id` of its own — the *activity*
+          // uuid — which quietly overwrote the pending id below it. TypeScript
+          // can't see that: `face` is typed `StickerFace`, which declares no
+          // `id`, and a value assigned from a variable gets no excess-property
+          // check. So the optimistic mark took the same drag id as the tray row
+          // it came from, dnd-kit's draggable map is keyed by that id, and when
+          // the server's real row id replaced the pending one the mark's
+          // cleanup deleted the entry the tray row was still relying on. The
+          // row stayed on screen, still looked draggable, and never lifted
+          // again until a reload. `faceOf` at both payload sites now stops the
+          // extra id travelling at all; this order is the second lock.
+          { ...face, id: `pending:${change.day}:${activityId}`, activityId },
         ),
       });
       return next;
