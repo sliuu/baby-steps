@@ -158,15 +158,16 @@ export function DayCell(props: Props) {
           one shared "overlay" helper.
 
           A negative z-index paints after the cell's own background and before
-          its in-flow children, which is exactly what a wash should do: an
-          opaque `bg-ramp-red-soft` in front of the marks would hide the very
-          stickers it's pointing at, while the drop highlight is a 6% tint that
-          genuinely should read on top of them.
+          its in-flow children, which is exactly what a wash should do: laid in
+          front of the marks it would sit on top of the very stickers it is
+          pointing at, while the drop highlight is a 6% tint that genuinely
+          should read on top of them.
 
-          Keeping the base surface underneath is also what makes the ink wash
-          work at all. `bg-ink/10` is translucent, so it needs a real surface
-          beneath it — laid straight onto the cell it would show the grid's
-          hairline colour through the gaps. */}
+          Keeping the base surface underneath is also what makes the wash work
+          at all. Both of `wash()`'s answers are translucent now — the hue at
+          35% as well as `bg-ink/10` — so both need a real surface beneath
+          them; laid straight onto the cell they would show the grid's hairline
+          colour through the gaps. */}
       {lit && highlight && (
         <div
           aria-hidden="true"

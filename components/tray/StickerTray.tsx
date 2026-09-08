@@ -135,7 +135,7 @@ export function StickerTray(props: Props) {
           same padding in from the right edge. */}
       <header className={TRAY_INSET}>
         <div className="flex items-start justify-between gap-3">
-          <h2 className="font-heading text-2xl leading-none">Your stickers</h2>
+          <h2 className="font-heading text-panel-title leading-none">Your stickers</h2>
           {/* The `+` and everything behind it. The tray hands it the six areas
               it is already grouped by, rather than the form fetching them:
               they're the same six rows, and two queries for one list is how

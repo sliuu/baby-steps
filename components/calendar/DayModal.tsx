@@ -98,7 +98,7 @@ export function DayModal(props: Props) {
         {day && (
           <>
             <DialogHeader>
-              <DialogTitle className="text-xl">
+              <DialogTitle className="text-dialog-title">
                 {formatDayLong(day)}
               </DialogTitle>
               <DialogDescription>

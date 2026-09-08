@@ -21,7 +21,7 @@ export function TopNav(props: Props) {
   return (
     <header className="sticky top-0 z-20 border-b border-hairline bg-background/85 backdrop-blur-sm">
       <nav className={`${PAGE_WIDTH} flex h-16 items-center gap-6`}>
-        <span className="font-heading text-2xl font-semibold tracking-tight">
+        <span className="font-heading text-panel-title">
           Baby Steps
         </span>
 

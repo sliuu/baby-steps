@@ -100,7 +100,7 @@ export function NewStickerForm(props: Props) {
           before you can start. */}
       <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle className="text-xl">New sticker</DialogTitle>
+          <DialogTitle className="text-dialog-title">New sticker</DialogTitle>
         </DialogHeader>
 
         <StickerFields

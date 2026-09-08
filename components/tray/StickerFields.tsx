@@ -169,8 +169,8 @@ export function StickerFields(props: Props) {
   );
 
   const area = areas.find((candidate) => candidate.id === lifeAreaId);
-  /** The chosen area's colours, worn by the mark field. `ramp` has a fallback. */
-  const { tint, border } = ramp(area?.colorKey ?? "");
+  /** The chosen area's colour, worn by the mark field. `ramp` has a fallback. */
+  const { tint } = ramp(area?.colorKey ?? "");
 
   /**
    * Are we about to move an existing sticker's history to a different area?
@@ -201,7 +201,7 @@ export function StickerFields(props: Props) {
     <form action={submit} className="flex flex-col gap-4">
       {/* Life area first, and that ordering is what let the preview go. The
           area decides the colour, so once it's chosen the mark field below can
-          simply *be* the sticker — same tint, same ring, same glyph the tray
+          simply *be* the sticker — same fill, same glyph the tray
           will draw. A separate preview panel was showing you a copy of a thing
           the form can just show you directly. */}
       <div className="flex flex-col gap-1.5">
@@ -263,18 +263,23 @@ export function StickerFields(props: Props) {
       </div>
 
       <div className="flex items-end gap-3">
-        {/* The mark field *is* the preview: the same tint and ring
-            `StickerMark` draws in the tray, wrapped around the input you type
-            into. Before an area is chosen it wears `ramp()`'s fallback, which
-            is what the grid shows for an unrecognised colour too — one
-            fallback, one appearance.
+        {/* The mark field *is* the preview: the same fill `StickerMark` draws
+            in the tray, wrapped around the input you type into. Before an area
+            is chosen it wears `ramp()`'s fallback, which is what the grid shows
+            for an unrecognised colour too — one fallback, one appearance.
+
+            It lost its ring when the sticker did, and it has to stay in step or
+            the preview stops being one. The transparent 1px border is kept for
+            the same reason it is kept there: `size-11` is the border-box, and
+            dropping the border would draw this circle 2px smaller than the one
+            it is previewing.
 
             The colour lives on this wrapper rather than on the input because
             shadcn's input carries a `dark:` background of its own, and a
-            `dark:`-less tint would lose to it in dark mode. A ring and a fill
-            on the outside, a transparent field on the inside. */}
+            `dark:`-less fill would lose to it in dark mode. The fill on the
+            outside, a transparent field on the inside. */}
         <div
-          className={`relative size-11 shrink-0 rounded-full border ${tint} ${border}`}
+          className={`relative size-11 shrink-0 rounded-full border border-transparent ${tint}`}
         >
           {/* No maxLength, and that's the whole lesson of this field: the
               attribute counts UTF-16 code units, so maxLength={1} accepts "A"

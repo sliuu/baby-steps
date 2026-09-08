@@ -130,7 +130,7 @@ export function TrendsBoard(props: Props) {
     // it again would nest one max-width inside an identical one and pay the
     // horizontal padding twice — the page would look inset from itself.
     <div className="flex flex-col gap-5">
-      <h1 className="font-heading text-5xl font-medium tracking-tight">
+      <h1 className="font-heading text-page-title">
         Trends
       </h1>
 

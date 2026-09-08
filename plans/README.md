@@ -61,3 +61,7 @@ keyframes and the reduced-motion block.
   at `size-14` the tint dominates and the sticker reads as a pale blob rather
   than an outlined mark. This is likely part of "chunky" but it is a visual
   decision about a shared component, not a motion fix.
+
+  Settled since, outside this audit: the ring is gone and the fill came back at
+  45%, so the observation stands and the answer was the other one — drop the
+  outline rather than the fill. See `StickerMark` and `--sticker-fill`.

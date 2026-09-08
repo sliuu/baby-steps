@@ -11,45 +11,53 @@ type Props = {
    * instead of 26. `cn` merges rather than concatenates, so `size-14` here
    * replaces the `size-[26px]` below instead of racing it in the stylesheet.
    *
-   * The point of the prop is that the *appearance* stays in one file. The tint,
-   * the ring, the fallback colour, the emoji-font correction — a change to any
-   * of those lands on the calendar, the tray, the day modal and the login page
-   * at once, because all four render this component rather than its recipe.
+   * The point of the prop is that the *appearance* stays in one file. The fill,
+   * the fallback colour, the emoji-font correction — a change to any of those
+   * lands on the calendar, the tray, the day modal and the login page at once,
+   * because all four render this component rather than its recipe.
    */
   className?: string;
 };
 
 /**
- * A pale circle outlined in its life area's colour, with the mark inside. The
- * same component renders on a day and in the tray — that's why it takes a
+ * A circle filled with its life area's colour, with the mark inside. The same
+ * component renders on a day and in the tray — that's why it takes a
  * StickerFace, the three fields it actually draws, rather than a row from
  * either table. Nothing here knows where it sits, so there is no variant prop
  * and no second component to keep in step.
  *
- * It used to be a filled circle at the ramp's soft end, and the outline is what
- * let the fill get out of the way. A mark drawn in --ink was always legible on
- * that fill, and the ones that weren't are the ones this app can't recolour: an
- * emoji arrives with its own palette, and a mid-tone circle behind it competes
- * with every one of them. Moving the hue to a 1px ring keeps the area
- * identifiable — arguably more so, since a ring is the full colour rather than
- * a tint of it — and hands the middle of the circle back to whatever is drawn
- * there.
+ * **The ring is gone, and this is the trade it makes.** For two steps this was
+ * a near-white circle with a 1px outline in the full hue, on the argument that
+ * an emoji arrives with its own palette and a mid-tone circle behind it
+ * competes with every one of them — so the hue moved to the thinnest shape
+ * that could carry it and handed the middle of the circle back.
  *
- * Five saturated circles on one day would still shout over the date they're
- * annotating, which is the constraint that produced the soft rung in the first
- * place. A ring is a thin enough shape to wear the full hue without doing that.
+ * That argument was right about the emoji and wrong about the calendar. A ring
+ * is only legible one sticker at a time; a month of them reads as a field of
+ * identical pale discs with something coloured around the edge, and the whole
+ * point of the six hues is that you can see the shape of a month without
+ * reading it. A fill is a much larger target for the same information.
+ *
+ * So the fill came back at 45% — see `--sticker-fill` in globals.css — which
+ * is deliberately short of the 48% soft rung that made the emoji fight its
+ * background the first time. The ink mark clears 8.9:1 on every hue in light
+ * and 4.8:1 in dark, and an emoji, which can't be recoloured, now sits on
+ * something closer to paper than to the hue.
+ *
+ * The border stays in the class list at 1px and transparent, not removed. It
+ * is holding the 26px box: `size-[26px]` is the border-box, so dropping the
+ * border would shrink the drawn circle by 2px and reflow every row of marks.
  */
 export function StickerMark(props: Props) {
   const { sticker } = props;
-  const { tint, border } = ramp(sticker.colorKey);
+  const { tint } = ramp(sticker.colorKey);
 
   return (
     <span
       title={sticker.name}
       className={cn(
-        "grid size-[26px] shrink-0 place-items-center rounded-full border text-[0.8rem] leading-none text-ink",
+        "grid size-[26px] shrink-0 place-items-center rounded-full border border-transparent text-[0.8rem] leading-none text-ink",
         tint,
-        border,
         props.className,
       )}
     >

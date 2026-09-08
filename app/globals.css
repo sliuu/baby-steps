@@ -13,17 +13,57 @@
    single class name changing.
 --------------------------------------------------------------------------- */
 @theme inline {
-  --font-sans: var(--font-eb-garamond), Georgia, "Times New Roman", serif;
-  --font-heading: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* The heading sizes, named by role rather than by rung.
+
+     The values below are Tailwind's own — text-6xl, text-7xl, text-5xl,
+     text-4xl, text-2xl, text-xl — so this scale currently changes nothing. It
+     exists anyway, because the *right* size for a title is a property of the
+     typeface and this app has now worn three of them.
+
+     The arithmetic, for whoever swaps the fourth. Set side by side at one
+     nominal size, the faces this app has tried need these corrections to look
+     the same size: Cormorant 1.06 (it runs small — thin strokes, low
+     x-height), Merriweather 0.90 (drawn for screens, carries most of its em),
+     Instrument Serif 1.04 (a display face, back near Cormorant). Those are
+     absolute, against each other — *not* against whatever is here now. The
+     rungs below were tuned by eye while the headings were Cormorant, so the
+     factor to apply is the new face's number over 1.06, not the new face's
+     number.
+
+     Getting that wrong is what made the Merriweather pass feel oversized: it
+     went in at 0.90 when the correction against Cormorant was 0.90/1.06, about
+     0.85, so every title was still six per cent too big. Instrument Serif is
+     1.04/1.06 — within two per cent — which is why these are the original
+     numbers again.
+
+     Line heights are restated on every rung: a `--text-*` token with no
+     companion leaves the utility setting font-size alone, and the heading
+     would inherit body leading. */
+  --text-display: 3.75rem;
+  --text-display--line-height: 1;
+  --text-display-lg: 4.5rem;
+  --text-display-lg--line-height: 1;
+  --text-page-title: 3rem;
+  --text-page-title--line-height: 1;
+  --text-section-title: 2.25rem;
+  --text-section-title--line-height: 1.111;
+  --text-panel-title: 1.5rem;
+  --text-panel-title--line-height: 1.333;
+  --text-dialog-title: 1.25rem;
+  --text-dialog-title--line-height: 1.4;
   /* Emoji first, and that ordering is the whole point — see `StickerMark`. A
      line box is sized by the *first available* font, not by the font that ends
      up drawing the character, so a sticker mark set in the body serif gets a
      serif's baseline with an emoji's ink hanging off it. Naming the emoji font
      first makes the two agree. The serif stays on the end for marks that are
      letters. */
-  --font-emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
-    var(--font-eb-garamond), Georgia, serif;
+  --font-emoji:
+    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+    var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 
   /* shadcn's contract — its components read only these names. */
   --color-background: var(--background);
@@ -196,7 +236,11 @@
      page still gets a light scrollbar, because the browser has no way to know. */
   color-scheme: light;
 
-  --radius: 0.625rem;
+  /* 8px. Was 0.625rem — 10px — and the whole radius family is derived from
+     this one number, so the corners on a card, a dialog and a button all
+     tightened by the same fifth. Softer than a square corner, far enough from
+     a pill that nothing reads as a badge. */
+  --radius: 0.5rem;
 
   /* Durations, in pairs: in, then out.
 
@@ -263,9 +307,16 @@
      see `ENTER` in `FloatingStickers.tsx` for the arithmetic. */
   --dur-fall: 620ms;
 
+  /* The page stays cream; the things *on* it went white.
+
+     The old surface was cream-on-cream — #fdfcf8 over #f7f4ed is a four-point
+     difference, which is a card you have to look for. White is the paper and
+     the cream around it is the desk, and the two now separate on their own
+     without a heavier border doing the work. The sunken rung follows: it is
+     the shadow side of white rather than a deeper cream. */
   --bg: #f7f4ed;
-  --surface: #fdfcf8;
-  --surface-sunken: #f1eee6;
+  --surface: #ffffff;
+  --surface-sunken: #f2f0ec;
   --ink: #1c1a17;
   --ink-muted: #8a8378;
   /* Between the two. Letterspaced caps are set small and spaced apart, which
@@ -273,7 +324,7 @@
      faint in a label. This is the weight a label needs to hold its own without
      competing with the thing it's naming. */
   --ink-label: #5b5449;
-  --hairline: #e3ded2;
+  --hairline: #e7e3da;
 
   /* Ramps are named by hue, because `life_areas.color_key` stores a hue. An
      area is a database row that points at one of these; it is not itself a
@@ -303,23 +354,34 @@
   --ramp-green-soft: #a8c6a4;
   --ramp-purple-soft: #cbaddd;
 
-  /* Each hue at 20% over the surface cream — the fill a sticker wears now that
-     it also wears an outline.
+  /* The fill a sticker wears, and the only rung that is written as live
+     arithmetic rather than as six hex values.
 
-     The outline is what carries the hue, so the fill stopped having to. At 48%
-     a mark drawn in dark ink had to compete with a mid-tone circle behind it,
-     and an emoji — which brings its own colours and can't be recoloured —
-     competed worst. At 20% every hue clears 12.8:1 under --ink, and the ring
-     around it names the area more clearly than the old fill did.
+     It was 20% over the surface, because the sticker also wore a 1px ring in
+     the full hue and the ring was what named the area — a fill that faint is
+     there to stay out of the way. The ring is gone now and the fill has to
+     carry the hue on its own, so it moved up to 45%: enough colour that six
+     circles on a Tuesday read as six areas at a glance, short of the mid-tone
+     that made an emoji fight its own background at the old 48% soft rung.
 
-     Same mix as the soft rung, one step less of it, for the same reason: seven
-     hues later this is arithmetic rather than six more guesses. */
-  --ramp-red-tint: #f2d8d2;
-  --ramp-blue-tint: #d4e2eb;
-  --ramp-orange-tint: #f6e1cf;
-  --ramp-yellow-tint: #f7eed2;
-  --ramp-green-tint: #dae5d5;
-  --ramp-purple-tint: #e8dbed;
+     Written as a `color-mix` because 45% is a design decision someone will
+     want to turn, and a percentage you can edit in one place is a knob where
+     twelve hand-picked hex values are a chore. It also means the dark theme
+     needs no copy of this block at all: `--ramp-*` and `--surface` are both
+     redefined on `.dark`, which is the same element this is declared on, so
+     each mix re-resolves against the dark hue over the dark card.
+
+     The second argument is `--surface` and not `--surface-sunken`, and that is
+     an approximation on purpose. A mark sits on the card in the tray and on a
+     sunken cell in the grid; picking one keeps this six values instead of
+     twelve, and the two grounds are four points apart. */
+  --sticker-fill: 45%;
+  --ramp-red-tint: color-mix(in srgb, var(--ramp-red) var(--sticker-fill), var(--surface));
+  --ramp-blue-tint: color-mix(in srgb, var(--ramp-blue) var(--sticker-fill), var(--surface));
+  --ramp-orange-tint: color-mix(in srgb, var(--ramp-orange) var(--sticker-fill), var(--surface));
+  --ramp-yellow-tint: color-mix(in srgb, var(--ramp-yellow) var(--sticker-fill), var(--surface));
+  --ramp-green-tint: color-mix(in srgb, var(--ramp-green) var(--sticker-fill), var(--surface));
+  --ramp-purple-tint: color-mix(in srgb, var(--ramp-purple) var(--sticker-fill), var(--surface));
 
   /* The default six, by name. Aliases — the ramp above is the real value. */
   --area-spirituality: var(--ramp-red);
@@ -364,94 +426,20 @@
 .dark {
   color-scheme: dark;
 
+  /* Same move as the light theme, upside down: the card lifts off the ground
+     instead of sinking toward it. #26231f over #1a1815 is the dark equivalent
+     of white over cream — a surface you can see the edge of without a border
+     announcing it. */
   --bg: #1a1815;
-  --surface: #221f1b;
-  --surface-sunken: #141310;
+  --surface: #26231f;
+  --surface-sunken: #161512;
   --ink: #f0ebe0;
   --ink-muted: #918a7c;
   /* "Darker" inverts here, as the pastels did: more presence against a dark
      ground means lighter, not darker. Same step away from --ink-muted, toward
      --ink rather than away from it. */
   --ink-label: #bcb4a4;
-  --hairline: #33302a;
-
-  /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
-     and the mood aliases follow automatically. */
-  --ramp-red: #d75f52;
-  --ramp-blue: #4a93ce;
-  --ramp-orange: #e88c42;
-  --ramp-yellow: #e8c755;
-  --ramp-green: #63a55f;
-  --ramp-purple: #a971d2;
-
-  /* "Pastel" inverts in the dark theme: a tint toward the surface is a *darker*
-     muted hue, not a lighter one. Same mix, opposite direction, so --ink still
-     reads on top.
-
-     42%, not the 48% the light theme uses, and the gap is the one place these
-     two ramps can't move together. Mixing further from the surface means
-     *toward the full hue*, which is brighter here and darker there — so the
-     same step that adds contrast under --ink in the light theme takes it away
-     in this one. --ramp-yellow is the binding constraint: at 48% the mark on a
-     Creativity & Play sticker falls to 4.03:1, under the 4.5 it has always
-     held. 42% is the furthest this side can travel and still clear it. */
-  --ramp-red-soft: #6f3a33;
-  --ramp-blue-soft: #32516a;
-  --ramp-orange-soft: #784e2d;
-  --ramp-yellow-soft: #786a35;
-  --ramp-green-soft: #3d5939;
-  --ramp-purple-soft: #5b416b;
-
-  /* 20% here too, and this is the rung where the two themes *can* move
-     together. The soft pair couldn't: mixing further from the surface means
-     brighter in the light theme and darker in this one, so the step that helped
-     --ink there hurt it here, and yellow pinned this side at 42%. Mixing *less*
-     moves both toward their own surface, which adds contrast under the mark in
-     both directions at once. The floor is 8.5:1, on dark yellow. */
-  --ramp-red-tint: #462c26;
-  --ramp-blue-tint: #2a363f;
-  --ramp-orange-tint: #4a3523;
-  --ramp-yellow-tint: #4a4127;
-  --ramp-green-tint: #2f3a29;
-  --ramp-purple-tint: #3d2f40;
-
-  --background: var(--bg);
-  --foreground: var(--ink);
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-  --primary: #221f1a;
-  --primary-foreground: #faf8f2;
-  --secondary: #ece7dc;
-  --secondary-foreground: var(--ink);
-  --muted: #ece7dc;
-  --muted-foreground: var(--ink-muted);
-  --accent: #ece7dc;
-  --accent-foreground: var(--ink);
-  --destructive: var(--area-spirituality);
-  --border: var(--hairline);
-  --input: var(--hairline);
-  --ring: #b8ac97;
-}
-
-/* ---------------------------------------------------------------------------
-   Dark — warm charcoal, not blue-black. Area hues lift ~12% so they hold
-   their contrast against a dark ground.
---------------------------------------------------------------------------- */
-.dark {
-  color-scheme: dark;
-
-  --bg: #1a1815;
-  --surface: #221f1b;
-  --surface-sunken: #141310;
-  --ink: #f0ebe0;
-  --ink-muted: #918a7c;
-  /* "Darker" inverts here, as the pastels did: more presence against a dark
-     ground means lighter, not darker. Same step away from --ink-muted, toward
-     --ink rather than away from it. */
-  --ink-label: #bcb4a4;
-  --hairline: #33302a;
+  --hairline: #37342d;
 
   /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
      and the mood aliases follow automatically. */
@@ -545,6 +533,28 @@
   font-size: 0.7rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  color: var(--ink-label);
+}
+
+/* ---------------------------------------------------------------------------
+   SUN–SAT over the calendar, and the one place that family is deliberately
+   broken.
+
+   Those seven cells wore `eyebrow` until the type changed, and letterspaced
+   caps are the wrong shape for them. An eyebrow *names a section you are about
+   to read* — "Mood", "Work & Study" — and spacing it out is what stops a
+   three-letter label reading as an abbreviation of something. The weekday
+   header names seven columns you are about to scan, and `format(…, "EEE")`
+   already hands over "Sun", which is a word. Uppercasing it into S U N turns a
+   word back into three letters and costs a beat per column, seven times, on
+   the densest screen in the app.
+
+   So: same size and same colour — this is still a label, not content — and
+   just enough tracking that the words don't crowd inside a 1px-gapped cell.
+--------------------------------------------------------------------------- */
+@utility daylabel {
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
   color: var(--ink-label);
 }
 

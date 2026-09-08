@@ -25,18 +25,26 @@
  * big enough to notice in review.
  */
 /*
- * `tint` is the third rung, added when the sticker grew an outline. It is the
- * palest of the three and it only ever appears *under* `border`, which is why
- * they were added as a pair rather than as one more colour to pick from: the
- * fill on its own no longer says which area a sticker belongs to.
+ * `tint` is the third rung, and it is the sticker's fill and nothing else —
+ * `StickerMark` and the mark field that previews it are its only two callers.
+ * It arrived as the pale half of a fill-plus-ring pair; the ring is gone and
+ * the rung moved up to 45% to carry the hue on its own, which is why it is
+ * written as a `color-mix` on a single `--sticker-fill` percentage rather than
+ * as twelve hex values. Turn that one number and both themes follow.
+ *
+ * There is deliberately no `border` beside it any more. A saturated 1px ring is
+ * exactly what this step removed, and leaving `border-ramp-*` in this map is an
+ * invitation to put it back one component at a time. Same argument as the
+ * missing saturated `fill`/`stroke` above: the rule holds because the class
+ * does not exist, not because someone remembers it.
  */
 export const RAMP = {
-  red: { bg: "bg-ramp-red", soft: "bg-ramp-red-soft", tint: "bg-ramp-red-tint", text: "text-ramp-red", border: "border-ramp-red", softFill: "fill-ramp-red-soft", softStroke: "stroke-ramp-red-soft" },
-  blue: { bg: "bg-ramp-blue", soft: "bg-ramp-blue-soft", tint: "bg-ramp-blue-tint", text: "text-ramp-blue", border: "border-ramp-blue", softFill: "fill-ramp-blue-soft", softStroke: "stroke-ramp-blue-soft" },
-  orange: { bg: "bg-ramp-orange", soft: "bg-ramp-orange-soft", tint: "bg-ramp-orange-tint", text: "text-ramp-orange", border: "border-ramp-orange", softFill: "fill-ramp-orange-soft", softStroke: "stroke-ramp-orange-soft" },
-  yellow: { bg: "bg-ramp-yellow", soft: "bg-ramp-yellow-soft", tint: "bg-ramp-yellow-tint", text: "text-ramp-yellow", border: "border-ramp-yellow", softFill: "fill-ramp-yellow-soft", softStroke: "stroke-ramp-yellow-soft" },
-  green: { bg: "bg-ramp-green", soft: "bg-ramp-green-soft", tint: "bg-ramp-green-tint", text: "text-ramp-green", border: "border-ramp-green", softFill: "fill-ramp-green-soft", softStroke: "stroke-ramp-green-soft" },
-  purple: { bg: "bg-ramp-purple", soft: "bg-ramp-purple-soft", tint: "bg-ramp-purple-tint", text: "text-ramp-purple", border: "border-ramp-purple", softFill: "fill-ramp-purple-soft", softStroke: "stroke-ramp-purple-soft" },
+  red: { bg: "bg-ramp-red", soft: "bg-ramp-red-soft", lit: "bg-ramp-red-soft/35", tint: "bg-ramp-red-tint", text: "text-ramp-red", softFill: "fill-ramp-red-soft", softStroke: "stroke-ramp-red-soft" },
+  blue: { bg: "bg-ramp-blue", soft: "bg-ramp-blue-soft", lit: "bg-ramp-blue-soft/35", tint: "bg-ramp-blue-tint", text: "text-ramp-blue", softFill: "fill-ramp-blue-soft", softStroke: "stroke-ramp-blue-soft" },
+  orange: { bg: "bg-ramp-orange", soft: "bg-ramp-orange-soft", lit: "bg-ramp-orange-soft/35", tint: "bg-ramp-orange-tint", text: "text-ramp-orange", softFill: "fill-ramp-orange-soft", softStroke: "stroke-ramp-orange-soft" },
+  yellow: { bg: "bg-ramp-yellow", soft: "bg-ramp-yellow-soft", lit: "bg-ramp-yellow-soft/35", tint: "bg-ramp-yellow-tint", text: "text-ramp-yellow", softFill: "fill-ramp-yellow-soft", softStroke: "stroke-ramp-yellow-soft" },
+  green: { bg: "bg-ramp-green", soft: "bg-ramp-green-soft", lit: "bg-ramp-green-soft/35", tint: "bg-ramp-green-tint", text: "text-ramp-green", softFill: "fill-ramp-green-soft", softStroke: "stroke-ramp-green-soft" },
+  purple: { bg: "bg-ramp-purple", soft: "bg-ramp-purple-soft", lit: "bg-ramp-purple-soft/35", tint: "bg-ramp-purple-tint", text: "text-ramp-purple", softFill: "fill-ramp-purple-soft", softStroke: "stroke-ramp-purple-soft" },
 } as const;
 
 export type RampKey = keyof typeof RAMP;
@@ -56,11 +64,22 @@ export function ramp(colorKey: string) {
  * in Step 10, and it's why the tray row you clicked is visibly the same colour
  * as the days that just lit up rather than approximately it.
  *
+ * **It is `soft` at 35%, not `soft`, and the alpha is doing real work.** A
+ * highlight always has the marks it is pointing at sitting on top of it, and
+ * those marks are now filled in the same hue at 45%. Opaque `soft` is 48% of
+ * that same hue, so a lit Tuesday and the sticker that lit it landed within
+ * 1.06:1 of each other — the sticker disappeared into the evidence for itself.
+ *
+ * 35% is not a taste call, it is the number that puts the separation back where
+ * it was when the fill was 20% and this was opaque: 1.19–1.53 across the six in
+ * light, 1.46–1.90 in dark, against 1.19–1.52 and 1.41–1.90 before. Yellow is
+ * the floor in both eras, which is what you would expect from the palest hue.
+ *
  * `null` means ink, which is what a mood gets. Moods are drawn as plain
  * outlines everywhere in this app precisely so they never compete with the six
  * area hues, and giving them one here would undo that. Ink at low opacity is
  * one declaration that lands correctly in both themes.
  */
 export function wash(colorKey: string | null): string {
-  return colorKey ? ramp(colorKey).soft : "bg-ink/10";
+  return colorKey ? ramp(colorKey).lit : "bg-ink/10";
 }

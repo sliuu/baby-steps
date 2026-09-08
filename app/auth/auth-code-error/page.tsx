@@ -15,7 +15,7 @@ export default async function AuthCodeError({
       <p className="eyebrow mb-3">
         Something went sideways
       </p>
-      <h1 className="mb-4 font-heading text-4xl font-semibold tracking-tight">
+      <h1 className="mb-4 font-heading text-section-title">
         We couldn&rsquo;t sign you in
       </h1>
       <p className="mb-8 text-ink-muted">

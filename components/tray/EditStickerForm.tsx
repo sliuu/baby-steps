@@ -87,7 +87,7 @@ export function EditStickerForm(props: Props) {
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">Edit sticker</DialogTitle>
+          <DialogTitle className="text-dialog-title">Edit sticker</DialogTitle>
           <DialogDescription>
             Change its mark, its name, or where it belongs.
           </DialogDescription>

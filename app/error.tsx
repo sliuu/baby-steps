@@ -41,7 +41,7 @@ export default function ErrorBoundary({
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-8 py-24 text-center">
       <p className="eyebrow mb-3">Something went sideways</p>
-      <h1 className="mb-4 font-heading text-4xl font-semibold tracking-tight">
+      <h1 className="mb-4 font-heading text-section-title">
         That didn&rsquo;t load
       </h1>
       <p className="mb-8 text-ink-muted">

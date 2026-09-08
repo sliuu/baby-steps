@@ -165,7 +165,7 @@ export function MonthGrid(props: Props) {
         <div className="overflow-hidden rounded-md border border-hairline bg-hairline">
           <div className="grid grid-cols-7 gap-px">
             {labels.map((label) => (
-              <div key={label} className="eyebrow bg-surface py-3 text-center">
+              <div key={label} className="daylabel bg-surface py-3 text-center">
                 {label}
               </div>
             ))}

@@ -73,7 +73,7 @@ export default function LoginPage() {
       {/* `text-balance` matters more at this size than it did at the old one:
             "Baby Steps" fits one line on a phone, and the paragraph under it
             is the thing that would otherwise break into a two-word orphan. */}
-      <h1 className="animate-rise mb-5 font-heading text-6xl font-semibold tracking-tight text-balance sm:text-7xl">
+      <h1 className="animate-rise mb-5 font-heading text-display text-balance sm:text-display-lg">
         Baby Steps
       </h1>
 

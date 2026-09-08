@@ -1,20 +1,45 @@
 import type { Metadata } from "next";
-import { Cormorant, EB_Garamond } from "next/font/google";
+import { DM_Sans, Instrument_Serif } from "next/font/google";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
-const cormorant = Cormorant({
-  variable: "--font-cormorant",
+/**
+ * The two faces, and why these two.
+ *
+ * This started as Cormorant over EB Garamond — a hairline display serif over a
+ * book serif — then tried Merriweather over Karla, which fixed the fragility at
+ * small sizes by making everything heavier and squarer than the app wanted.
+ *
+ * Instrument Serif is the third answer and a different kind of face: a
+ * masthead, not a paragraph. High contrast, one weight, drawn to be set large,
+ * with enough confidence in a title that it doesn't need bold to carry. DM Sans
+ * underneath is deliberately plain — a geometric grotesque with no opinions, so
+ * the serif is the only thing in the app doing any talking.
+ *
+ * **Instrument Serif ships one weight, 400, and nothing here may ask for
+ * another.** There is no 500 and no 600, so a `font-medium` or `font-semibold`
+ * on a heading would get a synthetic bold: the browser smearing the outline
+ * sideways, which on a high-contrast serif looks like a printing fault. Every
+ * heading call site had its weight utility removed when this landed, and the
+ * dialog title in `components/ui/dialog.tsx` went from `font-medium` to
+ * `font-normal` for the same reason. If a face with real weights comes back,
+ * those classes come back with it.
+ *
+ * DM Sans is loaded as a variable font — no `weight` array — so `font-medium`
+ * and `font-semibold` in body copy resolve to real instances off the `wght`
+ * axis rather than to separate files. Italics are not loaded for either face
+ * because nothing in the app is set in them.
+ */
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument-serif",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400"],
   display: "swap",
 });
 
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -36,7 +61,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${cormorant.variable} ${ebGaramond.variable} h-full antialiased`}
+      className={`${instrumentSerif.variable} ${dmSans.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

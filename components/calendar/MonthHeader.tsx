@@ -26,7 +26,7 @@ export function MonthHeader(props: Props) {
           contents can leave a screen reader with nothing to report. */}
       <h1
         aria-live="polite"
-        className="font-heading text-5xl font-medium tracking-tight"
+        className="font-heading text-page-title"
       >
         {/* Crossfades, with no sideways movement — the grid below does the
             travelling. A title sliding the same distance as the grid would read
