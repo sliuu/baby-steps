@@ -111,6 +111,8 @@ type Floater = {
   size: string;
   /** Its own drift clock — see `--animate-drift` in globals.css. */
   drift: string;
+  /** Its own horizontal clock — see `--animate-drift-x` in globals.css. */
+  driftX: string;
   /**
    * **The knob.** Nudge one sticker off its band without disturbing anything
    * else — `ml-[9px] mt-[-14px]` and so on. Leave it off and the sticker sits
@@ -184,6 +186,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.middle} ${X["5"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:7.8s] [--drift-delay:-2.1s]",
+    driftX: "[--drift-x-dur:10.7s] [--drift-x-delay:-0.4s]",
     offset: "mt-[-14px]",
   },
   {
@@ -193,6 +196,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.middle} ${X["95"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:9.2s] [--drift-delay:-2.7s]",
+    driftX: "[--drift-x-dur:12.6s] [--drift-x-delay:-2.3s]",
     offset: "mt-[16px]",
     tilt: "rotate-6",
   },
@@ -204,6 +208,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top3} ${X["10"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:6.7s] [--drift-delay:-1.2s]",
+    driftX: "[--drift-x-dur:9.2s] [--drift-x-delay:-4.2s]",
     offset: "ml-[11px] mt-[-9px]",
     tilt: "-rotate-6",
   },
@@ -214,6 +219,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top3} ${X["50"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:6.9s] [--drift-delay:-1.6s]",
+    driftX: "[--drift-x-dur:9.5s] [--drift-x-delay:-6.1s]",
     offset: "ml-[9px] mt-[14px]",
     tilt: "-rotate-2",
   },
@@ -224,6 +230,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top3} ${X["90"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:6.4s] [--drift-delay:-0.8s]",
+    driftX: "[--drift-x-dur:8.8s] [--drift-x-delay:-8s]",
     offset: "ml-[13px] mt-[-9px]",
   },
   {
@@ -233,6 +240,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom3} ${X["20"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:8.4s] [--drift-delay:-2.9s]",
+    driftX: "[--drift-x-dur:11.5s] [--drift-x-delay:-9.9s]",
     offset: "ml-[-7px] mt-[-12px]",
     tilt: "rotate-6",
   },
@@ -243,6 +251,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom3} ${X["60"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:7.1s] [--drift-delay:-1.9s]",
+    driftX: "[--drift-x-dur:9.7s] [--drift-x-delay:-3s]",
     offset: "ml-[-9px] mt-[7px]",
     tilt: "-rotate-6",
   },
@@ -253,6 +262,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom3} ${X["80"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:7.2s] [--drift-delay:-1.1s]",
+    driftX: "[--drift-x-dur:9.9s] [--drift-x-delay:-4.7s]",
     offset: "ml-[-15px] mt-[-10px]",
     tilt: "rotate-3",
   },
@@ -264,6 +274,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top2} ${X["15"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:8.2s] [--drift-delay:-0.7s]",
+    driftX: "[--drift-x-dur:11.2s] [--drift-x-delay:-5.3s]",
     offset: "ml-[-8px] mt-[15px]",
     tilt: "rotate-2",
   },
@@ -274,6 +285,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top2} ${X["35"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:6.8s] [--drift-delay:-0.9s]",
+    driftX: "[--drift-x-dur:9.3s] [--drift-x-delay:-0.7s]",
     offset: "ml-[6px] mt-[11px]",
   },
   {
@@ -283,6 +295,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top2} ${X["55"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:7.7s] [--drift-delay:-1.3s]",
+    driftX: "[--drift-x-dur:10.5s] [--drift-x-delay:-9.8s]",
     offset: "ml-[15px] mt-[9px]",
   },
   {
@@ -292,6 +305,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top2} ${X["75"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:8.9s] [--drift-delay:-2.3s]",
+    driftX: "[--drift-x-dur:12.2s] [--drift-x-delay:-10s]",
     offset: "ml-[-12px] mt-[8px]",
     tilt: "-rotate-3",
   },
@@ -302,6 +316,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom2} ${X["15"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:6.6s] [--drift-delay:-2.2s]",
+    driftX: "[--drift-x-dur:9s] [--drift-x-delay:-7s]",
     offset: "ml-[10px] mt-[-16px]",
     tilt: "rotate-2",
   },
@@ -312,6 +327,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom2} ${X["35"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:6.2s] [--drift-delay:-1.7s]",
+    driftX: "[--drift-x-dur:8.5s] [--drift-x-delay:-2.3s]",
     offset: "ml-[8px] mt-[-15px]",
     tilt: "-rotate-2",
   },
@@ -322,6 +338,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom2} ${X["55"]}`,
     size: "size-14 text-2xl",
     drift: "[--drift-dur:7s] [--drift-delay:0s]",
+    driftX: "[--drift-x-dur:9.6s] [--drift-x-delay:-0.9s]",
     offset: "ml-[-9px] mt-[-11px]",
     tilt: "rotate-3",
   },
@@ -332,6 +349,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom2} ${X["75"]}`,
     size: "size-12 text-xl",
     drift: "[--drift-dur:8.8s] [--drift-delay:-0.4s]",
+    driftX: "[--drift-x-dur:12.1s] [--drift-x-delay:-6.5s]",
     offset: "ml-[7px] mt-[12px]",
     tilt: "-rotate-2",
   },
@@ -343,6 +361,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top1} ${X["5"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:9.8s] [--drift-delay:-1.4s]",
+    driftX: "[--drift-x-dur:13.4s] [--drift-x-delay:-5.8s]",
     offset: "ml-[-11px] mt-[10px]",
     tilt: "-rotate-3",
   },
@@ -353,6 +372,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top1} ${X["25"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:8s] [--drift-delay:-2.4s]",
+    driftX: "[--drift-x-dur:11s] [--drift-x-delay:-2.4s]",
     offset: "ml-[12px] mt-[18px]",
     tilt: "rotate-6",
   },
@@ -363,6 +383,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top1} ${X["45"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:7.4s] [--drift-delay:-0.5s]",
+    driftX: "[--drift-x-dur:10.1s] [--drift-x-delay:-7s]",
     offset: "ml-[-14px] mt-[-8px]",
   },
   {
@@ -372,6 +393,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top1} ${X["65"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:8.6s] [--drift-delay:-2.5s]",
+    driftX: "[--drift-x-dur:11.8s] [--drift-x-delay:-3.8s]",
     offset: "ml-[-6px] mt-[13px]",
     tilt: "-rotate-3",
   },
@@ -382,6 +404,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.top1} ${X["85"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:7.6s] [--drift-delay:-0.2s]",
+    driftX: "[--drift-x-dur:10.4s] [--drift-x-delay:-0.4s]",
     offset: "ml-[14px] mt-[-13px]",
     tilt: "-rotate-6",
   },
@@ -392,6 +415,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom1} ${X["5"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:9.5s] [--drift-delay:-1.5s]",
+    driftX: "[--drift-x-dur:13s] [--drift-x-delay:-4s]",
     offset: "ml-[11px] mt-[-9px]",
     tilt: "-rotate-6",
   },
@@ -402,6 +426,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom1} ${X["25"]}`,
     size: "size-12 text-xl",
     drift: "[--drift-dur:8.5s] [--drift-delay:-0.6s]",
+    driftX: "[--drift-x-dur:11.6s] [--drift-x-delay:-10.1s]",
     offset: "ml-[-7px] mt-[14px]",
     tilt: "rotate-3",
   },
@@ -412,6 +437,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom1} ${X["45"]}`,
     size: "size-10 text-lg",
     drift: "[--drift-dur:7.5s] [--drift-delay:-1.8s]",
+    driftX: "[--drift-x-dur:10.3s] [--drift-x-delay:-6.5s]",
     offset: "ml-[16px] mt-[-12px]",
   },
   {
@@ -421,6 +447,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom1} ${X["65"]}`,
     size: "size-12 text-xl",
     drift: "[--drift-dur:6.5s] [--drift-delay:-1.2s]",
+    driftX: "[--drift-x-dur:8.9s] [--drift-x-delay:-6s]",
     offset: "ml-[-13px] mt-[10px]",
     tilt: "-rotate-3",
   },
@@ -431,6 +458,7 @@ const FLOATERS: Floater[] = [
     position: `${BAND.bottom1} ${X["85"]}`,
     size: "size-14 text-2xl",
     drift: "[--drift-dur:9s] [--drift-delay:-0.3s]",
+    driftX: "[--drift-x-dur:12.3s] [--drift-x-delay:-2.3s]",
     offset: "ml-[6px] mt-[-6px]",
     tilt: "rotate-6",
   },
@@ -680,12 +708,13 @@ function drop(size: string) {
  * immune to the page reflowing under it when the webfonts land.
  * `overflow-hidden` guarantees a sticker near an edge can't widen the page.
  *
- * **Three nested spans, three animations, and that's the minimum.** An element
- * has one `animation` shorthand and one `translate`, and this needs three
+ * **Four nested spans, four animations, and that's the minimum.** An element
+ * has one `animation` shorthand and one `translate`, and this needs four
  * different things to move it: the entrance drops it into place, the pointer
- * pushes it aside, and the drift never stops. Stacked on one element the last
- * one written would win and the others would vanish without an error. Nesting
- * is cheaper than hand-writing a combined keyframe.
+ * pushes it aside, and the drift — which is two animations, one per axis, for
+ * the same reason — never stops. Stacked on one element the last one written
+ * would win and the others would vanish without an error. Nesting is cheaper
+ * than hand-writing a combined keyframe.
  *
  * The entrance is `animate-fall`, not the `animate-rise` the heading and the
  * paragraph use. A word rising into place reads as settling; a small round
@@ -730,14 +759,19 @@ export function FloatingStickers() {
               <span
                 className={`animate-drift block ${floater.drift} ${floater.offset ?? ""}`}
               >
-                <StickerMark
-                  sticker={{
-                    name: floater.name,
-                    mark: floater.mark,
-                    colorKey: floater.colorKey,
-                  }}
-                  className={floater.size}
-                />
+                {/* The horizontal half of the drift, on its own element
+                    because `translate` is one property and the span above is
+                    already spending its. Nothing else lives here. */}
+                <span className={`animate-drift-x block ${floater.driftX}`}>
+                  <StickerMark
+                    sticker={{
+                      name: floater.name,
+                      mark: floater.mark,
+                      colorKey: floater.colorKey,
+                    }}
+                    className={floater.size}
+                  />
+                </span>
               </span>
             </span>
           </span>

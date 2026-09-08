@@ -1,6 +1,6 @@
 # 003 — Give the drift a second axis, and a real reduced-motion resting state
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: b8ee038
 - **Severity**: MEDIUM
 - **Category**: Physicality & origin / Accessibility

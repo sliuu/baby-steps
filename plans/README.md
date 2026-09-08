@@ -10,7 +10,7 @@ app behind it.
 | --- | --- | --- | --- |
 | [001](001-fix-pointer-nudge-field.md) | Fix the cursor field: remove the singularity and the stale centres | HIGH | DONE |
 | [002](002-stickers-fall-and-settle.md) | Make the stickers fall in and settle, instead of popping | HIGH | DONE |
-| [003](003-two-axis-drift-and-reduced-motion.md) | Give the drift a second axis, and a real reduced-motion resting state | MEDIUM | TODO — held for review of 001/002 |
+| [003](003-two-axis-drift-and-reduced-motion.md) | Give the drift a second axis, and a real reduced-motion resting state | MEDIUM | DONE |
 
 ## Order
 

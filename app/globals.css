@@ -153,9 +153,12 @@
     fall var(--dur-fall) both,
     sticker-fade calc(var(--dur-fall) * 0.3) linear both;
 
-  /* The stickers loitering behind the signed-out page once they have landed.
-     A slow bob and a small tilt, forever: the entrance is over, and this is
-     what is left of it.
+  /* The stickers loitering behind the signed-out page. This is the vertical
+     half of the drift; `--animate-drift-x` below is the horizontal one, and a
+     sticker wears both — on two nested spans, because an element has one
+     `translate` and two simultaneous translations need two elements. Neither
+     axis alone is the movement: the periods are non-harmonic, so what you
+     watch is a slow open figure rather than a line.
 
      Duration and delay are read from custom properties rather than baked in,
      the same trick `deck-slide` uses for its offset: two dozen stickers all
@@ -176,6 +179,12 @@
      through the wait instead of jumping to it. */
   --animate-drift: drift var(--drift-dur, 6s) ease-in-out var(--drift-delay, 0s)
     infinite alternate both;
+
+  /* The horizontal half. Same shape, its own two properties, and the same rule
+     about negative delays — every `--drift-x-delay` in `FloatingStickers` is
+     negative for exactly the reason above. */
+  --animate-drift-x: drift-x var(--drift-x-dur, 8s) ease-in-out
+    var(--drift-x-delay, -1s) infinite alternate both;
 }
 
 /* ---------------------------------------------------------------------------
@@ -646,17 +655,44 @@
    home. Small numbers on purpose: this runs forever behind a page someone is
    trying to read a sentence on, and anything you can *watch* is too much.
 
-   Reduced motion needs no rule of its own: the blanket block at the bottom of
-   this file flattens the duration and caps the iteration count at one, which
-   leaves the stickers still. */
+   This is half the drift. `drift-x` below is the other half, and the two are
+   on two different elements for the reason that keyframe's comment gives.
+
+   Reduced motion *does* need a rule of its own, and this is the one animation
+   in the file that does — see `.animate-drift` inside the
+   `prefers-reduced-motion` block at the bottom. The blanket rule there caps the
+   iteration count at one, which for an `alternate` animation with `both` means
+   a single forward pass that ends on the last keyframe and stays there. For
+   every other animation here that is the right answer, because they all end
+   where the element belongs. This one ends 7px down and 3.5° over. */
 @keyframes drift {
   from {
-    translate: 0 -11px;
-    rotate: -5deg;
+    translate: 0 -7px;
+    rotate: -3.5deg;
   }
   to {
-    translate: 0 11px;
-    rotate: 5deg;
+    translate: 0 7px;
+    rotate: 3.5deg;
+  }
+}
+
+/* The other half of the drift. Splitting the two axes across two elements is
+   not tidiness — `translate` is one property, so a second animation on the same
+   span would simply win and the vertical drift would vanish with no error
+   anywhere to say why.
+
+   The periods are deliberately not multiples of each other (each is 1.37× its
+   sticker's vertical one), which is what turns two bobs into a slow open figure
+   that never repeats visibly. It also removes the hang at the ends of the
+   cycle: `ease-in-out` with `alternate` brings each axis to a stop at its
+   extremes, and two axes stopping at different moments means the object itself
+   never does. */
+@keyframes drift-x {
+  from {
+    translate: -5px 0;
+  }
+  to {
+    translate: 5px 0;
   }
 }
 
@@ -882,6 +918,29 @@
     transition-duration: 1ms !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
+  }
+
+  /* The drift needs its own rule, and it is the one animation in this app that
+     does. The blanket rule above stops everything by flattening the duration
+     and capping the iteration count at one — which for an `alternate` animation
+     with `both` means a single forward pass that finishes on the *last*
+     keyframe and stays there. Every other animation in this file ends where the
+     element belongs, so that is the right answer for all of them. The drift
+     ends 7px down and 3.5° over, so capping it would park all twenty-six
+     stickers below their positions and tilted the same way — still, but visibly
+     wrong, and wrong in a way that reads as a bug rather than as a preference
+     being honoured.
+
+     `animation: none` instead: no animation, so the elements sit where layout
+     puts them. The per-sticker `tilt` and `offset` are ordinary utilities
+     rather than animations, so the field keeps its scatter and only loses its
+     movement — which is precisely what the request asks for.
+
+     Class specificity beats `*`, so this wins the `!important` contest against
+     the blanket rule above. */
+  .animate-drift,
+  .animate-drift-x {
+    animation: none !important;
   }
 
   ::view-transition-group(*),
