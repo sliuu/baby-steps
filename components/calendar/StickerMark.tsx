@@ -1,3 +1,4 @@
+import { MARK_ICON_SIZE, MARK_STROKE, iconFor } from "@/lib/icons";
 import { ramp } from "@/lib/palette";
 import type { StickerFace } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
@@ -47,10 +48,25 @@ type Props = {
  * The border stays in the class list at 1px and transparent, not removed. It
  * is holding the 26px box: `size-[26px]` is the border-box, so dropping the
  * border would shrink the drawn circle by 2px and reflow every row of marks.
+ *
+ * **A mark is one of two things, and this is the only place that decides.** It
+ * can name an icon — `icon:dumbbell`, drawn by Lucide out of `lib/icons.ts` —
+ * or it can be a single grapheme, drawn by a font. The first is the only thing
+ * the picker offers now; the second is a typed letter, and every emoji anyone
+ * made before the icons arrived. That second branch is not legacy code waiting
+ * to be deleted — it is what keeps rows written a year ago drawing exactly as
+ * they did, down to the half-pixel nudge below.
+ *
+ * The icon inherits `text-ink` through `currentColor`, which is the whole
+ * answer to "what colour is it": one flat ink on a 45% tint, on every hue, in
+ * both themes. Colouring it in the hue instead was the obvious idea and is the
+ * wrong one — full red on a 45% red tint is about 2:1, which is not a contrast
+ * ratio a 1px stroke can survive.
  */
 export function StickerMark(props: Props) {
   const { sticker } = props;
   const { tint } = ramp(sticker.colorKey);
+  const icon = iconFor(sticker.mark);
 
   return (
     <span
@@ -61,29 +77,43 @@ export function StickerMark(props: Props) {
         props.className,
       )}
     >
-      {/* `font-emoji` is here to centre the glyph, not to choose a typeface.
-          A line box takes its height and its baseline from the *first available
-          font* — the first family the browser has installed, whether or not it
-          contains the character being drawn. So a mark set in the body serif is
-          positioned by the serif's ascent and descent while an emoji's ink is
-          drawn by the emoji font's, and the two disagree: the glyph sits low in
-          the circle. Naming the emoji font first makes the box and the ink come
-          from the same metrics. Same lesson as the `+` in `NewStickerForm`,
-          arriving from the other side — there the fix was to stop using a
-          glyph, here it's to let the glyph's own font size the box.
+      {icon ? (
+        // One size rule and one stroke weight, both from `lib/icons.ts`, so a
+        // 26px circle on a Tuesday and a 56px one behind the login page draw
+        // the same picture at the same relative size. There is no
+        // `translate-y` on this branch: an icon is centred in its own box, and
+        // the half-pixel below exists for a problem — a glyph positioned by
+        // font metrics it does not fill — that an SVG simply does not have.
+        <icon.Icon
+          className={MARK_ICON_SIZE}
+          strokeWidth={MARK_STROKE}
+          aria-hidden="true"
+        />
+      ) : (
+        /* `font-emoji` is here to centre the glyph, not to choose a typeface.
+            A line box takes its height and its baseline from the *first available
+            font* — the first family the browser has installed, whether or not it
+            contains the character being drawn. So a mark set in the body serif is
+            positioned by the serif's ascent and descent while an emoji's ink is
+            drawn by the emoji font's, and the two disagree: the glyph sits low in
+            the circle. Naming the emoji font first makes the box and the ink come
+            from the same metrics. Same lesson as the `+` in `NewStickerForm`,
+            arriving from the other side — there the fix was to stop using a
+            glyph, here it's to let the glyph's own font size the box.
 
-          `translate-y` is the other half, and it's a magic number on purpose.
-          Naming the emoji font first fixed *which* box the glyph is centred in;
-          it can't fix that a box isn't ink. What gets centred is the font's
-          ascent-plus-descent, and an emoji font reserves descent room its
-          glyphs barely use — so the box's midpoint sits below the ink's and the
-          mark rides high by the difference. There is no `align-items: optical`.
-          Half a pixel down is the whole correction, chosen by eye at 26px, and
-          it is font-specific: a mark that's a letter rather than an emoji takes
-          the same strut now and gets nudged along with it. */}
-      <span className="font-emoji translate-y-[0.5px]" aria-hidden="true">
-        {sticker.mark}
-      </span>
+            `translate-y` is the other half, and it's a magic number on purpose.
+            Naming the emoji font first fixed *which* box the glyph is centred in;
+            it can't fix that a box isn't ink. What gets centred is the font's
+            ascent-plus-descent, and an emoji font reserves descent room its
+            glyphs barely use — so the box's midpoint sits below the ink's and the
+            mark rides high by the difference. There is no `align-items: optical`.
+            Half a pixel down is the whole correction, chosen by eye at 26px, and
+            it is font-specific: a mark that's a letter rather than an emoji takes
+            the same strut now and gets nudged along with it. */
+        <span className="font-emoji translate-y-[0.5px]" aria-hidden="true">
+          {sticker.mark}
+        </span>
+      )}
       <span className="sr-only">{sticker.name}</span>
     </span>
   );

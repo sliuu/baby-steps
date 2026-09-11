@@ -5,6 +5,10 @@ import type { Mood } from "@/lib/moods";
 // nothing resolves `@/` — that alias belongs to the bundler, and there is no
 // bundler in that process. Type imports are erased and can keep using it.
 import { graphemeCount } from "./graphemes.ts";
+// Same rule, same reason: relative, with the extension, so `node --test` can
+// load this module without a bundler. It reaches `lucide-react` through that
+// file, which is plain JavaScript and resolves fine in a bare node process.
+import { isIconMark } from "./icons.ts";
 
 /**
  * Everything needed to *draw* a sticker, and nothing else.
@@ -17,7 +21,23 @@ import { graphemeCount } from "./graphemes.ts";
  */
 export type StickerFace = {
   name: string;
-  /** One grapheme — a letter or an emoji. */
+  /**
+   * What goes in the circle. One of two things, and `StickerMark` is the only
+   * place that tells them apart: an icon name — `icon:dumbbell`, resolved
+   * through `lib/icons.ts` — or a single grapheme.
+   *
+   * The picker only offers icons now; the emoji tabs are gone, and why is in
+   * `lib/icons.ts`. The grapheme case did not go with them, because it is two
+   * things rather than one: a typed letter, which is still a perfectly good
+   * mark, and the emoji already sitting in somebody's database. Rejecting them
+   * here would break rows that were valid when they were written, for no gain
+   * — nothing can add a *new* emoji, which was the actual problem.
+   *
+   * Not two columns and not a tagged union, because the database has one
+   * `mark text` column with a year of rows in it and every one of those rows is
+   * still valid. The prefix is what makes one string able to say both things
+   * without ambiguity; see `ICON_PREFIX`.
+   */
   mark: string;
   colorKey: string;
 };
@@ -64,6 +84,21 @@ export type ActivitySticker = StickerFace & {
 export type DayStickers = {
   activities: ActivitySticker[];
   mood: Mood | null;
+  /**
+   * The day's note, or null when there isn't one.
+   *
+   * Null and not `""`. The database deletes the row rather than storing an
+   * empty string, so there is one representation of "no note" on both sides of
+   * the wire — and a day you typed into and then cleared is indistinguishable
+   * from a day you never touched, which is the correct answer to a question
+   * nobody asked.
+   *
+   * The month grid ignores it. Only the week strip is wide enough to give a
+   * sentence a home, so this rides along in the same map rather than being
+   * fetched by the view that happens to show it — one query, one shape, and
+   * switching Month to Week is a re-render rather than a round trip.
+   */
+  note: string | null;
 };
 
 export type StickersByDay = Map<DayString, DayStickers>;
@@ -84,7 +119,11 @@ export type StickersByDay = Map<DayString, DayStickers>;
  * cross that line freely; values don't. So the shapes and the empty case live
  * on this side, and `lib/queries/` stays server-only.
  */
-export const NO_STICKERS: DayStickers = { activities: [], mood: null };
+export const NO_STICKERS: DayStickers = {
+  activities: [],
+  mood: null,
+  note: null,
+};
 
 /**
  * A sticker that doesn't exist yet: what the new-sticker form collects.
@@ -114,6 +153,16 @@ export type DraftCheck =
  * fifteen characters long.
  */
 export const NAME_MAX = 24;
+
+/**
+ * How long a day's note may be, matching the CHECK constraint in
+ * `scripts/day-notes.sql` — if the two ever disagree, the database wins.
+ *
+ * "Short notes or summaries" is the brief, and 280 is what makes that true of
+ * the data rather than only of the textarea: two or three sentences, and no
+ * room to start keeping a journal in a calendar column.
+ */
+export const NOTE_MAX = 280;
 
 /** Pull a draft out of a form. Anything missing is "", never null. */
 export function readDraft(form: FormData): StickerDraft {
@@ -170,14 +219,18 @@ export function validateDraft(draft: StickerDraft): DraftCheck {
     return {
       ok: false,
       field: "mark",
-      message: "Pick a mark: one letter or one emoji.",
+      message: "Pick an icon, or type a letter.",
     };
   }
-  if (graphemeCount(mark) !== 1) {
+  // An icon name is checked against the set rather than against a pattern, so
+  // an id that has been retired from `lib/icons.ts` can't be saved as one. The
+  // grapheme rule is unchanged and still second, which is the order that
+  // matters: `icon:dumbbell` is thirteen graphemes and would fail it.
+  if (!isIconMark(mark) && graphemeCount(mark) !== 1) {
     return {
       ok: false,
       field: "mark",
-      message: "The mark is a single character — one letter or one emoji.",
+      message: "Pick an icon, or type a single character.",
     };
   }
 

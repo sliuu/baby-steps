@@ -23,8 +23,13 @@ import { StickerMark } from "@/components/calendar/StickerMark";
  */
 
 /**
- * Seven bands down the screen, and the middle one is the only one with a rule
- * attached: it's level with the words, so it holds the two edge columns only.
+ * Nine bands down the screen. Three of them are level with the words, and
+ * those three share one rule: they hold the edge columns only.
+ *
+ * There used to be one band there, with one sticker either side of the
+ * sentence, and the field read as a heavy top and a heavy bottom with a gap
+ * across the middle. Three bands at 36/46/56% put a short column down each
+ * flank instead, which is the same field with its waist filled in.
  *
  * `top-[4%]` and `bottom-[4%]` rather than a single set of top percentages,
  * because measuring each half from its own edge keeps them symmetric without
@@ -33,19 +38,31 @@ import { StickerMark } from "@/components/calendar/StickerMark";
  * The `min-height` gate on the third band is arithmetic, not taste. The text
  * block is around 380px tall and vertically centred, so on an 800px window it
  * occupies 26% to 74% and a band at 25% is touching it. At 1000px it occupies
- * 31% to 69% and there's room. Under that height the screen gets five bands
- * instead of seven, which is the right answer — there isn't space for seven.
+ * 31% to 69% and there's room. Under that height the screen gets seven bands
+ * instead of nine, which is the right answer — there isn't space for nine.
  */
 const BAND = {
   top1: "top-[4%]",
   top2: "top-[14%]",
   top3: "top-[25%] hidden [@media(min-height:1000px)]:block",
   /**
-   * Level with the title. `lg:` gated because this is the one band that can
-   * collide with the text: the column is 448px wide, so at 1024px a sticker
-   * centred on 5% sits 217px clear of it, and at 640px it doesn't.
+   * The three level with the words, and the only ones that can collide with
+   * them, which is what the `lg:` gate is for. At 1024px the column is 512px
+   * wide — `max-w-lg` — with `px-8` inside it, so the words run 288px to 736px
+   * and each flank is 288px of clear space. A sticker centred on 15% has its
+   * right edge at 174px, and the two things that can push it further are the
+   * `offset` knob (20px at most) and the drift (7px), which leaves 87px in the
+   * worst case. That is why the columns here stop at 15% rather than going on
+   * to 20%, where the same arithmetic leaves 36px: it does not overlap, but it
+   * is close enough that a longer tagline would make it overlap.
+   *
+   * No height gate on these three, unlike `top3`/`bottom3`. Those sit above
+   * the words and a short window pushes the words into them; these sit beside
+   * the words and a short window changes nothing about the flank.
    */
-  middle: "top-[46%] hidden lg:block",
+  mid1: "top-[36%] hidden lg:block",
+  mid2: "top-[46%] hidden lg:block",
+  mid3: "top-[56%] hidden lg:block",
   bottom3: "bottom-[25%] hidden [@media(min-height:1000px)]:block",
   bottom2: "bottom-[14%]",
   bottom1: "bottom-[4%]",
@@ -96,6 +113,17 @@ const X = {
  */
 type Floater = {
   name: string;
+  /**
+   * An icon name from `lib/icons.ts` — `icon:` and one of the fifty-four ids.
+   *
+   * These were emoji, and thirty of them on one screen were the clearest
+   * argument for the icon set there is. Every emoji arrives with its own
+   * palette, its own stroke weight and its own idea of how much of the em to
+   * fill, and it is drawn differently on macOS, Android and Windows — so the
+   * layer read as thirty unrelated pictures that happened to be falling
+   * together, rather than as one set. Same circles, same colours, same
+   * positions: only what is inside them changed.
+   */
   mark: string;
   colorKey: string;
   /** One `BAND` and one `X`. */
@@ -158,7 +186,7 @@ type Floater = {
  *
  * - **`[@media(min-height:1000px)]`** — the third band up and down. On a short
  *   window it would be on top of the tagline.
- * - **`hidden lg:block`** — the pair level with the title, which needs the
+ * - **`hidden lg:block`** — the six level with the words, which need the
  *   window to be wider than the text column plus two stickers.
  *
  * Everything else shows at every size, because a percentage of the screen is
@@ -178,12 +206,33 @@ type Floater = {
  * opposite, which is why the two are separate lists.
  */
 const FLOATERS: Floater[] = [
-  // Level with the title.
+  // The three bands level with the words: a short column down each flank.
+  {
+    name: "Feed the birds",
+    mark: "icon:bird",
+    colorKey: "green",
+    position: `${BAND.mid1} ${X["15"]}`,
+    size: "size-10 text-lg",
+    drift: "[--drift-dur:8.1s] [--drift-delay:-1.6s]",
+    driftX: "[--drift-x-dur:11.3s] [--drift-x-delay:-5.1s]",
+    offset: "ml-[-7px] mt-[11px]",
+  },
+  {
+    name: "Write a letter",
+    mark: "icon:mail",
+    colorKey: "yellow",
+    position: `${BAND.mid1} ${X["85"]}`,
+    size: "size-11 text-xl",
+    drift: "[--drift-dur:6.3s] [--drift-delay:-2.6s]",
+    driftX: "[--drift-x-dur:10.2s] [--drift-x-delay:-3.4s]",
+    offset: "ml-[9px] mt-[-12px]",
+    tilt: "-rotate-6",
+  },
   {
     name: "Wind down",
-    mark: "🌙",
+    mark: "icon:moon",
     colorKey: "purple",
-    position: `${BAND.middle} ${X["5"]}`,
+    position: `${BAND.mid2} ${X["5"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:7.8s] [--drift-delay:-2.1s]",
     driftX: "[--drift-x-dur:10.7s] [--drift-x-delay:-0.4s]",
@@ -191,19 +240,40 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Take a photo",
-    mark: "📷",
+    mark: "icon:camera",
     colorKey: "orange",
-    position: `${BAND.middle} ${X["95"]}`,
+    position: `${BAND.mid2} ${X["95"]}`,
     size: "size-11 text-xl",
     drift: "[--drift-dur:9.2s] [--drift-delay:-2.7s]",
     driftX: "[--drift-x-dur:12.6s] [--drift-x-delay:-2.3s]",
     offset: "mt-[16px]",
     tilt: "rotate-6",
   },
+  {
+    name: "Text a friend",
+    mark: "icon:message-circle",
+    colorKey: "yellow",
+    position: `${BAND.mid3} ${X["10"]}`,
+    size: "size-11 text-xl",
+    drift: "[--drift-dur:9.4s] [--drift-delay:-0.9s]",
+    driftX: "[--drift-x-dur:12.9s] [--drift-x-delay:-7.4s]",
+    offset: "ml-[12px] mt-[-9px]",
+    tilt: "rotate-3",
+  },
+  {
+    name: "Swim",
+    mark: "icon:waves-ladder",
+    colorKey: "red",
+    position: `${BAND.mid3} ${X["90"]}`,
+    size: "size-10 text-lg",
+    drift: "[--drift-dur:7.3s] [--drift-delay:-2s]",
+    driftX: "[--drift-x-dur:12.4s] [--drift-x-delay:-1.2s]",
+    offset: "ml-[-10px] mt-[14px]",
+  },
   // The bands closest to the text, on tall windows.
   {
     name: "Eat an apple",
-    mark: "🍎",
+    mark: "icon:apple",
     colorKey: "red",
     position: `${BAND.top3} ${X["10"]}`,
     size: "size-10 text-lg",
@@ -214,7 +284,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Drink water",
-    mark: "💧",
+    mark: "icon:glass-water",
     colorKey: "blue",
     position: `${BAND.top3} ${X["50"]}`,
     size: "size-10 text-lg",
@@ -225,7 +295,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Sweep up",
-    mark: "🧹",
+    mark: "icon:brush-cleaning",
     colorKey: "blue",
     position: `${BAND.top3} ${X["90"]}`,
     size: "size-10 text-lg",
@@ -235,7 +305,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Rest day",
-    mark: "🛌",
+    mark: "icon:armchair",
     colorKey: "red",
     position: `${BAND.bottom3} ${X["20"]}`,
     size: "size-10 text-lg",
@@ -246,7 +316,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Eat something green",
-    mark: "🥗",
+    mark: "icon:salad",
     colorKey: "green",
     position: `${BAND.bottom3} ${X["60"]}`,
     size: "size-10 text-lg",
@@ -257,7 +327,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Practice",
-    mark: "🎸",
+    mark: "icon:guitar",
     colorKey: "purple",
     position: `${BAND.bottom3} ${X["80"]}`,
     size: "size-11 text-xl",
@@ -269,7 +339,7 @@ const FLOATERS: Floater[] = [
   // Second band up and down.
   {
     name: "Walk",
-    mark: "🥾",
+    mark: "icon:mountain",
     colorKey: "green",
     position: `${BAND.top2} ${X["15"]}`,
     size: "size-10 text-lg",
@@ -280,7 +350,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Listen to a record",
-    mark: "🎧",
+    mark: "icon:disc-3",
     colorKey: "blue",
     position: `${BAND.top2} ${X["35"]}`,
     size: "size-10 text-lg",
@@ -290,7 +360,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Make tea",
-    mark: "🍵",
+    mark: "icon:coffee",
     colorKey: "orange",
     position: `${BAND.top2} ${X["55"]}`,
     size: "size-10 text-lg",
@@ -300,7 +370,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Watch something",
-    mark: "🎬",
+    mark: "icon:film",
     colorKey: "purple",
     position: `${BAND.top2} ${X["75"]}`,
     size: "size-11 text-xl",
@@ -311,7 +381,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Tidy up",
-    mark: "🧺",
+    mark: "icon:boxes",
     colorKey: "blue",
     position: `${BAND.bottom2} ${X["15"]}`,
     size: "size-10 text-lg",
@@ -322,7 +392,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Ride",
-    mark: "🚲",
+    mark: "icon:bike",
     colorKey: "red",
     position: `${BAND.bottom2} ${X["35"]}`,
     size: "size-10 text-lg",
@@ -333,7 +403,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Run",
-    mark: "🏃",
+    mark: "icon:footprints",
     colorKey: "red",
     position: `${BAND.bottom2} ${X["55"]}`,
     size: "size-14 text-2xl",
@@ -344,7 +414,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Cook a real meal",
-    mark: "🍳",
+    mark: "icon:cooking-pot",
     colorKey: "orange",
     position: `${BAND.bottom2} ${X["75"]}`,
     size: "size-12 text-xl",
@@ -356,7 +426,7 @@ const FLOATERS: Floater[] = [
   // The two ends of the screen.
   {
     name: "Sit outside",
-    mark: "☀️",
+    mark: "icon:sun",
     colorKey: "yellow",
     position: `${BAND.top1} ${X["5"]}`,
     size: "size-11 text-xl",
@@ -367,7 +437,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Early night",
-    mark: "💤",
+    mark: "icon:bed",
     colorKey: "yellow",
     position: `${BAND.top1} ${X["25"]}`,
     size: "size-10 text-lg",
@@ -378,7 +448,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Stretch",
-    mark: "🧘",
+    mark: "icon:person-standing",
     colorKey: "purple",
     position: `${BAND.top1} ${X["45"]}`,
     size: "size-11 text-xl",
@@ -388,7 +458,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Call home",
-    mark: "📞",
+    mark: "icon:phone-call",
     colorKey: "yellow",
     position: `${BAND.top1} ${X["65"]}`,
     size: "size-10 text-lg",
@@ -399,7 +469,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Bake",
-    mark: "🍞",
+    mark: "icon:croissant",
     colorKey: "orange",
     position: `${BAND.top1} ${X["85"]}`,
     size: "size-11 text-xl",
@@ -410,7 +480,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Write it down",
-    mark: "✎",
+    mark: "icon:notebook-pen",
     colorKey: "green",
     position: `${BAND.bottom1} ${X["5"]}`,
     size: "size-10 text-lg",
@@ -421,7 +491,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Read",
-    mark: "📚",
+    mark: "icon:book-open",
     colorKey: "blue",
     position: `${BAND.bottom1} ${X["25"]}`,
     size: "size-12 text-xl",
@@ -432,7 +502,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Coffee with a friend",
-    mark: "☕",
+    mark: "icon:users",
     colorKey: "orange",
     position: `${BAND.bottom1} ${X["45"]}`,
     size: "size-10 text-lg",
@@ -442,7 +512,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Make something",
-    mark: "🎨",
+    mark: "icon:palette",
     colorKey: "purple",
     position: `${BAND.bottom1} ${X["65"]}`,
     size: "size-12 text-xl",
@@ -453,7 +523,7 @@ const FLOATERS: Floater[] = [
   },
   {
     name: "Water the plants",
-    mark: "🌱",
+    mark: "icon:sprout",
     colorKey: "green",
     position: `${BAND.bottom1} ${X["85"]}`,
     size: "size-14 text-2xl",
@@ -465,8 +535,8 @@ const FLOATERS: Floater[] = [
 ];
 
 /**
- * The twenty-six arrival slots, 420ms to 2304ms. Add `--dur-fall` and the last
- * sticker is on screen at 2924ms.
+ * The thirty arrival slots, 420ms to 2551ms. Add `--dur-fall` and the last
+ * sticker is on screen at 3171ms.
  *
  * The first one starts at 420ms because that is exactly when the text finishes
  * rising — `--dur-hero`, with no delay on any of the three elements. The page
@@ -475,7 +545,8 @@ const FLOATERS: Floater[] = [
  * constant to every delay preserves every gap between stickers and therefore
  * preserves everything `ORDER` guarantees. Rescaling does not.
  *
- * **The number that matters is the smallest gap: 62ms.** Two events closer
+ * **The number that matters is the smallest gap: 63ms here, and the floor is
+ * about 62ms.** Two events closer
  * together than roughly 60ms are not perceived as two events — they group, and
  * what you see is a clump arriving rather than one thing after another. That
  * floor is the one hard constraint in this array; everything else here is
@@ -486,7 +557,7 @@ const FLOATERS: Floater[] = [
  * That was true and it was the problem: over half the field landed inside a
  * quarter of a second.
  *
- * **The gaps narrow as it goes** — about 84ms at the start, about 66ms at the
+ * **The gaps narrow as it goes** — about 85ms at the start, about 65ms at the
  * end. They used to be graded by size, on the theory that a big sticker earns
  * more air; they aren't any more, because arrival order stopped following size
  * (see `ORDER`). The ramp survives on its own terms: the first thing to land on
@@ -494,12 +565,12 @@ const FLOATERS: Floater[] = [
  * you're watching a field fill in rather than watching each one.
  *
  * **The gaps are also deliberately uneven**, each a few milliseconds off the
- * ramp. Twenty-six evenly spaced arrivals read as a sequence playing back; the
- * same twenty-six with the intervals slightly ragged read as things falling. It
+ * ramp. Thirty evenly spaced arrivals read as a sequence playing back; the
+ * same thirty with the intervals slightly ragged read as things falling. It
  * costs nothing — this is a literal array either way — and it is most of what
  * separates a cascade from a metronome.
  *
- * The whole thing takes about 2.9 seconds, which is a long time and is allowed
+ * The whole thing takes about 3.2 seconds, which is a long time and is allowed
  * to be: the text is readable and clickable from the first frame and the layer
  * is `pointer-events-none`, so none of this is ever in anyone's way.
  *
@@ -512,7 +583,7 @@ const FLOATERS: Floater[] = [
  *
  * Written out rather than generated because Tailwind scans source text:
  * `[animation-delay:${n}ms]` built in a loop compiles to nothing, and all
- * twenty-six would land at once with no error anywhere to say why. Arbitrary
+ * thirty would land at once with no error anywhere to say why. Arbitrary
  * properties rather than `delay-*` utilities for the reason
  * `app/login/page.tsx` gives — in v4 those set `transition-delay`, and this is
  * an animation.
@@ -523,31 +594,35 @@ const FLOATERS: Floater[] = [
  */
 const ENTER = [
   "[animation-delay:420ms]",
-  "[animation-delay:504ms]",
+  "[animation-delay:505ms]",
   "[animation-delay:582ms]",
-  "[animation-delay:668ms]",
-  "[animation-delay:747ms]",
-  "[animation-delay:834ms]",
-  "[animation-delay:910ms]",
-  "[animation-delay:992ms]",
-  "[animation-delay:1076ms]",
-  "[animation-delay:1148ms]",
-  "[animation-delay:1228ms]",
-  "[animation-delay:1302ms]",
-  "[animation-delay:1383ms]",
-  "[animation-delay:1454ms]",
-  "[animation-delay:1529ms]",
-  "[animation-delay:1607ms]",
-  "[animation-delay:1675ms]",
-  "[animation-delay:1750ms]",
-  "[animation-delay:1819ms]",
-  "[animation-delay:1895ms]",
-  "[animation-delay:1962ms]",
-  "[animation-delay:2033ms]",
-  "[animation-delay:2105ms]",
-  "[animation-delay:2167ms]",
-  "[animation-delay:2235ms]",
-  "[animation-delay:2304ms]",
+  "[animation-delay:665ms]",
+  "[animation-delay:750ms]",
+  "[animation-delay:826ms]",
+  "[animation-delay:906ms]",
+  "[animation-delay:979ms]",
+  "[animation-delay:1061ms]",
+  "[animation-delay:1136ms]",
+  "[animation-delay:1215ms]",
+  "[animation-delay:1296ms]",
+  "[animation-delay:1367ms]",
+  "[animation-delay:1442ms]",
+  "[animation-delay:1513ms]",
+  "[animation-delay:1588ms]",
+  "[animation-delay:1664ms]",
+  "[animation-delay:1731ms]",
+  "[animation-delay:1805ms]",
+  "[animation-delay:1874ms]",
+  "[animation-delay:1946ms]",
+  "[animation-delay:2011ms]",
+  "[animation-delay:2085ms]",
+  "[animation-delay:2151ms]",
+  "[animation-delay:2219ms]",
+  "[animation-delay:2289ms]",
+  "[animation-delay:2352ms]",
+  "[animation-delay:2421ms]",
+  "[animation-delay:2485ms]",
+  "[animation-delay:2551ms]",
 ];
 /** Biggest first. Anything not on this list arrives with the smallest. */
 /**
@@ -581,11 +656,11 @@ const DROP: Record<string, string> = {
  * - **Close together anywhere.** Within about a quarter of the screen,
  *   measured with the two axes weighted *equally* — see below.
  *
- * No pair in either category lands within 273ms of another. The order before
+ * No pair in either category lands within 280ms of another. The order before
  * this one managed 60ms, and that was the whole complaint: the top band
  * arriving as a clump at the end.
  *
- * This list is the output of an annealed search over all twenty-six slots
+ * This list is the output of an annealed search over all thirty slots
  * against those two rules, with size as a soft third term. It is not a rule you
  * can apply by hand and it is not worth trying — reorder it by eye and you will
  * reintroduce a pair, because the failures are invisible until they animate.
@@ -638,33 +713,37 @@ const DROP: Record<string, string> = {
  * set rather than per breakpoint.
  */
 const ORDER = [
+  "Drink water",
   "Run",
-  "Make tea",
-  "Eat an apple",
-  "Read",
-  "Practice",
-  "Bake",
-  "Listen to a record",
-  "Make something",
-  "Tidy up",
   "Take a photo",
-  "Call home",
   "Walk",
+  "Read",
+  "Call home",
+  "Practice",
+  "Feed the birds",
+  "Sweep up",
+  "Tidy up",
+  "Eat something green",
+  "Early night",
+  "Watch something",
   "Water the plants",
   "Ride",
-  "Sweep up",
-  "Stretch",
   "Wind down",
-  "Eat something green",
-  "Write it down",
-  "Drink water",
-  "Sit outside",
-  "Cook a real meal",
+  "Stretch",
+  "Swim",
+  "Make something",
   "Rest day",
-  "Watch something",
-  "Early night",
+  "Eat an apple",
+  "Bake",
+  "Write it down",
+  "Cook a real meal",
+  "Listen to a record",
+  "Write a letter",
+  "Text a friend",
   "Coffee with a friend",
-];/**
+  "Sit outside",
+  "Make tea",
+]; /**
  * When each sticker arrives, keyed by name.
  *
  * Sorting a *copy*: `sort` mutates, and `FLOATERS` is rendered in its own
@@ -673,7 +752,7 @@ const ORDER = [
 const ARRIVAL = new Map(
   [...FLOATERS]
     .sort((a, b) => slot(a.name) - slot(b.name))
-    // A twenty-seventh sticker, or one misspelled in `ORDER`, sorts to the end
+    // A thirty-first sticker, or one misspelled in `ORDER`, sorts to the end
     // and gets no delay rather than crashing: it arrives with the first group,
     // which is visible enough to notice and fix.
     .map((floater, index) => [floater.name, ENTER[index] ?? ""] as const),
@@ -686,7 +765,7 @@ function slot(name: string) {
 
 /**
  * An unrecognised size falls the keyframe's own default rather than crashing,
- * which is how `ARRIVAL` handles a twenty-seventh sticker too.
+ * which is how `ARRIVAL` handles a thirty-first sticker too.
  */
 function drop(size: string) {
   const found = Object.keys(DROP).find((name) => size.startsWith(name));
@@ -698,7 +777,7 @@ function drop(size: string) {
  *
  * Decoration, and treated as such throughout: `aria-hidden` on the layer, so a
  * screen reader hears the two words and the sentence and nothing else, and
- * `pointer-events-none` so twenty-six circles can't intercept a click meant for
+ * `pointer-events-none` so thirty circles can't intercept a click meant for
  * a sign-in button. Between them those two attributes are the difference
  * between atmosphere and an obstacle. `pointer-events-none` doesn't stop the
  * cursor *effect*, incidentally — `PointerNudge` listens on the window.

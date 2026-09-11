@@ -77,7 +77,7 @@ export function PointerNudge(props: { children: ReactNode }) {
      * entrance on the span above (which holds its *first* keyframe for up to a
      * second, because it is declared `both`) and the push this file writes
      * itself. Measuring the painted box at mount therefore records all
-     * twenty-six centres wherever the entrance happens to be holding them —
+     * thirty centres wherever the entrance happens to be holding them —
      * a whole drop height out — and nothing ever corrects it. The giveaway was
      * that resizing the window made the effect better, because by then the
      * entrance had settled. Layout offsets ignore transforms entirely, so this

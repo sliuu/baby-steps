@@ -111,6 +111,29 @@ describe("validateDraft · the mark", () => {
     assert.equal(result.ok, false);
     assert.equal(result.ok === false && result.field, "mark");
   });
+
+  it("accepts an icon name, which is not one grapheme", () => {
+    // The whole point of the second rule. Thirteen characters, one picture —
+    // if the grapheme check ran first, or alone, every icon would be rejected.
+    const result = validateDraft(draft({ mark: "icon:dumbbell" }));
+    assert.equal(result.ok, true);
+    assert.equal(result.ok && result.draft.mark, "icon:dumbbell");
+  });
+
+  it("rejects an icon name that isn't in the set", () => {
+    // Membership, not shape. A retired or mistyped id has to fail here rather
+    // than reach the calendar and render as the words it was stored as.
+    const result = validateDraft(draft({ mark: "icon:dumbell" }));
+    assert.equal(result.ok, false);
+    assert.equal(result.ok === false && result.field, "mark");
+  });
+
+  it("rejects a bare icon id with no prefix", () => {
+    // "dumbbell" is a word someone could type into the field, and the prefix is
+    // what stops it silently becoming a picture.
+    const result = validateDraft(draft({ mark: "dumbbell" }));
+    assert.equal(result.ok, false);
+  });
 });
 
 describe("validateDraft · the life area", () => {

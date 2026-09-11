@@ -3,7 +3,7 @@
 import { useActionState, useId, useState, type ReactNode } from "react";
 
 import type { SaveResult } from "@/app/actions/activities";
-import { EmojiPicker } from "@/components/tray/EmojiPicker";
+import { MarkPicker } from "@/components/tray/MarkPicker";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MARK_ICON_SIZE, MARK_STROKE, iconFor } from "@/lib/icons";
 import { ramp } from "@/lib/palette";
 import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
 
@@ -168,6 +169,16 @@ export function StickerFields(props: Props) {
     null,
   );
 
+  /**
+   * The icon this mark names, or null when it is a letter, an emoji or empty.
+   *
+   * Everything the mark field does differently below hangs off this one value:
+   * an icon is drawn rather than typed, so the field shows a picture, submits
+   * from a hidden input, and hands its own value back to the empty string so
+   * that typing over it replaces the icon instead of appending to its name.
+   */
+  const markIcon = iconFor(mark);
+
   const area = areas.find((candidate) => candidate.id === lifeAreaId);
   /** The chosen area's colour, worn by the mark field. `ramp` has a fallback. */
   const { tint } = ramp(area?.colorKey ?? "");
@@ -210,7 +221,11 @@ export function StickerFields(props: Props) {
             renders a hidden native <select> alongside the button, so the value
             arrives in FormData like any other field. Without it the trigger is
             just a button and `lifeArea` would always be empty. */}
-        <Select name="lifeArea" value={lifeAreaId} onValueChange={setLifeAreaId}>
+        <Select
+          name="lifeArea"
+          value={lifeAreaId}
+          onValueChange={setLifeAreaId}
+        >
           <SelectTrigger
             id={`${errorId}-area`}
             className="w-full"
@@ -255,7 +270,7 @@ export function StickerFields(props: Props) {
             error says so in the same words. A warning that is only sometimes
             true doesn't need a filler sentence to keep its seat warm. */}
         {moving && (
-          <p className="text-[0.8rem] text-ink-muted">
+          <p className="text-[0.735rem] text-ink-muted">
             Marks you’ve already placed move with it, so past months will show
             it under the new area.
           </p>
@@ -292,13 +307,44 @@ export function StickerFields(props: Props) {
               the body serif sits low. Labelled by `aria-label` rather than a
               <Label> — the circle is 44px across and a word above it would be
               wider than the control it names. */}
+          {markIcon && (
+            <>
+              {/* The picture, over an input that is deliberately empty.
+
+                  `1.35rem` is not chosen, it is converted: `StickerMark` draws
+                  a 26px circle around `text-[0.8rem]`, and `MARK_ICON_SIZE` is
+                  1.25em of that, so the icon is 61.5% of the circle. This
+                  circle is 44px, and 1.35rem is the type size that lands the
+                  same fraction here. Change either number there and this one
+                  follows, or the preview stops being one.
+
+                  `pointer-events-none` so the field underneath still takes the
+                  click: the way back to a letter is to type one. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 grid place-items-center text-[1.35rem] text-ink"
+              >
+                <markIcon.Icon
+                  className={MARK_ICON_SIZE}
+                  strokeWidth={MARK_STROKE}
+                />
+              </span>
+              {/* What actually submits while an icon is chosen. The visible
+                  field gives up its `name` in the same breath, so `mark`
+                  appears in the FormData exactly once either way. */}
+              <input type="hidden" name="mark" value={mark} />
+            </>
+          )}
           <Input
-            name="mark"
-            value={mark}
+            name={markIcon ? undefined : "mark"}
+            value={markIcon ? "" : mark}
             onChange={(event) => setMark(event.target.value)}
             autoComplete="off"
-            aria-label="Mark"
-            placeholder="G"
+            // The label says what is in the circle, because the field is empty
+            // when an icon is in it and "Mark" on its own would be read out as
+            // a blank one.
+            aria-label={markIcon ? `Mark: ${markIcon.label}` : "Mark"}
+            placeholder={markIcon ? "" : "G"}
             className="font-emoji size-full rounded-full border-0 bg-transparent px-0 text-center text-base dark:bg-transparent"
             {...fieldProps("mark")}
           />
@@ -307,7 +353,7 @@ export function StickerFields(props: Props) {
               which is why the picker takes a setter and keeps no idea of what's
               currently chosen. It sits on the circle's corner because picking a
               mark and seeing the mark are one thing, not two. */}
-          <EmojiPicker
+          <MarkPicker
             onPick={setMark}
             className="absolute -right-1 -bottom-1 rounded-full"
           />
@@ -335,7 +381,7 @@ export function StickerFields(props: Props) {
         {problem && (
           <p
             id={errorId}
-            className="rounded-md bg-ramp-red-soft px-2 py-1.5 text-[0.9rem]"
+            className="rounded-md bg-ramp-red-soft px-2 py-1.5 text-[0.83rem]"
           >
             {problem.message}
           </p>
