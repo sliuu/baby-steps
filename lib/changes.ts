@@ -72,7 +72,13 @@ export type CalendarChange =
       index: number;
     }
   | { kind: "mood"; day: DayString; mood: Mood }
-  | { kind: "clearMood"; day: DayString };
+  | { kind: "clearMood"; day: DayString }
+  /**
+   * The day's note, replaced wholesale. `""` is how the week strip says
+   * "cleared" — it reaches the optimistic map as `null` and the database as a
+   * delete, so there is one empty state rather than two.
+   */
+  | { kind: "note"; day: DayString; note: string };
 
 /**
  * The optimistic redraw: the calendar as it will look once `change` lands.
@@ -105,13 +111,24 @@ export function applyChange(
   // instead. Splitting it out is what keeps the other four one-liners.
   if (change.kind === "move") return moveSticker(byDay, change);
 
-  const current = byDay.get(change.day) ?? { activities: [], mood: null };
+  const current = byDay.get(change.day) ?? {
+    activities: [],
+    mood: null,
+    note: null,
+  };
   const next = new Map(byDay);
 
   switch (change.kind) {
     case "mood":
       next.set(change.day, { ...current, mood: change.mood });
       return next;
+
+    case "note": {
+      const note = change.note.trim() === "" ? null : change.note;
+      if (current.note === note) return byDay;
+      next.set(change.day, { ...current, note });
+      return next;
+    }
 
     case "clearMood":
       if (current.mood === null) return byDay;
@@ -234,7 +251,7 @@ function moveSticker(
     return next;
   }
 
-  const target = byDay.get(to) ?? { activities: [], mood: null };
+  const target = byDay.get(to) ?? { activities: [], mood: null, note: null };
   const duplicate = target.activities.some(
     (sticker) => sticker.activityId === activityId,
   );

@@ -29,8 +29,29 @@ function placed(activityId: string, face: typeof GYM) {
   return { id: `row-${activityId}`, activityId, ...face };
 }
 
-function calendar(entries: Record<string, DayStickers>): StickersByDay {
-  return new Map(Object.entries(entries));
+/**
+ * A calendar, written the short way.
+ *
+ * `note` is optional here and nowhere else. Almost every test in this file is
+ * about activities or moods, and spelling out `note: null` on each of the forty
+ * or so days below would be forty lines of noise about a field the test isn't
+ * asking anything about. The note tests pass it; the rest get the empty day's
+ * value, which is what `getStickersByDay` would have handed them.
+ */
+type Entry = Omit<DayStickers, "note"> & { note?: string | null };
+
+function calendar(entries: Record<string, Entry>): StickersByDay {
+  return new Map(
+    Object.entries(entries).map(([day, entry]) => [
+      day,
+      // Filled in, not copied over. Two tests below hold onto the object they
+      // passed and assert `applyChange` handed back *that* object, so an entry
+      // that is already a whole `DayStickers` has to go in untouched — a spread
+      // would break the identity those tests are checking, and the failure
+      // would look like a bug in `applyChange` rather than in this helper.
+      "note" in entry ? (entry as DayStickers) : { ...entry, note: null },
+    ]),
+  );
 }
 
 describe("applyChange · place", () => {
@@ -208,14 +229,21 @@ describe("applyChange · remove", () => {
 
     // The mood is still there. A day is two independent things, and unticking
     // an activity must not take the mood with it.
-    assert.deepEqual(after.get(DAY), { activities: [], mood: "great" });
+    assert.deepEqual(after.get(DAY), {
+      activities: [],
+      mood: "great",
+      note: null,
+    });
   });
 });
 
 describe("applyChange · move", () => {
   it("carries the mark to the other day", () => {
     const before = calendar({
-      [DAY]: { activities: [placed("gym", GYM), placed("read", READ)], mood: "okay" },
+      [DAY]: {
+        activities: [placed("gym", GYM), placed("read", READ)],
+        mood: "okay",
+      },
     });
     const after = applyChange(before, {
       kind: "move",
@@ -346,7 +374,11 @@ describe("applyChange · move within a day", () => {
   const THREE = () =>
     calendar({
       [DAY]: {
-        activities: [placed("gym", GYM), placed("read", READ), placed("swim", SWIM)],
+        activities: [
+          placed("gym", GYM),
+          placed("read", READ),
+          placed("swim", SWIM),
+        ],
         mood: "okay",
       },
     });
@@ -447,7 +479,11 @@ describe("applyChange · mood", () => {
       mood: "great",
     });
 
-    assert.deepEqual(after.get(DAY), { activities: [], mood: "great" });
+    assert.deepEqual(after.get(DAY), {
+      activities: [],
+      mood: "great",
+      note: null,
+    });
   });
 
   // The other half of a database rule: `unique (user_id, day)` on day_moods,
@@ -456,7 +492,11 @@ describe("applyChange · mood", () => {
     const before = calendar({
       [DAY]: { activities: [placed("gym", GYM)], mood: "great" },
     });
-    const after = applyChange(before, { kind: "mood", day: DAY, mood: "rough" });
+    const after = applyChange(before, {
+      kind: "mood",
+      day: DAY,
+      mood: "rough",
+    });
 
     assert.equal(after.get(DAY)?.mood, "rough");
     assert.equal(after.get(DAY)?.activities.length, 1);
@@ -471,6 +511,7 @@ describe("applyChange · mood", () => {
     assert.deepEqual(after.get(DAY), {
       activities: [placed("gym", GYM)],
       mood: null,
+      note: null,
     });
   });
 
@@ -483,6 +524,104 @@ describe("applyChange · mood", () => {
   });
 });
 
+// A note is stored one way and typed another. The textarea's empty state is
+// `""`, the column's is a row that isn't there, and `applyChange` is where the
+// two are reconciled — so these tests are about that seam and not about text.
+describe("applyChange · note", () => {
+  it("writes a note onto a day", () => {
+    const before = calendar({ [DAY]: { activities: [], mood: null } });
+    const after = applyChange(before, {
+      kind: "note",
+      day: DAY,
+      note: "Long walk, felt good.",
+    });
+
+    assert.equal(after.get(DAY)?.note, "Long walk, felt good.");
+  });
+
+  it("keeps the day's stickers and mood", () => {
+    const before = calendar({
+      [DAY]: { activities: [placed("gym", GYM)], mood: "great" },
+    });
+    const after = applyChange(before, { kind: "note", day: DAY, note: "Ow." });
+
+    assert.deepEqual(after.get(DAY), {
+      activities: [placed("gym", GYM)],
+      mood: "great",
+      note: "Ow.",
+    });
+  });
+
+  // The action deletes the row for an empty note, so the map has to agree that
+  // an emptied note is `null` and not `""`. If these two disagreed the day
+  // would look noted until the next reload and unnoted after it.
+  it("stores an emptied note as null", () => {
+    const before = calendar({
+      [DAY]: { activities: [], mood: null, note: "x" },
+    });
+    const after = applyChange(before, { kind: "note", day: DAY, note: "" });
+
+    assert.equal(after.get(DAY)?.note, null);
+  });
+
+  it("treats whitespace as empty", () => {
+    const before = calendar({
+      [DAY]: { activities: [], mood: null, note: "x" },
+    });
+    const after = applyChange(before, {
+      kind: "note",
+      day: DAY,
+      note: "   \n ",
+    });
+
+    assert.equal(after.get(DAY)?.note, null);
+  });
+
+  it("returns the same Map when the note hasn't changed", () => {
+    const before = calendar({
+      [DAY]: { activities: [], mood: null, note: "Same." },
+    });
+
+    assert.equal(
+      applyChange(before, { kind: "note", day: DAY, note: "Same." }),
+      before,
+    );
+  });
+
+  it("returns the same Map when an empty note is cleared again", () => {
+    const before = calendar({ [DAY]: { activities: [], mood: null } });
+
+    assert.equal(
+      applyChange(before, { kind: "note", day: DAY, note: "" }),
+      before,
+    );
+  });
+
+  it("notes a day that isn't in the map yet", () => {
+    const after = applyChange(calendar({}), {
+      kind: "note",
+      day: DAY,
+      note: "First thing here.",
+    });
+
+    assert.deepEqual(after.get(DAY), {
+      activities: [],
+      mood: null,
+      note: "First thing here.",
+    });
+  });
+
+  it("leaves other days alone", () => {
+    const before = calendar({
+      [DAY]: { activities: [], mood: null },
+      [OTHER]: { activities: [placed("gym", GYM)], mood: null, note: "Kept." },
+    });
+    const after = applyChange(before, { kind: "note", day: DAY, note: "New." });
+
+    assert.equal(after.get(OTHER)?.note, "Kept.");
+  });
+});
+
 // These are the ones that would catch a rewrite of `applyChange` that looks
 // tidier and is wrong. Mutating the incoming Map corrupts the value React falls
 // back to when a write fails, so a failed drop would roll back to the optimistic
@@ -490,7 +629,11 @@ describe("applyChange · mood", () => {
 // gone on the next reload with nothing to explain it.
 describe("applyChange · doesn't touch what it was given", () => {
   it("leaves the original Map and its arrays alone", () => {
-    const day: DayStickers = { activities: [placed("read", READ)], mood: null };
+    const day: DayStickers = {
+      activities: [placed("read", READ)],
+      mood: null,
+      note: null,
+    };
     const before = calendar({ [DAY]: day });
 
     applyChange(before, {
@@ -526,7 +669,11 @@ describe("applyChange · doesn't touch what it was given", () => {
   });
 
   it("doesn't disturb other days", () => {
-    const untouched: DayStickers = { activities: [], mood: "great" };
+    const untouched: DayStickers = {
+      activities: [],
+      mood: "great",
+      note: null,
+    };
     const before = calendar({
       [DAY]: { activities: [], mood: null },
       [OTHER]: untouched,

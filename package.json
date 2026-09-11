@@ -11,6 +11,8 @@
     "check:dates": "node scripts/check-dates.mts",
     "seed": "npx supabase@2.115.0 db query --linked -f scripts/seed.sql",
     "seed:reset": "npx supabase@2.115.0 db query --linked -f scripts/seed-reset.sql",
+    "db:notes": "npx supabase@2.115.0 db query --linked -f scripts/day-notes.sql",
+    "adopt:icons": "npx supabase@2.115.0 db query --linked -f scripts/adopt-icons.sql",
     "types:db": "npx supabase@2.115.0 gen types typescript --linked > lib/database.types.ts"
   },
   "dependencies": {

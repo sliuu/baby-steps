@@ -136,6 +136,30 @@ export type Database = {
         }
         Relationships: []
       }
+      day_notes: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          note: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          note: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          note?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       life_areas: {
         Row: {
           color_key: string

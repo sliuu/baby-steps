@@ -2,11 +2,111 @@
 
 Newest first. One entry per step.
 
-**Now:** The app moves. Dialogs and menus arrive slower than they leave, the month steps sideways like a deck of pages, a placed mark scales into its square, and a `prefers-reduced-motion` track turns all of it off without changing a single layout. On a slow connection the page now paints its frame and a full-size grey calendar immediately instead of a white screen. The sticker form also lost its preview: the area picker moved to the top and the mark field wears that area's colour, with the emoji picker on its corner. **Uncommitted**, and reviewed in the browser as it was built — except the skeletons, which need network throttling to see at all, and the smaller form, which hasn't been looked at yet. The `lib/database.types.ts` item below is still open. One step left after this: deploy.
+**Now:** The calendar has two views. A Month/Week pill sits beside the title and the same two arrows step whichever one you're in; the week is seven tall columns, each with the day's stickers spelled out as named bars and a note field at the bottom for a line about that day. Before that: every emoji in the app became a Lucide icon, drawn from a 432-icon map with eight hand-drawn sports additions, and the body text moved to DM Sans throughout. **All of it committed and pushed** — four commits on `main`, which is what the hosted version had been missing: the database already held `icon:<id>` marks for all 23 activities and the deployed build was still `c77303b`, so every sticker there read as the literal words `icon:tennis`. `npm run db:notes` has been run; `npm run adopt:icons` has not, so existing stickers keep their emoji. The `lib/database.types.ts` item below is still open. One step left after this: deploy.
 
 Most of Step 16 still hasn't been looked at in a browser; the open items under each entry below are the list.
 
 The plan grew a step: editing a sticker was inserted as Step 16, so motion and deploy became 17 and 18.
+
+---
+
+## 2026-09-10 · The week
+
+"Add a 'week' section. 7 sections (columns), one for each day in the week. Same arrows for going forward or backward. Sticker tray available to drag into the days, but because there's more room we'll include the whole word into the rectangular bar that will be the sticker. Color coded the same way. At the bottom of each day, a space for notes about that day. short notes or summaries."
+
+**What changed about the interface.** There is a Month/Week pill next to the calendar title. In week view the grid becomes seven full-height columns, one per day, each headed by its own weekday name and date. A sticker dragged in from the tray lands as a rectangular bar with the activity's name written in it, tinted the same colour it has in the month grid. Under the stack, each column ends in a two-line note field — click it, type, click away, and it saves. The arrows and the tray are the same ones; nothing else on the page moved.
+
+**Decisions**
+
+- **A toggle inside the calendar, not a third section in the top nav.** Everything the week needs already exists on this page and is stateful: one `DndContext`, the tray, the day modal, the optimistic map, the error region. A separate route would have meant a second copy of all of it, and "same arrows" would have been two components that happened to look alike. It also keeps exactly one grid mounted at a time, which matters because both grids register droppables under the same day ids.
+- **One `anchor: Date` serves both views.** Switching Month↔Week keeps your place instead of snapping back to today — the week you land on is the week containing the day you were looking at.
+- **`MonthGrid` lost its head.** It used to own the month, the title, the arrows and the deck transition. All four moved up into `CalendarPanel`, and the grid is now purely derived from a `month: Date` prop. `MonthHeader` is gone; `PeriodHeader` replaces it and takes a unit word, so the arrows read "Previous week" or "Previous month" from the same code.
+- **The transition types are now `step-next` / `step-previous`.** They were `month-next` / `month-previous`, and the animation is unchanged — the same 8% slide and fade — but the unit isn't a month any more. The CSS class names (`deck-next`, `deck-previous`) stayed, because they describe the picture rather than the unit.
+- **`DropSlot` grew an axis.** A month cell lays marks out in a row and wants a vertical caret; a week column stacks them and wants a horizontal one. The slot carries `axis` in its droppable data, and the collision function in `CalendarBoard` reads it to decide which direction is "along" and which is the cross axis it weights ×4. That weighting is what makes a slot in the column you're over beat a slot one column across.
+- **`DraggableMark` takes a `shape`, which is the opposite call from the one made about `DraggableSticker`.** Those two stayed separate because their *behaviour* differs. Here nothing behavioural differs at all — same drag, same data, same overlay — only the picture, so a prop is right and a second component would be a copy of thirty lines to change one child.
+- **Notes are stored as a row or not at all.** Emptying a note deletes the row rather than writing `""`, so `null` is the only "no note" and there is one empty state instead of two that render identically. `applyChange` trims and nulls the same way the action does, which is the usual second-copy-of-a-rule, so it's tested.
+- **The note commits on blur, not on keystroke.** Prose typed at speed would otherwise be one server action per character. Escape reverts and blurs. A render-time guard adopts a newly saved value without clobbering what you're in the middle of typing.
+- **Moods stay circles in both views.** A mood belongs to the day rather than to the stack inside it, and it sits in the column header either way — so the drag overlay only becomes a bar for activities.
+
+**Changed**
+
+- `components/calendar/viewMode.tsx` — new; the Week/Month context, provided by `AppShell`
+- `lib/nav.ts` — three sections (`week`, `month`, `trends`) and `isCalendar`
+- `components/calendar/period.ts` — new; `CalendarViewMode`, `Landed`, and the `PeriodProps` both grids take
+- `components/calendar/CalendarPanel.tsx` — new; owns the anchor, the title, the deck transition, and which grid is mounted
+- `components/calendar/PeriodHeader.tsx` — new; title and arrows (replaces `MonthHeader.tsx`, deleted). It had the Month/Week pill for an afternoon; the nav has it now.
+- `components/calendar/WeekGrid.tsx`, `WeekDayColumn.tsx`, `StickerBar.tsx`, `DayNote.tsx` — new
+- `components/calendar/MonthGrid.tsx` — rewritten as a derived grid with no state, header or transition
+- `components/dnd/DropSlot.tsx` — `axis` prop, carried in the droppable data
+- `components/dnd/DraggableMark.tsx` — `shape` prop
+- `components/dnd/CalendarBoard.tsx` — `view` state, axis-aware collisions, bar-shaped overlay in week view
+- `lib/dates.ts` — `weekGrid`, `toWeekString`, `stepWeek`, `formatWeekTitle`
+- `lib/stickers.ts` — `DayStickers.note`, `NOTE_MAX`
+- `lib/changes.ts` — the `note` change
+- `lib/queries/stickers.ts` — third query for `day_notes`
+- `app/actions/stickers.ts` — `setDayNote`
+- `scripts/day-notes.sql`, `package.json` (`npm run db:notes`), `lib/database.types.ts`
+- `app/globals.css` — the deck comment now names the right transition types
+
+**State:** `tsc`, `eslint`, 229 tests, `npm run check:dates` (33 assertions) and `npm run build` all green. Uncommitted.
+
+**Three fixes after the first look in a browser.**
+
+- **Notes saved and never came back.** `getStickersByDay` ran the third query and then had no loop to fold its rows into the map, so every note round-tripped to Postgres correctly and rendered as an empty field. Worth remembering as the shape of the bug: the query, the guard and the types were all right, and the four lines that used the result were missing.
+- **The field grows with the note now.** It was two fixed rows. The height comes from a hidden twin `<span>` sharing the textarea's grid cell and its typography — CSS rather than measuring `scrollHeight` in an effect, because an effect runs after paint and a saved four-line note would render short and jump. Grid rows stretch, so a long Thursday makes the whole week taller and each note stays at the bottom of its own column.
+- **And then the growth went the wrong way, twice.** First the stack above the note was `flex-1` — a zero flex-basis, no height of its own, only leftover space — so a note gaining a line took it from the stickers. `grow shrink-0` fixed that and changed nothing visible, because the real culprit was where the minimum height lived. `min-h-[26rem]` was on the *column*, and a column with four stickers in it is twenty rem of dead air: a longer note just ate the air, and the column only exceeded 26rem once everything together did. The floor now sits on the sticker stack instead (`STACK_FLOOR`, now 24rem — see the scrolling note below), the column has no minimum at all and is the sum of its parts — so a line added to a note is a line added to the column, from the first one. And the last piece was the note's anchor: with the stack set to `grow`, the note was pinned to the bottom of its column, so a longer note expanded *upwards* — the hairline above it climbed into the sticker area and the column's bottom edge never moved. The stack no longer grows. The hairline sits in the same place in all seven days, the note grows downwards, and the column gets taller to hold it. The trade is that a short note sits under its own hairline with spare height below rather than on the floor of the column: tops aligned instead of bottoms, which is the right way round for the first line of a sentence. All seven stay level, because that is what a grid row does.
+
+**The week's day header lost the pencil.** Weekday, numeral, mood face and pencil is four things across a 100px header, and it read as clutter where the month cell's three do not — the month cell's pencil shares a run with the marks rather than with the date. It moved to a row of its own between the sticker stack and the note's hairline, right-aligned, which is the one band in the column that was genuinely spare. That row is 28px the column didn't have, so `STACK_FLOOR` gave back the same 28px (24rem → 22.25rem) and the resting height is unchanged.
+
+**Week and Month became nav sections.** "Let's make the top nav 'Week Month Trends' and remove the tabs next to the arrows." That reverses the first decision in this entry, and the reason it reverses cleanly is that the decision was about *state*, not about where the control sits. Both sections render the same `calendar` node and neither unmounts it, so there is still one `DndContext`, one tray, one optimistic map and one grid mounted at a time — the thing a second route would have cost. What changed is only who holds the value, and `AppShell` can't pass it down: the calendar arrives there as `props.calendar`, a finished server-rendered node, and a node cannot be given a prop. So it goes through context (`components/calendar/viewMode.tsx`), which crosses the server-rendered markup in between without trouble because the provider and the consumer are both client components. `PeriodHeader` is back to the period and two arrows.
+
+The argument for the old pill was that month-or-week is a lens on a page rather than a place you can be sent to, which is still true of the URL and turned out not to be what decides. Two segmented pills on one screen read as two levels of navigation, and having to remember which of them holds Week is worse than the inaccuracy. Month is still the landing section even though Week is listed first.
+
+**And the page fits a 14" laptop.** "On the week page, it shouldn't scroll, because it doesn't go past the page, so I don't know why it does but it does." It wasn't the calendar. The sticker tray caps its own height at `calc(100vh - 8rem)` so it can scroll internally on a long list — but the tray's top edge sits 120px down the page (64 of nav, 56 of `main`'s old `py-14`) with another 56 below it, so the tray alone was 48px taller than the window on a week that ended well above the fold. The cap is arithmetic about the padding above and below it, and it has to be kept in step with it: `py-10` now, so `calc(100vh - 9rem)`.
+
+With those 144px of chrome fixed, the rest was finding the vertical budget for the grid — about 850px of content area on that screen, minus 48 of title and 24 of panel gap. The month grid spends it on six rows: the weekday labels went from `py-3` to `py-2` and a day cell's floor from `min-h-32` to `min-h-24`, which is 96px a row and makes a quiet month fit. A *busy* month still runs past the fold, deliberately — `min-h-24` is a floor and marks set the real row height, so the number to change if that matters more is the mark size. The week spends it on one row, so `STACK_FLOOR` went up rather than down: 19rem left an empty week floating in the top two thirds of the screen, and 24rem fills it with about three lines of note growth in hand before the window has to scroll.
+
+**Open**
+
+- **Run `npm run types:db`** when convenient, to replace the hand-written `day_notes` block in `lib/database.types.ts` with a generated one.
+- **Column height is still a guess, from the other end.** `STACK_FLOOR` is 24rem of sticker room per column, picked to fill a 14" screen without scrolling it. On a larger display an empty week will sit higher than it needs to; on a smaller one, sooner than expected, a second line of note will start a scrollbar.
+- **Bar text truncates.** Long activity names get an ellipsis rather than wrapping to two lines. Fine for "Gym", unknown for "Coffee with a friend".
+- **Seven columns on a phone is untested.** The grid is `grid-cols-7` with no breakpoint below it.
+
+---
+
+## 2026-09-09 · Icons, not emoji
+
+"Replace all emoji used as icons throughout the app with SVG icons from Lucide, installed as a package rather than inline emoji characters… Build a central icon map so there's one source of truth… Keep icon size and stroke width consistent across all instances."
+
+**What changed about the interface.** Every mark in the app is now a line drawing at one weight. The tray, the calendar squares, the mood row and the login background all draw from the same set, so a Tuesday with four stickers on it reads as four members of one family instead of four fonts' worth of colour emoji. The picker on the sticker form is now an icon picker: eight groups, 432 icons, searchable by name. Body text across the app moved to DM Sans, the landing paragraph re-tuned to land on three lines, and the login page's sticker field fills out to the left and right of the words.
+
+**Decisions**
+
+- **One map, `lib/icons.ts`, and the ids in it are database values.** A mark is stored as `icon:<id>` in `activities.mark`. That makes renaming an id a data migration, not a refactor — the generator that builds this file now refuses to drop an id that's already shipped, because an orphaned row renders as the literal text `icon:laptop` in a calendar square, which is exactly how the one that got away was found.
+- **Emoji still render.** A mark that isn't `icon:`-prefixed falls through to the old path. That's what makes the migration a `UPDATE` you can run whenever (`npm run adopt:icons`) rather than a flag day, and it's why an existing sticker with 🏃 on it is not broken right now — just not yet converted.
+- **Eight icons are hand-drawn.** Lucide has no tennis, basketball, golf, ski, surf, rowing, climbing or yoga pose. Adding a second icon family for them would have undone the whole point, so they're drawn on Lucide's own 24px grid with `createLucideIcon` and live in `lib/icons-custom.ts`.
+- **Size and stroke are two exported constants**, `MARK_ICON_SIZE` (`size-[1.25em]`, so the icon scales with whatever type size its container sets) and `MARK_STROKE` (1.5). Nothing sets either inline.
+- **The mood row was left alone**, deliberately. Its five faces are a scale, not a vocabulary, and a scale reads better as faces than as line drawings.
+
+**Changed**
+
+- `lib/icons.ts` — new; 432 icons in 8 groups of 54, plus the lookup and the two constants
+- `lib/icons-custom.ts`, `lib/icons.test.ts` — new
+- `components/tray/EmojiPicker.tsx` → `MarkPicker.tsx`
+- `lib/emoji.ts`, `scripts/build-emoji.mjs` — deleted
+- `scripts/adopt-icons.sql`, `scripts/seed.sql` — the emoji→icon mapping
+- `components/calendar/StickerMark.tsx`, `DayMoodButton.tsx`, `components/tray/*`, `components/trends/*` — draw from the map
+- `app/layout.tsx`, `app/globals.css` — DM Sans as the body face
+- `app/login/page.tsx`, `components/auth/FloatingStickers.tsx` — three-line subtitle, four more stickers, wider middle band
+- `components/auth/PointerNudge.tsx`, `components/ui/*` — pointer cursor on the buttons that are buttons
+
+**State:** green under `tsc`, `eslint`, tests and `build`. Uncommitted.
+
+**Open**
+
+- **`npm run adopt:icons` hasn't been run.** Until it is, existing stickers keep their emoji.
+- **The Google avatar is still missing in the top-right.** Needs the DevTools Network status code for the `googleusercontent` request to tell the three causes apart: 403/429 wants `referrerPolicy="no-referrer"`, 404 means a stale `avatar_url`, and no request at all means empty user metadata.
 
 ---
 

@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 
 import type { DayString } from "@/lib/dates";
 import { isMood } from "@/lib/moods";
+import { NOTE_MAX } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -371,6 +372,60 @@ export async function clearDayMood(day: DayString): Promise<PlaceResult> {
 
   if (error) {
     return { ok: false, message: "That mood wouldn't clear. Try again." };
+  }
+
+  refresh();
+  return { ok: true };
+}
+
+/**
+ * Write the day's note, or clear it.
+ *
+ * An empty string deletes the row rather than storing `''`. The column is
+ * `not null` and the calendar draws "no note" one way, so two representations
+ * of the same nothing would only ever disagree — see `scripts/day-notes.sql`.
+ *
+ * Trimmed before the length check and before the emptiness test, so a note of
+ * three spaces clears the day and a note that only exceeds 280 characters in
+ * trailing whitespace is accepted rather than rejected for being too long.
+ *
+ * The optimistic write has already landed by the time this runs, and the week
+ * strip will keep showing what you typed even if this fails — the error line
+ * under the tray is what says otherwise. That is the same bargain every other
+ * action here makes; the difference is that a note is the one thing you can
+ * lose that you cannot reconstruct by looking at the screen, which is why the
+ * message names the note rather than saying "try again".
+ */
+export async function setDayNote(
+  day: DayString,
+  note: string,
+): Promise<PlaceResult> {
+  if (!DAY_PATTERN.test(day)) {
+    return { ok: false, message: "That isn't a day." };
+  }
+
+  const text = note.trim();
+  if (text.length > NOTE_MAX) {
+    return {
+      ok: false,
+      message: `That note is too long — ${NOTE_MAX} characters at most.`,
+    };
+  }
+
+  const { supabase, user } = await signedInClient();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const { error } = text
+    ? await supabase
+        .from("day_notes")
+        .upsert(
+          { user_id: user.id, day, note: text },
+          { onConflict: "user_id,day" },
+        )
+    : await supabase.from("day_notes").delete().eq("day", day);
+
+  if (error) {
+    return { ok: false, message: "That note didn't save. Copy it somewhere and try again." };
   }
 
   refresh();

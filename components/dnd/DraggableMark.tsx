@@ -2,6 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 
+import { StickerBar } from "@/components/calendar/StickerBar";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { formatDayLong, type DayString } from "@/lib/dates";
 import { faceOf, type ActivitySticker } from "@/lib/stickers";
@@ -20,6 +21,20 @@ type Props = {
    * exactly the same from inside a render.
    */
   landing: boolean;
+  /**
+   * Which drawing to put inside the handle: the month grid's 26px circle, or
+   * the week strip's full-width bar with the name on it.
+   *
+   * A prop here and two components below is the opposite of the call the doc
+   * above makes about `DraggableSticker`, and deliberately so. That merge would
+   * have switched off half of one component to build the other — different
+   * element, different listeners, an `onActivate` that only one of them has.
+   * Nothing behavioural changes here: same button, same payload, same id, same
+   * landing animation, same keyboard handling. Only the picture is different,
+   * and duplicating the drag wiring to vary a picture is how the two views
+   * start disagreeing about what a drag *is*.
+   */
+  shape?: "mark" | "bar";
 };
 
 /**
@@ -50,6 +65,8 @@ type Props = {
  * something, or you can't tell by looking which of the two a press will do.
  */
 export function DraggableMark(props: Props) {
+  const bar = props.shape === "bar";
+
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: props.sticker.id,
     data: {
@@ -89,13 +106,21 @@ export function DraggableMark(props: Props) {
       // sticker's last movement was away from the day it had just been put on.
       // Animating the result instead means the same motion plays whether the
       // mark arrived by drag or by a checkbox in the day modal.
-      className={`touch-none rounded-full transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-        props.landing ? "animate-land" : ""
-      } ${
+      //
+      // The bar takes `rounded-md` and `block w-full` for the same two
+      // reasons one level down: the ring should trace the sticker, and a
+      // sticker that is a row has to fill the column it is a row of.
+      className={`touch-none transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+        bar ? "block w-full rounded-md" : "rounded-full"
+      } ${props.landing ? "animate-land" : ""} ${
         isDragging ? "opacity-35" : `cursor-grab active:cursor-grabbing ${props.faded}`
       }`}
     >
-      <StickerMark sticker={props.sticker} />
+      {bar ? (
+        <StickerBar sticker={props.sticker} />
+      ) : (
+        <StickerMark sticker={props.sticker} />
+      )}
     </button>
   );
 }

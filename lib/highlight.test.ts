@@ -59,7 +59,7 @@ function day(
   activities: ActivitySticker[],
   mood: DayStickers["mood"] = null,
 ): DayStickers {
-  return { activities, mood };
+  return { activities, mood, note: null };
 }
 
 const EMPTY_DAY = day([]);

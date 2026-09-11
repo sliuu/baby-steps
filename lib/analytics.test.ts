@@ -68,6 +68,7 @@ function days(
   for (const [day, activityIds] of Object.entries(entries)) {
     map.set(day, {
       mood: null,
+      note: null,
       activities: activityIds.map((activityId) => ({
         id: `placement-${activityId}-${day}`,
         activityId,
@@ -222,7 +223,7 @@ describe("tally · counting", () => {
 
   it("ignores moods — a mood is not a mark", () => {
     const map = days({ "2026-08-10": ["act-gym"] });
-    map.set("2026-08-11", { activities: [], mood: "great" });
+    map.set("2026-08-11", { activities: [], mood: "great", note: null });
     assert.equal(tally(map, GROUPS, ALL).total, 1);
   });
 });
@@ -383,7 +384,7 @@ describe("percent", () => {
 function moodDays(entries: Record<string, Mood>): StickersByDay {
   const map: StickersByDay = new Map();
   for (const [day, mood] of Object.entries(entries)) {
-    map.set(day, { mood, activities: [] });
+    map.set(day, { mood, activities: [], note: null });
   }
   return map;
 }

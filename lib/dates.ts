@@ -1,8 +1,11 @@
 import {
   addDays,
   addMonths,
+  addWeeks,
+  endOfWeek,
   format,
   isSameMonth,
+  isSameYear,
   parse,
   startOfMonth,
   startOfWeek,
@@ -138,4 +141,96 @@ export function weekdayLabels(): string[] {
   return Array.from({ length: 7 }, (_, i) =>
     format(addDays(firstCell, i), "EEE"),
   );
+}
+
+/* ---------------------------------------------------------------------------
+   The week.
+
+   Everything below is the month's arithmetic done one row at a time. The month
+   grid borrows days from its neighbours to fill whole weeks; a week borrows
+   nothing, so there is no `inMonth` here and no fixed cell count to defend —
+   seven columns, always, and every one of them is a real day you can point at.
+
+   What a week column needs and a month cell doesn't is the weekday *on the
+   column itself*. The month grid names its columns once, in a header row, and
+   the forty-two cells below inherit that naming by position. Seven columns
+   can't: they are wide enough to read as seven separate lists rather than as
+   one grid, so each one says which day it is.
+--------------------------------------------------------------------------- */
+
+/** A day in the week strip — a `DayCellData` with its own weekday name. */
+export type WeekDayData = {
+  day: DayString;
+  /** 1–31, for display. */
+  dayOfMonth: number;
+  /** "Mon". The column's own label, not a header two rows up. */
+  weekday: string;
+  isToday: boolean;
+};
+
+/** The number of columns the week strip always draws. */
+export const DAYS_IN_WEEK = 7;
+
+/**
+ * The seven days of the week containing `anchor`, Sunday first.
+ *
+ * `anchor` is any day inside the week, not the Sunday — the caller steps a date
+ * and this finds the week around it, which is what makes `stepWeek` a plain
+ * `addWeeks` rather than something that has to stay aligned to a boundary.
+ *
+ * `todayString` is passed in for the same reason `monthGrid` takes it: reading
+ * the clock during render makes the output depend on which machine ran it, and
+ * the server and the browser are not always on the same date.
+ */
+export function weekGrid(
+  anchor: Date,
+  todayString: DayString | null,
+): WeekDayData[] {
+  const first = startOfWeek(anchor); // Sunday, per date-fns default
+
+  return Array.from({ length: DAYS_IN_WEEK }, (_, i) => {
+    const date = addDays(first, i);
+    const day = toDayString(date);
+    return {
+      day,
+      dayOfMonth: date.getDate(),
+      weekday: format(date, "EEE"),
+      isToday: day === todayString,
+    };
+  });
+}
+
+/** "2026-08-09" — the Sunday, as a stable key for the week's view transition. */
+export function toWeekString(anchor: Date): DayString {
+  return toDayString(startOfWeek(anchor));
+}
+
+export function stepWeek(anchor: Date, by: number): Date {
+  return startOfWeek(addWeeks(anchor, by));
+}
+
+/**
+ * "9 – 15 August 2026", and the two cases where that isn't enough.
+ *
+ * A week is the one period in this app that routinely straddles a boundary, so
+ * the title has to say which parts are shared and which aren't. Three shapes,
+ * narrowest first: inside one month the month and year are said once at the
+ * end; across two months of one year each end names its own month; across two
+ * years each end names everything. Anything less makes "29 – 4 September" a
+ * date range that runs backwards.
+ *
+ * An en dash with spaces, not a hyphen — this is a range, and at this size the
+ * hyphen reads as part of the number next to it.
+ */
+export function formatWeekTitle(anchor: Date): string {
+  const first = startOfWeek(anchor);
+  const last = endOfWeek(anchor);
+
+  if (isSameMonth(first, last)) {
+    return `${format(first, "d")} – ${format(last, "d MMMM yyyy")}`;
+  }
+  if (isSameYear(first, last)) {
+    return `${format(first, "d MMM")} – ${format(last, "d MMM yyyy")}`;
+  }
+  return `${format(first, "d MMM yyyy")} – ${format(last, "d MMM yyyy")}`;
 }

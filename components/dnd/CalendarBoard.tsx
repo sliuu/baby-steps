@@ -14,7 +14,13 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useState,
+  useTransition,
+} from "react";
 
 import {
   clearDayMood,
@@ -22,12 +28,16 @@ import {
   placeActivity,
   removeActivity,
   setDayMood,
+  setDayNote,
   type PlaceResult,
 } from "@/app/actions/stickers";
+import { CalendarPanel } from "@/components/calendar/CalendarPanel";
 import { DayModal } from "@/components/calendar/DayModal";
-import { MonthGrid, type Landed } from "@/components/calendar/MonthGrid";
 import { MoodMark } from "@/components/calendar/MoodMark";
+import { StickerBar } from "@/components/calendar/StickerBar";
 import { StickerMark } from "@/components/calendar/StickerMark";
+import type { Landed } from "@/components/calendar/period";
+import { useCalendarView } from "@/components/calendar/viewMode";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { applyChange, type CalendarChange } from "@/lib/changes";
 import { formatDayLong, toMonthString, type DayString } from "@/lib/dates";
@@ -94,6 +104,8 @@ function runChange(change: CalendarChange): Promise<PlaceResult> {
       return setDayMood(change.day, change.mood);
     case "clearMood":
       return clearDayMood(change.day);
+    case "note":
+      return setDayNote(change.day, change.note);
   }
 }
 
@@ -167,16 +179,25 @@ const collisionDetection: CollisionDetection = (args) => {
     const rect = args.droppableRects.get(container.id);
     if (!rect) continue;
 
-    // `rect.left` is the centre, because the box has no width.
-    const dx = pointer.x - rect.left;
-    // Vertical distance counts quadruple. A day's marks wrap onto several
-    // lines, and 30px of line height is small next to 85px of width — so plain
-    // distance lets the last gap on the line above win while the cursor is
-    // clearly on the line below. Weighting the axis that separates rows keeps
-    // the caret on the row you're pointing at.
-    const dy = (pointer.y - (rect.top + rect.height / 2)) * 4;
+    // The slot has no extent along the axis it divides, so on that axis the
+    // near edge *is* the centre; on the other axis the centre has to be
+    // computed. Which is which is what `axis` says — see `DropSlot`.
+    //
+    // The cross axis counts quadruple, and it's the weighting rather than the
+    // distance that makes the caret land where you're pointing. In a month
+    // cell a day's marks wrap onto several lines, and 30px of line height is
+    // small next to 85px of width, so plain distance lets the last gap on the
+    // line above win while the cursor is clearly on the line below. In a week
+    // column the same thing happens transposed: the slots are as wide as the
+    // column, so without the weighting the caret would rather jump a row than
+    // notice you had moved sideways within one.
+    const block = data.axis === "block";
+    const along = block ? pointer.y - rect.top : pointer.x - rect.left;
+    const across = block
+      ? (pointer.x - (rect.left + rect.width / 2)) * 4
+      : (pointer.y - (rect.top + rect.height / 2)) * 4;
 
-    const distance = dx * dx + dy * dy;
+    const distance = along * along + across * across;
     if (distance < shortest) {
       shortest = distance;
       nearest = container;
@@ -209,6 +230,17 @@ export function CalendarBoard(props: Props) {
     applyChange,
   );
   const [dragging, setDragging] = useState<DragPayload | null>(null);
+
+  /**
+   * Month or week — read here, owned by the top nav.
+   *
+   * It is read at this level and not lower down because the drag overlay below
+   * is the panel's sibling and has to know: the thing under the cursor must be
+   * the same shape as the hole it is going into — a circle over the month grid,
+   * a named bar over the week strip. The panel owns *which period*; this reads
+   * *which shape*.
+   */
+  const view = useCalendarView();
   const [openDay, setOpenDay] = useState<DayString | null>(null);
   const [error, setError] = useState<string | null>(null);
   /**
@@ -474,6 +506,17 @@ export function CalendarBoard(props: Props) {
    */
   const leaving = !target && dragging?.kind === "activity" && !!dragging.from;
 
+  /**
+   * Whether the thing in the air is a named bar rather than a circle.
+   *
+   * The week columns are wide enough to spell the activity out, so that is what
+   * they draw — and the overlay has to agree, or you'd be carrying a circle
+   * towards a row of bars. Moods stay a circle in both views: a mood belongs to
+   * the day rather than to the stack inside it, and it sits in the day's header
+   * either way.
+   */
+  const bar = view === "week" && dragging?.kind === "activity";
+
   return (
     <DndContext
       // Not decoration, and not optional. dnd-kit stamps every draggable with
@@ -501,10 +544,11 @@ export function CalendarBoard(props: Props) {
             shrink below its content's width, so without it a wide grid would
             push the rail off the side instead of narrowing. */}
         <div className="min-w-0 flex-1">
-          {/* The server's month, so first paint isn't blank. MonthGrid corrects
-              it on mount if the visitor's timezone disagrees. */}
-          <MonthGrid
+          {/* The server's month, so first paint isn't blank. CalendarPanel
+              corrects it on mount if the visitor's timezone disagrees. */}
+          <CalendarPanel
             initialMonth={toMonthString(new Date())}
+            view={view}
             stickersByDay={stickersByDay}
             onOpenDay={setOpenDay}
             onCommit={commit}
@@ -524,6 +568,15 @@ export function CalendarBoard(props: Props) {
             scrolling on its own once the list outgrows the window, rather than
             pushing the page taller than the calendar it sits beside.
 
+            `9rem` is that promise written down, and it has to be kept in step
+            with the page's own padding. The tray's top edge is 64px of nav plus
+            `main`'s 40px of top padding, and there are another 40px of bottom
+            padding under it: 144px, which is 9rem. A cap any larger and the
+            tray alone makes a page scroll that would otherwise have fit — it
+            was `8rem`, and 48 stray pixels of scrollbar on a week that ended
+            well above the fold is exactly what that bought. If `py-10` in
+            `AppShell` ever changes, this changes with it.
+
             That scroll is vertical only, and keeping it that way is a rule, not
             a preference: nothing in here may be wider than the rail. Note that
             `overflow-y-auto` does not leave the other axis alone — CSS promotes
@@ -531,7 +584,7 @@ export function CalendarBoard(props: Props) {
             child bleeding past the edge is a horizontal scrollbar, and hiding
             it would only move the problem. Long names truncate; hit areas fill
             the width rather than reaching past it. */}
-        <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:w-72 lg:shrink-0 lg:overflow-y-auto">
+        <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-9rem)] lg:w-72 lg:shrink-0 lg:overflow-y-auto">
           <StickerTray
             groups={props.groups}
             selection={selection}
@@ -552,7 +605,7 @@ export function CalendarBoard(props: Props) {
                 rail; words start at TRAY_INSET. */}
             {error && (
               <p
-                className={`${TRAY_INSET} rounded-md bg-ramp-red-soft py-2 text-[0.9rem]`}
+                className={`${TRAY_INSET} rounded-md bg-ramp-red-soft py-2 text-[0.83rem]`}
               >
                 {error}
               </p>
@@ -604,7 +657,13 @@ export function CalendarBoard(props: Props) {
             // same size, in all three; only weight and hue move, because
             // anything that changed size mid-drag would shift under the cursor
             // at the exact moment you're aiming it.
-            className={`rounded-full transition-opacity ${
+            //
+            // The corner radius is the one thing that does follow the view,
+            // for the same reason the child below does: the ring and the
+            // shadow have to trace the shape actually being carried.
+            className={`transition-opacity ${
+              bar ? "rounded-md" : "rounded-full"
+            } ${
               target
                 ? "opacity-100 drop-shadow-md"
                 : `opacity-50 ${leaving ? "ring-2 ring-ramp-red" : ""}`
@@ -612,6 +671,12 @@ export function CalendarBoard(props: Props) {
           >
             {dragging.kind === "mood" ? (
               <MoodMark mood={dragging.mood} />
+            ) : bar ? (
+              // `w-max` because the overlay's box is `max-content` and a bar is
+              // `w-full`: inside a shrink-wrapped parent that resolves to the
+              // width of the name, which is the right size for something in the
+              // air. In a column it will stretch; here it shouldn't.
+              <StickerBar sticker={dragging.face} className="w-max" />
             ) : (
               <StickerMark sticker={dragging.face} />
             )}

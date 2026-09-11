@@ -36,7 +36,7 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
 
   // Both requests leave together. Awaiting them one after the other would make
   // the page wait for the sum rather than the slower of the two.
-  const [placed, moods] = await Promise.all([
+  const [placed, moods, notes] = await Promise.all([
     whileTokenSettles(() =>
       supabase
         .from("day_activities")
@@ -53,6 +53,9 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
     whileTokenSettles(() =>
       supabase.from("day_moods").select("id, day, mood"),
     ),
+    whileTokenSettles(() =>
+      supabase.from("day_notes").select("id, day, note"),
+    ),
   ]);
 
   if (placed.error || !placed.data) {
@@ -65,13 +68,20 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
       `Could not load moods: ${moods.error?.message ?? "no rows returned"}`,
     );
   }
+  // A missing `day_notes` relation lands here, not as an empty list — which is
+  // exactly what you see if `npm run db:notes` hasn't been run yet.
+  if (notes.error || !notes.data) {
+    throw new Error(
+      `Could not load notes: ${notes.error?.message ?? "no rows returned"}`,
+    );
+  }
 
   const byDay: StickersByDay = new Map();
 
   function dayEntry(day: DayString): DayStickers {
     let entry = byDay.get(day);
     if (!entry) {
-      entry = { activities: [], mood: null };
+      entry = { activities: [], mood: null, note: null };
       byDay.set(day, entry);
     }
     return entry;
@@ -96,6 +106,13 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
     // rather than in this file's types. Narrowing it is what turns it into Mood.
     if (!isMood(row.mood)) continue;
     dayEntry(row.day).mood = row.mood;
+  }
+
+  // No narrowing to do — the column is `not null` with a length CHECK, so any
+  // row that exists holds a note worth showing. An empty note is the absence of
+  // a row, which is why there is nothing to skip here.
+  for (const row of notes.data) {
+    dayEntry(row.day).note = row.note;
   }
 
   return byDay;

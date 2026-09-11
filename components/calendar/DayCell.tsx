@@ -91,7 +91,8 @@ function numeralClasses(cell: DayCellData): string {
  * That was the whole lesson of `dayLabel()`, and it outlived the function.
  */
 export function DayCell(props: Props) {
-  const { cell, stickers, onOpen, onCommit, highlight, lit, caretIndex } = props;
+  const { cell, stickers, onOpen, onCommit, highlight, lit, caretIndex } =
+    props;
 
   /**
    * One rule, and it covers every mark on the page: a mark stays at full
@@ -146,7 +147,12 @@ export function DayCell(props: Props) {
       // day felt like this. A sticker landing between those two turns a label
       // into a shelf, and the two facts stop reading as a pair. The capacity it
       // bought was one mark, and the price was the cell's own structure.
-      className={`group/day relative isolate flex min-h-32 w-full flex-col items-stretch justify-start p-2.5 transition-colors ${
+      // `min-h-24` is six rows of 96px, which is what makes a quiet month fit a
+      // 14" laptop without scrolling. It is a floor and not a height — a day
+      // with three rows of marks is taller than this and always was, so a busy
+      // month still runs past the fold. The number to change if that matters
+      // more than the empty ones is the mark size, not this.
+      className={`group/day relative isolate flex min-h-24 w-full flex-col items-stretch justify-start p-2.5 transition-colors ${
         cell.inMonth
           ? "bg-surface hover:bg-ink/2"
           : "bg-surface-sunken hover:bg-ink/2"
@@ -211,7 +217,7 @@ export function DayCell(props: Props) {
       <div className="flex items-center justify-between gap-2">
         <time
           dateTime={cell.day}
-          className={`oldstyle grid size-7 place-items-center rounded-full text-[0.95rem] ${numeralClasses(cell)}`}
+          className={`oldstyle grid size-7 place-items-center rounded-full text-[0.875rem] ${numeralClasses(cell)}`}
         >
           {cell.dayOfMonth}
         </time>

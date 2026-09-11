@@ -3,7 +3,16 @@
 //
 // Not a test suite — the project has no test runner yet. It exists because the
 // date maths is the one part of Step 5 that can be quietly wrong for months.
-import { monthGrid, toDayString, weekdayLabels, stepMonth } from "../lib/dates.ts";
+import {
+  formatWeekTitle,
+  monthGrid,
+  stepMonth,
+  stepWeek,
+  toDayString,
+  toWeekString,
+  weekGrid,
+  weekdayLabels,
+} from "../lib/dates.ts";
 
 function assert(label: string, actual: unknown, expected: unknown) {
   const ok = JSON.stringify(actual) === JSON.stringify(expected);
@@ -54,3 +63,30 @@ assert("every day string is unique", new Set(days).size, 42);
 // Stepping across a year boundary.
 assert("December + 1 is January", toDayString(stepMonth(new Date(2026, 11, 15), 1)), "2027-01-01");
 assert("January - 1 is December", toDayString(stepMonth(new Date(2026, 0, 15), -1)), "2025-12-01");
+
+// --- The week strip -------------------------------------------------------
+
+const week = weekGrid(new Date(2026, 7, 12), "2026-08-12");
+assert("7 columns", week.length, 7);
+assert("the week opens on Sunday", week[0].day, "2026-08-09");
+assert("the week closes on Saturday", week[6].day, "2026-08-15");
+assert("each column names its own weekday", week.map((c) => c.weekday), ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+assert("exactly one column is today", week.filter((c) => c.isToday).length, 1);
+assert("anchoring on the Sunday gives the same week", weekGrid(new Date(2026, 7, 9), null)[6].day, "2026-08-15");
+
+assert("stepping forward lands on the next Sunday", toDayString(stepWeek(new Date(2026, 7, 12), 1)), "2026-08-16");
+assert("stepping back lands on the previous Sunday", toDayString(stepWeek(new Date(2026, 7, 12), -1)), "2026-08-02");
+assert("a week can cross a year", toDayString(stepWeek(new Date(2026, 11, 30), 1)), "2027-01-03");
+
+assert("a week inside one month says the month once", formatWeekTitle(new Date(2026, 7, 12)), "9 – 15 August 2026");
+assert("a week across two months names both", formatWeekTitle(new Date(2026, 7, 31)), "30 Aug – 5 Sep 2026");
+assert("a week across two years names both", formatWeekTitle(new Date(2026, 11, 31)), "27 Dec 2026 – 2 Jan 2027");
+
+assert("the week key is its Sunday", toWeekString(new Date(2026, 7, 12)), "2026-08-09");
+
+// Spring-forward is the week's version of the DST check above: 8 March 2026 is
+// 23 hours long, and a `startOfWeek` + `addDays` walk must still produce seven
+// distinct days rather than the 8th twice.
+const dstWeek = weekGrid(new Date(2026, 2, 10), null);
+assert("the spring-forward week has seven distinct days", new Set(dstWeek.map((c) => c.day)).size, 7);
+assert("the day after spring-forward is the 9th", dstWeek[1].day, "2026-03-09");

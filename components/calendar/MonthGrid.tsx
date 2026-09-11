@@ -1,218 +1,80 @@
 "use client";
 
-import {
-  addTransitionType,
-  startTransition,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-  ViewTransition,
-} from "react";
+import { useMemo } from "react";
 
 import { DayCell } from "./DayCell";
-import { MonthHeader } from "./MonthHeader";
-import type { DropTarget } from "@/components/dnd/dropTarget";
-import type { CalendarChange } from "@/lib/changes";
-import {
-  fromMonthString,
-  monthGrid,
-  stepMonth,
-  today,
-  toMonthString,
-  weekdayLabels,
-  type DayString,
-} from "@/lib/dates";
-import { dayMatches, type Highlight } from "@/lib/highlight";
-import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
+import type { PeriodProps } from "./period";
+import { monthGrid, weekdayLabels } from "@/lib/dates";
+import { dayMatches } from "@/lib/highlight";
+import { NO_STICKERS } from "@/lib/stickers";
 
-/**
- * The one mark that just arrived, if any.
- *
- * Keyed by activity rather than by sticker row id, because the id changes. A
- * placed sticker is optimistic first — it renders under `pending:…` while the
- * insert is in flight, then swaps to the real uuid when the server answers.
- * Watching the id would mean the mark is a different mark halfway through its
- * own landing animation, and the animation restarts. The activity is unique
- * within a day (the table's own constraint says so) and doesn't move.
- */
-export type Landed = { day: DayString; activityId: string };
-
-type Props = {
-  /** "2026-08", computed on the server so first paint isn't blank. */
-  initialMonth: string;
-  /**
-   * Fetched once on the server, for every month at once. That's why arrowing to
-   * September is instant and needs no request — the data for it is already here.
-   */
-  stickersByDay: StickersByDay;
-  /** Passed straight through to every cell. The grid itself owns no selection. */
-  onOpenDay: (day: DayString) => void;
-  /** Also straight through, for the mood popover on a day. See `CalendarBoard.commit`. */
-  onCommit: (change: CalendarChange) => void;
-  /**
-   * The resolved selection, or null. Also not owned here — it belongs to the
-   * board, because the tray is what sets it and the tray is the grid's sibling.
-   */
-  highlight: Highlight | null;
-  /**
-   * Where a release would land right now, or null between drags. One value
-   * doing two jobs: the day it names gets the drop highlight, and the index it
-   * names gets the caret.
-   */
-  target: DropTarget | null;
-  /**
-   * Whether that target should show a caret at all. False for a mood, which
-   * lands on the day as a whole and has no slot to sit in — the day still
-   * lights up, but no line appears between marks to promise an order that isn't
-   * about to change.
-   */
-  caret: boolean;
-  /** Set for roughly half a second after a mark is placed, then back to null. */
-  landed: Landed | null;
+type Props = PeriodProps & {
+  /** The first of the month being shown. `CalendarPanel` derives it. */
+  month: Date;
 };
 
-/** Today never changes mid-session, so there is nothing to subscribe to. */
-const noSubscription = () => () => {};
-
 /**
- * Owns one piece of state: which month you're looking at. The 42 cells are
- * *derived* from it, never stored alongside it — two things that must agree
- * eventually won't.
+ * Forty-two cells, six rows, always.
  *
- * The awkward part is the clock. This component renders twice: once on the
- * server, then again in the browser to hydrate. Reading `new Date()` during
- * render would let those two runs disagree — a server in UTC and a browser in
- * California are on different dates for seven hours out of every day — and
- * React would hydrate against markup that doesn't match.
- *
- * `useSyncExternalStore` exists for exactly this. Its third argument is the
- * value to use on the server *and during hydration*; the second is the real
- * client value, which React switches to immediately afterwards. So the first
- * paint is deliberately today-less, and no cell is wrongly marked.
+ * Purely derived now — the month arrives as a prop and the cells come out of
+ * `monthGrid`. It used to own the month, the clock and the deck animation as
+ * well; those moved up to `CalendarPanel` when the week strip appeared, since
+ * all three are answers to "which period am I looking at" and there are now
+ * two views asking.
  */
 export function MonthGrid(props: Props) {
-  const todayString = useSyncExternalStore(
-    noSubscription,
-    () => today(), // browser: the visitor's own date
-    () => null, // server and hydration: we don't know yet
+  const cells = useMemo(
+    () => monthGrid(props.month, props.todayString),
+    [props.month, props.todayString],
   );
-
-  // Null until an arrow is pressed. While it's null the grid follows the clock,
-  // so a visitor who leaves the tab open overnight isn't stranded in last month.
-  const [chosenMonth, setChosenMonth] = useState<Date | null>(null);
-
-  const month = useMemo(() => {
-    if (chosenMonth) return chosenMonth;
-    return fromMonthString(todayString?.slice(0, 7) ?? props.initialMonth);
-  }, [chosenMonth, todayString, props.initialMonth]);
-
-  const cells = useMemo(() => monthGrid(month, todayString), [month, todayString]);
   const labels = useMemo(() => weekdayLabels(), []);
-  const monthKey = toMonthString(month);
-
-  /**
-   * Step a month, and tell the browser which way we went.
-   *
-   * Three things have to be true for the deck animation to run, and each of
-   * them is easy to lose:
-   *
-   * 1. `startTransition`. `<ViewTransition>` only participates in transitions —
-   *    a bare `setState` swaps the months with no animation at all, and there
-   *    is no warning when it does.
-   *
-   * 2. `addTransitionType`, because direction cannot be a prop. React reads the
-   *    *exit* animation off the outgoing month, and the outgoing month rendered
-   *    before you clicked anything, so its props can't know which arrow you
-   *    just pressed. A transition type is metadata on the update itself, which
-   *    both sides can see.
-   *
-   * 3. A changed `key` and no `name`. With a name, React treats the two months
-   *    as the same element and morphs one into the other. Without one, it sees
-   *    an unmount and a mount — the enter/exit pair the deck needs.
-   */
-  const step = (by: number) => {
-    startTransition(() => {
-      addTransitionType(by > 0 ? "month-next" : "month-previous");
-      setChosenMonth(stepMonth(month, by));
-    });
-  };
 
   return (
-    <section className="flex flex-col gap-8" data-month={monthKey}>
-      <MonthHeader month={month} onStep={step} />
-
-      {/* `default="none"` is load-bearing, not tidiness. Every sticker change
-          in this app commits inside a `startTransition` — see
-          `CalendarBoard.commit` — and a `<ViewTransition>` with no default
-          animates on *any* transition that touches it. Without this, dropping a
-          sticker on a Tuesday would slide the whole month sideways. */}
-      <ViewTransition
-        key={monthKey}
-        enter={{
-          "month-next": "deck-next",
-          "month-previous": "deck-previous",
-          default: "none",
-        }}
-        exit={{
-          "month-next": "deck-next",
-          "month-previous": "deck-previous",
-          default: "none",
-        }}
-        default="none"
-      >
-        {/* The hairlines are the 1px gaps, showing the container's background
-            through them. One rule instead of per-cell borders that double up. */}
-        <div className="overflow-hidden rounded-md border border-hairline bg-hairline">
-          <div className="grid grid-cols-7 gap-px">
-            {labels.map((label) => (
-              <div key={label} className="daylabel bg-surface py-3 text-center">
-                {label}
-              </div>
-            ))}
-
-            {cells.map((cell) => {
-              // One lookup per cell. A shared empty value rather than a fresh
-              // object each time, so an empty day's props stay referentially
-              // equal between renders and React can skip the work.
-              const stickers = props.stickersByDay.get(cell.day) ?? NO_STICKERS;
-              const aimed = props.target?.day === cell.day;
-
-              return (
-                <DayCell
-                  key={cell.day}
-                  cell={cell}
-                  stickers={stickers}
-                  onOpen={props.onOpenDay}
-                  onCommit={props.onCommit}
-                  highlight={props.highlight}
-                  over={aimed}
-                  caretIndex={
-                    aimed && props.caret && props.target
-                      ? props.target.index
-                      : null
-                  }
-                  // The cell is told whether it's lit; it never works it out.
-                  // The stickers are already in hand from the lookup above, so
-                  // asking here costs nothing and keeps the rule in one
-                  // function that a test can reach.
-                  lit={
-                    props.highlight
-                      ? dayMatches(props.highlight, stickers)
-                      : false
-                  }
-                  // Non-null only for the mark that was just placed, and only
-                  // for about half a second. See `CalendarBoard.landed`.
-                  landed={
-                    props.landed?.day === cell.day
-                      ? props.landed.activityId
-                      : null
-                  }
-                />
-              );
-            })}
+    // The hairlines are the 1px gaps, showing the container's background
+    // through them. One rule instead of per-cell borders that double up.
+    <div className="overflow-hidden rounded-md border border-hairline bg-hairline">
+      <div className="grid grid-cols-7 gap-px">
+        {labels.map((label) => (
+          <div key={label} className="daylabel bg-surface py-2 text-center">
+            {label}
           </div>
-        </div>
-      </ViewTransition>
-    </section>
+        ))}
+
+        {cells.map((cell) => {
+          // One lookup per cell. A shared empty value rather than a fresh
+          // object each time, so an empty day's props stay referentially
+          // equal between renders and React can skip the work.
+          const stickers = props.stickersByDay.get(cell.day) ?? NO_STICKERS;
+          const aimed = props.target?.day === cell.day;
+
+          return (
+            <DayCell
+              key={cell.day}
+              cell={cell}
+              stickers={stickers}
+              onOpen={props.onOpenDay}
+              onCommit={props.onCommit}
+              highlight={props.highlight}
+              over={aimed}
+              caretIndex={
+                aimed && props.caret && props.target ? props.target.index : null
+              }
+              // The cell is told whether it's lit; it never works it out.
+              // The stickers are already in hand from the lookup above, so
+              // asking here costs nothing and keeps the rule in one
+              // function that a test can reach.
+              lit={
+                props.highlight ? dayMatches(props.highlight, stickers) : false
+              }
+              // Non-null only for the mark that was just placed, and only
+              // for about half a second. See `CalendarBoard.landed`.
+              landed={
+                props.landed?.day === cell.day ? props.landed.activityId : null
+              }
+            />
+          );
+        })}
+      </div>
+    </div>
   );
 }
