@@ -147,7 +147,7 @@ export function StickerTray(props: Props) {
             visible way out is a trap. While something is lit it says what, and
             offers the exit — the lit row itself is the other way out, but it
             can be scrolled off the bottom of a long rail, and this never is. */}
-        <p className="mt-2 text-[0.9rem] text-ink-muted">
+        <p className="mt-2 text-[0.83rem] text-ink-muted">
           {props.label ? (
             <>
               Showing <span className="text-ink">{props.label}</span> ·{" "}
@@ -235,7 +235,7 @@ export function StickerTray(props: Props) {
                   because an empty list with a paragraph next to it is a lie a
                   screen reader repeats. */}
               {stickers.length === 0 && (
-                <li className={`${TRAY_INSET} py-1 text-[0.9rem] text-ink-muted`}>
+                <li className={`${TRAY_INSET} py-1 text-[0.83rem] text-ink-muted`}>
                   Nothing here yet
                 </li>
               )}

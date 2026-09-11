@@ -181,7 +181,7 @@ export function TrendsBoard(props: Props) {
                 // doesn't announce them, so a screen reader would hear the new
                 // rule and never the new period.
                 aria-live="polite"
-                className="tabular text-[0.9rem] text-ink-muted"
+                className="tabular text-[0.83rem] text-ink-muted"
               >
                 {span}
               </p>
@@ -242,7 +242,7 @@ export function TrendsBoard(props: Props) {
             once something can archive a sticker, marks that stop being
             attributable say so instead of quietly leaving the total. */}
         {totals.unattributed > 0 && (
-          <p className="text-[0.9rem] text-ink-muted lg:col-span-2">
+          <p className="text-[0.83rem] text-ink-muted lg:col-span-2">
             {totals.unattributed} mark{totals.unattributed === 1 ? "" : "s"} came
             from stickers that are no longer in your tray, so they aren&rsquo;t
             counted under any area.

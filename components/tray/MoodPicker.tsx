@@ -122,7 +122,7 @@ function MoodChoice(props: {
         <span aria-hidden="true">
           <MoodMark mood={props.mood} />
         </span>
-        <span className="max-w-full truncate text-[0.75rem] leading-none">
+        <span className="max-w-full truncate text-[0.69rem] leading-none">
           {MOOD_LABEL[props.mood]}
         </span>
       </button>

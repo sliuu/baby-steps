@@ -115,7 +115,7 @@ export function MoodStrip(props: { moods: MoodTally; phrase: string }) {
         // Not five dashes. A row of empty counts looks like a broken strip; a
         // sentence says the same thing and points at the calendar, matching how
         // the page's other empty state behaves.
-        <p className="text-[0.95rem] text-ink-muted">
+        <p className="text-[0.875rem] text-ink-muted">
           No moods logged yet. Tap a day on the Calendar tab to set one.
         </p>
       ) : (
@@ -142,12 +142,12 @@ export function MoodStrip(props: { moods: MoodTally; phrase: string }) {
                 <MoodMark mood={entry.mood} />
               </span>
 
-              <span className="text-[0.95rem]">{entry.label}</span>
+              <span className="text-[0.875rem]">{entry.label}</span>
 
               {/* Same dash-for-zero rule as the table above it, for the same
                   reason: zero is a measurement, a dash is nothing here, and
                   the eye skips it instead of reading it. */}
-              <span className="tabular text-[0.95rem]">
+              <span className="tabular text-[0.875rem]">
                 {entry.count === 0 ? (
                   <span className="text-ink-muted">—</span>
                 ) : (

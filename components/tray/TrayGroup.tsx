@@ -111,7 +111,7 @@ export function TrayRowFace(props: FaceProps) {
       </span>
       {/* min-w-0 again: truncate can't do anything to a flex item that refuses
           to shrink below its own text. A long name would overflow the rail. */}
-      <span className="min-w-0 truncate text-[0.9rem]">{props.name}</span>
+      <span className="min-w-0 truncate text-[0.83rem]">{props.name}</span>
     </>
   );
 }

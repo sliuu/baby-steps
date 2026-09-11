@@ -55,6 +55,40 @@
   --text-panel-title--line-height: 1.333;
   --text-dialog-title: 1.25rem;
   --text-dialog-title--line-height: 1.4;
+
+  /* The body sizes, and the other half of the same correction.
+
+     The headings above got a new face and a scale to sit on; the body copy got
+     a new face and kept sizes that were chosen by eye while it was EB Garamond.
+     Garamond is a small-x-height face and DM Sans is a large one, so the same
+     nominal size is visibly bigger in the new one — 16px of DM Sans reads
+     roughly like 17px of Garamond, which is why the app felt heavier after the
+     swap without anything having got longer.
+
+     0.92 is that correction, and it is arithmetic rather than taste: the
+     specimen's optical-size numbers are EB Garamond 1.05 and DM Sans 0.97, and
+     0.97/1.05 is 0.924. Every rung below is Tailwind's own value times 0.92,
+     line heights included, so the leading ratio on each rung is unchanged and
+     nothing re-flows out of proportion.
+
+     Line heights are restated for the same reason as the headings: a `--text-*`
+     token with no companion leaves the utility setting font-size alone.
+
+     `text-3xl` and up are not here because nothing uses them — every title in
+     the app is on a role token above. If a body rung ever needs to be exempt,
+     give it a role name up there rather than un-scaling it here. */
+  --text-xs: 0.69rem;
+  --text-xs--line-height: 0.92rem;
+  --text-sm: 0.805rem;
+  --text-sm--line-height: 1.15rem;
+  --text-base: 0.92rem;
+  --text-base--line-height: 1.38rem;
+  --text-lg: 1.035rem;
+  --text-lg--line-height: 1.61rem;
+  --text-xl: 1.15rem;
+  --text-xl--line-height: 1.61rem;
+  --text-2xl: 1.38rem;
+  --text-2xl--line-height: 1.84rem;
   /* Emoji first, and that ordering is the whole point — see `StickerMark`. A
      line box is sized by the *first available* font, not by the font that ends
      up drawing the character, so a sticker mark set in the body serif gets a
@@ -268,7 +302,7 @@
   --dur-land: 420ms;
 
   /* The entrance on the signed-out page — the heading, the tagline, the
-     buttons, and all twenty-six stickers behind them.
+     buttons, and all thirty stickers behind them.
 
      It was 700ms, on the theory that a page with nothing to do on it can
      afford to take its time. The theory was half right: the page can afford
@@ -530,7 +564,10 @@
    mean to break rank.
 --------------------------------------------------------------------------- */
 @utility eyebrow {
-  font-size: 0.7rem;
+  /* 0.7rem times the 0.92 body correction — see the `--text-*` block. The
+     `daylabel` below is deliberately not scaled with it: that one was drawn
+     against DM Sans in the first place. */
+  font-size: 0.645rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-label);
@@ -729,15 +766,20 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Month deck — see `MonthGrid`.
+   Period deck — see `CalendarPanel`.
 
    These pseudo-elements are the browser's screenshots of the outgoing and
-   incoming month, painted over the page for the length of the transition. They
-   are attached to the document root no matter where in the tree the element
-   lives, which is why these selectors are unnested and why they are matched by
-   class: `<ViewTransition enter={{ "month-next": "deck-next" }}>` puts
-   `deck-next` on the pseudo-element, and `::view-transition-new(.deck-next)`
-   is how CSS gets at it.
+   incoming period, painted over the page for the length of the transition.
+   They are attached to the document root no matter where in the tree the
+   element lives, which is why these selectors are unnested and why they are
+   matched by class: `<ViewTransition enter={{ "step-next": "deck-next" }}>`
+   puts `deck-next` on the pseudo-element, and
+   `::view-transition-new(.deck-next)` is how CSS gets at it.
+
+   The transition types are `step-next` and `step-previous` rather than
+   anything with "month" in the name, because the same two arrows now step a
+   month or a week and the animation is the same either way. The class names
+   below stayed — they describe the picture, not the unit.
 
    `reverse` on the outgoing side is doing real work: it means one keyframe
    describes arriving, and leaving is that same motion played backwards. The
@@ -864,6 +906,14 @@
 
   body {
     @apply bg-background text-foreground;
+
+    /* The base rung, applied. Text with no `text-*` class of its own would
+       otherwise sit at the browser's 16px and miss the 0.92 correction
+       entirely, which would leave the scale true everywhere except the
+       paragraphs nobody remembered to size. On `body` rather than `html` on
+       purpose: `rem` stays 16px, so spacing, radii and every max-width are
+       untouched and this moves type only. */
+    font-size: 0.92rem;
   }
 
   h1,
@@ -936,7 +986,7 @@
      with `both` means a single forward pass that finishes on the *last*
      keyframe and stays there. Every other animation in this file ends where the
      element belongs, so that is the right answer for all of them. The drift
-     ends 7px down and 3.5° over, so capping it would park all twenty-six
+     ends 7px down and 3.5° over, so capping it would park all thirty
      stickers below their positions and tilted the same way — still, but visibly
      wrong, and wrong in a way that reads as a bug rather than as a preference
      being honoured.

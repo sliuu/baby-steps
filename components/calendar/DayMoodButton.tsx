@@ -94,7 +94,7 @@ export function DayMoodButton(props: Props) {
               <span aria-hidden="true">
                 <MoodMark mood={mood} />
               </span>
-              <span className="text-[0.75rem] leading-none">
+              <span className="text-[0.69rem] leading-none">
                 {MOOD_LABEL[mood]}
               </span>
             </button>
@@ -107,7 +107,7 @@ export function DayMoodButton(props: Props) {
         <button
           type="button"
           onClick={() => choose({ kind: "clearMood", day: props.day })}
-          className="rounded-md py-1 text-[0.85rem] text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+          className="rounded-md py-1 text-[0.78rem] text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
         >
           Clear mood
         </button>

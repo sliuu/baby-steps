@@ -228,7 +228,7 @@ export function DayModal(props: Props) {
                     <RadioGroupItem value={NO_MOOD} id="day-mood-none" />
                     <label
                       htmlFor="day-mood-none"
-                      className="min-w-0 flex-1 text-[0.9rem] text-ink-muted"
+                      className="min-w-0 flex-1 text-[0.83rem] text-ink-muted"
                     >
                       No mood
                     </label>

@@ -58,7 +58,7 @@ export const TRAY_INSET = "px-2";
  * like focus.
  */
 export function segment(active: boolean): string {
-  return `rounded-full px-5 py-1.5 text-[0.95rem] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 ${
+  return `rounded-full px-5 py-1.5 text-[0.875rem] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 ${
     active ? "bg-secondary text-ink" : "text-ink-muted hover:text-ink"
   }`;
 }

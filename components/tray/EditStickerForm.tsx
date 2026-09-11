@@ -106,7 +106,7 @@ export function EditStickerForm(props: Props) {
         {problem && (
           <p
             role="status"
-            className="rounded-md bg-ramp-red-soft px-2.5 py-2 text-[0.9rem]"
+            className="rounded-md bg-ramp-red-soft px-2.5 py-2 text-[0.83rem]"
           >
             {problem}
           </p>
