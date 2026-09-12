@@ -42,6 +42,22 @@ type Props = {
   markCounts: Map<string, number>;
   /** Archiving, restoring and deleting report failures through the board's line. */
   onError: (message: string) => void;
+  /**
+   * Demo mode: the calendar keeps changes in memory and writes nothing.
+   *
+   * Everything the tray does to the *calendar* — dragging a sticker onto a
+   * day, lighting an area, picking a mood — works unchanged in a demo, because
+   * all of it goes through the board's `commit` and never touches the network.
+   * What the tray also does is manage the library itself: the `+`, the editor,
+   * the restore button. Those are Server Actions with no in-memory version, and
+   * a signed-out visitor pressing one would get a failure message about a
+   * session they never had.
+   *
+   * So they come off. Not disabled — absent, which is the only state that
+   * doesn't invite a click. The demo is a picture of a year you already have,
+   * and making a new sticker is the first thing signing in is *for*.
+   */
+  local?: boolean;
 };
 
 /**
@@ -140,7 +156,7 @@ export function StickerTray(props: Props) {
               it is already grouped by, rather than the form fetching them:
               they're the same six rows, and two queries for one list is how
               the dropdown and the groups end up disagreeing. */}
-          <NewStickerForm areas={areas} />
+          {!props.local && <NewStickerForm areas={areas} />}
         </div>
 
         {/* The line under the heading does double duty, because a mode with no
@@ -225,7 +241,9 @@ export function StickerTray(props: Props) {
               // answered. Six more triggers and no second component, because
               // the only thing that differs is a value.
               action={
-                <NewStickerForm areas={areas} defaultAreaId={group.areaId} />
+                props.local ? undefined : (
+                  <NewStickerForm areas={areas} defaultAreaId={group.areaId} />
+                )
               }
             >
               {/* An area with nothing in it was a bare label with a gap under it
@@ -260,12 +278,14 @@ export function StickerTray(props: Props) {
                     selected={sameSelection(selection, stickerSelection)}
                     wash={wash(sticker.colorKey)}
                     onSelect={() => toggle(stickerSelection)}
-                    onActivate={() => setEditing(sticker.id)}
+                    onActivate={
+                      props.local ? undefined : () => setEditing(sticker.id)
+                    }
                     // "Gym" is what the row shows; "Edit Gym" is what it does.
                     // The longer phrase still contains the visible word, which
                     // is what keeps it a legal accessible name — and what keeps
                     // "click Gym" working for someone using voice control.
-                    label={`Edit ${sticker.name}`}
+                    label={props.local ? undefined : `Edit ${sticker.name}`}
                   />
                 );
               })}
@@ -288,7 +308,7 @@ export function StickerTray(props: Props) {
           the grid, because a dialog isn't laid out — it's portaled to the end
           of the document by Radix and would otherwise be a phantom grid cell
           taking up a column. */}
-      {open && (
+      {!props.local && open && (
         <EditStickerForm
           key={open.sticker.id}
           sticker={open.sticker}

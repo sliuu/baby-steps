@@ -110,6 +110,26 @@ export default function LoginPage() {
             ever earlier than it was. */}
       <div className="animate-rise w-full max-w-sm">
         <SignInButtons />
+
+        {/* Inside the buttons' wrapper rather than beside it, so the page
+            still arrives in the three beats the note above describes — this is
+            a footnote to the buttons, not a fourth thing to read.
+
+            It is a plain link and it is deliberately quiet. Signing in is what
+            this page is for; the demo is the answer to "what am I signing into",
+            which is a question you only have if the two lines above didn't
+            answer it. A second button here would make it a choice between two
+            equal things, and it isn't one. */}
+        <p className="mt-5 text-[0.875rem] text-ink-muted">
+          Not sure yet?{" "}
+          <a
+            href="/demo"
+            className="text-ink underline decoration-hairline underline-offset-4 transition-colors hover:decoration-current"
+          >
+            Look around a year of it first
+          </a>
+          .
+        </p>
       </div>
     </main>
   );

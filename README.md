@@ -25,6 +25,10 @@ hand-written SVG for the charts.
   habit's last eight weeks, a square per day; *Moods* is how the days felt — a
   line over time, then a count of each.
 
+All three are visible without an account at **`/demo`**, over a year of stickers
+generated from today — real boards, real drag-and-drop, nothing written down.
+The library there is the one `npm run seed` installs.
+
 ## Running it
 
 Needs Node 22+ and a Supabase project.
@@ -68,8 +72,8 @@ expected green before a step is committed.
 ```
 app/actions/     server actions (stickers, activities, auth)
 lib/queries/     Supabase reads
-lib/             pure modules — analytics, charts, heatmap, lifestar, dates…
-components/      calendar/ tray/ trends/ dnd/ ui/
+lib/             pure modules — analytics, charts, heatmap, lifestar, demo, dates…
+components/      calendar/ tray/ trends/ dnd/ demo/ ui/
 supabase/        schema + RLS migrations
 learning/        one explainer per step
 ```

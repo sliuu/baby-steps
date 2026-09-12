@@ -52,6 +52,22 @@ import { payloadName, readDragPayload, type DragPayload } from "./payload";
 type Props = {
   groups: LibraryGroup[];
   stickersByDay: StickersByDay;
+  /**
+   * Demo mode: every change is applied here and written nowhere.
+   *
+   * The signed-out demo at `/demo` renders this exact board over a generated
+   * year — see `lib/demo.ts` — and the whole of the difference is this flag.
+   * That is the reason it is a flag rather than a second board: a demo you have
+   * to maintain alongside the real thing is a demo that drifts, and the first
+   * thing it stops showing is whatever changed last week.
+   *
+   * What it turns off is the network, nothing else. Dragging, the caret, the
+   * landing animation, the day modal, moods, notes and the highlight all run
+   * unchanged, because none of them ever asked the server anything — `commit`
+   * is the single place that did. The library is not editable in a demo; see
+   * `StickerTray`'s own `local`.
+   */
+  local?: boolean;
 };
 
 /**
@@ -225,8 +241,22 @@ const collisionDetection: CollisionDetection = (args) => {
  * it's what happens when the lie expires.
  */
 export function CalendarBoard(props: Props) {
+  /**
+   * The demo's copy of the calendar, and only the demo's.
+   *
+   * Signed in, `props.stickersByDay` is the truth and this state is never
+   * written — the expression below picks the prop, so the board behaves exactly
+   * as it did before this existed. In a demo there is no server to be the
+   * truth, so `commit` folds each change into this instead and it becomes one.
+   *
+   * `useOptimistic` still wraps whichever of the two is in play. It is doing
+   * nothing useful in a demo, where the "in flight" window is zero frames wide,
+   * and leaving it in the path is what keeps there from being two versions of
+   * how a sticker reaches the screen.
+   */
+  const [saved, setSaved] = useState(props.stickersByDay);
   const [stickersByDay, apply] = useOptimistic(
-    props.stickersByDay,
+    props.local ? saved : props.stickersByDay,
     applyChange,
   );
   const [dragging, setDragging] = useState<DragPayload | null>(null);
@@ -397,6 +427,14 @@ export function CalendarBoard(props: Props) {
 
     startTransition(async () => {
       apply(change);
+      // A demo's truth is the state above, so folding the change into it is the
+      // whole of the write. The optimistic value expires a moment later and
+      // falls back to a `saved` that already contains the change — the same
+      // handoff the server does, with the round trip taken out.
+      if (props.local) {
+        setSaved((current) => applyChange(current, change));
+        return;
+      }
       const result = await runChange(change);
       setError(result.ok ? null : result.message);
     });
@@ -593,6 +631,7 @@ export function CalendarBoard(props: Props) {
             label={highlight?.label ?? null}
             markCounts={markCounts}
             onError={setError}
+            local={props.local}
           />
 
           {/* Rendered always, filled sometimes. A live region the browser only
