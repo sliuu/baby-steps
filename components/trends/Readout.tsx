@@ -5,13 +5,10 @@ import { AreaTable } from "./AreaTable";
 
 type Props = {
   tally: Tally;
-  moods: MoodTally;
   /** The sentence, already composed. Null when there's nothing to say. */
   takeaway: string | null;
   /** `AreaTable`'s accessible name. See the prop's note there. */
   caption: string;
-  /** "this month", "so far" — from `rangePhrase`, for the mood heading. */
-  phrase: string;
 };
 
 /**
@@ -21,8 +18,8 @@ type Props = {
  * plainly, because "put it in a card too" is the obvious thing to do and it
  * would be wrong. A card is a frame, and a frame says "this is a picture, look
  * at it as a unit". The chart on the left is exactly that. This side is reading
- * matter — a sentence, then a table, then a strip — and sitting it on the page
- * ground lets it behave like the rest of the app's text does. Two cards side by
+ * matter — a sentence, then a table — and sitting it on the page ground lets it
+ * behave like the rest of the app's text does. Two cards side by
  * side would also make the page a pair of panels with no hierarchy, when the
  * actual relationship is that one of them is the picture and the other is what
  * the picture says.
@@ -33,22 +30,27 @@ type Props = {
  * that's tedious to check by rendering and trivial to check with `assert`. What
  * is left here is which element goes where — which genuinely does have to be
  * looked at.
+ *
+ * It used to end in the mood strip, and losing it is what the tabs bought. A
+ * sentence about life areas, a table of life areas and then five faces counting
+ * *days* was three things in one column of which only two shared a unit, and
+ * the odd one out was last. `MoodStrip` still lives in this file — it is the
+ * same kind of composed-not-computed panel and it has never had anywhere better
+ * to be — but `TrendsBoard` mounts it on its own tab now.
  */
 export function Readout(props: Props) {
   return (
     // `gap-6`, tightened from 8, and the reason is the column beside it. The
     // chart card is a fixed ratio, so its height is set by how wide the column
-    // is — it can't be stretched to meet this one, and this one is the taller of
-    // the two by about the height of two gaps. Closing the two gaps and shaving
-    // the table's row padding is what brings the bottoms to roughly the same
-    // line. Roughly is the honest word: six areas with marks and five moods on
-    // one row is the common case, and a range with fewer of either ends higher.
+    // is — it can't be stretched to meet this one. With the mood strip gone this
+    // column is now the *shorter* of the two rather than the taller, which is a
+    // change in which one hangs: the gap stays at 6 because the sentence and the
+    // table are a pair and padding them apart to chase the card's bottom edge
+    // would space them by an accident of the chart's aspect ratio.
     <div className="flex flex-col gap-6">
       {props.takeaway && <Sentence text={props.takeaway} />}
 
       <AreaTable tally={props.tally} caption={props.caption} />
-
-      <MoodStrip moods={props.moods} phrase={props.phrase} />
     </div>
   );
 }
@@ -57,8 +59,8 @@ export function Readout(props: Props) {
  * The chart, stated.
  *
  * A chart shows a shape and leaves you to read it. This says the reading out
- * loud, which is a real accessibility feature and not only a nicety: the three
- * charts are `aria-hidden`, so for a screen reader this line *is* the summary,
+ * loud, which is a real accessibility feature and not only a nicety: the star
+ * beside it is `aria-hidden`, so for a screen reader this line *is* the chart,
  * arriving before the table rather than instead of it.
  *
  * One line. A muted second line under it used to give the totals — "4 marks in
@@ -89,11 +91,11 @@ function Sentence(props: { text: string }) {
  * page where both appear at once. The face is the mood's mark, so the face is
  * what goes here.
  *
- * Exported as well as used here, for the one case the layout splits them up:
- * a range can hold moods and no marks — somebody who logs how a day felt
- * without placing a sticker on it — and then the chart and the table have
- * nothing to draw while this still does. `TrendsBoard` shows it beside the
- * empty state there.
+ * Exported rather than used here: it is the whole of the Moods tab. That is
+ * also what settles the case this note used to be about — a range can hold
+ * moods and no marks, somebody who logs how a day felt without placing a
+ * sticker on it, and the strip is no longer behind a tally that has nothing to
+ * draw. Its own empty state is the only one it needs.
  *
  * All five always, in the scale's order — never ranked, never filtered. See
  * `MoodTally.moods`: these are a scale running great → rough, so their order is
@@ -144,9 +146,9 @@ export function MoodStrip(props: { moods: MoodTally; phrase: string }) {
 
               <span className="text-[0.875rem]">{entry.label}</span>
 
-              {/* Same dash-for-zero rule as the table above it, for the same
-                  reason: zero is a measurement, a dash is nothing here, and
-                  the eye skips it instead of reading it. */}
+              {/* Same dash-for-zero rule `AreaTable` uses a tab away, for the
+                  same reason: zero is a measurement, a dash is nothing here,
+                  and the eye skips it instead of reading it. */}
               <span className="tabular text-[0.875rem]">
                 {entry.count === 0 ? (
                   <span className="text-ink-muted">—</span>

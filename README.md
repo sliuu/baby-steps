@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Baby Steps
 
-## Getting Started
+A habit tracker for the long view.
 
-First, run the development server:
+Most habit apps are built around the streak — the unbroken chain you're one bad
+day away from losing. Baby Steps isn't. You put a sticker on a day when you did
+something, and that's it. There's no streak to break, no scolding, no empty day
+demanding an explanation. Habits are built slowly; a missed day is not an event.
+
+The satisfaction is meant to come from looking back. A month of stickers, a year
+of squares per habit, a star that shows where your life actually went — the
+picture you couldn't see while you were living it. Simple to use on any given
+day, quietly rewarding over months.
+
+Built with Next.js 16 (App Router), React 19 and TypeScript, Tailwind v4 with
+shadcn/ui, Supabase for Postgres and OAuth, dnd-kit for drag-and-drop, and
+hand-written SVG for the charts.
+
+## Three sections
+
+- **Week** — seven tall columns, stickers as named bars, a note field per day.
+- **Month** — the calendar grid, stickers dragged in from a tray, one mood per day.
+- **Trends** — three tabs. *Areas* is the Life Star and a table of where your
+  marks went; *Habits* pairs a ranking of your most-done with a grid of every
+  habit's last eight weeks, a square per day; *Moods* is how the days felt — a
+  line over time, then a count of each.
+
+## Running it
+
+Needs Node 22+ and a Supabase project.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set up Google/GitHub OAuth first — **[`OAuthSetup.md`](./OAuthSetup.md)**, about
+25 minutes of console work, no code. Then link the project, push the migrations
+in `supabase/migrations/`, and:
 
-## Learn More
+```bash
+npm run seed   # life areas + a starter habit library
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| | |
+| --- | --- |
+| `npm run dev` / `build` / `start` | the usual |
+| `npm test` | `node --test` over `lib/*.test.ts` |
+| `npm run lint` | eslint |
+| `npm run check:dates` | guards against timezone-shifted dates |
+| `npm run seed` / `seed:reset` | starter data / wipe |
+| `npm run types:db` | regenerate `lib/database.types.ts` |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`test`, `lint`, `check:dates` and `build` are the four gates; all four are
+expected green before a step is committed.
 
-## Deploy on Vercel
+## Where things live
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/actions/     server actions (stickers, activities, auth)
+lib/queries/     Supabase reads
+lib/             pure modules — analytics, charts, heatmap, lifestar, dates…
+components/      calendar/ tray/ trends/ dnd/ ui/
+supabase/        schema + RLS migrations
+learning/        one explainer per step
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Everything in `lib/` outside `queries/` and `supabase/` is deliberately free of
+value imports, so it runs directly under `node --test` with no build step.
+
+## The other docs
+
+- **[`PROGRESS.md`](./PROGRESS.md)** — newest first, one entry per step: what
+  changed about the interface, why, and what's still open. Read this first.
+- **[`AGENTS.md`](./AGENTS.md)** — this is not the Next.js you know. Check
+  `node_modules/next/dist/docs/` before writing framework code.
+- **[`ProjectPlan.md`](./ProjectPlan.md)** — the decisions, made once, with reasons.

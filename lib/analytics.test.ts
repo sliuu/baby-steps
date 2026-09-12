@@ -4,8 +4,13 @@ import { describe, it } from "node:test";
 // Relative, with the extension. Node strips the types itself and resolves this
 // path directly; `@/lib/analytics` would be a bundler alias with no bundler.
 import {
+  MOOD_SCORE,
+  activityTally,
   inBounds,
   leaders,
+  moodDrift,
+  moodSeries,
+  moodTakeaway,
   moodTally,
   percent,
   rangePhrase,
@@ -14,6 +19,7 @@ import {
   tally,
   type Bounds,
 } from "./analytics.ts";
+import { addDays } from "./daymath.ts";
 import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
@@ -389,6 +395,128 @@ function moodDays(entries: Record<string, Mood>): StickersByDay {
   return map;
 }
 
+/**
+ * Days built from real faces, because `activityTally` reads them.
+ *
+ * The other builder names every sticker after its own id, which is fine for
+ * counting and useless here: the ranking carries `name`, `mark` and `colorKey`
+ * through from the placement and breaks ties on the name, so a fixture where
+ * the name *is* the id can't tell a bug in that from a bug in the sort.
+ */
+const FACES: Record<string, { name: string; mark: string; colorKey: string }> = {
+  "act-gym": { name: "Gym", mark: "G", colorKey: "green" },
+  "act-med": { name: "Meditation", mark: "M", colorKey: "red" },
+  "act-walk": { name: "Walk", mark: "W", colorKey: "green" },
+};
+
+function faced(entries: Record<string, string[]>): StickersByDay {
+  const map: StickersByDay = new Map();
+  for (const [day, activityIds] of Object.entries(entries)) {
+    map.set(day, {
+      mood: null,
+      note: null,
+      activities: activityIds.map((activityId) => ({
+        id: `placement-${activityId}-${day}`,
+        activityId,
+        ...FACES[activityId],
+      })),
+    });
+  }
+  return map;
+}
+
+describe("activityTally", () => {
+  it("ranks habits biggest first", () => {
+    const ranking = activityTally(
+      faced({
+        "2026-08-01": ["act-gym", "act-med"],
+        "2026-08-02": ["act-med"],
+        "2026-08-03": ["act-med"],
+      }),
+      ALL,
+    );
+
+    assert.deepEqual(
+      ranking.activities.map((a) => [a.name, a.count]),
+      [
+        ["Meditation", 3],
+        ["Gym", 1],
+      ],
+    );
+    assert.equal(ranking.total, 4);
+  });
+
+  it("counts two placements of one sticker on one day as two", () => {
+    // The reason `counts` in the heatmap are numbers rather than booleans, and
+    // the reason this counts placements rather than days.
+    const ranking = activityTally(
+      faced({ "2026-08-01": ["act-gym", "act-gym"] }),
+      ALL,
+    );
+
+    assert.deepEqual(ranking.activities.map((a) => a.count), [2]);
+  });
+
+  it("carries the face through from the placement", () => {
+    const [top] = activityTally(faced({ "2026-08-01": ["act-med"] }), ALL)
+      .activities;
+
+    assert.equal(top.activityId, "act-med");
+    assert.equal(top.name, "Meditation");
+    assert.equal(top.mark, "M");
+    assert.equal(top.colorKey, "red");
+  });
+
+  it("leaves out habits with nothing in range, rather than listing zeros", () => {
+    // The opposite of `tally`, which keeps every area at zero. See the note on
+    // `activityTally` for why the two disagree on purpose.
+    const ranking = activityTally(faced({ "2026-08-01": ["act-gym"] }), ALL);
+
+    assert.deepEqual(ranking.activities.map((a) => a.name), ["Gym"]);
+  });
+
+  it("breaks a tie by name, not by whatever order the map yielded", () => {
+    // Walk is placed first and Gym second, so an unsorted result would put
+    // Walk on top. Equal counts have to come out the same way every render.
+    const ranking = activityTally(
+      faced({ "2026-08-01": ["act-walk", "act-gym"] }),
+      ALL,
+    );
+
+    assert.deepEqual(ranking.activities.map((a) => a.name), ["Gym", "Walk"]);
+  });
+
+  it("obeys the range", () => {
+    const ranking = activityTally(
+      faced({
+        "2026-07-31": ["act-gym", "act-gym", "act-gym"],
+        "2026-08-05": ["act-med"],
+      }),
+      { from: "2026-08-01", to: "2026-08-31" },
+    );
+
+    assert.deepEqual(ranking.activities.map((a) => a.name), ["Meditation"]);
+    assert.equal(ranking.total, 1);
+  });
+
+  it("shares are of the range's total, and add up", () => {
+    const ranking = activityTally(
+      faced({ "2026-08-01": ["act-gym", "act-gym", "act-med", "act-walk"] }),
+      ALL,
+    );
+
+    assert.deepEqual(ranking.activities.map((a) => a.share), [0.5, 0.25, 0.25]);
+    assert.deepEqual(ranking.activities.map((a) => a.percent), [50, 25, 25]);
+  });
+
+  it("is empty when nothing is in range", () => {
+    assert.deepEqual(activityTally(faced({}), ALL), {
+      activities: [],
+      total: 0,
+    });
+  });
+});
+
 describe("moodTally", () => {
   it("counts days per mood", () => {
     const result = moodTally(
@@ -462,6 +590,251 @@ describe("moodTally", () => {
     map.set("2026-08-01", { ...map.get("2026-08-01")!, mood: "okay" });
 
     assert.equal(moodTally(map, ALL).total, 1);
+  });
+});
+
+/**
+ * A run of moods on consecutive days starting at `from`.
+ *
+ * Most of what follows cares about direction, and writing twenty dates out by
+ * hand to get one is a fixture you have to debug. Gaps are made by building two
+ * runs and merging them, which keeps the gap visible as a date rather than
+ * buried in a list.
+ */
+function moodRun(from: string, moods: Mood[]): StickersByDay {
+  const map: StickersByDay = new Map();
+  moods.forEach((mood, i) => {
+    map.set(addDays(from, i), { mood, activities: [], note: null });
+  });
+  return map;
+}
+
+function merge(...maps: StickersByDay[]): StickersByDay {
+  const out: StickersByDay = new Map();
+  for (const map of maps) for (const [day, value] of map) out.set(day, value);
+  return out;
+}
+
+describe("MOOD_SCORE", () => {
+  it("runs 5 down to 1 in the scale's order", () => {
+    // Written out in the source rather than derived, so this is the assertion
+    // that keeps the two from drifting: add a sixth mood to `MOODS` and the
+    // scores have to be re-thought rather than silently renumbered.
+    assert.deepEqual(
+      MOODS.map((mood) => MOOD_SCORE[mood]),
+      [5, 4, 3, 2, 1],
+    );
+  });
+});
+
+describe("moodSeries", () => {
+  it("is empty for a range with no moods in it", () => {
+    const result = moodSeries(days({ "2026-08-01": ["act-gym"] }), ALL);
+
+    assert.deepEqual(result.points, []);
+    assert.equal(result.from, null);
+    assert.equal(result.to, null);
+  });
+
+  it("keeps only the days that carry a mood", () => {
+    const map = merge(
+      moodRun("2026-08-01", ["great", "good"]),
+      days({ "2026-08-03": ["act-gym"] }),
+    );
+
+    // Three days in the map, two on the line. A day you didn't rate is not a
+    // neutral day, so nothing is invented for the third.
+    assert.deepEqual(moodSeries(map, ALL).points.map((p) => p.day), [
+      "2026-08-01",
+      "2026-08-02",
+    ]);
+  });
+
+  it("sorts by day, whatever order the map arrived in", () => {
+    const map: StickersByDay = new Map();
+    for (const day of ["2026-08-03", "2026-08-01", "2026-08-02"]) {
+      map.set(day, { mood: "okay", activities: [], note: null });
+    }
+
+    // `StickersByDay` is in the query's insertion order. Every number below —
+    // `at`, `gap`, the rolling mean — reads neighbours, so this is the test
+    // that fails first if the sort is ever dropped as redundant.
+    assert.deepEqual(moodSeries(map, ALL).points.map((p) => p.day), [
+      "2026-08-01",
+      "2026-08-02",
+      "2026-08-03",
+    ]);
+  });
+
+  it("scores and labels each point from the mood", () => {
+    const [point] = moodSeries(moodRun("2026-08-01", ["low"]), ALL).points;
+
+    assert.equal(point.mood, "low");
+    assert.equal(point.score, 2);
+    assert.equal(point.label, MOOD_LABEL.low);
+  });
+
+  it("obeys the bounds", () => {
+    const result = moodSeries(
+      moodRun("2026-07-30", ["great", "good", "okay", "low"]),
+      { from: "2026-07-31", to: "2026-08-01" },
+    );
+
+    assert.deepEqual(result.points.map((p) => p.day), ["2026-07-31", "2026-08-01"]);
+    assert.equal(result.from, "2026-07-31");
+    assert.equal(result.to, "2026-08-01");
+  });
+
+  it("spaces points by date, not by index", () => {
+    const map = merge(
+      moodRun("2026-08-01", ["great"]),
+      moodRun("2026-08-02", ["good"]),
+      moodRun("2026-08-11", ["okay"]),
+    );
+
+    // Three points over ten days: day two sits a tenth along, not a half. This
+    // is the difference between a time series and a list, and evenly spaced
+    // indices would draw a fortnight of silence as one short step.
+    assert.deepEqual(moodSeries(map, ALL).points.map((p) => p.at), [0, 0.1, 1]);
+  });
+
+  it("centres a lone point rather than pinning it to the left edge", () => {
+    const [point] = moodSeries(moodRun("2026-08-01", ["okay"]), ALL).points;
+
+    // The span is zero, so the fraction would be 0/0. Pinned at 0 it reads as
+    // the start of a line that failed to draw.
+    assert.equal(point.at, 0.5);
+  });
+
+  it("never smooths — a spike is a spike however long the series is", () => {
+    // Long enough that the deleted rolling mean would have kicked in. The
+    // scores are the moods and nothing sits between them: the line joins the
+    // days you logged, and a mean would move it off the dots it's drawn from,
+    // through heights that aren't moods.
+    const moods: Mood[] = Array.from({ length: 20 }, (_, i) =>
+      i === 10 ? "rough" : "great",
+    );
+    const result = moodSeries(moodRun("2026-08-01", moods), ALL);
+
+    assert.equal(result.points[10].score, 1);
+    assert.deepEqual(
+      result.points.map((p) => p.score),
+      moods.map((mood) => MOOD_SCORE[mood]),
+    );
+  });
+
+  it("breaks the line when more than a week goes unlogged", () => {
+    const map = merge(
+      moodRun("2026-08-01", ["great", "good"]),
+      // Seven days later: joined, because a week is the boundary and this is
+      // exactly on it.
+      moodRun("2026-08-09", ["okay"]),
+      // Eight days after that: broken.
+      moodRun("2026-08-17", ["low"]),
+    );
+
+    assert.deepEqual(moodSeries(map, ALL).points.map((p) => p.gap), [
+      false,
+      false,
+      false,
+      true,
+    ]);
+  });
+});
+
+describe("moodDrift", () => {
+  const drift = (moods: Mood[]) => moodDrift(moodSeries(moodRun("2026-08-01", moods), ALL));
+
+  it("says nothing under six points", () => {
+    // Five days of collapse is still five days. "Steady" is a claim too, so
+    // neither verdict is available yet.
+    assert.equal(drift(["great", "great", "good", "low", "rough"]), null);
+  });
+
+  it("calls a climb", () => {
+    assert.equal(drift(["rough", "low", "low", "good", "great", "great"]), "up");
+  });
+
+  it("calls a dip", () => {
+    assert.equal(drift(["great", "great", "good", "low", "low", "rough"]), "down");
+  });
+
+  it("calls a flat run steady", () => {
+    assert.equal(drift(["okay", "okay", "okay", "okay", "okay", "okay"]), "steady");
+  });
+
+  it("holds steady when the move is under half a rung", () => {
+    // Halves are (5,4,4) = 4.33 and (4,4,5) = 4.33 — one swapped day, no
+    // direction. The scale's resolution is one rung; less than half of that is
+    // which days you happened to open the app on.
+    assert.equal(drift(["great", "good", "good", "good", "good", "great"]), "steady");
+  });
+
+  it("is not decided by a single day at either end", () => {
+    // One rough Tuesday at the end of an otherwise level fortnight. Comparing
+    // the first point to the last would read three rungs of collapse off two
+    // days; the halves put it at 4 against 3.57 and call it what it is.
+    const moods: Mood[] = Array.from({ length: 15 }, (_, i) =>
+      i === 14 ? "rough" : "good",
+    );
+
+    assert.equal(drift(moods), "steady");
+  });
+
+  it("is swung by an outlier when the series is barely long enough", () => {
+    // The other side of the same coin, asserted rather than left implied. At
+    // six points each half is three days, so one rough day *is* a third of the
+    // evidence and moving a whole rung is the honest reading of it. `DRIFT_MIN`
+    // buys a direction that is better than noise, not one that is stable.
+    assert.equal(drift(["good", "good", "good", "good", "good", "rough"]), "down");
+  });
+
+  it("drops the middle point of an odd run rather than favouring a side", () => {
+    const result = drift(["rough", "rough", "rough", "great", "great", "great", "great"]);
+
+    // Seven points: three each side, the fourth ignored. Both halves are the
+    // same size, so the comparison is symmetric.
+    assert.equal(result, "up");
+  });
+});
+
+describe("moodTakeaway", () => {
+  const say = (moods: Mood[]) =>
+    moodTakeaway(moodSeries(moodRun("2026-08-01", moods), ALL), "this month");
+
+  it("has nothing to say about an empty series", () => {
+    assert.equal(moodTakeaway(moodSeries(new Map(), ALL), "this month"), null);
+  });
+
+  it("names the shortfall rather than guessing a direction", () => {
+    const line = say(["great", "good"]);
+
+    assert.ok(line?.includes("2 logged days"));
+    assert.ok(line?.includes("not enough"));
+  });
+
+  it("says one logged day, singular", () => {
+    assert.ok(say(["great"])?.includes("1 logged day "));
+  });
+
+  it("reports the direction and the sample it rests on", () => {
+    const line = say(["rough", "low", "low", "good", "great", "great"]);
+
+    assert.ok(line?.includes("climbing"));
+    assert.ok(line?.includes("this month"));
+    assert.ok(line?.includes("6 logged days"));
+  });
+
+  it("never prints a score", () => {
+    // `MOOD_SCORE` is an invented scale. "3.4" on the page would give it an
+    // authority it hasn't earned; the direction is the finding.
+    for (const line of [
+      say(["rough", "low", "low", "good", "great", "great"]),
+      say(["great", "great", "good", "low", "low", "rough"]),
+      say(["okay", "okay", "okay", "okay", "okay", "okay"]),
+    ]) {
+      assert.doesNotMatch(line!, /\d+\.\d/);
+    }
   });
 });
 

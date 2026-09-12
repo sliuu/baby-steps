@@ -3,9 +3,10 @@
 // belongs to the bundler. The type imports below are erased and cross freely,
 // which is why they can keep the alias.
 //
-// `./moods.ts` is the only value import, and it is safe to take because that
-// module imports nothing itself. A module with no imports can always be pulled
-// into a tested one; the rule that bites is depth, not count.
+// `./moods.ts` and `./daymath.ts` are the only value imports, and both are safe
+// to take because neither imports anything itself. A module with no imports can
+// always be pulled into a tested one; the rule that bites is depth, not count.
+import { daysBetween } from "./daymath.ts";
 import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { DayString } from "@/lib/dates";
 import type { LibraryGroup } from "@/lib/queries/activities";
@@ -249,6 +250,94 @@ export function percent(count: number, total: number): number {
   return Math.round((count / total) * 1000) / 10;
 }
 
+/** One habit and how often it was placed in range. */
+export type ActivityTally = {
+  activityId: string;
+  name: string;
+  mark: string;
+  colorKey: string;
+  count: number;
+  /** `count / total`, exact. */
+  share: number;
+  /** `share` as a percentage to one decimal place. See `percent`. */
+  percent: number;
+};
+
+export type ActivityRanking = {
+  /** Only habits with at least one mark in range, biggest first. */
+  activities: ActivityTally[];
+  /** Marks in range. The same number `tally` reports. */
+  total: number;
+};
+
+/**
+ * Which habits you actually did, ranked.
+ *
+ * The other half of the question `tally` answers. `tally` rolls placements up
+ * to the six life areas, which is the balance picture — this leaves them at the
+ * grain you placed them at, which is the "what did I do most" one. Both walk
+ * the same map for the same reason, and neither is derivable from the other.
+ *
+ * **No library argument, and that's the difference from `tally`.** An area is a
+ * fact about an activity that a placement doesn't carry, so attributing a mark
+ * to one needs the groups. A habit's own name, mark and colour *are* on the
+ * placement — `getStickersByDay` joins them live, so a renamed sticker's whole
+ * history comes back renamed — and asking the library for them again would be a
+ * second source for the same fact.
+ *
+ * That also decides the empty rows: there are none. A habit you never did in
+ * range simply isn't in a ranking of what you did. `tally` keeps its zero rows
+ * because six areas are a fixed frame you read the month against; a list of
+ * habits isn't a frame, and twenty rows of nothing above the four you did would
+ * bury the answer.
+ *
+ * Ties break by name, not by whatever order the map happened to yield. Step 12
+ * has the long version: two equal counts that come out in different places on
+ * different renders is the kind of instability that makes a reader stop
+ * trusting the panel. Alphabetical is arbitrary but it is at least the *same*
+ * arbitrary every time.
+ */
+export function activityTally(
+  stickersByDay: StickersByDay,
+  bounds: Bounds,
+): ActivityRanking {
+  const counts = new Map<string, ActivityTally>();
+  let total = 0;
+
+  for (const [day, stickers] of stickersByDay) {
+    if (!inBounds(day, bounds)) continue;
+
+    for (const sticker of stickers.activities) {
+      total++;
+      // The activity, never the placement `id` — see the same note in `tally`.
+      const seen = counts.get(sticker.activityId);
+      if (seen) {
+        seen.count++;
+        continue;
+      }
+      counts.set(sticker.activityId, {
+        activityId: sticker.activityId,
+        name: sticker.name,
+        mark: sticker.mark,
+        colorKey: sticker.colorKey,
+        count: 1,
+        share: 0,
+        percent: 0,
+      });
+    }
+  }
+
+  const activities = [...counts.values()]
+    .map((activity) => ({
+      ...activity,
+      share: total === 0 ? 0 : activity.count / total,
+      percent: percent(activity.count, total),
+    }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+  return { activities, total };
+}
+
 /** One mood and how many days in range carried it. */
 export type MoodCount = {
   mood: Mood;
@@ -310,6 +399,233 @@ export function moodTally(
     })),
     total,
   };
+}
+
+/**
+ * A mood's height on the line: 5 for Great down to 1 for Rough.
+ *
+ * **This is the one real liberty the chart takes, so it is taken in the open.**
+ * The five moods are an *ordinal* scale — they have an order and nothing else.
+ * Nobody has measured that the step from Great to Good is the same size as the
+ * step from Low to Rough, and it probably isn't. A line chart cannot be drawn
+ * without asserting that they are, because a line needs a height and a height
+ * is a number. So the assertion is made here, once, where it can be read,
+ * rather than three levels down inside a component.
+ *
+ * What it costs: the *value* of the line is not meaningful. "3.4" is not a
+ * mood and the chart never prints one. What it keeps is the only thing the
+ * question needs — the *direction*, which survives any scale that preserves the
+ * order. Up is better, down is worse, and that is all the picture claims.
+ *
+ * Written out rather than derived from `MOODS.length - index` so that reading
+ * this file tells you the numbers. The test asserts it agrees with the array's
+ * order, which is the half that would actually go wrong.
+ */
+export const MOOD_SCORE: Record<Mood, number> = {
+  great: 5,
+  good: 4,
+  okay: 3,
+  low: 2,
+  rough: 1,
+};
+
+/**
+ * A gap longer than this breaks the line instead of being drawn through.
+ *
+ * A straight segment between two points is a claim about what happened in
+ * between. Across two or three days that claim is harmless and joining them is
+ * what makes the series readable. Across three weeks it is an invention — the
+ * line would slope smoothly through a fortnight you never logged and look
+ * exactly like a fortnight you did.
+ *
+ * A week is the boundary because it is the unit the rest of the app already
+ * thinks in, and because a whole week unlogged is the point at which the honest
+ * answer stops being "roughly this" and starts being "no idea".
+ */
+const MOOD_GAP = 7;
+
+/**
+ * Logged days before a direction can be claimed, and how far it has to move.
+ *
+ * Six is three points a side, which is the fewest that can average to anything
+ * but noise. Half a rung is the threshold because the scale's own resolution is
+ * one rung: a shift of less than half a step is not your mood changing, it is
+ * which days you happened to open the app on.
+ */
+const DRIFT_MIN = 6;
+const DRIFT_STEP = 0.5;
+
+/** One logged day, placed on the line. */
+export type MoodPoint = {
+  day: DayString;
+  mood: Mood;
+  /** The word, from `MOOD_LABEL`, so a tooltip can't drift from the strip. */
+  label: string;
+  /** `MOOD_SCORE[mood]`. 5 at the top of the chart, 1 at the bottom. */
+  score: number;
+  /**
+   * Where the day sits along the span: 0 on the first logged day, 1 on the
+   * last. A *fraction*, not a pixel — the component owns its own box, and a lib
+   * that returned coordinates would have to be told how wide the card is.
+   *
+   * Positioned by date and not by index, which is the difference between a time
+   * series and a list. Three days logged in a row and three logged a month
+   * apart are not the same picture, and evenly spacing them would draw them
+   * identically.
+   */
+  at: number;
+  /** True when the run before this point ended — see `MOOD_GAP`. */
+  gap: boolean;
+};
+
+export type MoodSeries = {
+  /** Only days that carry a mood, oldest first. Never one entry per calendar
+   *  day: a day you didn't rate is not a neutral day, it is no data. */
+  points: MoodPoint[];
+  /** The first and last logged day, which is the span `at` is measured across.
+   *  Not the range's edges — a month with one mood in it on the 9th has a span
+   *  of zero, and stretching that point across the month would invent 30 days
+   *  of flat line. */
+  from: DayString | null;
+  to: DayString | null;
+};
+
+/**
+ * How the mood went, day by day, over whatever range is picked.
+ *
+ * A third pass over the map `tally` and `moodTally` already walk, and the third
+ * one is the least apologetic: `moodTally` counts how many days felt each way
+ * and deliberately throws the dates away, which is exactly the axis this needs.
+ * One function returning both would return a shape where every caller takes
+ * half — the argument `moodTally` already makes about not folding into `tally`.
+ *
+ * It follows the range picker, unlike the habit strip. The strip ignores the
+ * picker because a density picture needs a fixed recent span to be comparable
+ * with itself; a line needs only enough points to have a direction, and a
+ * fortnight of them is a real answer to "how has this fortnight gone".
+ *
+ * **No smoothing.** This drew a centred rolling mean for about an hour and it
+ * was the wrong instrument. A mean is a claim *about* your days; the dots are
+ * your days, and the line between them is the only thing that says "these two
+ * are consecutive" without inventing a third number. Smoothing also quietly
+ * moves the line off the dots it is drawn from, which on a five-rung scale
+ * means the curve passes through heights that are not moods.
+ */
+export function moodSeries(
+  stickersByDay: StickersByDay,
+  bounds: Bounds,
+): MoodSeries {
+  const logged: { day: DayString; mood: Mood }[] = [];
+
+  for (const [day, stickers] of stickersByDay) {
+    if (!inBounds(day, bounds)) continue;
+    if (!stickers.mood) continue;
+    logged.push({ day, mood: stickers.mood });
+  }
+
+  // `StickersByDay` is a Map in insertion order, which is the query's order and
+  // not necessarily the calendar's. Every number below — the span, the gaps,
+  // the rolling mean — reads neighbours, so the sort is load-bearing rather
+  // than cosmetic. Day strings are fixed-width and zero-padded, so lexical
+  // order is chronological order.
+  logged.sort((a, b) => a.day.localeCompare(b.day));
+
+  if (logged.length === 0) return { points: [], from: null, to: null };
+
+  const from = logged[0].day;
+  const to = logged[logged.length - 1].day;
+  const span = daysBetween(from, to);
+
+  const points = logged.map((entry, i) => ({
+    day: entry.day,
+    mood: entry.mood,
+    label: MOOD_LABEL[entry.mood],
+    score: MOOD_SCORE[entry.mood],
+    // A span of zero is one logged day, or several on the same day — which
+    // cannot happen, since `day_moods` is unique per day, but the division
+    // would be `0/0` either way. Centred, because a lone point pinned to the
+    // left edge reads as the start of a line that failed to draw.
+    at: span === 0 ? 0.5 : daysBetween(from, entry.day) / span,
+    gap: i > 0 && daysBetween(logged[i - 1].day, entry.day) > MOOD_GAP,
+  }));
+
+  return { points, from, to };
+}
+
+/** Which way the series went, or null when it is too short to say. */
+export type MoodDrift = "up" | "down" | "steady";
+
+/**
+ * Up, down or steady, by comparing the first half of the series to the last.
+ *
+ * Halves rather than "first point against last point", which would let one
+ * rough Tuesday at either end decide the verdict. Halves rather than a fitted
+ * slope, because a regression line over five ordinal values is arithmetic
+ * dressed up as evidence — it would produce a number with three decimals from
+ * data that has five possible values.
+ *
+ * An odd count drops its middle point rather than giving it to one side, so the
+ * two halves are always the same size and the comparison is symmetric.
+ *
+ * Null under `DRIFT_MIN` points. "Steady" is a claim, and a claim needs enough
+ * data to have been able to say otherwise — reporting three days as steady is
+ * the same failure as reporting them as climbing.
+ */
+export function moodDrift(series: MoodSeries): MoodDrift | null {
+  const n = series.points.length;
+  if (n < DRIFT_MIN) return null;
+
+  const half = Math.floor(n / 2);
+  const first = mean(series.points.slice(0, half).map((p) => p.score));
+  const last = mean(series.points.slice(n - half).map((p) => p.score));
+  const moved = last - first;
+
+  if (Math.abs(moved) < DRIFT_STEP) return "steady";
+  return moved > 0 ? "up" : "down";
+}
+
+/** Guarded by its only caller, which never passes an empty slice. */
+function mean(values: number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+/**
+ * The line, in words. The mood tab's answer to `takeaway`.
+ *
+ * Same job and the same reason: the chart is `aria-hidden`, so this sentence is
+ * what a screen reader gets, and it is generated from the series rather than
+ * written once because a hand-written caption goes stale the moment the range
+ * changes.
+ *
+ * It never prints a score. The numbers behind the line are a made-up scale (see
+ * `MOOD_SCORE`) and putting "3.4" on the page would give them an authority they
+ * haven't earned. The direction is the finding; the count of logged days is
+ * what tells you how much to trust it.
+ *
+ * Null for an empty series — there is no sentence for no data, and `MoodStrip`
+ * below already says the useful thing about that case.
+ */
+export function moodTakeaway(series: MoodSeries, phrase: string): string | null {
+  const n = series.points.length;
+  if (n === 0) return null;
+
+  const days = `${n} logged day${n === 1 ? "" : "s"}`;
+  const drift = moodDrift(series);
+
+  // Named rather than a verdict. Under six points the honest answer is that the
+  // question can't be answered yet, and saying so points at what would fix it.
+  if (!drift) {
+    return `${days} ${phrase} — not enough yet to call a direction.`;
+  }
+
+  switch (drift) {
+    case "up":
+      return `Your mood has been climbing ${phrase}, across ${days}.`;
+    case "down":
+      return `Your mood has been dipping ${phrase}, across ${days}.`;
+    case "steady":
+      return `Your mood has held steady ${phrase}, across ${days}.`;
+  }
 }
 
 /**

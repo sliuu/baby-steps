@@ -5,33 +5,31 @@ import { VIEW } from "@/lib/charts";
 type Props = { children: ReactNode };
 
 /**
- * The panel all three charts draw into, at one fixed size.
+ * The panel the Life Star draws into, at one fixed size.
  *
- * Two of the three got this for free: the star and the donut share a `viewBox`,
- * and an SVG with a `viewBox` and `w-full` takes its height from the ratio, so
- * they were always the same height as each other. The bars are HTML and had no
- * such rule — six rows are as tall as six rows are — so switching to them
- * resized the card and moved everything below it. Which is the same problem the
- * shared `viewBox` was solving, solved for only two thirds of the charts.
+ * It was built for three tenants and has one left. The star and the donut
+ * shared a `viewBox`, so they were always the same height as each other; the
+ * bars were HTML and as tall as their rows, so switching to them resized the
+ * card and moved everything below it. The box moved up here and the ratio got
+ * stated once.
  *
- * So the box moves up here and the ratio is stated once. `aspectRatio` is an
- * inline style rather than a class for the reason `Bars` sets its widths that
- * way: Tailwind cannot generate a class for a number it never sees, and this
- * one is read from `VIEW` on purpose. Deriving it means the card cannot drift
- * from the viewBox it's supposed to match.
+ * Kept, rather than folded back into `LifeStar`, because `TrendsSkeleton`
+ * renders it too — that is the whole point of the file. The skeleton has to
+ * reserve exactly the height the real card will take, and the only way it
+ * cannot disagree is by rendering the same component.
  *
- * `min-h-fit` is the escape hatch. On a narrow screen the ratio makes the box
- * shorter than six rows of text can fit in, and there is nothing sensible to do
- * about that — a chart panel that clips its own rows is worse than one that is
- * taller than its neighbours. So the bars grow on a phone and the three cards
- * stop matching there. Stated rather than hidden, because it's a real edge.
+ * `aspectRatio` is an inline style rather than a class for the reason
+ * `MostDone` sets its bar widths that way: Tailwind cannot generate a class for
+ * a number it never sees, and this one is read from `VIEW` on purpose. Deriving
+ * it means the card cannot drift from the viewBox it's supposed to match.
+ * `min-h-fit` is the escape hatch for a narrow screen, where the ratio would
+ * make the box shorter than its own contents.
  *
- * The card also owns `aria-hidden`, which all three charts carried separately.
- * It belongs to the panel rather than to any one drawing: what makes it correct
- * is that `AreaTable` renders these same numbers as a real table on the same
- * page, and that fact is about the page, not about the chart. If a step ever
- * shows a chart without that table, this is the single place that has to
- * change.
+ * The card owns `aria-hidden`. It belongs to the panel rather than to the
+ * drawing: what makes it correct is that `AreaTable` renders these same numbers
+ * as a real table on the same page, and that fact is about the page, not about
+ * the chart. If a step ever shows a chart without that table, this is the
+ * single place that has to change.
  */
 export function ChartCard(props: Props) {
   return (

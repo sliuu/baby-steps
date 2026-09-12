@@ -5,17 +5,12 @@ import { describe, it } from "node:test";
 import {
   LABEL_GAP,
   LINE,
-  TOP,
   VIEW,
-  circumference,
-  donutArcs,
   labelAnchor,
   labelBaseline,
   normalize,
   polar,
   round2,
-  sliceMidAngles,
-  stackOffset,
   type Point,
 } from "./charts.ts";
 import { spokeAngle } from "./lifestar.ts";
@@ -186,153 +181,8 @@ describe("labelBaseline", () => {
   });
 });
 
-describe("circumference", () => {
-  it("is 2πr", () => {
-    assertClose(circumference(10), 2 * Math.PI * 10, "r=10");
-  });
-});
-
-describe("donutArcs", () => {
-  it("cuts the ring into segments proportional to the shares", () => {
-    const arcs = donutArcs([0.5, 0.25, 0.25], 100);
-    assert.equal(arcs[0].dashArray, "50 50");
-    assert.equal(arcs[1].dashArray, "25 75");
-    assert.equal(arcs[2].dashArray, "25 75");
-  });
-
-  it("starts each segment where the last one ended", () => {
-    const arcs = donutArcs([0.5, 0.25, 0.25], 100);
-    assert.equal(arcs[0].dashOffset, 0);
-    assert.equal(arcs[1].dashOffset, -50);
-    assert.equal(arcs[2].dashOffset, -75);
-  });
-
-  it("offsets negatively, because positive shifts the pattern backwards", () => {
-    // Sign errors here draw every segment at the right size in the wrong
-    // place, which looks like scrambled data rather than a bug in one number.
-    const arcs = donutArcs([0.25, 0.75], 400);
-    assert.ok(arcs[1].dashOffset < 0, "second segment offset is negative");
-    assert.equal(arcs[1].dashOffset, -100);
-  });
-
-  it("returns +0 rather than -0 for the first segment", () => {
-    // `assert.strictEqual` compares with Object.is, and Object.is(-0, 0) is
-    // false — so this would otherwise need its own special assertion.
-    assert.equal(Object.is(donutArcs([1], 100)[0].dashOffset, 0), true);
-  });
-
-  it("gives a zero share a zero-length dash", () => {
-    // An area with no marks paints nothing and takes no room, but it still
-    // occupies its index so the colours stay lined up with the areas.
-    const arcs = donutArcs([0.5, 0, 0.5], 100);
-    assert.equal(arcs[1].dashArray, "0 100");
-    assert.equal(arcs[1].dashOffset, -50);
-    assert.equal(arcs[2].dashOffset, -50);
-  });
-
-  it("paints the whole ring when the shares sum to 1", () => {
-    const length = 360;
-    const shares = [0.2, 0.3, 0.5];
-    const arcs = donutArcs(shares, length);
-    const painted = arcs.reduce(
-      (sum, arc) => sum + Number(arc.dashArray.split(" ")[0]),
-      0,
-    );
-    assertClose(painted, length, "painted length");
-  });
-
-  it("leaves the rest unpainted when the shares do not sum to 1", () => {
-    // Not an error. A partial total should look partial rather than being
-    // silently stretched to fill the ring.
-    const arcs = donutArcs([0.25, 0.25], 100);
-    assert.equal(arcs.length, 2);
-    assert.equal(arcs[1].dashOffset, -25);
-  });
-
-  it("handles an empty set of shares", () => {
-    assert.deepEqual(donutArcs([], 100), []);
-  });
-
-  it("uses the real circumference, not a rounded one", () => {
-    // The length comes from `circumference`, so a full single share has to
-    // close the ring exactly rather than leaving a hairline seam.
-    const length = circumference(52);
-    const [arc] = donutArcs([1], length);
-    assert.equal(arc.dashArray, `${round2(length)} 0`);
-  });
-});
-
-describe("sliceMidAngles", () => {
-  it("points at the middle of a slice, not its edge", () => {
-    // One slice covering the whole ring starts at the top and its middle is
-    // straight down. An off-by-a-half-slice here labels boundaries.
-    assertClose(sliceMidAngles([1])[0], TOP + Math.PI, "half turn on");
-  });
-
-  it("starts the first slice at twelve o'clock", () => {
-    // A quarter-share first slice runs from the top to three o'clock, so its
-    // middle is halfway between: 45° clockwise from the top.
-    assertClose(sliceMidAngles([0.25])[0], TOP + Math.PI / 4, "first mid");
-  });
-
-  it("spaces equal slices evenly, like spokes", () => {
-    const mids = sliceMidAngles([0.25, 0.25, 0.25, 0.25]);
-    for (let i = 1; i < mids.length; i++) {
-      assertClose(mids[i] - mids[i - 1], Math.PI / 2, `gap ${i}`);
-    }
-  });
-
-  it("gives a zero slice the boundary between its neighbours", () => {
-    // Which is exactly why `Donut` doesn't label empty areas: this angle is a
-    // real number pointing at somebody else's colour.
-    const mids = sliceMidAngles([0.5, 0, 0.5]);
-    assertClose(mids[1], TOP + Math.PI, "zero slice");
-  });
-
-  it("keeps going past a full turn when shares overshoot", () => {
-    // Nothing clamps. Shares that sum past 1 wrap around the ring, which is the
-    // same thing the drawing does — the labels stay on their segments rather
-    // than piling up at the end.
-    const mids = sliceMidAngles([0.75, 0.75]);
-    assertClose(mids[1] - mids[0], 0.75 * 2 * Math.PI, "gap");
-  });
-
-  it("handles an empty set of shares", () => {
-    assert.deepEqual(sliceMidAngles([]), []);
-  });
-});
-
-describe("stackOffset", () => {
-  it("leaves a one-line label exactly where the baseline put it", () => {
-    for (const baseline of ["auto", "middle", "hanging"] as const) {
-      assert.equal(stackOffset(baseline, 1), 0, baseline);
-    }
-  });
-
-  it("lifts a two-line block clear of a point it should sit above", () => {
-    assert.equal(stackOffset("auto", 2), -LINE);
-  });
-
-  it("straddles a point with half the extra height", () => {
-    // The one that goes wrong silently: without it every side label hangs half
-    // a line below its own segment, which reads as sloppy rather than as a bug.
-    assert.equal(stackOffset("middle", 2), -LINE / 2);
-  });
-
-  it("does not move a block that hangs below its point", () => {
-    // The first line is already below it; the second is further below, which is
-    // where it belongs.
-    assert.equal(stackOffset("hanging", 2), 0);
-  });
-
-  it("scales with the number of lines", () => {
-    assert.equal(stackOffset("auto", 3), -2 * LINE);
-    assert.equal(stackOffset("middle", 3), -LINE);
-  });
-});
-
 describe("VIEW", () => {
-  it("is wide enough for the donut's labels, which reach furthest", () => {
+  it("is wide enough for the widest labels the box was budgeted for", () => {
     // The budget from VIEW's doc comment, checked rather than trusted, because
     // the failure mode is a name with its last few letters sliced off at the
     // viewBox edge and nothing anywhere reports it.
@@ -359,8 +209,10 @@ describe("VIEW", () => {
   });
 
   it("leaves room above and below for a two-line label", () => {
-    // The donut stacks a percentage under each name, so the top and bottom
-    // labels are twice as tall as the star's.
+    // Two lines because the donut stacked a percentage under each name, and the
+    // box is deliberately still budgeted for that even though the donut is
+    // gone: the star's card would otherwise change height for no reason. See
+    // the note at the top of `charts.ts`.
     assert.ok(VIEW.cy >= VIEW.radius + LABEL_GAP + 2 * LINE, "vertical room");
   });
 });

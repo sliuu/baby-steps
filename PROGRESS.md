@@ -2,11 +2,120 @@
 
 Newest first. One entry per step.
 
-**Now:** The calendar has two views. A Month/Week pill sits beside the title and the same two arrows step whichever one you're in; the week is seven tall columns, each with the day's stickers spelled out as named bars and a note field at the bottom for a line about that day. Before that: every emoji in the app became a Lucide icon, drawn from a 432-icon map with eight hand-drawn sports additions, and the body text moved to DM Sans throughout. **All of it committed and pushed** — four commits on `main`, which is what the hosted version had been missing: the database already held `icon:<id>` marks for all 23 activities and the deployed build was still `c77303b`, so every sticker there read as the literal words `icon:tennis`. `npm run db:notes` has been run; `npm run adopt:icons` has not, so existing stickers keep their emoji. The `lib/database.types.ts` item below is still open. One step left after this: deploy.
+**Now:** Trends has been re-cut and then split into three tabs — **Areas · Habits · Moods**. No pie, no chart switcher. *Habits* pairs a ranking of your most-done with a strip of every habit's last eight weeks, a square per day, side by side on a wide screen and stacked at one width on a narrow one. *Moods* opens with a line joining every day you logged, in ink, with the reading printed above it in words. Never yet seen in a browser. Before that: the calendar grew two views. A Month/Week pill sits beside the title and the same two arrows step whichever one you're in; the week is seven tall columns, each with the day's stickers spelled out as named bars and a note field at the bottom for a line about that day. Before that: every emoji in the app became a Lucide icon, drawn from a 432-icon map with eight hand-drawn sports additions, and the body text moved to DM Sans throughout. **All of it committed and pushed** — four commits on `main`, which is what the hosted version had been missing: the database already held `icon:<id>` marks for all 23 activities and the deployed build was still `c77303b`, so every sticker there read as the literal words `icon:tennis`. `npm run db:notes` has been run; `npm run adopt:icons` has not, so existing stickers keep their emoji. The `lib/database.types.ts` item below is still open. One step left after this: deploy.
 
 Most of Step 16 still hasn't been looked at in a browser; the open items under each entry below are the list.
 
 The plan grew a step: editing a sticker was inserted as Step 16, so motion and deploy became 17 and 18.
+
+---
+
+## 2026-09-11 · Trends, re-cut · Three tabs · A mood line · Eight weeks per habit
+
+"In the trends section, let's remove pie and bar. I want an option to see each of your habits, and the days you did them, kind of like the github commit tracker. It's a way to track what you're doing. I'd also want to see a way to see which activities you did the most that month / year / etc"
+
+**What changed about the interface.** The donut is gone and so is the chart switcher above it — the Life Star is just there now, no control, and directly under it sits **Most done**, a ranked bar list of the habits themselves rather than the six life areas. Below both, running the full width of the page, is **Every habit, day by day**: one row per habit, one small square per day, a year of them. It scrolls sideways and opens at today, with the habit names pinned to the left edge so they stay readable eight months in. A square is faint if you did the habit once that day and solid if you did it more. Hovering one says which habit, which day, and how many times.
+
+**Decisions**
+
+- **Removing the pie removed the switcher too.** With three panels behind one control, the control earned its keep; with two left, it costs a click to hide one of two answers. And the two remaining answers are in *different units* — the star counts marks per life area, the ranking counts marks per habit — so putting them behind one toggle would have implied they were two views of one number. Both on the page at once, side by side, is the honest arrangement.
+- **The bar chart was kept but re-pointed.** It used to rank the six areas, which the star beside it already draws and the table beneath it already lists: three pictures of one number. Ranking the *habits* is what none of them could say — an area at thirty marks doesn't tell you whether that was thirty runs or ten runs, ten swims and ten walks. Eight rows, then "and four more habits, 11 marks between them," because that's an answer too.
+- **The strip ignores the range picker, on purpose.** Everything else on the page is filtered by it; this is always the last 365 days. A density strip needs a span long enough for a rhythm to appear, and the picker's shortest option is a fortnight — fourteen squares is not a picture of anything. The heading prints the actual span and the explainer says so out loud, so the two halves of the page can't be mistaken for each other.
+- **Three intensity levels, not five.** GitHub shades by commit count; a habit is done or not done. `heatLevel` gives 0, 1 and 2-or-more, mapped to nothing / `soft` / `bg`. Five steps would draw a precision the data does not have, and the palette has no graded scale to spend on it — `lib/palette.ts` deliberately keeps six hues at fixed rungs rather than a ramp per hue.
+- **The empty grid is one background, not four thousand elements.** A year × a dozen habits is ~4,400 cells and nearly all of them are blank. A `repeating-linear-gradient` at the cell pitch draws the empty track in one CSS property, and only the days you actually did something become real DOM nodes — a few hundred instead of thousands, same picture. It's what makes 365 columns cheap enough to be worth having.
+- **Scrolling, not squeezing.** 365 legible squares is about three laptop screens wide. The alternatives were both worse: two-pixel slivers you can't point at, or wrapping each habit into its own 53×7 GitHub block, which stacks a dozen of them down the page and gives up the one thing a row-per-habit layout is for — reading two habits against each other on the same week.
+- **Row order is library order, and a retired habit still gets a row if it was done.** Ranking the rows would move them between visits and break the colour banding that makes an area readable as a block. And you stopped doing the habit, you didn't stop having done it — same position `tally` already takes on archived marks. A retired habit with nothing in the window drops out; a mark whose activity isn't in the library at all is dropped rather than given a nameless row, because `Tally.unattributed` already reports exactly that.
+- **The whole drawing is `aria-hidden`, with an `sr-only` list underneath.** Same justification `ChartCard` gives and the same one the app has used since Step 13: a chart may be hidden only because the same facts are on the page in words. Announcing four thousand squares is not an accessible version of this picture. The list gives every row, in the same order: name, days out of 365, most recent.
+- **Geometry in pixels, which is the exception on this page.** Everything else scales with the type; this can't, because a cell has to line up with the cell above it in a different element. One shared `PITCH` is what makes 365 independent tracks agree, and it's what lets the month labels be placed by arithmetic instead of by measuring anything.
+- **No new queries.** `getStickersByDay` was already unbounded — every placement ever made ships to Trends on page load — so the strip is pure client-side arithmetic over data that was already there.
+- **`VIEW` and `LINE` in `lib/charts.ts` stay at the departed donut's budget.** The box was sized for the donut's horizontal labels, which are wider than the star's. Shrinking it now would move the one card still on the page for no reason but tidiness, so the constant keeps its size and the doc says why.
+
+**Changed**
+
+- `lib/heatmap.ts` — new; `dayWindow`, `monthLabels`, `heatmap`, `heatLevel`, `HEATMAP_DAYS`. Zero value imports, so it runs under `node --test`.
+- `lib/heatmap.test.ts` — new; 30 tests. The fixture's archived sticker is load-bearing: two tests pull in opposite directions on whether it gets a row.
+- `lib/analytics.ts` — `activityTally`, `ActivityTally`, `ActivityRanking`. No library argument, unlike `tally`: a habit's name, mark and colour ride on the placement already. No zero rows, and ties break on name.
+- `lib/analytics.test.ts` — a `describe("activityTally")` block with its own fixture, because the existing `days()` names every sticker after its own id and so can't tell a face bug from a sort bug.
+- `components/trends/HabitHeatmap.tsx`, `components/trends/MostDone.tsx` — new
+- `components/trends/Donut.tsx`, `ChartSwitcher.tsx`, `Bars.tsx` — deleted
+- `lib/charts.ts` / `lib/charts.test.ts` — `ChartKind`, `CHART_KINDS`, `CHART_LABEL`, `stackOffset`, `circumference`, `donutArcs`, `sliceMidAngles` and their four test blocks are gone
+- `components/trends/TrendsBoard.tsx` — no chart state; three new memos (`ranking`, `days`, `rows`) and a full-width strip below the two columns
+- `components/trends/ChartCard.tsx`, `RangePicker.tsx` — docs rewritten for a page with no switcher on it
+- `components/views/TrendsSkeleton.tsx` — the segmented-pill skeleton dropped, a "Most done" panel and a strip added
+
+**State:** `tsc`, `eslint`, `npm run check:dates` and `npm run build` all green. 243 tests (was 229: −21 donut, +35 new). Uncommitted.
+
+**Then it became three tabs.** "Now this is a lot of information at once. Let's break this up into tabs." Fair — the re-cut had put a radar, a six-row table, a takeaway sentence, a ranked bar list, a five-mood strip and a 365-column grid down one page. **Areas · Habits · Moods**, split by *unit* rather than by chart type, which is what makes it a division and not three drawers to put panels in.
+
+- **Areas** — the takeaway sentence, the Life Star, the area table. Everything counted per life area, plus the unattributed-marks note, which is a fact about attribution and belongs nowhere else.
+- **Habits** — Most done, then the year strip. Same unit, ranked first and then spread out, because "which habit" is the smaller question and the strip is easier to read once you know whose row to look at.
+- **Moods** — the strip on its own. It counts *days*, not marks, and it had been third in a column under a table of a different unit, which is how a five-item answer gets missed.
+
+**And this is not the switcher coming back.** The control deleted an hour earlier sat inside one card and chose between three drawings of the *same* six numbers. These divide the page's content. A control that hides an alternative rendering is furniture; a control that hides half the facts is navigation.
+
+- **Underlined tabs, not the nav's pill.** The pill now means one thing — top-level navigation — and the reason is already written down two entries below: two segmented pills on one screen read as two levels of navigation and you have to remember which one holds what. That's why the Month/Week pill left the calendar. So Trends uses `variant="line"` from `components/ui/tabs.tsx`, the same underline `MarkPicker` draws inside its popover. `segment()`'s doc now says the rule out loud instead of listing the switcher as its second tenant.
+- **The range picker sits beside the tab list, outside all three panels.** It governs every tab, so putting it inside would mean three copies of one control or a control that looks like it resets when you switch. The one thing it doesn't filter is the year strip, and the strip answers that itself — it prints its own dates and says so in words.
+- **Radix mounts one panel at a time, which the skeleton gets to exploit.** `TrendsSkeleton` used to reserve four heights and be wrong about at least one every time; the strip in particular was a deliberate under-guess because the row count isn't knowable before the library query lands. Now it draws the Areas tab only. Areas is always where you land, and the other two are behind a click that happens after the data has arrived — so there is nothing left to guess. That open item from an hour ago is closed by the layout rather than by a better guess.
+- **Readout lost the mood strip and kept the export.** It's the sentence and the table now. `MoodStrip` still lives in that file — same kind of composed-not-computed panel, nowhere better to be — and `TrendsBoard` mounts it on its own tab.
+- **The Habits tab's empty state is a sentence, not the dashed card.** When the range holds nothing, the ranking has nothing to draw but the rolling-year strip under it still does, so a box announcing "nothing here" would be contradicted by the thing directly beneath it.
+- **Most done is capped at `max-w-2xl`.** `normalize` always runs the top bar to the full width of its track, and across a whole page that's a foot of solid colour saying one number.
+
+Changed: `components/trends/TrendsBoard.tsx` (tabs, three panels), `components/trends/Readout.tsx` (narrowed to sentence + table), `components/views/TrendsSkeleton.tsx` (Areas only), `lib/layout.ts` (`segment()` doc). No new components and no new tests — the split is layout, and every number in it was already computed and already covered.
+
+### Then the moods got a line.
+
+"For the moods section, I'd like to see a line chart over time, for how my mood has gone up or down"
+
+**What changed about the interface.** The Moods tab opens with a new panel, **Mood over time**: a wide, low chart with the five moods as labelled gridlines — Great at the top, Rough at the bottom — a dot for every day you logged, and a line running through them. Above the drawing, in the same large type the Areas tab uses for its takeaway, is the reading in words: *"Your mood has been climbing this month, across 23 logged days."* The strip of five faces is still there, underneath.
+
+The line runs straight through the dots — no smoothing, no curve. Where you went more than a week without logging anything, it stops and picks up again on the other side.
+
+**Decisions**
+
+- **Five moods became five numbers, and the liberty is taken in the open.** Great is 5 down to Rough at 1. The five moods are an *ordinal* scale — they have an order and nothing else, and nobody has established that Great→Good is the same size a step as Low→Rough. A line needs a height and a height is a number, so the assertion gets made; it's made once, in `MOOD_SCORE`, with the reasoning above it, rather than three levels down inside a component. What it costs is that the line's *value* means nothing, so the chart never prints one — no numeric y axis, no "3.4" in the sentence. What survives is the direction, which is true under any scale that keeps the order.
+- **Ink, not a hue, and that was never in question.** Three files already say it — `MoodMark`, `wash()` in `palette.ts`, `highlight.ts` — six colours mean six life areas, everywhere. A green line for a good stretch would be a seventh meaning for a colour that has one, one tab away from the star that owns it.
+- **Positioned by date, not by index.** Three days logged in a row and three logged a month apart are not the same picture, and evenly spacing them would draw them identically. So `MoodPoint.at` is a 0–1 fraction of the span, gaps included — which is also what makes the breaks in the line legible as breaks rather than as missing data.
+- **The line breaks after a week unlogged.** A straight segment between two points is a claim about what happened in between. Across three days that's harmless and it's what makes the series readable; across three weeks it's an invention, and it would look exactly like a fortnight you did log. A week is the boundary because it's the unit the rest of the app thinks in.
+- **It drew a rolling mean for about an hour, and that was wrong.** *"I don't want a trendline, I want an actual line connecting the dots."* Two things were wrong with the mean beyond her not asking for it. The curve sat *off* the points it was computed from, so on a scale whose entire content is five named rungs the drawing passed through heights that are not moods. And it answered a question that was already answered better one inch above it: the direction is stated in words by `moodTakeaway`, which beats eyeballing a curve. What a picture can do that a sentence can't is show the actual days — so that is all it does now. `MOOD_SCORE` survives, because the dots still need heights; `SMOOTH_FROM`, `SMOOTH_WINDOW`, `centredMean`, `MoodPoint.trend` and `MoodSeries.window` are gone.
+- **The dots are `fill-ink`, not muted.** They were the faint evidence under a confident line. With the line running through them the relationship inverts: the dots are the measurements and the segments between them are the only interpolation in the drawing, so the marks are solid and each vertex is something you can point at.
+- **"Steady" is a claim, so it needs enough data to have been able to say otherwise.** Under six logged days `moodDrift` returns null and the sentence says *"4 logged days this month — not enough yet to call a direction"* rather than reporting a flat run. The verdict compares the mean of the first half against the last, not the first point against the last, so one rough Tuesday at either end doesn't decide it; the threshold is half a rung, because the scale's own resolution is one rung and less than half a step is which days you happened to open the app on. At six points a single outlier *can* still swing it — three days a side is a third of the evidence — and there's a test asserting exactly that, because it's a property of the sample size rather than a bug to tune away.
+- **Its own `viewBox`, 880×260, and explicitly not `charts.ts`'s `VIEW`.** That box is 520×320 because two *radial* charts had to share a frame and its width is budgeted for area names sticking out past a ring. Borrowing it would give a time series a near-square box, and the slope of a line is an artefact of its aspect ratio — squaring it steepens every change into something more dramatic than it was.
+- **The sentence is a prop, not something the component works out.** Same split as `Readout`: `moodTakeaway` lives in `lib/analytics.ts` where the branching is reachable by `assert`. It's also what makes the chart's `aria-hidden` legitimate — for anyone not looking at it, that line *is* the chart. The `sr-only` note under it adds only what the axes say (the two dates, the count, whether it's smoothed); the days themselves aren't listed, because a year of "12 March, Good" is not a reading of a trend and a single day lives on the calendar.
+- **Under two points there's no panel at all.** One dot in an empty grid says "one day, and it was Okay", which is the sentence above it printed larger. The strip below has its own empty state and says the useful thing — where to go and log one.
+- **`dayToUTC`/`utcToDay` moved out of `lib/heatmap.ts` into a new `lib/daymath.ts`.** The codebase's own rule, cited in `charts.ts`: it moves when the second caller arrives, not before. `moodSeries` needs day differences and `lib/dates.ts` can't supply them — it imports date-fns, and a `lib/` module under `node --test` can only take value imports from modules that import nothing. Everything in there is UTC, because a `DayString` is a calendar square rather than an instant: DST makes two local days 23 and 25 hours long, and local-date arithmetic across one of them lands at 23:00 the previous evening.
+
+Changed: `lib/daymath.ts` (new), `lib/daymath.test.ts` (new, 15 tests), `lib/heatmap.ts` (repointed at it), `lib/analytics.ts` (`MOOD_SCORE`, `moodSeries`, `moodDrift`, `moodTakeaway`), `lib/analytics.test.ts` (23 more), `components/trends/MoodLine.tsx` (new), `components/trends/TrendsBoard.tsx` (the Moods panel).
+
+### Then the two habit panels were paired.
+
+"For habits, let's find a way to put the two graphs side by side if there's enough room, or one on top of the other while being the same width if there isn't. It doesn't need to be a 365 day window for the bottom graph"
+
+**What changed about the interface.** On a wide screen the Habits tab is now one row: **Most done** on the left in a fixed 20rem column, **Every habit, day by day** on the right taking the rest. Narrower, they stack — and both are the full width of the column, so neither is arbitrarily narrower than the other. The strip is framed in the same card as the ranking, with a heading at the same size, so the two read as a pair rather than as a panel and some loose content below it.
+
+The strip is **the last eight weeks**, down from a rolling year. At a legible cell size it now fits its column outright, so on a laptop there is nothing left to scroll.
+
+**Decisions**
+
+- **The window shrank, not the cell.** 365 days at 6px is about three screens wide, which is why the strip could only ever be a full-bleed band under everything else — and the eleven months you had to scroll past were eleven months nobody looked at. The floor on a cell is about 6px; under that it stops being a mark you can point at and becomes texture. So the span gave way: **eight weeks, 56 squares, 574px of drawing including the name gutter**, which fits the wide column with room to spare.
+- **A multiple of seven, and that is the load-bearing half.** Every column is the same weekday, which is most of what makes a density picture readable — "I only ever do this at weekends" is a vertical stripe when the weeks line up and nothing at all when they drift. `HEATMAP_WEEKS = 8`, `HEATMAP_DAYS = HEATMAP_WEEKS * 7`, with a test asserting the multiple rather than the number.
+- **20rem and the rest, not two halves.** A ranking is short names with bars behind them and stops improving past about twenty characters; the strip is fixed-pitch squares that either fit or scroll. Pinning the narrow one to what it needs and giving the wide one the remainder is also what lets the strip's geometry be budgeted against a real number instead of a guess.
+- **`xl`, and the breakpoint is arithmetic rather than a device.** 20rem + the gap + 574px + the card's padding is about 1070px of content. `max-w-6xl` less its gutters gives 1072 at an `xl` viewport and less than that at `lg`, so `lg` would have put the two side by side and immediately made the strip scroll.
+- **`max-w-2xl` came off Most done.** It was there because `normalize` runs the top bar to the full width of its track and a foot of solid colour says one number. The grid column now does that job, and doing it twice would leave the ranking narrower than the card beside it — which is the thing she asked to stop happening.
+- **The strip kept its scroller.** It is a no-op at the width it's designed for and it is the honest fallback on a phone, where 574px does not fit anything. What it no longer does is define the layout.
+- **The strip grew a card and lost a heading size.** `text-panel-title` down to `eyebrow`, matching `MostDone` exactly: two peers in one grid row with headings at different sizes is a hierarchy the content doesn't have. The pinned name gutter's background went `bg-bg` → `bg-surface` to match what it now sits on.
+
+Changed: `lib/heatmap.ts` (`HEATMAP_WEEKS`, the window, three stale comments), `lib/heatmap.test.ts` (the whole-weeks assertion, month labels retested at both lengths), `components/trends/HabitHeatmap.tsx` (geometry, card, copy), `components/trends/TrendsBoard.tsx` (the grid).
+
+**State:** `tsc`, `eslint`, 283 tests, `npm run check:dates` and `npm run build` all green. Still uncommitted, still unseen in a browser.
+
+**Open**
+
+- **Never seen in a browser.** Verified by types, lint, tests and a build only — browser automation has been unavailable all session. Four things can only be confirmed by looking: the strip's scroll-to-today effect, the pinned name gutter's opaque background against the squares sliding under it, the month labels' alignment over their columns, and whether the underlined tab row sits right under a 3rem page title at `text-[0.95rem]`.
+- **A long habit name truncates in the gutter, which is now 128px rather than 176.** Three-quarters of the room it had. Same open question as the week view's bars, with less margin.
+- **The strip on a phone is untested.** It scrolls, so it should survive, but the pinned gutter is 128px of a 390px screen.
+- **The two-column Habits row has only been checked on paper.** The 20rem / remainder split and the `xl` breakpoint are both arithmetic against `max-w-6xl`; whether 20rem is actually enough for the longest habit name plus a bar worth comparing is a thing to look at.
+- **The mood line's gutter is a calculation, not a measurement.** 52 viewBox units, budgeted against "Great" at 12 units and an estimated 0.45em per character. SVG can't reflow text and the root `<svg>` clips at the viewBox edge, so if the estimate is short the failure is a silently sliced label. Worth a look at the widest and narrowest the card gets.
+- **A year's worth of dots is untried.** Pick "All time" with a year of daily moods and the chart draws 365 circles across 814 units — about two units apart, at r=3. They will overlap, and the line behind them will be a solid zigzag. Whether that reads as a dense record or as mud is the kind of thing only looking can settle; if it's mud, the answer is probably that the dots thin out past some count, not that the line goes back to being a mean.
 
 ---
 
@@ -681,6 +790,8 @@ Inserted into the plan at Stephanie's request, after the app had real data in it
 ---
 
 ## 2026-08-30 · Step 14 · Pie and Bars
+
+> Superseded by *Trends, re-cut* (2026-09-11). The donut and the switcher are deleted; the bar chart survives, pointed at habits rather than life areas. Kept for the reasoning, not as a description of the page.
 
 **Decisions**
 

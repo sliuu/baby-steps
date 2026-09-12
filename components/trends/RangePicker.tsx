@@ -38,13 +38,15 @@ type Props = {
 /**
  * A dropdown, not a segmented pill.
  *
- * The pill was the other option and it loses on one point: Step 14 puts a
- * genuine segmented pill on this same page for Life Star / Pie / Bars, and two
- * pills stacked on top of each other are two controls of equal weight competing
- * to look like the important one. They aren't equal. The chart switcher is a
- * lens you flip between while looking; the range quietly governs every number
- * underneath it, including the ones in the chart. Different jobs, so different
- * weights — a quiet dropdown above a loud pill.
+ * The pill was the other option, and it lost to a chart switcher that has since
+ * been deleted: Step 14 put a genuine segmented pill for Life Star / Pie / Bars
+ * directly below this control, and two pills stacked on each other are two
+ * controls of equal weight competing to look like the important one.
+ *
+ * The switcher is gone and the argument survives it, which is why this is still
+ * a dropdown. This control governs every number on the page above the strip,
+ * and it does so quietly — a loud pill for a filter would out-shout the panels
+ * it filters. What changed is only that it is now the sole control up there.
  */
 export function RangePicker(props: Props) {
   const { value, onChange } = props;

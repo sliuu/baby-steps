@@ -39,14 +39,17 @@ export const PAGE_WIDTH = "mx-auto w-full max-w-6xl px-10";
 export const TRAY_INSET = "px-2";
 
 /**
- * A segment of a pill: the nav's tabs, and the Trends chart switcher.
+ * A segment of a pill. The nav's three sections, and nothing else.
  *
- * Two controls that are not the same component and must look like the same
- * thing. They can't share a component — the nav's segments are `<a href>`s so
- * that a tab is a link you can middle-click, and the switcher's are radio
- * buttons because picking a lens is not navigation and nothing in the URL
- * changes. Different elements, different semantics, one appearance. So what
- * gets shared is the appearance, and only that.
+ * It had a second tenant — the Trends chart switcher — and outliving it is the
+ * useful part of this note, because the appearance is now load-bearing in the
+ * other direction. **The pill means top-level navigation.** Trends has tabs of
+ * its own now (Areas, Habits, Moods) and they are deliberately *not* drawn with
+ * this: they are the underlined `variant="line"` tabs, the same ones
+ * `MarkPicker` uses inside its popover. Two segmented pills on one screen read
+ * as two levels of navigation and you have to remember which one holds what —
+ * which is exactly why the Month/Week pill left the calendar for the nav. One
+ * pill per screen, and it is this one.
  *
  * Written as a function rather than three exported strings because the on/off
  * pair is the actual unit: an `active` segment that forgot to stop being muted
