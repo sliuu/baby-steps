@@ -29,6 +29,24 @@ All three are visible without an account at **`/demo`**, over a year of stickers
 generated from today — real boards, real drag-and-drop, nothing written down.
 The library there is the one `npm run seed` installs.
 
+## Privacy
+
+Your account only ever sees its own data. Every table has row-level security
+enabled with policies keyed on `user_id`, so the database itself — not the app
+code — is what enforces that. A request carrying the public anon key returns an
+empty list, not someone else's month.
+
+There is no analytics, no tracking, and no third-party scripts. The only
+services involved are Supabase (database and auth), Vercel (hosting), and
+whichever of Google or GitHub you sign in with.
+
+What isn't true: notes and habit names are stored as plain text, so whoever
+operates the database can technically read them. That is inherent to running it
+this way, not a bug to be fixed. The commitment is simply that we don't look at
+anyone's entries. If that ever needs to be a guarantee rather than a promise,
+the fix is encrypting note bodies in the browser — not done, and a real
+tradeoff, since it would cost any future search across your own notes.
+
 ## Running it
 
 Needs Node 22+ and a Supabase project.

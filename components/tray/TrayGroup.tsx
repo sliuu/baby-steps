@@ -2,10 +2,13 @@
 
 import type { ReactNode } from "react";
 
+import { StickerBar } from "@/components/calendar/StickerBar";
+import { StickerMark } from "@/components/calendar/StickerMark";
 import { DraggableSticker } from "@/components/dnd/DraggableSticker";
 import type { DragPayload } from "@/components/dnd/payload";
 import { HighlightToggle } from "@/components/tray/HighlightToggle";
 import { TRAY_INSET } from "@/lib/layout";
+import type { StickerFace } from "@/lib/stickers";
 
 type Props = {
   label: string;
@@ -90,13 +93,16 @@ type FaceProps = {
 };
 
 /**
- * The sticker and its name, side by side.
+ * A circle and its name, side by side.
  *
- * Pulled out on its own because two places draw it: the row sitting in the
- * tray, and the copy that follows the cursor while you drag. Those two have to
- * look identical — a lifted sticker that doesn't match the one you grabbed
- * reads as a different object — and the only way to guarantee that is for them
- * to be the same component.
+ * Pulled out on its own because three places draw it: a tray row while the
+ * month is up, and the day modal twice — once down its sticker list and once
+ * down its moods. Those have to look identical, and the only way to guarantee
+ * that is for them to be the same component.
+ *
+ * The modal keeps this face in both views, unlike the tray. Its list is tick
+ * boxes, and a tinted bar beside a checkbox reads as a control inside a
+ * control when the checkbox is already the thing you press.
  *
  * The visual is wrapped in aria-hidden rather than left to speak for itself.
  * Both StickerMark and MoodMark carry their own accessible name, which is right
@@ -116,7 +122,38 @@ export function TrayRowFace(props: FaceProps) {
   );
 }
 
-type RowProps = FaceProps & {
+/**
+ * Which drawing a row uses: the month's circle with a name beside it, or the
+ * week's named bar. The same two words `DraggableMark` uses for the same two
+ * shapes, so a grep for one finds both.
+ */
+type RowShape = "mark" | "bar";
+
+/**
+ * The row body, in whichever shape the calendar beside it is wearing.
+ *
+ * Shared by the live row and the archived one, because "a retired sticker
+ * looks like a live one, minus the verbs" is the whole of `ArchivedRow`.
+ */
+function RowBody(props: { face: StickerFace; shape: RowShape }) {
+  return props.shape === "bar" ? (
+    <StickerBar sticker={props.face} />
+  ) : (
+    <TrayRowFace
+      visual={<StickerMark sticker={props.face} />}
+      name={props.face.name}
+    />
+  );
+}
+
+type RowProps = {
+  /**
+   * The sticker being drawn — the same three fields the week strip and the
+   * thing under the cursor are drawn from, so all three are one object.
+   */
+  face: StickerFace;
+  /** Circle or bar. `StickerTray` reads the view; a row is only told. */
+  shape: RowShape;
   /** Unique within the drag context: an activity's uuid, or a mood's name. */
   dragId: string;
   payload: DragPayload;
@@ -145,21 +182,30 @@ type RowProps = FaceProps & {
  * recording. `TrayRow` *is* a `DraggableSticker` — dragging and highlighting
  * aren't features it has, they're what it is — so the disabled version would be
  * a component whose whole body is switched off by a flag. What's left when you
- * take those away is a face, a name, and one button, which is small enough to
- * write out plainly.
+ * take those away is one bar and one button, which is small enough to write out
+ * plainly.
  *
  * The consequence is the useful part: there is no code path where an archived
  * sticker can be dropped on a day, because the thing that does the dropping was
  * never rendered.
  */
-export function ArchivedRow(props: FaceProps & { action: ReactNode }) {
+export function ArchivedRow(props: {
+  face: StickerFace;
+  shape: RowShape;
+  action: ReactNode;
+}) {
   return (
     <li className={`${TRAY_INSET} flex items-center gap-2.5 py-1 pr-2`}>
-      {/* Dimmed as a group, so the circle fades with the name. The colour still
-          reads — it's the same area it always belonged to — just quieter than
-          the stickers you can still reach for. */}
+      {/* Dimmed as a group, so the rim and the shadow fade with the name. The
+          colour still reads — it's the same area it always belonged to — just
+          quieter than the stickers you can still reach for.
+
+          Same shape as a live row, which is the point: a drawer of circles
+          under a list of bars would read as a different kind of thing having
+          been archived. What says these are retired is the fade and the
+          missing verbs, not a second shape. */}
       <span className="flex min-w-0 flex-1 items-center gap-2.5 opacity-55">
-        <TrayRowFace visual={props.visual} name={props.name} />
+        <RowBody face={props.face} shape={props.shape} />
       </span>
       {props.action}
     </li>
@@ -174,6 +220,28 @@ export function ArchivedRow(props: FaceProps & { action: ReactNode }) {
  * threshold already tells a press from a drag and a click on a named thing
  * conventionally opens it. Highlighting is the third, and the third meaning is
  * always the one that needs its own control.
+ *
+ * **The body takes the calendar's shape.** With the week up, the row is the
+ * identical rectangle the week strip stacks — tint, rim, shadow and all, the
+ * name printed on the sticker rather than in a column beside it. With the
+ * month up it is the month's circle with the name alongside. The rail is a
+ * shelf of the things in the grid next to it, and a sticker you are about to
+ * pick up should already look like what it will be once you put it down;
+ * matching one view means mismatching the other, so it matches whichever is
+ * there. It is the same rule the thing under the cursor already followed — see
+ * `bar` in `CalendarBoard`.
+ *
+ * The band survives either way. The wash still paints the row when it's lit
+ * and the hover tint still paints it on the way past — the body sits inside
+ * the row's own inset, so against a bar both read as a halo around a rectangle
+ * rather than as a second fill fighting the tint. That is the same picture a
+ * lit Tuesday makes with a mark on it, and `wash()` is already the reason
+ * those two colours separate: see the note there about the number being 35%.
+ *
+ * The bar needs no `aria-hidden` wrapper, and doesn't get one: it prints the
+ * name as real text and its icon is already hidden, so there is only one name
+ * to read. The "Gym, Gym" the circle has to dodge can't happen when the
+ * picture and the word are one element.
  */
 export function TrayRow(props: RowProps) {
   return (
@@ -193,10 +261,10 @@ export function TrayRow(props: RowProps) {
         onActivate={props.onActivate}
         label={props.label}
       >
-        <TrayRowFace visual={props.visual} name={props.name} />
+        <RowBody face={props.face} shape={props.shape} />
       </DraggableSticker>
       <HighlightToggle
-        name={props.name}
+        name={props.face.name}
         lit={props.selected}
         onToggle={props.onSelect}
       />

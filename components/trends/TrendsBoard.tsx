@@ -24,6 +24,7 @@ import {
 } from "@/lib/analytics";
 import { formatDayShort, today, type DayString } from "@/lib/dates";
 import { HEATMAP_DAYS, dayWindow, heatmap } from "@/lib/heatmap";
+import { RULE } from "@/lib/layout";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
 
@@ -448,7 +449,12 @@ function Empty(props: { range: Range }) {
   const { range } = props;
 
   return (
-    <div className="rounded-xl border border-dashed border-hairline bg-surface px-10 py-16 text-center">
+    // Dashed, and now that is all it is: the box and the fill went with every
+    // other panel's, and what says "this band is empty" is the rule being
+    // broken rather than a frame drawn round a sentence. Same weight and same
+    // colour as a real panel's rule, because this *is* a panel — it is the
+    // Areas answer, in the case where the answer is "nothing".
+    <div className={`${RULE} border-dashed px-10 py-16 text-center`}>
       <p className="text-ink-muted">{emptyMessage(range)}</p>
     </div>
   );

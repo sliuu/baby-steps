@@ -45,9 +45,27 @@ type Props = {
  * and 4.8:1 in dark, and an emoji, which can't be recoloured, now sits on
  * something closer to paper than to the hue.
  *
- * The border stays in the class list at 1px and transparent, not removed. It
- * is holding the 26px box: `size-[26px]` is the border-box, so dropping the
- * border would shrink the drawn circle by 2px and reflow every row of marks.
+ * **The border is now the thing it was holding the space for.** For two steps
+ * it sat here at 1px and transparent, reserving room inside the 26px
+ * border-box so that giving it a colour later would cost no reflow. That is
+ * what this is: `border-sticker-edge` at 1.5px, plus `shadow-sticker`.
+ *
+ * A white rim and a soft shadow is what makes a coloured circle read as a
+ * *sticker* rather than as a dot — it's the margin of backing paper left by a
+ * die cut, which is the most recognisable thing about the object. See
+ * `--sticker-edge` in globals.css for why it is hard-coded white rather than
+ * `--surface`, and why the dark theme mixes it back.
+ *
+ * 1.5px and not 1px: a single pixel of rim around a 26px circle is visible
+ * one sticker at a time and disappears in a grid, which is the same mistake
+ * the old hue ring made. 1.5px reads as an edge at a glance and still leaves
+ * 23px of tint to carry the hue. Not 2px — at that width the rim starts
+ * competing with the fill for the circle, and the mark inside loses its
+ * ground.
+ *
+ * The box does not move. `size-[26px]` is the border-box and the border was
+ * always in the class list, so every row of marks lays out exactly where it
+ * did; what changed is that 1.5px of it is now paper instead of nothing.
  *
  * **A mark is one of two things, and this is the only place that decides.** It
  * can name an icon — `icon:dumbbell`, drawn by Lucide out of `lib/icons.ts` —
@@ -72,7 +90,7 @@ export function StickerMark(props: Props) {
     <span
       title={sticker.name}
       className={cn(
-        "grid size-[26px] shrink-0 place-items-center rounded-full border border-transparent text-[0.8rem] leading-none text-ink",
+        "grid size-[26px] shrink-0 place-items-center rounded-full border-[1.5px] border-sticker-edge text-[0.8rem] leading-none text-ink shadow-sticker",
         tint,
         props.className,
       )}

@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { TRAY_INSET } from "@/lib/layout";
+import { RULE, TRAY_INSET } from "@/lib/layout";
 import { WEEKS_IN_GRID } from "@/lib/dates";
 
 /**
@@ -43,14 +43,23 @@ export function CalendarSkeleton() {
             </div>
           </div>
 
-          {/* The same bordered box the real grid uses, down to the hairline
+          {/* The same chrome the real grid uses, down to the hairline
               background showing through a one-pixel gap between cells. Drawing
-              the frame for real rather than as a grey slab is what makes this
-              read as "the calendar is coming" instead of "something is broken". */}
-          <div className="overflow-hidden rounded-md border border-hairline bg-hairline">
+              the lines for real rather than as a grey slab is what makes this
+              read as "the calendar is coming" instead of "something is broken".
+
+              Which is also why the cells are `bg-background`: the month has no
+              surface of its own any more, and a skeleton in white would hand
+              over to a grid in cream. The box around it went for the same
+              reason — the month is a rule above and hairlines inside now, and
+              a framed skeleton would pop its own border off the moment the
+              data landed. Every number in here is a copy of one in `MonthGrid`
+              and `DayCell` — if those change, this is the second place to
+              change. */}
+          <div className={`${RULE} bg-hairline`}>
             <div className="grid grid-cols-7 gap-px">
               {Array.from({ length: 7 }, (_, i) => (
-                <div key={`label-${i}`} className="bg-surface py-3">
+                <div key={`label-${i}`} className="bg-background py-3">
                   <Skeleton className="mx-auto h-3 w-7" />
                 </div>
               ))}
@@ -59,7 +68,7 @@ export function CalendarSkeleton() {
                   see `monthGrid`. A skeleton that guessed five would shrink the
                   page by a row the moment the data arrived. */}
               {Array.from({ length: WEEKS_IN_GRID * 7 }, (_, i) => (
-                <div key={i} className="min-h-32 bg-surface p-2.5">
+                <div key={i} className="min-h-32 bg-background p-2.5">
                   <Skeleton className="h-4 w-5" />
                 </div>
               ))}
@@ -68,7 +77,13 @@ export function CalendarSkeleton() {
         </section>
       </div>
 
-      <aside className="lg:w-72 lg:shrink-0">
+      {/* `lg:w-56` — the rail's real width. It sat at the old 18rem through
+          two narrowings, which is a 64px jump sideways at the moment the data
+          lands: the skeleton is only worth drawing if the page it hands over
+          to is the same shape. (Spelling the stale class name here would emit
+          it — the scanner reads comments. See the footnote in
+          `lib/layout.ts`.) */}
+      <aside className="lg:w-56 lg:shrink-0">
         <div className="flex flex-col gap-7">
           <div className={TRAY_INSET}>
             <Skeleton className="h-6 w-40" />

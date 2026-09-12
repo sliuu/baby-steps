@@ -1,6 +1,7 @@
 import type { MoodPoint, MoodSeries } from "@/lib/analytics";
 import { round2 } from "@/lib/charts";
 import { formatDayShort } from "@/lib/dates";
+import { PANEL } from "@/lib/layout";
 import { MOODS, MOOD_LABEL } from "@/lib/moods";
 
 type Props = {
@@ -103,7 +104,7 @@ export function MoodLine(props: Props) {
   const runs = split(points);
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-6">
+    <section className={`flex flex-col gap-4 ${PANEL}`}>
       <h2 className="eyebrow">Mood over time</h2>
 
       {/* The reading, before the picture. Same job as `Readout`'s sentence and

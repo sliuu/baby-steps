@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { VIEW } from "@/lib/charts";
+import { PANEL } from "@/lib/layout";
 
 type Props = { children: ReactNode };
 
@@ -25,6 +26,11 @@ type Props = { children: ReactNode };
  * `min-h-fit` is the escape hatch for a narrow screen, where the ratio would
  * make the box shorter than its own contents.
  *
+ * It is not a card any more, and the name stayed. What it draws now is the
+ * rule above the star and the space under it — see `PANEL`, which is the
+ * week strip's chrome spread across the rest of the app. The fixed ratio is
+ * the reason the file still exists either way.
+ *
  * The card owns `aria-hidden`. It belongs to the panel rather than to the
  * drawing: what makes it correct is that `AreaTable` renders these same numbers
  * as a real table on the same page, and that fact is about the page, not about
@@ -33,10 +39,7 @@ type Props = { children: ReactNode };
  */
 export function ChartCard(props: Props) {
   return (
-    <figure
-      className="rounded-2xl border border-hairline bg-surface p-6"
-      aria-hidden="true"
-    >
+    <figure className={PANEL} aria-hidden="true">
       <div
         className="min-h-fit w-full"
         style={{ aspectRatio: `${VIEW.width} / ${VIEW.height}` }}

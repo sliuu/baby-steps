@@ -606,6 +606,15 @@ export function CalendarBoard(props: Props) {
             scrolling on its own once the list outgrows the window, rather than
             pushing the page taller than the calendar it sits beside.
 
+            What scrolls is no longer this element. It is a flex column that
+            *caps* the height, and `StickerTray` divides that height between a
+            header that stays put and a list that scrolls under it — the
+            heading, the `+` and the line that offers the way out of a
+            highlight used to scroll away with the stickers. The error line
+            below is the other flex child, so it sits under the scrolling list
+            rather than at the end of it, and a failure can't be scrolled out
+            of sight.
+
             `9rem` is that promise written down, and it has to be kept in step
             with the page's own padding. The tray's top edge is 64px of nav plus
             `main`'s 40px of top padding, and there are another 40px of bottom
@@ -615,14 +624,32 @@ export function CalendarBoard(props: Props) {
             well above the fold is exactly what that bought. If `py-10` in
             `AppShell` ever changes, this changes with it.
 
-            That scroll is vertical only, and keeping it that way is a rule, not
-            a preference: nothing in here may be wider than the rail. Note that
-            `overflow-y-auto` does not leave the other axis alone — CSS promotes
-            `overflow-x` from `visible` to `auto` alongside it — so a single
-            child bleeding past the edge is a horizontal scrollbar, and hiding
-            it would only move the problem. Long names truncate; hit areas fill
-            the width rather than reaching past it. */}
-        <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-9rem)] lg:w-72 lg:shrink-0 lg:overflow-y-auto">
+            That scroll is vertical only wherever it lives, and keeping it that
+            way is a rule, not a preference: nothing in here may be wider than
+            the rail. Note that `overflow-y-auto` does not leave the other axis
+            alone — CSS promotes `overflow-x` from `visible` to `auto`
+            alongside it — so a single child bleeding past the edge is a
+            horizontal scrollbar, and hiding it would only move the problem.
+            Long names truncate; hit areas fill the width rather than reaching
+            past it. */}
+        {/* `lg:w-56` — 14rem. It was 18rem, then 13, and this is 13 plus the
+            scrollbar.
+
+            13rem was measured as close to the floor: `TRAY_INSET` costs 16px,
+            the mark is 26, the gap to the name is 10, and the eye on the right
+            is about 24 with its own gap — 76px of furniture, leaving ~130px of
+            name, around 19 characters of DM Sans at `--text-base` against a
+            `NAME_MAX` of 24. Every one of those numbers still holds; what
+            changed is that the list now draws its own 8px scrollbar and that
+            bar takes real width rather than floating over the content the way
+            macOS's does. Handing back a whole rem instead of exactly 8px is
+            deliberate: the thumb is inset inside its track, so at 8px the
+            names would end flush against the bar with no air between them.
+
+            The five moods were the binding constraint before the sticker row
+            was — five labelled columns wanted ~54px each — which is what
+            losing their words bought. */}
+        <aside className="lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-9rem)] lg:w-56 lg:shrink-0 lg:flex-col">
           <StickerTray
             groups={props.groups}
             selection={selection}
@@ -638,7 +665,11 @@ export function CalendarBoard(props: Props) {
               discovers at the moment it gains text is a live region that often
               doesn't announce — it has to be in the tree beforehand for the
               change to be a change. */}
-          <div role="status" aria-live="polite" className="mt-6 empty:hidden">
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-6 empty:hidden lg:shrink-0"
+          >
             {/* Edge to edge like a row's highlight, with its text on the same
                 inset as the sticker names above it. Filled things span the
                 rail; words start at TRAY_INSET. */}

@@ -107,11 +107,13 @@ export function DraggableMark(props: Props) {
       // Animating the result instead means the same motion plays whether the
       // mark arrived by drag or by a checkbox in the day modal.
       //
-      // The bar takes `rounded-md` and `block w-full` for the same two
+      // The bar takes `rounded-sm` and `block w-full` for the same two
       // reasons one level down: the ring should trace the sticker, and a
-      // sticker that is a row has to fill the column it is a row of.
+      // sticker that is a row has to fill the column it is a row of. The
+      // radius follows `StickerBar`'s — they have to be the same number, or
+      // the ring cuts the corner it is tracing.
       className={`touch-none transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-        bar ? "block w-full rounded-md" : "rounded-full"
+        bar ? "block w-full rounded-sm" : "rounded-full"
       } ${props.landing ? "animate-land" : ""} ${
         isDragging ? "opacity-35" : `cursor-grab active:cursor-grabbing ${props.faded}`
       }`}

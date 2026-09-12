@@ -49,7 +49,10 @@ export function TrendsSkeleton() {
 
         <div className="grid items-start gap-x-14 gap-y-10 lg:grid-cols-2">
           <ChartCard>
-            <Skeleton className="size-full rounded-xl" />
+            {/* Square, since the panel stopped being a rounded card — a
+                rounded grey block under a straight rule is a shape the real
+                thing no longer has. */}
+            <Skeleton className="size-full rounded-none" />
           </ChartCard>
 
           {/* The readout: a sentence, then the table. Two lines and a short

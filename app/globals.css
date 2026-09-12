@@ -2,6 +2,18 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* The two markdown files are documentation, and Tailwind cannot tell
+   documentation from markup — every class name a changelog entry mentions
+   comes out of the build as a live CSS rule for a class nothing wears. That is
+   the same trap the footnote in `lib/layout.ts` describes, arriving from the
+   one direction a comment convention can't fix: PROGRESS.md's whole job is to
+   say which class changed, and it is a hundred entries long.
+
+   So they are excluded from the scan rather than written around. Nothing in
+   either file is ever rendered. */
+@source not "../PROGRESS.md";
+@source not "../README.md";
+
 @custom-variant dark (&:is(.dark *));
 
 /* ---------------------------------------------------------------------------
@@ -15,7 +27,11 @@
 @theme inline {
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  /* Space Mono, and the only thing wearing it is `eyebrow` below. Nothing in
+     the app used `font-mono` before it was pointed here — no code blocks, no
+     tabular figures — so this token was unoccupied and the eyebrows could take
+     it rather than invent a fourth family slot. */
+  --font-mono: var(--font-space-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   /* The heading sizes, named by role rather than by rung.
 
@@ -163,6 +179,14 @@
   --color-area-creativity: var(--area-creativity);
   --color-area-romance: var(--area-romance);
   --color-area-friends: var(--area-friends);
+
+  /* The die-cut rim and the lift, as `border-sticker-edge` and
+     `shadow-sticker`. Both are declared on `:root` / `.dark` like everything
+     else here, so a sticker in the tray and a sticker on a Tuesday cannot
+     drift apart — and neither can the two themes. */
+  --color-sticker-edge: var(--sticker-edge);
+  --shadow-sticker: var(--sticker-shadow);
+  --color-rule: var(--rule);
 
   --color-mood-great: var(--mood-great);
   --color-mood-good: var(--mood-good);
@@ -360,6 +384,31 @@
   --ink-label: #5b5449;
   --hairline: #e7e3da;
 
+  /* The scrollbar, which is furniture we draw ourselves now — see
+     `scrollbar-app`. Two rungs, resting and hovered, and both are literal
+     alphas for the reason `--sticker-shadow` is: a `color-mix` that gets
+     dropped renders as full-opacity ink, which here is a solid black bar down
+     the side of the tray. Ink rather than a fixed grey so it sits in the
+     palette, and translucent so it reads as laid over whatever it scrolls. */
+  --scroll-thumb: rgb(28 26 23 / 0.22);
+  --scroll-thumb-hover: rgb(28 26 23 / 0.38);
+
+  /* The one line heavier than a hairline: the rule the week hangs off. A
+     hairline divides things that are already understood to be a set — two
+     cells of one grid — and at 2px on its own above seven columns it reads as
+     a smudge rather than as a rule. This is the same ink four shades up.
+
+     Literal, and for the same reason `--sticker-shadow` is. The obvious
+     spelling was a border utility taking ink through Tailwind's slash-opacity
+     syntax, and Lightning CSS compiles those with a full-opacity `var(--ink)`
+     fallback ahead of the `color-mix`: on a browser without `color-mix` that
+     is a 2px near-black bar across the top of every week. Fine for the drop
+     outline, which is transient; not fine for permanent chrome.
+
+     (And writing that utility's name out in this comment emitted it. The
+     scanner reads comments — see the footnote in `lib/layout.ts`.) */
+  --rule: rgb(28 26 23 / 0.2);
+
   /* Ramps are named by hue, because `life_areas.color_key` stores a hue. An
      area is a database row that points at one of these; it is not itself a
      colour. Adding a seventh area later means picking a ramp, not editing CSS. */
@@ -416,6 +465,51 @@
   --ramp-yellow-tint: color-mix(in srgb, var(--ramp-yellow) var(--sticker-fill), var(--surface));
   --ramp-green-tint: color-mix(in srgb, var(--ramp-green) var(--sticker-fill), var(--surface));
   --ramp-purple-tint: color-mix(in srgb, var(--ramp-purple) var(--sticker-fill), var(--surface));
+
+  /* The die-cut edge, and the shadow that lifts it off the page.
+
+     A real sticker is a shape cut out of a sheet, and the cut leaves a margin
+     of the backing paper around the art. That white rim is the single most
+     recognisable thing about the object — more than the gloss, more than the
+     shape — so it is what the tint circles borrow to stop reading as flat
+     coloured dots and start reading as things placed on the day.
+
+     Pure white in light, and deliberately *not* `--surface`. The two are the
+     same colour on the tray's card, which would make the rim invisible there;
+     they differ on a sunken grid cell, which is where a sticker actually sits.
+     Hard-coding white is what makes the rim the paper's colour rather than
+     whatever it happens to be lying on.
+
+     In dark it is mixed back 70% toward the surface. A full white rim on a
+     #26231f cell is a bright ring around every mark, and a month of them is a
+     page of holes punched in the dark — the rim has to stay the lightest thing
+     in the sticker without becoming the lightest thing on the screen.
+
+     The shadow is one soft step, not a stack. It says "this is on top of the
+     page" and nothing else; anything deeper starts to say "this is draggable",
+     which is the drag overlay's line and not a resting sticker's. Two stops: a
+     hairline contact shadow holding the bottom edge down, and a wider, much
+     fainter one for the lift.
+
+     **Written as a literal alpha, and not mixed from `--ink`.** Mixing from
+     ink is the move the rest of this file makes and it is wrong for exactly
+     this property. Every other token here wants to flip with the theme; a
+     shadow does not. Ink is `#1c1a17` in light and `#f0ebe0` in dark, so an
+     ink-derived shadow becomes a pale *glow* in dark mode — which, under a rim
+     that is already the lightest thing in the sticker, reads as a halo rather
+     than as a lift.
+
+     So the colour is the light theme's ink as a literal, warm rather than
+     neutral black so it sits in the palette, and `.dark` overrides it with a
+     true black at a higher alpha: a dark shadow on a dark surface has to work
+     harder to register at all. The literal also avoids a `color-mix` fallback
+     that Lightning CSS renders as full-opacity ink on browsers without
+     `color-mix` — invisible in the ramps that already use it, and a heavy
+     black ring under every sticker here. */
+  --sticker-edge: #ffffff;
+  --sticker-shadow:
+    0 1px 1.5px rgb(28 26 23 / 0.16),
+    0 2px 5px rgb(28 26 23 / 0.09);
 
   /* The default six, by name. Aliases — the ramp above is the real value. */
   --area-spirituality: var(--ramp-red);
@@ -475,6 +569,17 @@
   --ink-label: #bcb4a4;
   --hairline: #37342d;
 
+  /* Light-on-dark, and *not* the light theme's alphas inverted. A translucent
+     white on #1a1815 loses contrast faster than a translucent black on cream,
+     so the resting rung comes up rather than down. */
+  --scroll-thumb: rgb(240 235 224 / 0.2);
+  --scroll-thumb-hover: rgb(240 235 224 / 0.34);
+
+  /* Up rather than mirrored, same as the thumb above it: light ink on a
+     #1a1815 page loses more contrast at the same alpha than dark ink on
+     cream. */
+  --rule: rgb(240 235 224 / 0.24);
+
   /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
      and the mood aliases follow automatically. */
   --ramp-red: #d75f52;
@@ -520,6 +625,24 @@
      is not. */
   --sticker-fill: 40%;
 
+  /* See the light theme for what the rim is and why it isn't `--surface`. Here
+     it is pulled 70% of the way back to the surface: enough to still read as a
+     cut edge against a 40% tint, not enough to ring every mark in white.
+     Unlike the ramps, this one does get a `color-mix` fallback worth thinking
+     about — without `color-mix` it lands on plain `#fff`, which is the light
+     theme's rim on a dark cell. Bright, but still a rim, so it degrades to
+     "too strong" rather than to "wrong thing".
+
+     The shadow is overridden rather than inherited, and the light theme's note
+     says why: shadows do not flip with the theme, so it cannot be derived from
+     ink. Pure black here rather than the warm ink, at roughly triple the
+     alpha — a shadow on a #26231f surface has almost no contrast to work with
+     and a light-theme alpha simply vanishes. */
+  --sticker-edge: color-mix(in srgb, #ffffff 70%, var(--surface));
+  --sticker-shadow:
+    0 1px 1.5px rgb(0 0 0 / 0.5),
+    0 2px 5px rgb(0 0 0 / 0.3);
+
   --background: var(--bg);
   --foreground: var(--ink);
   --card: var(--surface);
@@ -564,35 +687,131 @@
    mean to break rank.
 --------------------------------------------------------------------------- */
 @utility eyebrow {
-  /* 0.7rem times the 0.92 body correction — see the `--text-*` block. The
-     `daylabel` below is deliberately not scaled with it: that one was drawn
-     against DM Sans in the first place. */
-  font-size: 0.645rem;
-  letter-spacing: 0.18em;
+  /* Space Mono — see the third block of `app/layout.tsx` for why the labels
+     get their own face. The three values below all moved when it landed, and
+     each of them moved because a mono is not a proportional face:
+
+     **Size, down from 0.645rem.** That number was 0.7rem times the 0.92 body
+     correction, measured against DM Sans. Space Mono carries a tall x-height
+     on a wide advance, so it reads a rung larger than DM Sans at the same
+     nominal size; 0.6rem is where the two look like the same size.
+
+     **Tracking, down from 0.18em.** Letterspacing exists to stop small caps
+     crowding, and a mono has that spacing drawn into the glyphs already — its
+     advance is the widest character's, so an `I` arrives surrounded by air.
+     Keeping 0.18em on top of that reads as an ellipsis between letters rather
+     than as a label, and it costs width the tray no longer has to spend.
+
+     **A weight that isn't asked for.** No `font-weight` here: only 400 is
+     loaded, for the same reason the headings carry no weight utility.
+
+     `daylabel` below shares the face and takes the same size correction, but
+     it is still not this utility: SUN–SAT over the grid is seven words being
+     scanned rather than seven tags, so it keeps its own size and stays at
+     sentence case. Same family, different job. */
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-label);
 }
 
 /* ---------------------------------------------------------------------------
-   SUN–SAT over the calendar, and the one place that family is deliberately
-   broken.
+   SUN–SAT over the calendar: the eyebrows' face, and not the eyebrow.
 
-   Those seven cells wore `eyebrow` until the type changed, and letterspaced
-   caps are the wrong shape for them. An eyebrow *names a section you are about
-   to read* — "Mood", "Work & Study" — and spacing it out is what stops a
+   Those seven cells wore `eyebrow` itself until the type changed, and
+   letterspaced caps are the wrong shape for them. An eyebrow *names a section
+   you are about to read* — "Mood", "Work & Study" — and spacing it out is what stops a
    three-letter label reading as an abbreviation of something. The weekday
    header names seven columns you are about to scan, and `format(…, "EEE")`
    already hands over "Sun", which is a word. Uppercasing it into S U N turns a
    word back into three letters and costs a beat per column, seven times, on
    the densest screen in the app.
 
-   So: same size and same colour — this is still a label, not content — and
-   just enough tracking that the words don't crowd inside a 1px-gapped cell.
+   So: the same family and the same colour — this is still a label, not
+   content, and a weekday heading set in a different face from every other
+   heading in the app was the one thing here nobody was asking for — and then
+   its own size and just enough tracking that the words don't crowd inside a
+   1px-gapped cell.
 --------------------------------------------------------------------------- */
 @utility daylabel {
-  font-size: 0.7rem;
+  /* Space Mono, same as `eyebrow`, and the same correction with it: a mono
+     reads a rung larger at the same nominal size, so 0.7rem came down to
+     0.65rem when the family changed.
+
+     What it still does *not* take from `eyebrow` is the uppercasing. The note
+     above is the reason and it survives the change of face — `format(…,"EEE")`
+     hands over "Sun", which is a word being scanned, and S U N is three
+     letters to reassemble, seven times, on the densest screen in the app. So
+     this is the mono at sentence case: same face as the labels, still not a
+     label. */
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
   letter-spacing: 0.01em;
   color: var(--ink-label);
+}
+
+/* ---------------------------------------------------------------------------
+   The scrollbar inside the sticker rail.
+
+   A browser scrollbar is the one piece of furniture on the page we don't draw,
+   and in the rail that shows: a 15px slab of system grey against a 14rem
+   column of warm paper. This draws it instead — 8px wide, a 4px pill of
+   translucent ink inset inside its own track, no groove behind it.
+
+   **Why the WebKit pseudo-elements and not just `scrollbar-color`.** The
+   standard properties are the better mechanism and `html` uses them for the
+   page. They can set a thumb colour and nothing else: no radius, no inset, no
+   hover. They also can't do the thing this is for — on macOS both engines
+   overlay the scrollbar and fade it out when idle unless the visitor has set
+   "Show scroll bars: Always", so a rail that scrolls has *no* visible
+   indication that it does. Styling `::-webkit-scrollbar` opts the element out
+   of overlay scrollbars altogether: the bar is always there, and it takes real
+   layout width, which is why the rail got 1rem wider in the same pass.
+
+   **Why the standard properties are handed back.** Blink and WebKit ignore
+   `::-webkit-scrollbar` on any element whose `scrollbar-width` or
+   `scrollbar-color` is not `auto`, and both of those *inherit* — `html` sets
+   them, so without this they would arrive here and silently switch the rules
+   below off. Returning them to `auto` is scoped by `@supports selector()`, so
+   it happens only in the engines that have the pseudo-elements to replace
+   them: Firefox never matches, keeps the inherited thin ink scrollbar, and
+   gets the closest thing it can draw.
+
+   The inset is a transparent border plus `background-clip: padding-box` rather
+   than a narrower bar, so the thumb has air on both sides and the track stays
+   the full 8px of hit area. A 4px-wide scrollbar is accurate and very hard to
+   grab.
+--------------------------------------------------------------------------- */
+@utility scrollbar-app {
+  @supports selector(::-webkit-scrollbar) {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+
+  /* No groove. A visible track draws a line down the side of the tray that
+     isn't part of the design, and it would be there whether or not the list
+     is long enough to scroll. */
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scroll-thumb-hover);
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -892,16 +1111,19 @@
        inherit, so every scrolling box on the page gets them — the sticker rail
        included — without a class anywhere.
 
-       The thumb is ink at 35%, so it lands correctly in both themes from one
+       The thumb is `--scroll-thumb`, the same token the rail's own scrollbar
+       uses, so the page and the tray are drawn in one colour from one place;
+       it is defined per theme, so this lands correctly in both from a single
        declaration. A fixed grey would be too dark on cream or invisible on
        charcoal. The track is transparent: a visible groove would draw a line
        down the page that isn't part of the design.
 
        On a Mac these only show if scroll bars are set to "Always" in System
-       Settings; otherwise macOS overlays its own and hides them when idle. */
+       Settings; otherwise macOS overlays its own and hides them when idle —
+       which is the whole reason the rail does not stop here. See
+       `scrollbar-app`. */
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklch, var(--ink) 35%, transparent)
-      transparent;
+    scrollbar-color: var(--scroll-thumb) transparent;
   }
 
   body {

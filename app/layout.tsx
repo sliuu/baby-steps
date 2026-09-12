@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { DM_Sans, Instrument_Serif } from "next/font/google";
+import { DM_Sans, Instrument_Serif, Space_Mono } from "next/font/google";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 /**
- * The two faces, and why these two.
+ * The three faces, and why these three.
  *
  * This started as Cormorant over EB Garamond — a hairline display serif over a
  * book serif — then tried Merriweather over Karla, which fixed the fragility at
@@ -27,8 +27,27 @@ import "./globals.css";
  *
  * DM Sans is loaded as a variable font — no `weight` array — so `font-medium`
  * and `font-semibold` in body copy resolve to real instances off the `wght`
- * axis rather than to separate files. Italics are not loaded for either face
- * because nothing in the app is set in them.
+ * axis rather than to separate files. Italics are not loaded for any of the
+ * three because nothing in the app is set in them.
+ *
+ * **Space Mono is the third, and it has exactly one job: the eyebrows.** The
+ * small letterspaced caps that name a section — "MOOD", "WORK & STUDY", "MOST
+ * DONE" — are labels rather than prose, and a mono is the face that says so.
+ * Every glyph on the same advance is what makes a row of them read as a system
+ * of tags instead of as very small writing, and its slab-ish, slightly
+ * mechanical caps sit a long way from both the serif and the grotesque, so
+ * three faces on one screen stay three clearly different jobs rather than
+ * three shades of the same one.
+ *
+ * It ships 400 and 700, and only 400 is loaded — nothing sets an eyebrow bold,
+ * and a weight nobody asks for is a file everybody downloads. It is *not* a
+ * variable font, so that `weight` array is required rather than optional; drop
+ * it and the request fails at build time rather than falling back quietly.
+ *
+ * It reaches the `eyebrow` utility through `--font-mono`, the Tailwind theme
+ * token, which is why that token changed in globals.css rather than a fourth
+ * one being invented. Nothing in the app wore `font-mono` before this — there
+ * was no code or tabular anything — so the token was free.
  */
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
@@ -40,6 +59,13 @@ const instrumentSerif = Instrument_Serif({
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const spaceMono = Space_Mono({
+  variable: "--font-space-mono",
+  subsets: ["latin"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -61,7 +87,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${instrumentSerif.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${instrumentSerif.variable} ${dmSans.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

@@ -5,7 +5,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { MoodMark } from "@/components/calendar/MoodMark";
 import type { DragPayload } from "@/components/dnd/payload";
 import { TRAY_INSET } from "@/lib/layout";
-import { MOOD_LABEL, MOODS, type Mood } from "@/lib/moods";
+import { MOODS, type Mood } from "@/lib/moods";
 import { wash } from "@/lib/palette";
 
 type Props = {
@@ -24,6 +24,10 @@ type Props = {
  * a list that never changes and whose entries are one word each. As a row of
  * five it's about a third of that, and the six life areas — the part of the tray
  * that actually grows — start higher up the page.
+ *
+ * The words are gone too now, and the faces carry the five apart on their own —
+ * see the note on the button below, where the accessible name had to be handed
+ * back to something once the visible word stopped providing it.
  *
  * Not a `TrayGroup` full of `TrayRow`s any more, and the reason is the one
  * `ArchivedRow` already settled: what's left after you take the row apart is
@@ -49,13 +53,18 @@ export function MoodPicker(props: Props) {
 
       {/* Five columns, always, rather than a wrapping flex row. `flex-wrap`
           would break 4 + 1 at the first width that doesn't fit, and a lone
-          "Rough" on its own line reads as a different kind of thing. Equal
-          columns just get narrower, and the labels truncate long before that
-          matters — the longest is five characters.
+          face on its own line reads as a different kind of thing. Equal
+          columns just get narrower, and there is nothing in them to truncate
+          any more — a 20px face in a 1px-padded cell has a lot of room to lose
+          before it stops fitting.
 
-          The rail is 18rem, which leaves about 54px a column. Underneath the
-          calendar the tray is a multi-column grid and this section spans all of
-          it, so the narrowest this ever gets is a phone's full page width. */}
+          The rail is 14rem, and the list inside it gives 8px to a scrollbar,
+          which leaves about 43px a column for a 20px face. That is the ceiling
+          the labels used to set: five of them wanted ~54px each, which is most
+          of why the rail couldn't go under 18rem.
+          Underneath the calendar the tray is a multi-column grid and this
+          section spans all of it, so the narrowest this ever gets is a phone's
+          full page width. */}
       <ul className="mt-2 grid grid-cols-5">
         {MOODS.map((mood) => (
           <MoodChoice
@@ -106,7 +115,10 @@ function MoodChoice(props: {
         // One background slot, three states, exactly as the tray rows do it —
         // two background classes in one string are resolved by the compiled
         // stylesheet's order, not by the order they were typed.
-        className={`flex w-full touch-none flex-col items-center gap-1 rounded-md px-1 py-1.5 transition-opacity ${
+        // `flex-col` and its `gap-1` went with the label — one item needs no
+        // column and no gap. `justify-center` replaces what `items-center` was
+        // doing on the cross axis now that the axis has turned.
+        className={`flex w-full touch-none items-center justify-center rounded-md px-1 py-1.5 transition-opacity ${
           isDragging
             ? "opacity-35"
             : props.selected
@@ -114,17 +126,26 @@ function MoodChoice(props: {
               : "cursor-grab hover:bg-ink/5 active:cursor-grabbing"
         }`}
       >
-        {/* Hidden the same way `TrayRowFace` hides its circle: `MoodMark`
-            names itself "Mood: Great" for the grid, where it sits alone on a
-            date line with no words near it. Here the word is directly
-            underneath, and the button's name would otherwise be "Mood: Great
-            Great". */}
-        <span aria-hidden="true">
-          <MoodMark mood={props.mood} />
-        </span>
-        <span className="max-w-full truncate text-[0.69rem] leading-none">
-          {MOOD_LABEL[props.mood]}
-        </span>
+        {/* **No word under the face, and no `aria-hidden` over it.** Those two
+            go together and the second is the load-bearing half.
+
+            The label was there because five mouths needed naming while the
+            faces were new; the mouths turned out to carry it — a deep curve up
+            and a deep curve down are not a distinction anyone needs a caption
+            for, and "Great / Good" side by side were the two the word was
+            doing the least for anyway. Dropping them is also what lets the
+            rail get narrow: five labelled columns needed ~54px each, five
+            faces need the 20px face plus its gutter.
+
+            What the word *was* doing is naming the button, and losing that
+            silently is how a picker becomes five identical "button"s to a
+            screen reader. `MoodMark` already carries `sr-only` "Mood: Great"
+            for exactly the case it meets in the grid — alone on a date line
+            with no words near it — so the fix is to stop hiding it rather than
+            to add anything. It was wrapped in `aria-hidden` only to stop the
+            name reading "Mood: Great Great" while the visible word was there.
+            No visible word, no duplicate, no wrapper. */}
+        <MoodMark mood={props.mood} />
       </button>
     </li>
   );

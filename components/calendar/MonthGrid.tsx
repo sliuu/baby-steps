@@ -6,6 +6,7 @@ import { DayCell } from "./DayCell";
 import type { PeriodProps } from "./period";
 import { monthGrid, weekdayLabels } from "@/lib/dates";
 import { dayMatches } from "@/lib/highlight";
+import { RULE } from "@/lib/layout";
 import { NO_STICKERS } from "@/lib/stickers";
 
 type Props = PeriodProps & {
@@ -32,10 +33,31 @@ export function MonthGrid(props: Props) {
   return (
     // The hairlines are the 1px gaps, showing the container's background
     // through them. One rule instead of per-cell borders that double up.
-    <div className="overflow-hidden rounded-md border border-hairline bg-hairline">
+    //
+    // Which is also why the cells are `bg-background` rather than nothing at
+    // all now that the month has no surface of its own: this background is
+    // painted behind the whole grid, so a transparent cell shows hairline
+    // colour across its whole face instead of only in the 1px gaps. "No
+    // background" means the cells are the page's cream, not that they have
+    // none — and `wash()` still needs something opaque underneath it either
+    // way.
+    //
+    // **The box around the forty-two went too**, and the argument that kept it
+    // one pass ago — they are one object, six rows of a month, and the border
+    // is what says where the month ends — lost to the thing next door. The
+    // week had already given up its outline for a single rule above, and two
+    // views of the same seven columns drawn in two different chrome languages
+    // is worse than either language: switching Month/Week made the page's
+    // frame appear and disappear. So the month keeps the part that was doing
+    // real work, which is the hairline grid, and loses the part that was only
+    // saying "this is a card". What is left is exactly the week's grammar:
+    // thick rule above, thin lines between, no sides and no bottom. The
+    // radius went with the border — there is no box left to round, and a
+    // rounded corner with no edge to turn is just a clipped cell.
+    <div className={`${RULE} bg-hairline`}>
       <div className="grid grid-cols-7 gap-px">
         {labels.map((label) => (
-          <div key={label} className="daylabel bg-surface py-2 text-center">
+          <div key={label} className="daylabel bg-background py-2 text-center">
             {label}
           </div>
         ))}

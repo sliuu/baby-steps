@@ -1,5 +1,6 @@
 import { MoodMark } from "@/components/calendar/MoodMark";
 import type { MoodTally, Tally } from "@/lib/analytics";
+import { PANEL } from "@/lib/layout";
 
 import { AreaTable } from "./AreaTable";
 
@@ -105,7 +106,11 @@ export function MoodStrip(props: { moods: MoodTally; phrase: string }) {
   const { moods, total } = props.moods;
 
   return (
-    <section className="flex flex-col gap-3">
+    // Ruled like the line above it, which it was not before: the two are the
+    // whole of the Moods tab and were a framed panel over an unframed strip.
+    // Same `PANEL` as everything else now, so the tab reads as two sections
+    // rather than as a chart and its footnote.
+    <section className={`flex flex-col gap-3 ${PANEL}`}>
       {/* Plural, because it counts five of them. "Mood this month" read as a
           label for a single value — the month's mood — which is exactly what
           this isn't: it's the distribution, and the zero rows are part of the

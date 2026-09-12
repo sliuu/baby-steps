@@ -3,7 +3,7 @@
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
-import { StickerMark } from "@/components/calendar/StickerMark";
+import { useCalendarView } from "@/components/calendar/viewMode";
 import { EditStickerForm } from "@/components/tray/EditStickerForm";
 import { MoodPicker } from "@/components/tray/MoodPicker";
 import { NewStickerForm } from "@/components/tray/NewStickerForm";
@@ -92,6 +92,19 @@ export function StickerTray(props: Props) {
   const [editing, setEditing] = useState<string | null>(null);
 
   /**
+   * Circle or bar, read from the same context the board reads.
+   *
+   * The rail is a shelf of the things in the grid beside it, so its stickers
+   * wear the shape that grid draws: the month's circle with a name next to it,
+   * the week's named bar. Read here rather than passed in, for the reason the
+   * context exists at all — the tray is a client component inside a
+   * server-rendered calendar, and this is the channel that crosses that seam.
+   * One call for the whole rail, because "which calendar is up" is one fact
+   * and fifteen rows asking separately is fifteen chances to disagree.
+   */
+  const shape = useCalendarView() === "week" ? "bar" : "mark";
+
+  /**
    * The six areas in the shape both dialogs want.
    *
    * Built once here rather than inside each row, because the edit form needs
@@ -145,11 +158,36 @@ export function StickerTray(props: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-7">
+    /* A flex column, and in the rail it is a *full-height* one — see the
+       `<aside>` in `CalendarBoard`, which caps the height this fills. That cap
+       used to be the scroll container itself, which meant the heading, the `+`
+       and the "Drag one onto a day" line all scrolled away with the list. They
+       are the two things in here that are never what you are scrolling *for*:
+       the `+` is how you add the sticker you just noticed you don't have, and
+       the line under it is the only always-visible way out of a highlight.
+       Both were reachable only by scrolling back up.
+
+       So the height lands there instead and this column splits in two: a
+       header that doesn't move and a list that does. `min-h-0` and nothing
+       else — no `h-full`, because the aside's height is a cap rather than a
+       height and a percentage against it resolves to auto anyway. What makes
+       the split work is that a flex item may shrink below its content once
+       its minimum is zero: short list, this ends where it ends; long list,
+       the aside stops at its cap and the overflow lands on the one child
+       below that is allowed to scroll.
+
+       `lg:` on every part of it, because underneath the calendar there is no
+       cap, nothing to scroll inside, and the page's own scrollbar is the
+       right one. */
+    <div className="flex flex-col gap-7 lg:min-h-0">
       {/* Inset to match the rows, so the wordmark of the rail sits above the
           stickers rather than a few pixels left of them. The + button rides the
-          same padding in from the right edge. */}
-      <header className={TRAY_INSET}>
+          same padding in from the right edge.
+
+          `shrink-0` so it is never what gives when the list is long: a flex
+          item's default is to shrink before it overflows, and the first thing
+          to go would be the gap under the heading. */}
+      <header className={`${TRAY_INSET} lg:shrink-0`}>
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-heading text-panel-title leading-none">Your stickers</h2>
           {/* The `+` and everything behind it. The tray hands it the six areas
@@ -184,14 +222,33 @@ export function StickerTray(props: Props) {
       {/* The groups lie in a grid, not a stack, and the number of columns is the
           only thing that changes between the two places this tray lives.
 
-          In the rail (lg and up) it's one column, because the rail is 18rem
+          In the rail (lg and up) it's one column, because the rail is 14rem
           wide. Below that the tray sits under the calendar with the full page
-          to spend, and a single 18rem column down the middle of it would be a
+          to spend, and a single 14rem column down the middle of it would be a
           thin ribbon with the whole width empty either side. Each group keeps
           its own vertical list of names — it's the groups that spread out, not
           the stickers inside them, so a label always sits directly above the
-          stickers it names. */}
-      <div className="grid grid-cols-2 items-start gap-x-8 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-1">
+          stickers it names.
+
+          And in the rail this is also the scroll container — the header above
+          it doesn't move. `min-h-0` is the load-bearing half: a flex item's
+          minimum is its content, so without it this box would refuse to be
+          shorter than fifteen stickers and would push the whole column past
+          the cap instead of scrolling inside it. No `flex-1`, so a short list
+          still ends where it ends rather than stretching to the bottom of the
+          window.
+
+          `scrollbar-app` is the bar itself — 8px, ink, always there. Always
+          there is the point: macOS overlays and hides the system one, so a
+          rail that scrolls looked exactly like a rail that didn't. It costs
+          real layout width, which is what the rail's extra rem is for.
+
+          The scroll is vertical only, and that is a rule rather than a
+          preference: `overflow-y` promotes the other axis from `visible` to
+          `auto` alongside it, so one child wider than the rail is a horizontal
+          scrollbar, and hiding it would only move the problem. Long names
+          truncate; hit areas fill the width rather than reaching past it. */}
+      <div className="scrollbar-app grid grid-cols-2 items-start gap-x-8 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:min-h-0 lg:grid-cols-1 lg:overflow-y-auto">
         {/* First, and not from the database: the five moods are fixed by the
             CHECK constraint on day_moods, so there is nothing to fetch.
 
@@ -273,8 +330,8 @@ export function StickerTray(props: Props) {
                       activityId: sticker.id,
                       face: faceOf(sticker),
                     }}
-                    visual={<StickerMark sticker={sticker} />}
-                    name={sticker.name}
+                    face={sticker}
+                    shape={shape}
                     selected={sameSelection(selection, stickerSelection)}
                     wash={wash(sticker.colorKey)}
                     onSelect={() => toggle(stickerSelection)}
@@ -298,6 +355,7 @@ export function StickerTray(props: Props) {
         {archived.length > 0 && (
           <ArchivedGroup
             stickers={archived}
+            shape={shape}
             onError={props.onError}
             className="col-span-full"
           />
@@ -340,6 +398,8 @@ export function StickerTray(props: Props) {
  */
 function ArchivedGroup(props: {
   stickers: LibrarySticker[];
+  /** Passed through rather than read again — see the call site. */
+  shape: "mark" | "bar";
   onError: (message: string) => void;
   className?: string;
 }) {
@@ -363,8 +423,8 @@ function ArchivedGroup(props: {
         {props.stickers.map((sticker) => (
           <ArchivedRow
             key={sticker.id}
-            visual={<StickerMark sticker={sticker} />}
-            name={sticker.name}
+            face={sticker}
+            shape={props.shape}
             action={
               <RestoreStickerButton
                 activityId={sticker.id}

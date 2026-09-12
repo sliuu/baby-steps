@@ -90,7 +90,7 @@ export function WeekDayColumn(props: Props) {
       // grows *it*. Grid rows stretch, so the tallest day of the week sets the
       // height of all seven and they stay level. The generous empty look comes
       // from `STACK_FLOOR` below instead.
-      className="group/day relative isolate flex w-full flex-col bg-surface p-2.5 transition-colors hover:bg-ink/2"
+      className="group/day relative isolate flex w-full flex-col bg-background p-2.5 transition-colors hover:bg-ink/2"
     >
       {/* The highlight's colour, behind everything. Same wash as a month cell. */}
       {lit && highlight && (
@@ -175,10 +175,21 @@ export function WeekDayColumn(props: Props) {
           of them. Tops aligned rather than bottoms, which is the right way
           round when the thing being aligned is the first line of a sentence.
 
-          `gap-0.5` between bars; the slots are zero-height and sit in the gaps,
-          so the caret lands in the space that already exists rather than
-          opening a new one. */}
-      <div className={`mt-2 flex shrink-0 flex-col gap-0.5 ${STACK_FLOOR}`}>
+          `gap-1.5` between bars — 6px, up from 2. Two was the right number for
+          a bar that was a flat tint with a transparent border: the bars read
+          as one block of colour with hairlines through it, and tightening them
+          was how you saw the block. They are objects now, each with a white
+          rim and a shadow under it, and 2px put the next sticker inside the
+          previous one's shadow — the rim's whole job is to say where one
+          sticker stops, and it can't do it with nothing after it. 6px is the
+          shadow's own reach (2px down, 5px of blur) plus enough to read as a
+          gap, and it costs about one sticker's worth of `STACK_FLOOR` before
+          a busy day starts making the column taller.
+
+          The slots are zero-height and sit in those gaps, so the caret lands
+          in space that already exists rather than opening a new one — and it
+          has more of it to land in now. */}
+      <div className={`mt-2 flex shrink-0 flex-col gap-1.5 ${STACK_FLOOR}`}>
         {stickers.activities.map((sticker, index) => (
           <Fragment key={sticker.activityId}>
             <DropSlot

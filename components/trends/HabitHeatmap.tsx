@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { formatDayLong, formatDayShort, type DayString } from "@/lib/dates";
 import { heatLevel, monthLabels, type HeatRow } from "@/lib/heatmap";
+import { PANEL } from "@/lib/layout";
 import { ramp } from "@/lib/palette";
 
 type Props = {
@@ -110,11 +111,12 @@ export function HabitHeatmap(props: Props) {
   const to = props.days[props.days.length - 1];
 
   return (
-    // The same card as `MostDone`, and that is new. It used to be a bare
-    // full-bleed band, which was right when it ran the width of the page under
-    // everything else; now the two sit side by side as a pair and a framed
-    // panel next to an unframed one reads as one panel and some loose content.
-    <section className="flex min-w-0 flex-col gap-4 rounded-2xl border border-hairline bg-surface p-6">
+    // The same panel as `MostDone`, which is what matters: the two sit side by
+    // side as a pair, and one of them framed and the other not reads as one
+    // panel with some loose content beside it. Both were rounded white cards
+    // until this pass and both are now a rule with content under it — so the
+    // pair still agrees, and their two rules line up across the grid's gap.
+    <section className={`flex min-w-0 flex-col gap-4 ${PANEL}`}>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         {/* `eyebrow`, down from `text-panel-title`, to match `MostDone`'s
             heading exactly. Two peers in a grid with headings at different
@@ -163,10 +165,13 @@ export function HabitHeatmap(props: Props) {
               <div key={row.activityId} className="flex items-center">
                 {/* Pinned to the left edge of the scrollport, for the narrow
                     case where the strip still scrolls. It needs its own opaque
-                    background or the squares slide under it and show through —
-                    `bg-surface` now, not `bg-bg`, because the panel it sits on
-                    grew a card. */}
-                <span className="sticky left-0 z-10 flex w-32 shrink-0 items-baseline gap-2 bg-surface pr-4">
+                    background or the squares slide under it and show through,
+                    and that background has to be whatever it is lying on: the
+                    page's own cream now that the panel has no fill of its own.
+                    It was the card's white, and a white band over cream is the
+                    exact bug this fixes rather than a different shade of
+                    right. */}
+                <span className="sticky left-0 z-10 flex w-32 shrink-0 items-baseline gap-2 bg-background pr-4">
                   <span className="min-w-0 truncate text-[0.83rem]">
                     {row.name}
                   </span>

@@ -134,6 +134,19 @@ export function DayCell(props: Props) {
       // `isolate` gives the cell its own stacking context, so the negative
       // z-index on the wash below can't escape and paint behind the grid.
       //
+      // The page's own cream rather than the white it used to be: the month is
+      // the page now rather than a sheet laid on it, and with the card's
+      // border gone as well there is nothing left for a white fill to be the
+      // inside of. The white is described rather than spelled, because the
+      // scanner reads comments and nothing in the app wears that class any
+      // more — as it happens the rule survives regardless, since the sunken
+      // fill below contains the shorter name inside its own. What survives is the sunken rung for the
+      // days either side of the month, and it survives *because* it was never
+      // white — #f2f0ec is a shade under the cream, so with the white gone it
+      // still reads as recessed rather than as a second surface. The numeral
+      // was already dimmed for those days; this is the other half, and it is
+      // now the only fill in the grid.
+      //
       // The hover wash is the same ink-at-low-opacity trick the tray rows use,
       // but not the same number. 5% reads as a light touch across a 28px band
       // and as a grey square across a 150px cell — tint is perceived by area, so
@@ -154,7 +167,7 @@ export function DayCell(props: Props) {
       // more than the empty ones is the mark size, not this.
       className={`group/day relative isolate flex min-h-24 w-full flex-col items-stretch justify-start p-2.5 transition-colors ${
         cell.inMonth
-          ? "bg-surface hover:bg-ink/2"
+          ? "bg-background hover:bg-ink/2"
           : "bg-surface-sunken hover:bg-ink/2"
       }`}
     >

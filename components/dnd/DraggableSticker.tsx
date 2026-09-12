@@ -92,6 +92,14 @@ export function DraggableSticker(props: Props) {
       // up indented relative to anything else and nothing reaches the rail's
       // edge. See lib/layout.ts for why it's shared rather than written here.
       //
+      // The gap is for the circle-and-name body and inert under the bar, which
+      // is one child and fills the row. Kept rather than made conditional: a
+      // gap with nothing to separate costs nothing, and the alternative is the
+      // row's layout changing shape along with its contents. The padding is
+      // the same in both, which is what keeps the rail's rhythm — a 26px bar
+      // is exactly as tall as the 26px circle, so nothing in the list moves
+      // when the view switches.
+      //
       // Three background states, one slot, so exactly one class wins: dragging
       // (nothing, it's faded anyway), selected (the wash, which is the same
       // colour its days just turned), and neither (the hover band). Written as

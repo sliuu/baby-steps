@@ -1,5 +1,6 @@
 import type { ActivityRanking } from "@/lib/analytics";
 import { normalize, round2 } from "@/lib/charts";
+import { PANEL } from "@/lib/layout";
 import { ramp } from "@/lib/palette";
 
 type Props = {
@@ -55,7 +56,7 @@ export function MostDone(props: Props) {
   const shares = normalize(shown.map((activity) => activity.count));
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-6">
+    <section className={`flex flex-col gap-4 ${PANEL}`}>
       <h2 className="eyebrow">Most done {props.phrase}</h2>
 
       {/* One grid for the whole list, with each row opting into its columns
