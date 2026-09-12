@@ -72,3 +72,34 @@ export function addDays(day: DayString, by: number): DayString {
 export function daysBetween(from: DayString, to: DayString): number {
   return (dayToUTC(to) - dayToUTC(from)) / MS_PER_DAY;
 }
+
+/**
+ * Which day of the week a day string lands on: 0 for Sunday, 6 for Saturday.
+ *
+ * `getUTCDay` and not `getDay`, for the reason the header gives — and here the
+ * difference is visible rather than subtle. A local `getDay` on a UTC midnight
+ * is the *previous* day everywhere west of Greenwich, so every week in the
+ * Americas would start on the wrong square.
+ */
+export function weekday(day: DayString): number {
+  return new Date(dayToUTC(day)).getUTCDay();
+}
+
+/**
+ * The Sunday of the week `day` is in, or `day` itself when it is a Sunday.
+ *
+ * Sunday because that is where the calendar's own weeks start: `weekGrid` hands
+ * date-fns `startOfWeek` with no locale and takes its default. The grid and the
+ * "this week" range have to agree about which seven squares a week is, and
+ * there is no reading of a habit tracker where the highlighted row and the
+ * dropdown mean different weeks.
+ *
+ * Here rather than in `lib/dates.ts` beside `weekGrid`, because it is reached
+ * from `lib/analytics.ts`, which runs under `node --test` and cannot import
+ * date-fns. Two implementations of the same fact, in different modules, is the
+ * thing to be uneasy about — `lib/analytics.test.ts` pins this one against
+ * known Sundays so the pair can't quietly disagree.
+ */
+export function startOfWeek(day: DayString): DayString {
+  return addDays(day, -weekday(day));
+}

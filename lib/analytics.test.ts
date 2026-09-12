@@ -5,6 +5,8 @@ import { describe, it } from "node:test";
 // path directly; `@/lib/analytics` would be a bundler alias with no bundler.
 import {
   MOOD_SCORE,
+  RANGE_KINDS,
+  RANGE_LABEL,
   activityTally,
   inBounds,
   leaders,
@@ -18,8 +20,9 @@ import {
   takeaway,
   tally,
   type Bounds,
+  type Range,
 } from "./analytics.ts";
-import { addDays } from "./daymath.ts";
+import { addDays, daysBetween } from "./daymath.ts";
 import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
@@ -109,6 +112,66 @@ describe("resolveBounds", () => {
       from: "2026-08-01",
       to: "2026-08-01",
     });
+  });
+
+  it("this week runs from Sunday to today", () => {
+    // TODAY is a Saturday, so its week is the full seven and started on the
+    // 16th. A Saturday is also the only weekday where a Sunday-start and a
+    // Monday-start week differ by six days rather than one, which is why it is
+    // the useful day to pin this on.
+    assert.deepEqual(resolveBounds({ kind: "week" }, TODAY), {
+      from: "2026-08-16",
+      to: "2026-08-22",
+    });
+  });
+
+  it("this week on a Sunday is a single day", () => {
+    assert.deepEqual(resolveBounds({ kind: "week" }, "2026-08-16"), {
+      from: "2026-08-16",
+      to: "2026-08-16",
+    });
+  });
+
+  it("the trailing ranges include today and are exactly as long as they say", () => {
+    for (const [kind, length] of [
+      ["days7", 7],
+      ["days30", 30],
+      ["days365", 365],
+    ] as const) {
+      const bounds = resolveBounds({ kind }, TODAY);
+      assert.equal(bounds.to, TODAY, kind);
+      assert.equal(daysBetween(bounds.from!, bounds.to!) + 1, length, kind);
+    }
+  });
+
+  it("the trailing ranges cross month and year ends", () => {
+    assert.deepEqual(resolveBounds({ kind: "days7" }, "2026-01-03"), {
+      from: "2025-12-28",
+      to: "2026-01-03",
+    });
+    assert.deepEqual(resolveBounds({ kind: "days365" }, "2026-08-22"), {
+      from: "2025-08-23",
+      to: "2026-08-22",
+    });
+  });
+
+  it("this year and the trailing year are different ranges", () => {
+    // The distinction the two of them exist for: to-date starts at January and
+    // is eight months long today, trailing is always twelve.
+    const toDate = resolveBounds({ kind: "year" }, TODAY);
+    const trailing = resolveBounds({ kind: "days365" }, TODAY);
+    assert.notDeepEqual(toDate, trailing);
+    assert.ok(daysBetween(toDate.from!, toDate.to!) < 364);
+  });
+
+  it("every kind but all time resolves to two real edges", () => {
+    for (const kind of RANGE_KINDS) {
+      if (kind === "all" || kind === "custom") continue;
+      const bounds = resolveBounds({ kind } as Range, TODAY);
+      assert.ok(bounds.from, kind);
+      assert.equal(bounds.to, TODAY, kind);
+      assert.ok(bounds.from! <= bounds.to!, kind);
+    }
   });
 
   it("all time is open at both ends", () => {
@@ -888,13 +951,29 @@ describe("leaders", () => {
 
 describe("rangePhrase", () => {
   it("reads as an adverbial, not as the dropdown's label", () => {
+    assert.equal(rangePhrase({ kind: "week" }), "this week");
+    assert.equal(rangePhrase({ kind: "days7" }), "in the last 7 days");
     assert.equal(rangePhrase({ kind: "month" }), "this month");
+    assert.equal(rangePhrase({ kind: "days30" }), "in the last 30 days");
     assert.equal(rangePhrase({ kind: "year" }), "this year");
+    assert.equal(rangePhrase({ kind: "days365" }), "in the last 12 months");
     assert.equal(rangePhrase({ kind: "all" }), "so far");
     assert.equal(
       rangePhrase({ kind: "custom", from: "2026-08-01", to: "2026-08-22" }),
       "in this range",
     );
+  });
+
+  it("has a phrase and a label for every kind the dropdown offers", () => {
+    // The dropdown iterates `RANGE_KINDS` and the sentences read
+    // `rangePhrase`, so a kind added to the union without one of these is a
+    // blank option or an empty clause. This is the test that makes that
+    // impossible rather than unlikely.
+    for (const kind of RANGE_KINDS) {
+      const range = { kind, from: null, to: null } as Range;
+      assert.ok(RANGE_LABEL[kind], kind);
+      assert.ok(rangePhrase(range).length > 0, kind);
+    }
   });
 });
 

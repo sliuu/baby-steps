@@ -3,6 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { HabitHeatmap } from "./HabitHeatmap";
+import { HabitTable } from "./HabitTable";
 import { LifeStar } from "./LifeStar";
 import { MoodLine } from "./MoodLine";
 import { MostDone } from "./MostDone";
@@ -23,6 +24,7 @@ import {
   type Range,
 } from "@/lib/analytics";
 import { formatDayShort, today, type DayString } from "@/lib/dates";
+import { earliestPlacement, habitTable, habitWindow } from "@/lib/habits";
 import { HEATMAP_DAYS, dayWindow, heatmap } from "@/lib/heatmap";
 import { RULE } from "@/lib/layout";
 import type { LibraryGroup } from "@/lib/queries/activities";
@@ -178,6 +180,42 @@ export function TrendsBoard(props: Props) {
   const rows = useMemo(
     () => heatmap(props.stickersByDay, props.groups, days),
     [props.stickersByDay, props.groups, days],
+  );
+
+  /**
+   * The range as a closed window, which is what the habit table measures
+   * against. `bounds` can be open on either side — "all time" is two nulls —
+   * and a rate needs a denominator, so the open edges get closed once, here.
+   *
+   * The earliest placement is what closes the left one, and it is its own memo
+   * because it is a scan of the whole map that only changes when the data does:
+   * switching range must not re-walk every day you have ever recorded to
+   * rediscover the same first one.
+   */
+  const earliest = useMemo(
+    () => earliestPlacement(props.stickersByDay),
+    [props.stickersByDay],
+  );
+
+  // `habitSpan` rather than `window`: this is a client component, and a local
+  // named `window` shadows the global one for the whole function.
+  const habitSpan = useMemo(
+    () => habitWindow(bounds, todayString, earliest),
+    [bounds, todayString, earliest],
+  );
+
+  /**
+   * A fourth walk, at the same grain as the ranking and answering a wider
+   * question: every habit rather than the ones you actually did, with a rate
+   * and a last-done against the range. See `habitTable`.
+   *
+   * Unsorted and unfiltered on purpose — the table owns its own order, its own
+   * area filter and its own page, and keeping those out of here is what stops a
+   * header click from re-walking the placement map.
+   */
+  const habits = useMemo(
+    () => habitTable(props.stickersByDay, props.groups, habitSpan),
+    [props.stickersByDay, props.groups, habitSpan],
   );
 
   const span = spanLabel(range, bounds);
@@ -373,6 +411,25 @@ export function TrendsBoard(props: Props) {
 
             <HabitHeatmap rows={rows} days={days} />
           </div>
+
+          {/* Full width under the pair, because it is a different kind of
+              panel rather than a third peer. The two above are drawings you
+              read at a glance and they sit side by side at a glance's width;
+              this is six columns you look something up in, and a table
+              squeezed into a 20rem track is a table that wraps.
+
+              It goes below them, not above, because the order is
+              coarse-to-fine: which habits you did most, then what each of them
+              looks like day by day, then the numbers behind both. */}
+          <div className="mt-10">
+            <HabitTable
+              rows={habits}
+              window={habitSpan}
+              phrase={phrase}
+              today={todayString}
+              caption={habitsCaption(range, bounds)}
+            />
+          </div>
         </TabsContent>
 
         {/* Moods — days, not marks, which is exactly why they get their own
@@ -436,6 +493,21 @@ function tableCaption(range: Range, bounds: Bounds): string {
   return where
     ? `Marks by life area, ${RANGE_LABEL[range.kind]}: ${where}`
     : `Marks by life area, ${RANGE_LABEL[range.kind]}`;
+}
+
+/**
+ * The habit table's accessible name, built the same way and saying a different
+ * thing — the two tables are on two tabs and count two different units, so a
+ * shared caption would name the wrong one on one of them.
+ */
+function habitsCaption(range: Range, bounds: Bounds): string {
+  const where = spanLabel(range, bounds);
+  if (range.kind === "custom" && bounds.from && bounds.to) {
+    return `Every habit, ${formatDayShort(bounds.from)} to ${formatDayShort(bounds.to)}`;
+  }
+  return where
+    ? `Every habit, ${RANGE_LABEL[range.kind]}: ${where}`
+    : `Every habit, ${RANGE_LABEL[range.kind]}`;
 }
 
 /**

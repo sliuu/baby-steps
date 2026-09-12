@@ -6,7 +6,7 @@
 // `./moods.ts` and `./daymath.ts` are the only value imports, and both are safe
 // to take because neither imports anything itself. A module with no imports can
 // always be pulled into a tested one; the rule that bites is depth, not count.
-import { daysBetween } from "./daymath.ts";
+import { addDays, daysBetween, startOfWeek } from "./daymath.ts";
 import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { DayString } from "@/lib/dates";
 import type { LibraryGroup } from "@/lib/queries/activities";
@@ -15,30 +15,74 @@ import type { StickersByDay } from "@/lib/stickers";
 /**
  * Which stretch of time the Trends page is reading.
  *
- * Three of the four carry no dates at all, because they don't have fixed ones —
+ * All but one carry no dates at all, because they don't have fixed ones —
  * "this month" is a different fortnight in September than it is today. They name
  * a *rule*, and `resolveBounds` turns the rule plus a date into real edges. The
  * alternative — storing `{from, to}` the moment a range is picked — is a tab
  * left open overnight still reporting on yesterday's month.
+ *
+ * **The list is two families, and the difference is worth having both.** A
+ * *to-date* range runs from the start of the period you are inside — this week,
+ * this month, this year — and it is the one that answers "how is this month
+ * going", at the cost of being three days long on the 3rd. A *trailing* range is
+ * a fixed number of days back from today, so it is always the same length and
+ * always comparable with itself; it is the one that answers "how have I been
+ * doing lately". Offering only the first makes every rate jump on the 1st;
+ * offering only the second means the page can never speak about the month you
+ * are in.
  */
 export type Range =
+  | { kind: "week" }
+  | { kind: "days7" }
   | { kind: "month" }
+  | { kind: "days30" }
   | { kind: "year" }
+  | { kind: "days365" }
   | { kind: "all" }
   /** Either edge may be missing while you're still filling the other one in. */
   | { kind: "custom"; from: DayString | null; to: DayString | null };
 
 export type RangeKind = Range["kind"];
 
-/** What the dropdown says. Also the caption's fallback for the fixed ranges. */
+/**
+ * What the dropdown says. Also the caption's fallback for the fixed ranges.
+ *
+ * The trailing ones count days rather than naming a unit — "Last 30 days", not
+ * "Last month", which reads as September when you are in October. "Last 12
+ * months" is the one exception: 365 days is the same span and nobody thinks in
+ * it.
+ */
 export const RANGE_LABEL: Record<RangeKind, string> = {
+  week: "This week",
+  days7: "Last 7 days",
   month: "This month",
+  days30: "Last 30 days",
   year: "This year",
+  days365: "Last 12 months",
   all: "All time",
   custom: "Custom",
 };
 
-export const RANGE_KINDS: RangeKind[] = ["month", "year", "all", "custom"];
+/**
+ * Dropdown order, shortest span first, with each to-date range immediately
+ * above the trailing range of about its length.
+ *
+ * So the list reads as a zoom out — week, 7 days, month, 30 days, year, 12
+ * months, all — and the two readings of "roughly a month" sit next to each
+ * other where the difference between them is visible. Alphabetical would put
+ * "All time" first and interleave the families; by family would ask you to
+ * learn the taxonomy before you could find "this month".
+ */
+export const RANGE_KINDS: RangeKind[] = [
+  "week",
+  "days7",
+  "month",
+  "days30",
+  "year",
+  "days365",
+  "all",
+  "custom",
+];
 
 /**
  * Two inclusive edges, either of which may be open.
@@ -69,10 +113,23 @@ export type Bounds = { from: DayString | null; to: DayString | null };
  */
 export function resolveBounds(range: Range, today: DayString): Bounds {
   switch (range.kind) {
+    case "week":
+      return { from: startOfWeek(today), to: today };
+    // Trailing ranges include today, so they reach back one day less than they
+    // are long: seven days ending today starts six days ago. Off by one here is
+    // an eight-day week, which is the kind of thing only a test notices.
+    case "days7":
+      return { from: addDays(today, -6), to: today };
     case "month":
       return { from: `${today.slice(0, 7)}-01`, to: today };
+    case "days30":
+      return { from: addDays(today, -29), to: today };
     case "year":
       return { from: `${today.slice(0, 4)}-01-01`, to: today };
+    // 365 and not "this day last year", which is 366 days across a leap day and
+    // would make the range a different length depending on when you asked.
+    case "days365":
+      return { from: addDays(today, -364), to: today };
     case "all":
       return { from: null, to: null };
     case "custom":
@@ -666,10 +723,18 @@ export function leaders(tally: Tally): AreaTally[] {
  */
 export function rangePhrase(range: Range): string {
   switch (range.kind) {
+    case "week":
+      return "this week";
+    case "days7":
+      return "in the last 7 days";
     case "month":
       return "this month";
+    case "days30":
+      return "in the last 30 days";
     case "year":
       return "this year";
+    case "days365":
+      return "in the last 12 months";
     case "all":
       return "so far";
     case "custom":
