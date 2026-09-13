@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -35,6 +35,28 @@ export function SignInButtons() {
     }
   }
 
+  // **The way out of a stuck button.** `pending` is set on the way to the
+  // provider and cleared only on failure, because on success the browser has
+  // already left this page and the component is gone. That holds right up
+  // until the browser hands the page *back* with its state intact — a
+  // back/forward-cache restore, which is what `persisted` means. Nothing
+  // re-runs on a restore: no mount, no effect, no fresh `useState`. So
+  // `pending` comes back as whatever it was when we left, and both buttons
+  // return disabled with one of them still reading "Taking you to Google…",
+  // with no way out but a reload.
+  //
+  // That is a plausible landing after an OAuth round-trip, so it needs a
+  // recovery path rather than an explanation. The reset is unconditional
+  // because `pageshow` also fires once on an ordinary load, where `pending`
+  // is already `null` and clearing it costs nothing.
+  useEffect(() => {
+    function clearPending() {
+      setPending(null);
+    }
+    window.addEventListener("pageshow", clearPending);
+    return () => window.removeEventListener("pageshow", clearPending);
+  }, []);
+
   // `size="lg"` only sets a height, not a type scale — every variant inherits
   // `text-sm` from the base recipe — so the size that matches a 6xl heading has
   // to be asked for here. The height goes with it: `h-9` around `text-base` is
@@ -51,7 +73,9 @@ export function SignInButtons() {
         disabled={pending !== null}
         onClick={() => signIn("google")}
       >
-        {pending === "google" ? "Taking you to Google…" : "Continue with Google"}
+        {pending === "google"
+          ? "Taking you to Google…"
+          : "Continue with Google"}
       </Button>
 
       <Button
@@ -61,7 +85,9 @@ export function SignInButtons() {
         disabled={pending !== null}
         onClick={() => signIn("github")}
       >
-        {pending === "github" ? "Taking you to GitHub…" : "Continue with GitHub"}
+        {pending === "github"
+          ? "Taking you to GitHub…"
+          : "Continue with GitHub"}
       </Button>
 
       {error ? (

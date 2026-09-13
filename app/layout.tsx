@@ -92,7 +92,18 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* `suppressHydrationWarning` for the same reason it is on `<html>`,
+          and it has to be repeated because React only suppresses one level
+          deep — it does not cascade to children. Extensions inject attributes
+          onto `<body>` before React hydrates (ColorZilla's
+          `cz-shortcut-listen`, password managers' own markers), and React
+          reports each one as a hydration mismatch the app cannot fix and did
+          not cause. Suppressing here costs the ability to catch a real
+          attribute mismatch on this one element, which is a fair trade for a
+          tag that only ever carries two static classes. */}
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
+        {children}
+      </body>
     </html>
   );
 }

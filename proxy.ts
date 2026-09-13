@@ -99,9 +99,25 @@ export const config = {
     /*
      * Everything except:
      *   _next/static, _next/image  — build output, no session needed
-     *   favicon.ico, image files   — static assets
+     *   favicon.ico, apple-icon    — icon probes and generated icons
+     *   image files                — static assets, matched by extension
      * Skipping these keeps the auth check off requests that can't use it.
+     *
+     * **`apple-icon` is listed by name because it has no extension.** Next
+     * serves the generated icon routes at their bare path — `/apple-icon`,
+     * not `/apple-icon.png` — so the extension arm below never sees it, the
+     * proxy runs, and a signed-out request gets redirected to `/login`. The
+     * tile then arrives as an HTML document and iOS silently shows nothing.
+     * `app/icon.svg` is fine as it stands: it is a real file, served at
+     * `/icon.svg`, so `.svg` catches it. Add a name here for any icon that
+     * is generated rather than shipped.
+     *
+     * `favicon.ico` stays listed even though the file is gone. Browsers and
+     * crawlers probe that path speculatively, and a 404 is a cheaper honest
+     * answer than redirecting the probe to `/login` and running an auth check
+     * on it. `.ico` was never in the extension arm, so the name is the only
+     * thing keeping it out.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

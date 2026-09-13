@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!--
+    Three stickers in a triangle, pulled in until the rims cross.
+
+    A sticker here is what a sticker is everywhere else in the app: a 45% tint
+    of a ramp hue, a white rim, and a soft shadow under it. Red, blue and
+    green, which is a choice about the palest of them rather than about the
+    set: yellow at 45% over white is #f0dea7, four percent off the page, and
+    it was the disc that went missing on a light tab strip. The rim is the
+    whole reason this is legible. A die cut leaves a margin of the backing
+    sheet around the art, and that margin is what separates three pale discs
+    from one pale smudge at 16 pixels.
+
+    THE RIM IS 3 UNITS, NOT 1.5, AND THAT IS DELIBERATE. In the app the rim is
+    1.5px on a 26px sticker, a ratio of 1.5 over 26. Translated honestly into
+    this viewBox it would be 0.74 units, which renders at 16px as
+    three-eighths of a pixel: the browser draws it as a faint lightening at
+    the edge and the three discs go back to reading as three tints. What
+    matters in a favicon is rendered pixels, not the app's ratio, so the rim
+    is set at 1.5 RENDERED pixels, 3 units of a 32 viewBox drawn at 16.
+
+    CROSSING THE RIMS IS WHAT PAYS FOR THAT. Tangent discs at this rim have to
+    shrink to a fill radius of 3.8 to fit three of them in the box, and the
+    mark goes pale. Here the centres are 13.4 apart while each disc is 16.4
+    across including its rim, so the rims overlap by 3.0 and the discs are
+    free to grow: fill radius 5.2, well over a third more colour than the
+    tangent version had, and the three white rims fuse into one backing sheet
+    with channels cut through it.
+
+    THE RADIUS IS EXACTLY HALF THE SPACING, AND THAT IS THE WHOLE RULE. A
+    front disc's outer edge lands 5.2 from its neighbour's centre, which is
+    precisely where the neighbour's colour ends, so what crosses is white over
+    white and every disc stays a whole circle. Go past it and the rim eats
+    into the disc behind. The damage arrives faster than the arithmetic
+    suggests, because a shallow bite is a wide one: at 6.9 the bite is only
+    0.4 of a unit deep but the flat it leaves spans a third of the disc, and
+    it is plainly visible at 32px even though it vanishes at 16. Radius and
+    spacing are therefore one number, not two, and tightening further means
+    smaller discs rather than the same ones closer.
+
+    The triangle is centred on its bounding box, not on its centroid. A
+    point-up triangle of circles hangs lower than it sits, so centring the
+    centroid puts the apex rim through the top edge of the viewBox. The
+    numbers below come from the span instead: 29.8 across and 28.0 down,
+    leaving 1.1 either side and a little more underneath than above, because
+    the shadow falls that way.
+
+    The shadow is one feDropShadow where the app stacks two layers. At this
+    size the second layer draws the same grey over the first and the mark goes
+    muddy rather than lifted.
+
+    TWO RULES THIS FILE HAS TO OBEY, BOTH OF WHICH BROKE IT ONCE.
+
+    An SVG served as a file is parsed as XML, not as HTML, and XML forbids a
+    double hyphen inside a comment. So no CSS custom property may be written
+    by name in this prose. That is why the tokens below are described rather
+    than quoted, and it is not a style preference: one stray pair of hyphens
+    here and the whole document fails to parse. A browser shows nothing at
+    all, silently, and the tab falls back to whatever icon it had before.
+
+    And every colour is set from the stylesheet, never as a presentation
+    attribute. A custom property is substituted in a CSS declaration; whether
+    it is substituted in a `fill="..."` attribute is not something every
+    engine agrees on, and where it is not, the fill falls back to black. Three
+    black circles in a triangle is a recognisable logo, just not this one.
+
+    The dark rules mirror globals.css: a dark sticker is a 40% tint over the
+    dark surface (#26231f), so it goes dark and the rim carries the shape.
+    Safari honours these unevenly; without them it falls back to the light
+    mark, which is pale discs with a white rim on a dark tab strip. Still
+    legible, just not the app's own dark treatment. That fallback being
+    acceptable is why light is the default rather than the other way round.
+  -->
+  <style>
+    :root {
+      --red: #e4ada7;
+      --blue: #a2c2de;
+      --green: #aecbae;
+      --edge: #ffffff;
+      --shade: #1c1a17;
+      --shade-alpha: 0.24;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --red: #6d3b33;
+        --blue: #345065;
+        --green: #3e5739;
+        --edge: #bebdbc;
+        --shade: #000000;
+        --shade-alpha: 0.46;
+      }
+    }
+    circle { stroke: var(--edge); stroke-width: 3; }
+    .red { fill: var(--red); }
+    .blue { fill: var(--blue); }
+    .green { fill: var(--green); }
+    #lift { flood-color: var(--shade); flood-opacity: var(--shade-alpha); }
+  </style>
+
+  <defs>
+    <filter id="sh" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow id="lift" dx="0" dy="0.55" stdDeviation="0.62"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#sh)">
+    <circle class="red" cx="16" cy="9.85" r="6.7"/>
+    <circle class="blue" cx="9.3" cy="21.45" r="6.7"/>
+    <circle class="green" cx="22.7" cy="21.45" r="6.7"/>
+  </g>
+</svg>
