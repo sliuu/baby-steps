@@ -1,9 +1,9 @@
 // One value import, relative and with its extension, into a module that itself
-// imports nothing — the rule `lib/analytics.ts` states and `lib/heatmap.ts`
-// repeats: what bites under `node --test` is depth, not count. Everything below
+// imports nothing — the rule `lib/analytics.ts` states: what bites under
+// `node --test` is depth, not count. Everything below
 // it is `import type` and is erased before Node resolves a path, so those keep
 // the `@/` alias the bundler understands.
-import { daysBetween } from "./daymath.ts";
+import { addDays, daysBetween, startOfWeek } from "./daymath.ts";
 import type { Bounds } from "@/lib/analytics";
 import type { DayString } from "@/lib/dates";
 import type { LibraryGroup } from "@/lib/queries/activities";
@@ -83,6 +83,15 @@ function inWindow(day: DayString, window: HabitWindow): boolean {
   return day >= window.from && day <= window.to;
 }
 
+/**
+ * One day inside the window, and how many marks landed on it.
+ *
+ * `offset` is days from `window.from`, so a hit is a position before it is a
+ * date — which is what the plot wants, and what keeps date arithmetic out of
+ * the component.
+ */
+export type HabitHit = { offset: number; count: number };
+
 /** One habit, and everything the table says about it in one period. */
 export type HabitRow = {
   activityId: string;
@@ -97,14 +106,19 @@ export type HabitRow = {
   /** Days in the window carrying at least one mark. What the plot draws. */
   days: number;
   /**
-   * Offsets from `window.from`, ascending, one per day with a mark.
+   * One entry per day with a mark, ascending, each carrying that day's count.
    *
-   * Offsets rather than day strings, because the only thing that reads them is
-   * a plot that has to turn them into positions — and `offset / (days - 1)` is
-   * that position with no date arithmetic in the component. The day it came
-   * from is recoverable by adding the offset back, which nothing needs yet.
+   * Offsets from `window.from` rather than day strings, because the thing that
+   * reads them is a plot that has to turn them into positions — and the day is
+   * recoverable by adding the offset back, which `plotBlocks` does when it has
+   * to know which month a mark fell in.
+   *
+   * The per-day count rides along rather than being a second parallel array.
+   * `count` above is the row's total and `days` is how many days it is spread
+   * over; neither can say "twice on the Tuesday", which is the one thing a
+   * block on this plot shades for.
    */
-  hits: number[];
+  hits: HabitHit[];
   /** First and last day in the window it was placed, or null for an empty row. */
   first: DayString | null;
   last: DayString | null;
@@ -140,7 +154,8 @@ export type HabitRow = {
  * measured against it, including the habits the period has nothing to say
  * about.
  *
- * **Which rows exist**, and it is `heatmap`'s rule rather than the ranking's. A
+ * **Which rows exist**, and it is the deleted strip's rule rather than the
+ * ranking's. A
  * live sticker always gets a row, empty or not: "you have this habit and did
  * none of it this month" is a reading, and a tracker that hides it is only ever
  * showing you your wins. An *archived* sticker gets a row only if it was
@@ -172,8 +187,9 @@ export function habitTable(
 ): HabitRow[] {
   const rows = new Map<string, HabitRow>();
   const archived = new Set<string>();
-  /** Days already counted per habit, so `hits` holds one entry per day. */
-  const seen = new Map<string, Set<DayString>>();
+  /** Days already counted per habit, so `hits` holds one entry per day — and
+   *  the entry itself, so the second mark on a day can find it and bump it. */
+  const seen = new Map<string, Map<DayString, HabitHit>>();
 
   for (const group of groups) {
     for (const sticker of group.stickers) {
@@ -192,13 +208,13 @@ export function habitTable(
         last: null,
         interval: null,
       });
-      seen.set(sticker.id, new Set());
+      seen.set(sticker.id, new Map());
     }
   }
 
   // Over the placements rather than over the window: the map holds only days
   // that have something on them, so this is one pass over what exists instead
-  // of one lookup per habit per day. Same shape as `heatmap`.
+  // of one lookup per habit per day.
   for (const [day, stickers] of stickersByDay) {
     if (!inWindow(day, window)) continue;
 
@@ -214,10 +230,14 @@ export function habitTable(
       if (!row.last || day > row.last) row.last = day;
 
       const days = seen.get(sticker.activityId)!;
-      if (!days.has(day)) {
-        days.add(day);
+      const already = days.get(day);
+      if (already) {
+        already.count++;
+      } else {
+        const hit: HabitHit = { offset: daysBetween(window.from, day), count: 1 };
+        days.set(day, hit);
         row.days++;
-        row.hits.push(daysBetween(window.from, day));
+        row.hits.push(hit);
       }
     }
   }
@@ -228,7 +248,7 @@ export function habitTable(
     // The map is walked in insertion order and the placements arrive in
     // whatever order the day map yields, so this is the one place the plot's
     // left-to-right order is established.
-    row.hits.sort((a, b) => a - b);
+    row.hits.sort((a, b) => a.offset - b.offset);
     row.interval = row.count >= 2 ? window.days / row.count : null;
     table.push(row);
   }
@@ -275,12 +295,13 @@ export function frequencyLabel(row: HabitRow): string | null {
  * able to read anyway. Library order is also not arbitrary: the tray groups by
  * life area, so the unsorted table arrives in colour bands.
  *
- * `first` is the plot column. A strip of ticks has no single value to sort on,
- * so the header sorts by the day the ticks begin — which is the fact the
- * drawing shows that no other column states: whether this is a habit you have
- * been at all period or one that started last week.
+ * The plot column is the other one that doesn't sort, and it used to. It sorted
+ * by the day the marks begin, which is a real fact and the wrong one to hang a
+ * header on: a header that sorts says the column *has* an order, and a row of
+ * blocks is a shape you read across, not a value you rank. Two of the six
+ * headers being inert is also what makes the four that work look like controls.
  */
-export type HabitSortKey = "area" | "count" | "interval" | "first" | "last";
+export type HabitSortKey = "area" | "count" | "interval" | "last";
 
 export type SortDirection = "asc" | "desc";
 
@@ -298,7 +319,6 @@ export const SORT_START: Record<HabitSortKey, SortDirection> = {
   area: "asc",
   count: "desc",
   interval: "asc",
-  first: "asc",
   last: "desc",
 };
 
@@ -341,9 +361,8 @@ function emptyRank(row: HabitRow, key: HabitSortKey): number {
   switch (key) {
     case "interval":
       return row.count === 0 ? 1 : 0;
-    case "first":
     case "last":
-      return row[key] === null ? 1 : 0;
+      return row.last === null ? 1 : 0;
     case "area":
     case "count":
       return 0;
@@ -361,10 +380,9 @@ function compare(a: HabitRow, b: HabitRow, key: HabitSortKey): number {
       // sorts as the rarest thing there is, which is what one mark in a period
       // means next to a rate.
       return intervalOf(a) - intervalOf(b);
-    case "first":
     case "last": {
-      const left = a[key] ?? "";
-      const right = b[key] ?? "";
+      const left = a.last ?? "";
+      const right = b.last ?? "";
       // Day strings compare as dates, which is the whole point of the format:
       // zero-padded and big-endian sorts lexicographically as it sorts
       // chronologically. See `inBounds` for the long version.
@@ -412,4 +430,161 @@ export function pageOf<T>(
   const current = Math.min(Math.max(page, 1), last);
   const start = (current - 1) * size;
   return rows.slice(start, start + size);
+}
+
+/**
+ * How coarse a block on the plot is.
+ *
+ * The plot draws one block per unit of time across the window, and the unit has
+ * to change with the window or the drawing stops being readable at one end or
+ * the other. Thirty-one blocks for a month is a block per day and you can point
+ * at the Tuesday; three hundred and sixty-five of them in the same column is a
+ * smear.
+ *
+ * Four grains rather than two, because the jump from a day to a month leaves a
+ * hole exactly where the picker spends most of its options: a 90-day range in
+ * months is three blocks, which is not a picture of anything. Weeks fill it.
+ */
+export type PlotGrain = "day" | "week" | "month" | "year";
+
+/**
+ * Where each grain gives out, in days of window.
+ *
+ * Chosen by what they produce rather than by what they are called, because the
+ * number that matters is how many blocks come out the other end:
+ *
+ * - **31** — a block per day for every range up to a month. The picker's short
+ *   half (this week, last 7, this month, last 30) all land here, and a month of
+ *   daily blocks is the densest thing this column draws well.
+ * - **366** — a block per week up to a year, so 5 to 53 of them. The upper end
+ *   is within a block of the strip this panel replaced, which drew 56 squares in
+ *   about the same width, so the density is known to work.
+ * - **1827** — a block per month up to five years: 13 to 61. Past that the
+ *   blocks are thinner than the gaps between them, which is where a plot stops
+ *   being blocks and becomes a texture.
+ *
+ * Above the last one, a block per year. It is the only unbounded grain and it
+ * is the one that can afford to be: a decade is ten blocks.
+ */
+const DAY_MAX = 31;
+const WEEK_MAX = 366;
+const MONTH_MAX = 1827;
+
+export function plotGrain(days: number): PlotGrain {
+  if (days <= DAY_MAX) return "day";
+  if (days <= WEEK_MAX) return "week";
+  if (days <= MONTH_MAX) return "month";
+  return "year";
+}
+
+/**
+ * One block of the plot: a stretch of the window and what landed in it.
+ *
+ * `days` is the stretch *as clipped to the window*, not as the calendar has it,
+ * and that is what makes the shading honest at the edges. A "this month" window
+ * on the 13th ends in a block covering thirteen days, and calling it thirty
+ * would draw a month of hard work as a faint one.
+ */
+export type PlotBlock = {
+  from: DayString;
+  to: DayString;
+  /** Calendar days this block covers, clipped to the window at both ends. */
+  days: number;
+  /** Placements inside it. Twice on one Tuesday is two. */
+  marks: number;
+};
+
+/**
+ * The window cut into blocks, with the marks dealt into them.
+ *
+ * **The cuts are the calendar's, not the window's.** A weekly block starts on a
+ * Sunday and a monthly one on the 1st, so the first block is usually a short
+ * one. Cutting into equal-length pieces from `from` instead would be tidier
+ * arithmetic and would put the boundaries in a different place every time the
+ * range moved by a day — two visits a week apart would draw the same history as
+ * two different pictures. Calendar cuts hold still, which is the whole basis for
+ * reading one of these against the row above it.
+ *
+ * One walk, not a lookup per mark: `hits` is ascending and the blocks are built
+ * ascending, so the block index only ever moves forward.
+ */
+export function plotBlocks(window: HabitWindow, hits: HabitHit[]): PlotBlock[] {
+  const grain = plotGrain(window.days);
+  const blocks: PlotBlock[] = [];
+
+  let cursor = window.from;
+  while (cursor <= window.to) {
+    const next = nextBoundary(cursor, grain);
+    const to = next > window.to ? window.to : addDays(next, -1);
+    blocks.push({
+      from: cursor,
+      to,
+      days: daysBetween(cursor, to) + 1,
+      marks: 0,
+    });
+    cursor = next;
+  }
+
+  let index = 0;
+  for (const hit of hits) {
+    const day = addDays(window.from, hit.offset);
+    while (index < blocks.length - 1 && day > blocks[index].to) index++;
+    const block = blocks[index];
+    if (block && day >= block.from && day <= block.to) block.marks += hit.count;
+  }
+
+  return blocks;
+}
+
+/**
+ * The first day of the next block, whatever grain we are on.
+ *
+ * String arithmetic for the month and the year, because that is all it takes: a
+ * `DayString` is big-endian and zero-padded, so the month is characters 5 and 6
+ * and the next one is that number plus one. Going through `Date` to learn what
+ * follows January would be the slower way to get the same answer and would put
+ * a timezone back into a module that has spent four steps keeping them out.
+ */
+function nextBoundary(day: DayString, grain: PlotGrain): DayString {
+  switch (grain) {
+    case "day":
+      return addDays(day, 1);
+    // From the *containing* Sunday, so a window that opens mid-week still has
+    // its second block start on a Sunday rather than seven days after whatever
+    // day you happened to pick.
+    case "week":
+      return addDays(startOfWeek(day), 7);
+    case "month": {
+      const year = Number(day.slice(0, 4));
+      const month = Number(day.slice(5, 7));
+      return month === 12
+        ? `${year + 1}-01-01`
+        : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    }
+    case "year":
+      return `${Number(day.slice(0, 4)) + 1}-01-01`;
+  }
+}
+
+/**
+ * How hard a block is drawn: nothing, something, or a lot.
+ *
+ * Three levels and not a continuous scale, for the reason the strip this
+ * replaced gave: a ramp of twenty tints is a legend you have to consult, and
+ * nobody consults it. Empty, present, heavy is the most a 6px block can say.
+ *
+ * **Heavy means most of the days in it.** Half the block's length, with a floor
+ * of two — so a single day needs two marks, which is exactly the old strip's
+ * rule and keeps a day block meaning what it always meant, while a week needs
+ * four and a month needs about fifteen. The alternative was one mark per day of
+ * the block, and at week grain that asks for a perfect seven before anything
+ * darkens, which almost nothing clears and so draws every row the same.
+ *
+ * Absolute rather than relative to the row's own busiest block. Scaling each row
+ * to itself makes every habit look equally consistent and takes away the one
+ * comparison a table of rows is for.
+ */
+export function blockLevel(block: PlotBlock): 0 | 1 | 2 {
+  if (block.marks <= 0) return 0;
+  return block.marks >= Math.max(2, block.days / 2) ? 2 : 1;
 }

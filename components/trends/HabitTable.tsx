@@ -3,6 +3,8 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { RangePicker } from "./RangePicker";
+import { captionFor, spanLabel } from "./rangeText";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,122 +14,156 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { resolveBounds, type Range } from "@/lib/analytics";
 import { daysBetween } from "@/lib/daymath";
 import { formatDayLong, formatDayShort, type DayString } from "@/lib/dates";
 import {
-  HABITS_PER_PAGE,
   SORT_START,
+  blockLevel,
+  earliestPlacement,
   frequencyLabel,
+  habitTable,
+  habitWindow,
   pageCount,
   pageOf,
+  plotBlocks,
   sortHabits,
   type HabitRow,
   type HabitSortKey,
   type HabitWindow,
+  type PlotBlock,
   type SortDirection,
 } from "@/lib/habits";
 import { PANEL } from "@/lib/layout";
 import { ramp } from "@/lib/palette";
+import type { LibraryGroup } from "@/lib/queries/activities";
+import type { StickersByDay } from "@/lib/stickers";
 
 type Props = {
-  /** Every habit with the range measured against it, in library order. */
-  rows: HabitRow[];
-  /** The closed window the rows were counted over. The plot's axis. */
-  window: HabitWindow;
-  /** The range as an adverbial, for the heading. From `rangePhrase`. */
-  phrase: string;
-  /** The visitor's today, for reading "last done" as "3 days ago". */
+  /** The whole library, archived stickers included. Every live one gets a row. */
+  groups: LibraryGroup[];
+  /** Every placement, keyed by day. The table counts its own marks. */
+  stickersByDay: StickersByDay;
+  /** The visitor's today. Resolves the range, and reads "last" as "3 days ago". */
   today: DayString;
-  /** The table's accessible name. See `AreaTable`'s note on the same prop. */
-  caption: string;
 };
 
 /**
- * The plot's tick, in pixels, and the number of slots it is snapped to.
+ * The empty part of the plot, drawn rather than left blank.
  *
- * Pixels for the tick because it is the one thing here that must not scale: a
- * mark has to be visible and it has to be narrow, and 2px is the width at which
- * a vertical line still reads as a tick rather than a bar. The track itself is a
- * percentage and stretches with the column, which is the opposite of
- * `HabitHeatmap`'s fixed pitch — and the difference is the point. The strip's
- * cells have to line up with the cells in the row above, so they cannot move;
- * these ticks are only ever read against the other ticks in their own row.
+ * A stretch with nothing in it still has to read as a period that happened and
+ * was empty, rather than as a cell that failed to render — so every block is
+ * painted and the empty ones are painted faintly. `color-mix` against `--ink`
+ * rather than a fixed grey, so it flips with the theme for free: `--ink` is
+ * near-black in light and near-white in dark, and 7% of either against the page
+ * reads as the same faint absence.
  *
- * `SLOTS` is what keeps that honest across ranges. At 30 days a plot has one
- * tick per day and you can count them; at 365 days there could be three hundred
- * ticks in 200px, which is a solid block that says nothing. Snapping to 72 slots
- * turns the long ranges into a density — clusters and gaps — and leaves the
- * short ones untouched, since 72 slots is more than a month has days.
- *
- * 72 rather than a number derived from the column's width, because the column's
- * width is not knowable here: measuring it would mean an effect, a resize
- * observer and a re-render per drag. 72 is a little denser than the narrowest
- * this column gets, which is the error worth having — slightly overlapping ticks
- * at 8rem, exact ones everywhere wider.
+ * Lifted from the eight-week strip this plot replaced, which is the point — it
+ * should look like the same drawing.
  */
-const TICK = 2;
-const SLOTS = 72;
+const EMPTY_BLOCK = "color-mix(in srgb, var(--ink) 7%, transparent)";
 
 /**
- * Which columns the header can sort, in the order they are drawn.
+ * The columns, in the order they are drawn.
  *
- * The habit is not in here and that is the one deliberate omission: it is the
- * row's own label, a `<th scope="row">` the way `AreaTable`'s area is, and what
- * it sorts into — the alphabet — is a worse order than the one it arrives in.
- * Library order groups the table by life area, so the unsorted table is already
- * banded by colour.
+ * **One definition for the header and the body**, which is the fix for a
+ * collision rather than a tidying. They were two, and the two drifted: body
+ * cells carried a right pad and headers didn't, so "Marks" ran into "How often"
+ * with nothing between them. An alignment declared twice is an alignment that
+ * will disagree again; `cellClass` below is the single place either row asks.
  *
- * `align` travels with the definition rather than being spelled at each cell,
- * because a header that right-aligns over a left-aligned column is the classic
- * way a table stops reading as columns.
+ * `sort` is null for the two columns whose headers are labels rather than
+ * controls. The habit is the row's own `<th scope="row">`, and what it would
+ * sort into — the alphabet — is a worse order than the one it arrives in, since
+ * library order already bands the table by life area. The plot is a shape rather
+ * than a value: it has no single number to order by, and the two it might borrow
+ * (first mark, last mark) are the "Last" column's job.
  */
 const COLUMNS: {
-  key: HabitSortKey;
+  key: string;
   label: string;
+  sort: HabitSortKey | null;
   align: "left" | "right";
   /** Only the plot claims a width: it is the one cell that wants the slack. */
   width?: string;
 }[] = [
-  { key: "area", label: "Area", align: "left" },
-  { key: "count", label: "Marks", align: "right" },
-  { key: "interval", label: "How often", align: "left" },
-  { key: "first", label: "When", align: "left", width: "w-[30%] min-w-32" },
-  { key: "last", label: "Last", align: "right" },
+  { key: "habit", label: "Habit", sort: null, align: "left" },
+  { key: "area", label: "Area", sort: "area", align: "left" },
+  { key: "count", label: "Marks", sort: "count", align: "right" },
+  { key: "interval", label: "How often", sort: "interval", align: "left" },
+  { key: "when", label: "When", sort: null, align: "left", width: "w-[28%] min-w-36" },
+  { key: "last", label: "Last", sort: "last", align: "right" },
 ];
 
 /**
- * Every habit as a row, with the range measured against it.
+ * Every cell's padding and alignment, from its column's own definition.
  *
- * The third panel on this tab and the one that answers the questions the other
- * two can't. `MostDone` ranks by count and shows eight; `HabitHeatmap` draws
- * every day of a fixed eight weeks and ignores the range entirely. This one
- * takes the range seriously, shows *all* of your habits including the ones you
- * did nothing of, and puts a rate beside each — which is the number you would
- * otherwise have to work out by counting squares.
+ * `align-middle` is the other half of the header fix. A table cell inherits
+ * `vertical-align: baseline`, and a flex container's baseline is its first
+ * item's — so the right-aligned headers, which reverse their row to put the
+ * arrow on the outside, were taking their baseline from an SVG instead of from
+ * the word and sat a couple of pixels above their neighbours. Centring the cells
+ * sidesteps the question: nothing in this table is taller than one line, so
+ * middle and baseline agree everywhere they can.
+ */
+function cellClass(column: (typeof COLUMNS)[number], last: boolean): string {
+  return [
+    "py-2 align-middle",
+    last ? "" : "pr-4",
+    column.align === "right" ? "text-right" : "",
+    column.width ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * Every habit as a row, with a period measured against it.
  *
- * **It overlaps both of its neighbours, on purpose.** The count is in `MostDone`
- * and the ticks are a coarser version of the strip. What is new is the
- * combination: a rate, a last-done, and a row per habit rather than per top
- * eight — read down the page rather than across one week. The two drawings above
- * are for noticing; this is for looking something up.
+ * The panel you look something up in, as against the ranking above it, which is
+ * a picture you read at a glance. It shows *all* of your habits, including the
+ * ones you did nothing of, and puts a rate beside each — the number you would
+ * otherwise have to work out by counting.
  *
- * Four controls, and each one is a different kind of question. The range picker
- * up the page sets *when* (it is shared with every other panel, so it is not
- * repeated here); the area dropdown sets *what*; the headers set the order; the
- * pager sets how much. They compose — filtering to one area while sorted by
- * frequency on page 2 is a coherent thing to be looking at — which is why the
- * sort and the filter are separate pieces of state rather than one "view".
+ * **It has no heading, and that is deliberate.** It is the only table on the tab
+ * and it sits under its own rule with its dates in the top left; a title reading
+ * "Every habit" would be a label on the only thing it could be labelling. What a
+ * reader needs at the top is which period this is, so that is what is there —
+ * and what they need at the bottom is how much more there is, which is what the
+ * pager says. The accessible name the heading used to carry moved to the
+ * `<caption>`, where a screen reader still gets it.
+ *
+ * **It carries its own range.** The picker in the band above governs the
+ * ranking, the star and the moods; this one governs the table and nothing else,
+ * so a month's ranking can sit beside a year's rates. The cost is that two
+ * dropdowns on one page can say two different things — which is the feature, and
+ * why each prints the dates it resolved to right beside itself rather than
+ * relying on you to remember which is which.
+ *
+ * Four controls, four kinds of question. The range sets *when*, the area
+ * dropdown sets *what*, the headers set the order, the pager sets how much. They
+ * compose — one area, by frequency, page 2 of a year — which is why each is its
+ * own piece of state rather than one "view".
  */
 export function HabitTable(props: Props) {
-  const { rows, window: span } = props;
+  /**
+   * This table's own period.
+   *
+   * UI state exactly like the page's: not a fact about your month but a way of
+   * reading one, so it should die on refresh rather than persist.
+   *
+   * It starts where the page's picker starts, so the first paint of the tab
+   * shows one period and not two — the independence is there when you reach for
+   * it and invisible until then.
+   */
+  const [range, setRange] = useState<Range>({ kind: "month" });
 
   /**
    * Which column orders the table, and which way.
    *
    * Marks descending to start: the table's first reading should be the same one
-   * the ranking beside it gives, so that landing on the tab and then finding
-   * this panel doesn't feel like two different answers. Every other order is a
-   * click away.
+   * the ranking above it gives, so that finding this panel doesn't feel like two
+   * different answers. Every other order is a click away.
    */
   const [sort, setSort] = useState<{
     key: HabitSortKey;
@@ -145,6 +181,36 @@ export function HabitTable(props: Props) {
   const [areas, setAreas] = useState<Set<string>>(new Set());
 
   const [page, setPage] = useState(1);
+
+  const bounds = useMemo(
+    () => resolveBounds(range, props.today),
+    [range, props.today],
+  );
+
+  /**
+   * The first day anything was ever placed, which is what closes an open left
+   * edge — "all time" is two nulls, and a rate needs a denominator.
+   *
+   * Its own memo because it is a scan of the whole map that only changes when
+   * the data does: switching range must not re-walk every day you have ever
+   * recorded to rediscover the same first one.
+   */
+  const earliest = useMemo(
+    () => earliestPlacement(props.stickersByDay),
+    [props.stickersByDay],
+  );
+
+  // `span`, not `window`: this is a client component, and a local named
+  // `window` shadows the global one for the whole function.
+  const span = useMemo(
+    () => habitWindow(bounds, props.today, earliest),
+    [bounds, props.today, earliest],
+  );
+
+  const rows = useMemo(
+    () => habitTable(props.stickersByDay, props.groups, span),
+    [props.stickersByDay, props.groups, span],
+  );
 
   /** Every area with at least one row, in library order, for the dropdown. */
   const options = useMemo(() => {
@@ -175,21 +241,11 @@ export function HabitTable(props: Props) {
    * no effect that resets the state and no render where the table is briefly
    * empty. `page` is a request; this is the answer.
    */
-  const last = pageCount(ordered.length);
-  const current = Math.min(Math.max(page, 1), last);
+  const pages = pageCount(ordered.length);
+  const current = Math.min(Math.max(page, 1), pages);
   const shown = pageOf(ordered, current);
 
-  if (rows.length === 0) {
-    return (
-      <section className={`flex flex-col gap-4 ${PANEL}`}>
-        <h2 className="eyebrow">Every habit</h2>
-        <p className="text-ink-muted">
-          No habits in your tray yet. Add one from the Habits tab and it will
-          get a row here.
-        </p>
-      </section>
-    );
-  }
+  const dates = spanLabel(range, bounds);
 
   function clickHeader(key: HabitSortKey) {
     setSort((previous) =>
@@ -220,16 +276,37 @@ export function HabitTable(props: Props) {
     });
   }
 
+  if (rows.length === 0) {
+    return (
+      <section className={`flex flex-col gap-4 ${PANEL}`}>
+        <p className="text-ink-muted">
+          No habits in your tray yet. Add one from the Calendar and it will get a
+          row here.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className={`flex min-w-0 flex-col gap-4 ${PANEL}`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          {/* `eyebrow`, matching the two panels above it rather than being a
-              louder heading for being the wider one. */}
-          <h2 className="eyebrow">Every habit, {props.phrase}</h2>
-          <p className="tabular text-[0.83rem] text-ink-muted">
-            {formatDayShort(span.from)} — {formatDayShort(span.to)}
-          </p>
+      {/* The period on the left, the filter on the right, and no heading
+          between them. The dates come *before* the dropdown because they are
+          the answer and it is the question: you read what you are looking at,
+          and reach past it to change it. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {dates && (
+            <p
+              // The dates change when the dropdown changes, and the dropdown
+              // announces only its own label — so without this a screen reader
+              // hears the new rule and never the new period.
+              aria-live="polite"
+              className="tabular text-[0.83rem] text-ink-muted"
+            >
+              {dates}
+            </p>
+          )}
+          <RangePicker value={range} onChange={setRange} />
         </div>
 
         {/* Only when there is a choice to make. One area means the dropdown
@@ -247,23 +324,22 @@ export function HabitTable(props: Props) {
 
       {/* `overflow-x-auto` for the narrow case and nothing else. Six columns of
           short strings fit a laptop comfortably; on a phone the table scrolls
-          rather than wrapping a rate onto two lines, which is the same call
-          `HabitHeatmap` makes one panel up. */}
+          rather than wrapping a rate onto two lines. */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-2xl border-collapse text-left">
-          <caption className="sr-only">{props.caption}</caption>
+          <caption className="sr-only">
+            {captionFor("Every habit", range, bounds)}
+          </caption>
 
           <thead>
             <tr className="border-b border-hairline">
-              <th scope="col" className="eyebrow py-2 font-normal">
-                Habit
-              </th>
-              {COLUMNS.map((column) => (
-                <SortHeader
+              {COLUMNS.map((column, index) => (
+                <Header
                   key={column.key}
                   column={column}
+                  last={index === COLUMNS.length - 1}
                   sort={sort}
-                  onClick={() => clickHeader(column.key)}
+                  onClick={clickHeader}
                 />
               ))}
             </tr>
@@ -274,11 +350,14 @@ export function HabitTable(props: Props) {
               <tr key={row.activityId} className="border-b border-hairline">
                 {/* The habit heads its own row, which is what lets a screen
                     reader name it again beside every number in it. */}
-                <th scope="row" className="py-2 pr-4 font-normal">
+                <th
+                  scope="row"
+                  className={`${cellClass(COLUMNS[0], false)} font-normal`}
+                >
                   {row.name}
                 </th>
 
-                <td className="py-2 pr-4">
+                <td className={cellClass(COLUMNS[1], false)}>
                   <span className="flex items-center gap-2.5">
                     {/* The same bare dot as `AreaTable`'s, in the same size —
                         the two tables are on two tabs and are read minutes
@@ -294,29 +373,32 @@ export function HabitTable(props: Props) {
                 {/* `tabular` so the digits stop jittering as the range or the
                     order changes — the same reason `AreaTable`'s numbers wear
                     it. */}
-                <td className="tabular py-2 pr-4 text-right">
+                <td className={`${cellClass(COLUMNS[2], false)} tabular`}>
                   {row.count === 0 ? <Nothing /> : row.count}
                 </td>
 
-                <td className="py-2 pr-4 text-[0.9rem] whitespace-nowrap">
+                <td
+                  className={`${cellClass(COLUMNS[3], false)} text-[0.9rem] whitespace-nowrap`}
+                >
                   {frequencyLabel(row) ?? <Nothing />}
                 </td>
 
-                <td className="py-2 pr-4">
-                  {/* The plot itself is `aria-hidden`, so without this the
-                      column would announce as an empty cell under a heading.
-                      The fact the drawing carries that the other cells don't is
-                      where the marks *start*, which is also what this column
-                      sorts by — so the sentence and the header agree. */}
+                <td className={cellClass(COLUMNS[4], false)}>
+                  {/* The plot is `aria-hidden`, so without this the column
+                      would announce as an empty cell under a heading. What it
+                      says is the one fact the drawing carries that no other
+                      cell in the row does: where the marks start. */}
                   <span className="sr-only">
                     {row.first
                       ? `First on ${formatDayShort(row.first)}`
                       : "Nothing in this range"}
                   </span>
-                  <TickPlot row={row} window={span} />
+                  <BlockPlot row={row} window={span} />
                 </td>
 
-                <td className="tabular py-2 text-right text-[0.9rem] whitespace-nowrap">
+                <td
+                  className={`${cellClass(COLUMNS[5], true)} tabular text-[0.9rem] whitespace-nowrap`}
+                >
                   {row.last ? (
                     <span title={formatDayLong(row.last)}>
                       {lastLabel(row.last, props.today)}
@@ -333,7 +415,7 @@ export function HabitTable(props: Props) {
 
       <Pager
         page={current}
-        pages={last}
+        pages={pages}
         total={ordered.length}
         onChange={setPage}
       />
@@ -353,26 +435,44 @@ function Nothing() {
 }
 
 /**
- * A sortable column heading: a button in a `<th>`, with `aria-sort` on the cell.
+ * A column heading — a button when the column sorts, plain words when it
+ * doesn't.
  *
- * The button is what makes it operable — a click handler on a `<th>` is
- * invisible to the keyboard, and "clicking the headline" has to mean tabbing to
- * it too. `aria-sort` goes on the `<th>` rather than the button because it
- * describes the *column*, and it is the attribute that makes the arrow's
- * meaning available to someone who cannot see the arrow.
+ * The button is what makes it operable: a click handler on a `<th>` is invisible
+ * to the keyboard, and "clicking the headline" has to mean tabbing to it too.
+ * `aria-sort` goes on the `<th>` rather than the button because it describes the
+ * *column*, and it is what makes the arrow's meaning available to someone who
+ * cannot see the arrow.
  *
- * The arrow is only on the active column. Drawing a faint one on all five was
+ * The two inert headers get no button, no arrow and no hover, rather than a
+ * disabled button — which would still sit in the tab order announcing itself as
+ * a control you may not use. A header that does nothing should look like a
+ * label, because that is what it is.
+ *
+ * The arrow is only on the active column. Drawing a faint one on all four was
  * the other option and it turns the header row into a row of chevrons you have
  * to look past to read the words; `group-hover` gives it back exactly when you
  * are pointing at the thing you might click.
  */
-function SortHeader(props: {
+function Header(props: {
   column: (typeof COLUMNS)[number];
+  last: boolean;
   sort: { key: HabitSortKey; direction: SortDirection };
-  onClick: () => void;
+  onClick: (key: HabitSortKey) => void;
 }) {
   const { column, sort } = props;
-  const active = sort.key === column.key;
+  const key = column.sort;
+  const cell = `${cellClass(column, props.last)} font-normal`;
+
+  if (!key) {
+    return (
+      <th scope="col" className={`eyebrow ${cell}`}>
+        {column.label}
+      </th>
+    );
+  }
+
+  const active = sort.key === key;
   const Arrow = active && sort.direction === "asc" ? ChevronUp : ChevronDown;
 
   return (
@@ -381,15 +481,11 @@ function SortHeader(props: {
       aria-sort={
         active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"
       }
-      // The width is declared once, on the header, rather than on ten identical
-      // body cells that the browser then has to reconcile.
-      className={`py-2 font-normal ${column.width ?? ""} ${
-        column.align === "right" ? "text-right" : ""
-      }`}
+      className={cell}
     >
       <button
         type="button"
-        onClick={props.onClick}
+        onClick={() => props.onClick(key)}
         // `eyebrow` on the button rather than the cell, so the hit area is the
         // words and not the whole column's width — a header you can click
         // three centimetres to the right of reads as an accident.
@@ -410,73 +506,92 @@ function SortHeader(props: {
 }
 
 /**
- * When the marks fell, as ticks along the window.
+ * When the marks fell, as blocks along the window.
  *
- * The column the strip above can't be: it is per-row and it stretches, so it
- * says *shape* — front-loaded, evenly spread, three clusters and a gap — for
- * whatever span the picker is on, including a year. What it deliberately does
- * not say is which day; that is the calendar's job, and the last column names
- * the one day this panel is prepared to be precise about.
+ * **The same drawing as the eight-week strip this tab used to carry**, which is
+ * why the strip could go: discrete blocks with gutters between them, an empty
+ * one drawn faintly, a heavy one for a stretch you did more of than not. What
+ * was here before was a row of 2px ticks at positions computed from the data —
+ * a finer picture and the wrong one. Ticks say *when* precisely and nothing
+ * about how much, they are too narrow to point at, and at a year's worth they
+ * pile into a smear. Blocks lose the exact day, which the last column names
+ * anyway, and gain a shape you can compare against the row above.
  *
- * A one-day window is drawn as a single tick at the left rather than divided by
- * zero. `hits` holds offsets, and the only offset in a one-day window is 0.
+ * How long a block is comes from the window: a day each up to a month, a week
+ * each up to a year, then months, then years. See `plotGrain` — the rule is that
+ * the number of blocks stays in the range the eye can still count.
  *
- * `aria-hidden`, with `HabitHeatmap`'s justification and a stronger version of
- * it: every fact in here is also in the row it sits in — the count is two cells
- * left and the last day is one cell right — so a screen reader loses position
- * and keeps everything else.
+ * The block *widths* stretch where the strip's were fixed pixels, and that is
+ * the one thing that had to change. The strip's cells had to line up with the
+ * cells in the row above across a dozen independently rendered rows, so they
+ * could not move; these are cells of one table column, where every row is
+ * already the same width and a fraction lines them up for free.
+ *
+ * `aria-hidden`, with the strip's justification and a stronger version of it:
+ * every fact in here is also in the row it sits in — the count two cells left,
+ * the last day one cell right, the first in the `sr-only` beside it — so a
+ * screen reader loses the shape and keeps everything else.
  */
-function TickPlot(props: { row: HabitRow; window: HabitWindow }) {
+function BlockPlot(props: { row: HabitRow; window: HabitWindow }) {
   const { row, window: span } = props;
-  const divisor = Math.max(span.days - 1, 1);
 
-  /**
-   * One tick per slot, so a year of daily marks is a texture rather than a
-   * solid block of overlapping 2px lines. See `SLOTS`.
-   */
-  const slots = useMemo(() => {
-    const set = new Set<number>();
-    for (const hit of row.hits) {
-      set.add(Math.round((hit / divisor) * (SLOTS - 1)));
-    }
-    return [...set];
-  }, [row.hits, divisor]);
+  const blocks = useMemo(() => plotBlocks(span, row.hits), [span, row.hits]);
+  const tint = ramp(row.colorKey);
 
   return (
     <span
       aria-hidden="true"
-      // The track is a hairline through the middle rather than an empty box:
-      // with nothing drawn on it, a row with no marks still reads as a period
-      // that happened and was empty. `HabitHeatmap` spends a repeating gradient
-      // on the same idea; at this density one line is the whole picture.
-      className="relative block h-3.5 w-full before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-hairline before:content-['']"
+      // `gap-0.5` is the strip's 2px gutter, and it is what keeps a run of good
+      // days looking like a run rather than one solid bar. The column count is
+      // data-driven, so the template has to be an inline style: Tailwind reads
+      // the source text, it never runs it.
+      className="grid h-2.5 w-full gap-0.5"
+      style={{ gridTemplateColumns: `repeat(${blocks.length}, minmax(0, 1fr))` }}
     >
-      {slots.map((slot) => (
-        <span
-          key={slot}
-          // Inline, because Tailwind reads the source text and never runs it —
-          // a position computed from the data cannot be a class. The
-          // `100% - TICK` is what keeps the last tick inside the track instead
-          // of hanging 2px past its right edge.
-          style={{
-            left: `calc(${slot / (SLOTS - 1)} * (100% - ${TICK}px))`,
-            width: TICK,
-          }}
-          className={`absolute inset-y-0 rounded-full ${ramp(row.colorKey).bg}`}
-        />
-      ))}
+      {blocks.map((block) => {
+        const level = blockLevel(block);
+        return (
+          <span
+            key={block.from}
+            className={level === 2 ? tint.bg : level === 1 ? tint.soft : ""}
+            style={level === 0 ? { backgroundColor: EMPTY_BLOCK } : undefined}
+            // Native `title`, matching the strip's per-cell hint and the four
+            // other hover details in the app. A tooltip component would be a
+            // new dependency on the page for a hint on a 6px block.
+            title={blockTitle(row.name, block)}
+          />
+        );
+      })}
     </span>
   );
+}
+
+/**
+ * The hover hint on a block: which stretch, and what landed in it.
+ *
+ * A single-day block names the day and stops — "13 Sep — 13 Sep" is a range of
+ * one and reads as a mistake.
+ */
+function blockTitle(name: string, block: PlotBlock): string {
+  const when =
+    block.from === block.to
+      ? formatDayShort(block.from)
+      : `${formatDayShort(block.from)} — ${formatDayShort(block.to)}`;
+  const what =
+    block.marks === 0
+      ? "nothing"
+      : `${block.marks} ${block.marks === 1 ? "mark" : "marks"}`;
+  return `${name} · ${when} · ${what}`;
 }
 
 /**
  * Which areas to show, as checkboxes.
  *
  * A menu of checkboxes rather than a `Select`, because this is the one control
- * on the page whose answer can be several things at once — and the two look
- * different on purpose: the range picker up the page is a `Select` because a
- * range is exactly one choice. Radix's `DropdownMenuCheckboxItem` keeps the menu
- * open across a click, which is what makes picking three areas one gesture.
+ * on the panel whose answer can be several things at once — and the two look
+ * different on purpose: the range pickers are `Select`s because a range is
+ * exactly one choice. Radix's `DropdownMenuCheckboxItem` keeps the menu open
+ * across a click, which is what makes picking three areas one gesture.
  */
 function AreaFilter(props: {
   options: { id: string; name: string; colorKey: string }[];
@@ -551,16 +666,23 @@ function filterLabel(
 }
 
 /**
- * The pager, or nothing at all when everything fits.
+ * The pager, bottom right, or nothing at all when everything fits.
+ *
+ * **It is the panel's size label now that the heading is gone.** "Page 1 of 2"
+ * is the one line that says how much there is, which is why it leads with the
+ * page count rather than the row range it used to print: a reader looking at ten
+ * rows already knows they can see ten rows, and what they cannot tell is whether
+ * that is all of them. The total rides along after it, because "13 habits" is
+ * what makes page 2 worth pressing.
  *
  * Hidden rather than disabled at one page. A pager greyed out under a table of
  * four rows is furniture explaining a limit you haven't reached; the control
- * appearing when the table outgrows the screen is the same information, given
- * at the moment it means something.
+ * appearing when the table outgrows a page is the same information, given at the
+ * moment it means something.
  *
- * It says the range and the total rather than "Page 2 of 3", because the
- * question a reader has here is "how many habits are there" — the page number
- * is only interesting as a way of getting to the rest.
+ * Everything sits at the right-hand end — where a pager goes, where this one was
+ * asked to be, and the end of the reading. It is the only control on the panel
+ * that belongs after the table rather than before it.
  */
 function Pager(props: {
   page: number;
@@ -570,11 +692,8 @@ function Pager(props: {
 }) {
   if (props.pages <= 1) return null;
 
-  const from = (props.page - 1) * HABITS_PER_PAGE + 1;
-  const to = Math.min(props.page * HABITS_PER_PAGE, props.total);
-
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+    <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
       <p
         // The numbers change when a button is pressed and the buttons say only
         // "previous" and "next", so without this a screen reader hears the
@@ -582,7 +701,7 @@ function Pager(props: {
         aria-live="polite"
         className="tabular text-[0.83rem] text-ink-muted"
       >
-        {from}–{to} of {props.total}
+        Page {props.page} of {props.pages} · {props.total} habits
       </p>
 
       <div className="flex items-center gap-1">

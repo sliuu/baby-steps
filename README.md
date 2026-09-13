@@ -90,7 +90,7 @@ expected green before a step is committed.
 ```
 app/actions/     server actions (stickers, activities, auth)
 lib/queries/     Supabase reads
-lib/             pure modules — analytics, charts, heatmap, lifestar, demo, dates…
+lib/             pure modules — analytics, charts, habits, lifestar, demo, dates…
 components/      calendar/ tray/ trends/ dnd/ demo/ ui/
 supabase/        schema + RLS migrations
 learning/        one explainer per step

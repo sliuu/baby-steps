@@ -510,8 +510,8 @@ describe("activityTally", () => {
   });
 
   it("counts two placements of one sticker on one day as two", () => {
-    // The reason `counts` in the heatmap are numbers rather than booleans, and
-    // the reason this counts placements rather than days.
+    // The reason a block's `marks` is a number rather than a flag, and the
+    // reason this counts placements rather than days.
     const ranking = activityTally(
       faced({ "2026-08-01": ["act-gym", "act-gym"] }),
       ALL,

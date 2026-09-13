@@ -2,16 +2,15 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 
-import { HabitHeatmap } from "./HabitHeatmap";
 import { HabitTable } from "./HabitTable";
 import { LifeStar } from "./LifeStar";
 import { MoodLine } from "./MoodLine";
 import { MostDone } from "./MostDone";
 import { RangePicker } from "./RangePicker";
+import { captionFor, spanLabel } from "./rangeText";
 import { MoodStrip, Readout } from "./Readout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  RANGE_LABEL,
   activityTally,
   moodSeries,
   moodTakeaway,
@@ -20,12 +19,9 @@ import {
   resolveBounds,
   takeaway,
   tally,
-  type Bounds,
   type Range,
 } from "@/lib/analytics";
-import { formatDayShort, today, type DayString } from "@/lib/dates";
-import { earliestPlacement, habitTable, habitWindow } from "@/lib/habits";
-import { HEATMAP_DAYS, dayWindow, heatmap } from "@/lib/heatmap";
+import { today, type DayString } from "@/lib/dates";
 import { RULE } from "@/lib/layout";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
@@ -162,62 +158,6 @@ export function TrendsBoard(props: Props) {
     [props.stickersByDay, bounds],
   );
 
-  /**
-   * The rolling eight weeks, which is the one thing on this page `bounds`
-   * doesn't touch. Keyed on `todayString` alone, so switching range doesn't
-   * rebuild the same window to arrive at the same answer.
-   *
-   * Still computed while you're on another tab, deliberately. It's a few dozen
-   * marks bucketed into arrays — cheaper than the re-render that deferring it
-   * would cost — and keeping it out of the tab's own render is what lets Radix
-   * mount the Habits panel without a frame of empty strip.
-   */
-  const days = useMemo(
-    () => dayWindow(todayString, HEATMAP_DAYS),
-    [todayString],
-  );
-
-  const rows = useMemo(
-    () => heatmap(props.stickersByDay, props.groups, days),
-    [props.stickersByDay, props.groups, days],
-  );
-
-  /**
-   * The range as a closed window, which is what the habit table measures
-   * against. `bounds` can be open on either side — "all time" is two nulls —
-   * and a rate needs a denominator, so the open edges get closed once, here.
-   *
-   * The earliest placement is what closes the left one, and it is its own memo
-   * because it is a scan of the whole map that only changes when the data does:
-   * switching range must not re-walk every day you have ever recorded to
-   * rediscover the same first one.
-   */
-  const earliest = useMemo(
-    () => earliestPlacement(props.stickersByDay),
-    [props.stickersByDay],
-  );
-
-  // `habitSpan` rather than `window`: this is a client component, and a local
-  // named `window` shadows the global one for the whole function.
-  const habitSpan = useMemo(
-    () => habitWindow(bounds, todayString, earliest),
-    [bounds, todayString, earliest],
-  );
-
-  /**
-   * A fourth walk, at the same grain as the ranking and answering a wider
-   * question: every habit rather than the ones you actually did, with a rate
-   * and a last-done against the range. See `habitTable`.
-   *
-   * Unsorted and unfiltered on purpose — the table owns its own order, its own
-   * area filter and its own page, and keeping those out of here is what stops a
-   * header click from re-walking the placement map.
-   */
-  const habits = useMemo(
-    () => habitTable(props.stickersByDay, props.groups, habitSpan),
-    [props.stickersByDay, props.groups, habitSpan],
-  );
-
   const span = spanLabel(range, bounds);
 
   /**
@@ -341,7 +281,7 @@ export function TrendsBoard(props: Props) {
               <Readout
                 tally={totals}
                 takeaway={summary}
-                caption={tableCaption(range, bounds)}
+                caption={captionFor("Marks by life area", range, bounds)}
               />
 
               {/* Zero today, and it stays invisible while it is. It exists so
@@ -364,70 +304,47 @@ export function TrendsBoard(props: Props) {
         </TabsContent>
 
         {/* Habits — the same marks at the grain they were placed at, twice
-            over: ranked for the range, and spread across the last eight weeks
-            one row per habit. Which you did most, and when you did it.
+            over: ranked for the range, then every habit as a row. Which you did
+            most, and then the numbers behind that.
 
-            **Side by side once there's room, stacked at one width when there
-            isn't.** They were stacked full-bleed, the ranking capped at
-            `max-w-2xl` and the strip running the whole page — two panels of
-            different widths about the same habits, with a scroll between them.
-            A grid puts them in one row above `xl` and in one column below it,
-            and in the stacked case both cards are the column, so neither is
-            arbitrarily narrower than the other.
+            **Stacked, and one of them used to be three panels.** There was an
+            eight-week strip between these two, a grid of every habit's last
+            fifty-six days at a fixed pitch, and the table below it drew the same
+            marks over whatever range you had picked. Two drawings of when, one
+            of them stuck on a window the range picker couldn't touch. The strip
+            is gone and its drawing moved into the table's own column, which is
+            the trade: you lose a day-by-day grid you could not re-aim, and gain
+            one that follows the range and sits beside the rate it explains.
 
-            The split is `20rem` and the rest, not two halves. A ranking is a
-            list of short names with bars behind them and it stops improving
-            past about twenty characters; the strip is 574px of fixed-pitch
-            squares that either fits or scrolls. So the narrow one is pinned to
-            what it needs and the wide one takes what's left — which is also
-            what lets `HabitHeatmap`'s geometry be budgeted against a number
-            rather than a guess.
-
-            `xl` and not `lg`, because the arithmetic says so: 20rem plus the
-            gap plus the strip's 574px and its card padding is about 1070px of
-            content, which is what `max-w-6xl` gives at an `xl` viewport and
-            more than `lg` has. */}
+            Coarse to fine, top to bottom. The ranking is capped and the table
+            runs full width, because a ranking is short names with bars behind
+            them and stops improving past about twenty characters, while a table
+            of six columns squeezed into a narrow track is a table that wraps. */}
         <TabsContent value="habits">
-          <div
-            className={`grid items-start gap-x-8 gap-y-10 ${
-              ranking.activities.length === 0
-                ? ""
-                : "xl:grid-cols-[20rem_minmax(0,1fr)]"
-            }`}
-          >
+          <div className="flex flex-col gap-10">
             {ranking.activities.length === 0 ? (
-              // Not the full `Empty` card. The tab isn't empty — the strip
-              // still covers the last eight weeks — so a dashed box announcing
-              // nothing would be contradicted by the thing next to it. It also
-              // drops the grid back to one column: a sentence doesn't need a
-              // 20rem track, and the strip gets the whole width instead.
+              // Not the full `Empty` card. The tab isn't empty — the table
+              // below carries its own range and may well have rows — so a
+              // dashed box announcing nothing would be contradicted by the
+              // thing under it.
               <p className="text-ink-muted">
                 Nothing placed {phrase}, so there is no ranking to draw. The
-                strip covers the last eight weeks either way.
+                table below sets its own range, so it may still have something
+                to show.
               </p>
             ) : (
-              <MostDone ranking={ranking} phrase={phrase} />
+              <div className="max-w-2xl">
+                <MostDone ranking={ranking} phrase={phrase} />
+              </div>
             )}
 
-            <HabitHeatmap rows={rows} days={days} />
-          </div>
-
-          {/* Full width under the pair, because it is a different kind of
-              panel rather than a third peer. The two above are drawings you
-              read at a glance and they sit side by side at a glance's width;
-              this is six columns you look something up in, and a table
-              squeezed into a 20rem track is a table that wraps.
-
-              It goes below them, not above, because the order is
-              coarse-to-fine: which habits you did most, then what each of them
-              looks like day by day, then the numbers behind both. */}
-          <div className="mt-10">
+            {/* No range props: it resolves its own. See the component's note —
+                the picker in the band above governs this ranking, and the one
+                inside the table governs the table. */}
             <HabitTable
-              rows={habits}
-              window={habitSpan}
-              phrase={phrase}
+              groups={props.groups}
+              stickersByDay={props.stickersByDay}
               today={todayString}
-              caption={habitsCaption(range, bounds)}
             />
           </div>
         </TabsContent>
@@ -451,63 +368,6 @@ export function TrendsBoard(props: Props) {
       </Tabs>
     </div>
   );
-}
-
-/**
- * The dates beside the dropdown, or null when there's nothing to add.
- *
- * Null in exactly two cases, both of them "the control already said it". "All
- * time" has no edges to print, and its own label is the complete answer. A
- * custom range prints its dates on the popover button itself, so repeating them
- * two inches to the right is the same string twice.
- *
- * So this earns its place only for the fixed ranges, which are the ones whose
- * label is a *rule* — "This month" doesn't tell you it means the 1st to the
- * 22nd, and that's the number you'd want to check against the calendar.
- */
-function spanLabel(range: Range, bounds: Bounds): string | null {
-  if (range.kind === "custom") return null;
-  if (!bounds.from && !bounds.to) return null;
-  if (bounds.from && bounds.to) {
-    return bounds.from === bounds.to
-      ? formatDayShort(bounds.from)
-      : `${formatDayShort(bounds.from)} — ${formatDayShort(bounds.to)}`;
-  }
-  if (bounds.from) return `From ${formatDayShort(bounds.from)}`;
-  return `Up to ${formatDayShort(bounds.to!)}`;
-}
-
-/**
- * The table's accessible name. Never drawn — see the prop's note in `AreaTable`.
- *
- * Says more than `spanLabel` deliberately: on screen the rule and the dates sit
- * beside each other and the table is directly below them, so proximity does the
- * work. A screen reader entering the table has left all of that behind, so this
- * has to be self-contained.
- */
-function tableCaption(range: Range, bounds: Bounds): string {
-  const where = spanLabel(range, bounds);
-  if (range.kind === "custom" && bounds.from && bounds.to) {
-    return `Marks by life area, ${formatDayShort(bounds.from)} to ${formatDayShort(bounds.to)}`;
-  }
-  return where
-    ? `Marks by life area, ${RANGE_LABEL[range.kind]}: ${where}`
-    : `Marks by life area, ${RANGE_LABEL[range.kind]}`;
-}
-
-/**
- * The habit table's accessible name, built the same way and saying a different
- * thing — the two tables are on two tabs and count two different units, so a
- * shared caption would name the wrong one on one of them.
- */
-function habitsCaption(range: Range, bounds: Bounds): string {
-  const where = spanLabel(range, bounds);
-  if (range.kind === "custom" && bounds.from && bounds.to) {
-    return `Every habit, ${formatDayShort(bounds.from)} to ${formatDayShort(bounds.to)}`;
-  }
-  return where
-    ? `Every habit, ${RANGE_LABEL[range.kind]}: ${where}`
-    : `Every habit, ${RANGE_LABEL[range.kind]}`;
 }
 
 /**

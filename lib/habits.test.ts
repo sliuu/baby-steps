@@ -6,22 +6,26 @@ import { describe, it } from "node:test";
 import {
   HABITS_PER_PAGE,
   SORT_START,
+  blockLevel,
   earliestPlacement,
   frequencyLabel,
   habitTable,
   habitWindow,
   pageCount,
   pageOf,
+  plotBlocks,
+  plotGrain,
   sortHabits,
   type HabitRow,
   type HabitSortKey,
+  type PlotBlock,
 } from "./habits.ts";
 import { resolveBounds } from "./analytics.ts";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
 
 /**
- * Two areas, three habits, one retired — `lib/heatmap.test.ts`'s fixture,
+ * Two areas, three habits, one retired — the deleted strip's fixture,
  * because the two modules share their row rule and a shared rule deserves a
  * shared shape of test. Walk is archived and that is the point: the same
  * library has to produce a different number of rows depending on whether Walk
@@ -238,16 +242,21 @@ describe("habitTable · what a row says", () => {
     assert.equal(gym.days, 2);
   });
 
-  it("plots one tick per day, however many marks that day holds", () => {
+  it("plots one hit per day, carrying that day's count", () => {
+    // Three marks on one day is one entry, not three — the plot draws days —
+    // but the count rides along so a block can shade for how full it was.
     const map = days({ "2026-09-05": ["act-gym", "act-gym", "act-gym"] });
     const gym = rowFor(habitTable(map, GROUPS, WINDOW), "act-gym");
-    assert.deepEqual(gym.hits, [4]);
+    assert.deepEqual(gym.hits, [{ offset: 4, count: 3 }]);
   });
 
   it("measures hits as offsets from the window's first day", () => {
     const map = days({ "2026-09-01": ["act-gym"], "2026-09-30": ["act-gym"] });
     const gym = rowFor(habitTable(map, GROUPS, WINDOW), "act-gym");
-    assert.deepEqual(gym.hits, [0, 29]);
+    assert.deepEqual(gym.hits, [
+      { offset: 0, count: 1 },
+      { offset: 29, count: 1 },
+    ]);
   });
 
   it("sorts hits ascending whatever order the days arrive in", () => {
@@ -256,7 +265,10 @@ describe("habitTable · what a row says", () => {
       "2026-09-02": ["act-gym"],
       "2026-09-11": ["act-gym"],
     });
-    assert.deepEqual(rowFor(habitTable(map, GROUPS, WINDOW), "act-gym").hits, [1, 10, 19]);
+    assert.deepEqual(
+      rowFor(habitTable(map, GROUPS, WINDOW), "act-gym").hits.map((h) => h.offset),
+      [1, 10, 19],
+    );
   });
 
   it("records the first and last day inside the window", () => {
@@ -393,7 +405,6 @@ describe("SORT_START", () => {
       area: "asc",
       count: "desc",
       interval: "asc",
-      first: "asc",
       last: "desc",
     });
   });
@@ -411,7 +422,7 @@ describe("sortHabits", () => {
       areaName: "Body",
       count: 9,
       days: 9,
-      hits: [1],
+      hits: [{ offset: 1, count: 1 }],
       first: "2026-09-02",
       last: "2026-09-11",
       interval: 3.3,
@@ -425,7 +436,7 @@ describe("sortHabits", () => {
       areaName: "Craft",
       count: 2,
       days: 2,
-      hits: [5],
+      hits: [{ offset: 5, count: 1 }],
       first: "2026-09-06",
       last: "2026-09-07",
       interval: 15,
@@ -439,7 +450,7 @@ describe("sortHabits", () => {
       areaName: "Admin",
       count: 1,
       days: 1,
-      hits: [20],
+      hits: [{ offset: 20, count: 1 }],
       first: "2026-09-21",
       last: "2026-09-21",
       interval: null,
@@ -490,12 +501,8 @@ describe("sortHabits", () => {
     assert.deepEqual(ids(sortHabits(ROWS, "last", "desc")), ["c", "a", "b", "d"]);
   });
 
-  it("orders by the day the plot starts", () => {
-    assert.deepEqual(ids(sortHabits(ROWS, "first", "asc")), ["a", "b", "c", "d"]);
-  });
-
   it("sinks the empty rows whichever way the arrow points", () => {
-    for (const key of ["interval", "first", "last"] as const) {
+    for (const key of ["interval", "last"] as const) {
       for (const direction of ["asc", "desc"] as const) {
         assert.equal(
           ids(sortHabits(ROWS, key, direction)).at(-1),
@@ -519,7 +526,7 @@ describe("sortHabits", () => {
   });
 
   it("handles every key without throwing on an empty table", () => {
-    const keys: HabitSortKey[] = ["area", "count", "interval", "first", "last"];
+    const keys: HabitSortKey[] = ["area", "count", "interval", "last"];
     for (const key of keys) {
       assert.deepEqual(sortHabits([], key, "asc"), []);
     }
@@ -572,3 +579,321 @@ describe("pageOf", () => {
     assert.deepEqual(seen, rows);
   });
 });
+
+describe("plotGrain", () => {
+  it("gives a block a day for anything up to a month", () => {
+    // The picker's whole short half — this week, last 7, this month, last 30 —
+    // lands here, which is the case the user asked for by name.
+    assert.equal(plotGrain(1), "day");
+    assert.equal(plotGrain(7), "day");
+    assert.equal(plotGrain(30), "day");
+    assert.equal(plotGrain(31), "day");
+  });
+
+  it("gives a block a week from a month up to a year", () => {
+    assert.equal(plotGrain(32), "week");
+    assert.equal(plotGrain(90), "week");
+    assert.equal(plotGrain(365), "week");
+    assert.equal(plotGrain(366), "week");
+  });
+
+  it("gives a block a month past a year", () => {
+    // The other case the user named: longer than a year is drawn in months.
+    assert.equal(plotGrain(367), "month");
+    assert.equal(plotGrain(1827), "month");
+  });
+
+  it("gives a block a year past five of them", () => {
+    assert.equal(plotGrain(1828), "year");
+    assert.equal(plotGrain(3650), "year");
+  });
+});
+
+describe("plotBlocks · day grain", () => {
+  const window = habitWindow(
+    { from: "2026-09-01", to: "2026-09-10" },
+    "2026-09-12",
+    null,
+  );
+
+  it("draws one block per day, covering the window exactly", () => {
+    const blocks = plotBlocks(window, []);
+    assert.equal(blocks.length, 10);
+    assert.equal(blocks[0].from, "2026-09-01");
+    assert.equal(blocks.at(-1)!.to, "2026-09-10");
+    assert.deepEqual([...new Set(blocks.map((b) => b.days))], [1]);
+  });
+
+  it("puts a hit in the block its day falls in", () => {
+    const blocks = plotBlocks(window, [{ offset: 3, count: 1 }]);
+    assert.deepEqual(
+      blocks.filter((b) => b.marks > 0).map((b) => b.from),
+      ["2026-09-04"],
+    );
+  });
+
+  it("carries a day's whole count into its block", () => {
+    const blocks = plotBlocks(window, [{ offset: 0, count: 3 }]);
+    assert.equal(blocks[0].marks, 3);
+  });
+
+  it("leaves every block at zero when there is nothing to place", () => {
+    assert.deepEqual(
+      [...new Set(plotBlocks(window, []).map((b) => b.marks))],
+      [0],
+    );
+  });
+});
+
+describe("plotBlocks · week grain", () => {
+  // 1 Sep 2026 is a Tuesday, so the first block is a short one — which is the
+  // point of cutting on the calendar rather than from the window's own start.
+  const window = habitWindow(
+    { from: "2026-09-01", to: "2026-11-30" },
+    "2026-12-01",
+    null,
+  );
+
+  it("starts every block after the first on a Sunday", () => {
+    const blocks = plotBlocks(window, []);
+    for (const block of blocks.slice(1)) {
+      assert.equal(startOfWeekString(block.from), block.from, block.from);
+    }
+  });
+
+  it("clips the first and last blocks to the window", () => {
+    const blocks = plotBlocks(window, []);
+    assert.equal(blocks[0].from, "2026-09-01");
+    assert.equal(blocks[0].days, 5); // Tue to Sat
+    assert.equal(blocks.at(-1)!.to, "2026-11-30");
+    assert.equal(blocks.at(-1)!.days, 2); // the Sunday and the Monday
+  });
+
+  it("covers the window with no gap and no overlap", () => {
+    assertCovers(plotBlocks(window, []), window.from, window.to, window.days);
+  });
+
+  it("deals marks into the week they fall in", () => {
+    // Offsets 0 (Tue 1 Sep, the short first block) and 5 (Sun 6 Sep, the
+    // second), which is the boundary the calendar cut puts between them.
+    const blocks = plotBlocks(window, [
+      { offset: 0, count: 1 },
+      { offset: 5, count: 2 },
+    ]);
+    assert.equal(blocks[0].marks, 1);
+    assert.equal(blocks[1].marks, 2);
+    assert.equal(blocks[1].from, "2026-09-06");
+  });
+});
+
+describe("plotBlocks · month grain", () => {
+  // Fifteen months, which is what it takes to get past the week grain's year —
+  // and it crosses two year ends, which is where string arithmetic on the month
+  // digits would go wrong if it were going to.
+  const window = habitWindow(
+    { from: "2025-11-14", to: "2027-02-03" },
+    "2027-02-03",
+    null,
+  );
+
+  it("starts every block after the first on the 1st", () => {
+    const blocks = plotBlocks(window, []);
+    assert.equal(blocks.length, 16);
+    assert.deepEqual(blocks.slice(0, 4).map((b) => b.from), [
+      "2025-11-14",
+      "2025-12-01",
+      "2026-01-01",
+      "2026-02-01",
+    ]);
+    for (const block of blocks.slice(1)) {
+      assert.equal(block.from.slice(8), "01", block.from);
+    }
+  });
+
+  it("rolls December into the next January", () => {
+    const blocks = plotBlocks(window, []);
+    assert.deepEqual(blocks.slice(13).map((b) => b.from), [
+      "2026-12-01",
+      "2027-01-01",
+      "2027-02-01",
+    ]);
+  });
+
+  it("clips both ends and counts the rest whole", () => {
+    const blocks = plotBlocks(window, []);
+    assert.equal(blocks[0].days, 17); // the 14th to the 30th
+    assert.equal(blocks[1].days, 31); // December, entire
+    assert.equal(blocks.at(-1)!.days, 3); // the 1st to the 3rd
+    assertCovers(blocks, window.from, window.to, window.days);
+  });
+
+  it("deals a mark into the month it falls in", () => {
+    // Offset 17 is 1 Dec 2025, the first day of the second block.
+    const blocks = plotBlocks(window, [{ offset: 17, count: 2 }]);
+    assert.equal(blocks[1].marks, 2);
+    assert.equal(blocks[0].marks, 0);
+  });
+});
+
+describe("plotBlocks · year grain", () => {
+  const window = habitWindow(
+    { from: "2020-06-15", to: "2026-09-12" },
+    "2026-09-12",
+    null,
+  );
+
+  it("cuts on 1 January", () => {
+    const blocks = plotBlocks(window, []);
+    assert.deepEqual(
+      blocks.map((b) => b.from),
+      [
+        "2020-06-15",
+        "2021-01-01",
+        "2022-01-01",
+        "2023-01-01",
+        "2024-01-01",
+        "2025-01-01",
+        "2026-01-01",
+      ],
+    );
+    assertCovers(blocks, window.from, window.to, window.days);
+  });
+
+  it("counts a leap year as 366 days", () => {
+    const blocks = plotBlocks(window, []);
+    assert.equal(blocks[4].from, "2024-01-01");
+    assert.equal(blocks[4].days, 366);
+  });
+});
+
+describe("plotBlocks · edges", () => {
+  it("draws a one-day window as a single block", () => {
+    const window = habitWindow(
+      { from: "2026-09-12", to: "2026-09-12" },
+      "2026-09-12",
+      null,
+    );
+    const blocks = plotBlocks(window, [{ offset: 0, count: 1 }]);
+    assert.equal(blocks.length, 1);
+    assert.deepEqual(blocks[0], {
+      from: "2026-09-12",
+      to: "2026-09-12",
+      days: 1,
+      marks: 1,
+    });
+  });
+
+  it("drops a hit that lands outside the window rather than clamping it", () => {
+    // Can't happen from `habitTable`, which only ever records days inside the
+    // window. Asserted because the alternative — piling a stray offset onto
+    // the last block — would draw a habit as busier than it was.
+    const window = habitWindow(
+      { from: "2026-09-01", to: "2026-09-10" },
+      "2026-09-12",
+      null,
+    );
+    const blocks = plotBlocks(window, [{ offset: 40, count: 1 }]);
+    assert.deepEqual([...new Set(blocks.map((b) => b.marks))], [0]);
+  });
+
+  it("keeps every mark when several land in one block", () => {
+    const window = habitWindow(
+      { from: "2026-01-01", to: "2026-12-31" },
+      "2026-12-31",
+      null,
+    );
+    const hits = [0, 1, 2, 3].map((offset) => ({ offset, count: 1 }));
+    const blocks = plotBlocks(window, hits);
+    assert.equal(
+      blocks.reduce((sum, block) => sum + block.marks, 0),
+      4,
+    );
+  });
+});
+
+describe("blockLevel", () => {
+  const block = (marks: number, days: number): PlotBlock => ({
+    from: "2026-09-01",
+    to: "2026-09-01",
+    days,
+    marks,
+  });
+
+  it("draws an empty block as empty", () => {
+    assert.equal(blockLevel(block(0, 1)), 0);
+    assert.equal(blockLevel(block(0, 30)), 0);
+  });
+
+  it("needs two marks on a single day to go heavy", () => {
+    // The strip's own rule, kept so that a day block means what it always
+    // meant.
+    assert.equal(blockLevel(block(1, 1)), 1);
+    assert.equal(blockLevel(block(2, 1)), 2);
+  });
+
+  it("asks a week for half its days, not all of them", () => {
+    assert.equal(blockLevel(block(3, 7)), 1);
+    assert.equal(blockLevel(block(4, 7)), 2);
+  });
+
+  it("scales the bar with the block, so a month asks for about fifteen", () => {
+    assert.equal(blockLevel(block(14, 30)), 1);
+    assert.equal(blockLevel(block(15, 30)), 2);
+  });
+
+  it("reads a clipped block against the days it actually covers", () => {
+    // A "this month" window on the 13th ends in a 13-day block. Seven marks in
+    // it is a hard fortnight and has to draw like one, which is what clipping
+    // `days` to the window buys.
+    assert.equal(blockLevel(block(7, 13)), 2);
+    assert.equal(blockLevel(block(7, 30)), 1);
+  });
+
+  it("judges each block on its own, never against the row's busiest", () => {
+    // Two rows, same block, same answer — which is what makes a column of
+    // plots comparable down the page.
+    assert.equal(blockLevel(block(4, 7)), blockLevel(block(4, 7)));
+  });
+});
+
+/**
+ * The Sunday on or before a day, worked out here rather than imported.
+ *
+ * `startOfWeek` is not exported from `lib/habits.ts` and shouldn't be — it is
+ * `lib/daymath.ts`'s — but importing a second module into this test would add a
+ * resolution path for no gain. Three lines of string arithmetic against a known
+ * anchor is the cheaper assertion.
+ */
+function startOfWeekString(day: string): string {
+  const anchor = Date.UTC(2026, 8, 6); // Sunday 6 Sep 2026
+  const [y, m, d] = day.split("-").map(Number);
+  const at = Date.UTC(y, m - 1, d);
+  const back = Math.floor((at - anchor) / 86_400_000) % 7;
+  const shift = ((back % 7) + 7) % 7;
+  const sunday = new Date(at - shift * 86_400_000);
+  return sunday.toISOString().slice(0, 10);
+}
+
+/**
+ * The blocks cover the window once: no gap, no overlap, no day lost at an edge.
+ *
+ * The invariant every grain shares, and the one that would actually break if
+ * `nextBoundary` were wrong about a month or a leap year — a drawing with a
+ * missing week in it looks like a quiet week.
+ */
+function assertCovers(
+  blocks: PlotBlock[],
+  from: string,
+  to: string,
+  days: number,
+) {
+  assert.equal(blocks[0].from, from);
+  assert.equal(blocks.at(-1)!.to, to);
+  assert.equal(
+    blocks.reduce((sum, block) => sum + block.days, 0),
+    days,
+  );
+  for (let i = 1; i < blocks.length; i++) {
+    assert.ok(blocks[i - 1].to < blocks[i].from, `${i} overlaps`);
+  }
+}

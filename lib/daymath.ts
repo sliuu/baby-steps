@@ -9,14 +9,15 @@ import type { DayString } from "@/lib/dates";
  *
  * `lib/dates.ts` is the app's date module and it is the right one to reach for
  * nearly everywhere. It cannot be reached from here: it imports `date-fns`, and
- * the modules that need this arithmetic — `lib/heatmap.ts`, `lib/analytics.ts` —
+ * the modules that need this arithmetic — `lib/analytics.ts`, `lib/habits.ts` —
  * run under `node --test`, where the only resolvable imports are relative paths
  * with a literal extension into modules that themselves import nothing.
  *
  * So this exists as the bundler-free half: no formatting, no locale, no `Date`
- * left in the return type. It moved out of `lib/heatmap.ts` when the mood series
- * became the second caller, which is the same rule `polar` and `firstGrapheme`
- * moved under — on the second caller, not in anticipation of one.
+ * left in the return type. It moved out of the since-deleted `lib/heatmap.ts`
+ * when the mood series became the second caller, which is the same rule `polar`
+ * and `firstGrapheme` moved under — on the second caller, not in anticipation
+ * of one.
  *
  * **Everything here is UTC, and that is not an implementation detail.** A
  * `DayString` is a calendar square, not an instant: "2026-03-29" is one cell on
