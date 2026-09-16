@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-
+import { BottomNav } from "@/components/BottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useSection } from "@/components/useSection";
 import { CalendarViewProvider } from "@/components/calendar/viewMode";
 import { PAGE_WIDTH, segment } from "@/lib/layout";
-import { isCalendar, PAGES, type Page } from "@/lib/nav";
+import { isCalendar, PAGES } from "@/lib/nav";
 
 type Props = {
   calendar: React.ReactNode;
@@ -15,7 +15,7 @@ type Props = {
 /**
  * `AppShell` for somebody who hasn't signed in.
  *
- * The same three sections, the same switcher, the same layout — and it is a
+ * The same four sections, the same switcher, the same layout — and it is a
  * separate file rather than a flag on `AppShell` for one reason: the two
  * differ in the nav, and only in the nav. `AppShell` takes a `SessionUser` and
  * hands it to `UserMenu`; there is no user here, and threading an optional one
@@ -29,10 +29,10 @@ type Props = {
  * all that ships to the browser.
  */
 export function DemoShell(props: Props) {
-  const [page, setPage] = useState<Page>("month");
+  const [page, setPage] = useSection();
 
   return (
-    <CalendarViewProvider view={page === "week" ? "week" : "month"}>
+    <CalendarViewProvider view={isCalendar(page) ? page : "month"}>
       {/* Above the sticky header rather than inside it, and it scrolls away.
           A banner is an answer to "what am I looking at", which is a question
           you have once, on arrival — pinning it to the top of the window would
@@ -51,7 +51,9 @@ export function DemoShell(props: Props) {
         <nav className={`${PAGE_WIDTH} flex h-16 items-center gap-6`}>
           <span className="font-heading text-panel-title">Baby Steps</span>
 
-          <div className="flex flex-1 justify-center">
+          {/* Hidden below 64rem, where the bottom bar takes over. Same
+              breakpoint and same reason as `TopNav`. */}
+          <div className="hidden flex-1 justify-center lg:flex">
             <div className="flex items-center gap-1">
               {PAGES.map(({ id, label, href }) => {
                 const active = id === page;
@@ -73,7 +75,7 @@ export function DemoShell(props: Props) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             {/* A real navigation, not a router push: leaving the demo should
                 drop everything in it, and a full load is the cheapest way to
@@ -88,9 +90,12 @@ export function DemoShell(props: Props) {
         </nav>
       </header>
 
-      <main className={`${PAGE_WIDTH} flex-1 py-10`}>
+      {/* The bottom padding clears the phone's fixed bar — see `AppShell`. */}
+      <main className={`${PAGE_WIDTH} flex-1 pt-10 pb-24 lg:pb-10`}>
         {isCalendar(page) ? props.calendar : props.trends}
       </main>
+
+      <BottomNav page={page} onPageChange={setPage} />
     </CalendarViewProvider>
   );
 }

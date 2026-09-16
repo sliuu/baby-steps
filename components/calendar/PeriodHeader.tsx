@@ -3,11 +3,18 @@ import { ViewTransition } from "react";
 
 import type { CalendarViewMode } from "./period";
 
+/**
+ * The two periods you can step through. The day view has no arrows — it steps
+ * by tapping a date in its own week strip — and the type says so, which is
+ * what stops the arrows ever being labelled "Previous today".
+ */
+type SteppablePeriod = Exclude<CalendarViewMode, "today">;
+
 type Props = {
   /** "August 2026", or "9 – 15 August 2026". */
   title: string;
   /** Read-only here. It names the unit in the arrows, nothing more. */
-  view: CalendarViewMode;
+  view: SteppablePeriod;
   onStep: (by: number) => void;
 };
 
@@ -93,7 +100,7 @@ export function PeriodHeader(props: Props) {
 type ArrowProps = {
   direction: "previous" | "next";
   /** Named in the label, because "Next" alone doesn't say next *what*. */
-  unit: CalendarViewMode;
+  unit: SteppablePeriod;
   onClick: () => void;
 };
 

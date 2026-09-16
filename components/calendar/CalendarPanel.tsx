@@ -12,8 +12,10 @@ import { startOfMonth } from "date-fns";
 
 import { MonthGrid } from "./MonthGrid";
 import { PeriodHeader } from "./PeriodHeader";
+import { TodayView } from "./TodayView";
 import { WeekGrid } from "./WeekGrid";
 import type { CalendarViewMode, PeriodProps } from "./period";
+import type { LibraryGroup } from "@/lib/queries/activities";
 import {
   formatMonthTitle,
   formatWeekTitle,
@@ -29,6 +31,15 @@ import {
 type Props = Omit<PeriodProps, "todayString"> & {
   /** "2026-08", computed on the server so first paint isn't blank. */
   initialMonth: string;
+  /**
+   * The sticker library, for the day view's picker and nothing else.
+   *
+   * Deliberately not in `PeriodProps`: the month and the week draw the stickers
+   * that are *on* the days they show, and have no business knowing what else
+   * exists. The day view is the one place in the calendar you add from, so it
+   * is the one place the catalogue has to reach.
+   */
+  groups: LibraryGroup[];
   /**
    * Which view is showing. It arrives from `CalendarBoard`, which reads it off
    * the top nav — the panel neither owns it nor changes it. There is nothing in
@@ -92,6 +103,20 @@ export function CalendarPanel(props: Props) {
   const week = props.view === "week";
   const month = useMemo(() => startOfMonth(anchor), [anchor]);
 
+  // Named one by one rather than spread from `props`, which also carries
+  // `view` and `initialMonth` — two things a grid has no business seeing. A
+  // JSX spread is not excess-property checked, so those would arrive silently.
+  const passthrough: PeriodProps = {
+    stickersByDay: props.stickersByDay,
+    onOpenDay: props.onOpenDay,
+    onCommit: props.onCommit,
+    highlight: props.highlight,
+    target: props.target,
+    caret: props.caret,
+    landed: props.landed,
+    todayString,
+  };
+
   const title = week ? formatWeekTitle(anchor) : formatMonthTitle(month);
   // The key React watches to decide there is something to animate between. It
   // carries the view as well as the period, so switching Month to Week is a
@@ -130,19 +155,20 @@ export function CalendarPanel(props: Props) {
     });
   };
 
-  // Named one by one rather than spread from `props`, which also carries
-  // `view` and `initialMonth` — two things a grid has no business seeing. A JSX spread is not excess-property checked, so those
-  // would arrive silently.
-  const passthrough: PeriodProps = {
-    stickersByDay: props.stickersByDay,
-    onOpenDay: props.onOpenDay,
-    onCommit: props.onCommit,
-    highlight: props.highlight,
-    target: props.target,
-    caret: props.caret,
-    landed: props.landed,
-    todayString,
-  };
+  // The day view draws its own masthead and steps by tapping a date in its own
+  // strip, so it takes neither the period header nor the deck transition — it
+  // shares only the anchor, which is what keeps "where you were looking"
+  // intact when you switch to Week or Month and back.
+  if (props.view === "today") {
+    return (
+      <TodayView
+        anchor={anchor}
+        onPickDay={setChosenDay}
+        groups={props.groups}
+        {...passthrough}
+      />
+    );
+  }
 
   return (
     <section className="flex flex-col gap-6" data-period={periodKey}>

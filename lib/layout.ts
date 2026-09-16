@@ -54,8 +54,18 @@
  *
  * `mx-auto` is load-bearing again now that there is something to centre
  * within.
+ *
+ * **The gutter is two numbers now, and the smaller one is the phone's.** 40px
+ * either side of a 375px screen leaves 295px of page, which is a fifth of the
+ * width spent on margin — enough that the day strip's seven columns stop
+ * fitting and a sticker name starts truncating at four words. 20px is the
+ * narrow value; the wide one is unchanged and takes over at the same
+ * breakpoint the top nav swaps its pill for the bottom bar, so the page's
+ * margin and the page's navigation change shape together rather than 200px
+ * apart.
  */
-export const PAGE_WIDTH = "mx-auto w-full max-w-(--breakpoint-2xl) px-10";
+export const PAGE_WIDTH =
+  "mx-auto w-full max-w-(--breakpoint-2xl) px-5 lg:px-10";
 
 /**
  * The tray's own gutter, and the same problem one level down.

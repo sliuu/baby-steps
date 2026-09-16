@@ -14,8 +14,17 @@ import type { StickersByDay } from "@/lib/stickers";
  * disagreeing about what a drop target is.
  */
 
-/** Month grid or week strip. The calendar shows one of the two. */
-export type CalendarViewMode = "month" | "week";
+/**
+ * Month grid, week strip, or one day. The calendar shows one of the three.
+ *
+ * These are the same three strings as `CalendarPage` in `lib/nav.ts`, and that
+ * is on purpose rather than a coincidence to be tidied away behind a mapping
+ * table: the nav names the view, so a section and a view mode are one idea seen
+ * from two files. They are declared twice because the dependency only runs one
+ * way — a grid may not import the nav, and the nav must not know that a
+ * calendar exists.
+ */
+export type CalendarViewMode = "month" | "week" | "today";
 
 /**
  * The one mark that just arrived, if any.

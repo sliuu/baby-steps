@@ -549,11 +549,12 @@ export function CalendarBoard(props: Props) {
    *
    * The week columns are wide enough to spell the activity out, so that is what
    * they draw — and the overlay has to agree, or you'd be carrying a circle
-   * towards a row of bars. Moods stay a circle in both views: a mood belongs to
-   * the day rather than to the stack inside it, and it sits in the day's header
-   * either way.
+   * towards a row of bars. The day view draws bars too, at full width, so the
+   * test is "not the month" rather than "the week". Moods stay a circle in all
+   * three: a mood belongs to the day rather than to the stack inside it, and it
+   * sits in the day's header either way.
    */
-  const bar = view === "week" && dragging?.kind === "activity";
+  const bar = view !== "month" && dragging?.kind === "activity";
 
   return (
     <DndContext
@@ -587,6 +588,10 @@ export function CalendarBoard(props: Props) {
           <CalendarPanel
             initialMonth={toMonthString(new Date())}
             view={view}
+            // For the day view's picker only. The tray gets the same list
+            // below — one query, two surfaces onto it, which is the point of
+            // the library living up here rather than in either of them.
+            groups={props.groups}
             stickersByDay={stickersByDay}
             onOpenDay={setOpenDay}
             onCommit={commit}
