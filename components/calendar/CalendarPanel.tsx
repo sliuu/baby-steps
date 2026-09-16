@@ -10,6 +10,7 @@ import {
 } from "react";
 import { startOfMonth } from "date-fns";
 
+import { MonthDots } from "./MonthDots";
 import { MonthGrid } from "./MonthGrid";
 import { PeriodHeader } from "./PeriodHeader";
 import { TodayView } from "./TodayView";
@@ -35,12 +36,15 @@ type Props = Omit<PeriodProps, "todayString"> & {
   /** "2026-08", computed on the server so first paint isn't blank. */
   initialMonth: string;
   /**
-   * The sticker library, for the day view's picker and nothing else.
+   * The sticker library: the day view's picker, and the phone month's areas.
    *
-   * Deliberately not in `PeriodProps`: the month and the week draw the stickers
-   * that are *on* the days they show, and have no business knowing what else
-   * exists. The day view is the one place in the calendar you add from, so it
-   * is the one place the catalogue has to reach.
+   * Deliberately not in `PeriodProps`, and the reason has survived a second
+   * tenant. The grids draw the stickers that are *on* the days they show and
+   * have no business knowing what else exists; the two places that need the
+   * catalogue need it for something other than drawing a day. The day view is
+   * where you add from. `MonthDots` counts areas touched, and a placement
+   * carries its hue but not the area it came from — the map from one to the
+   * other only exists here.
    */
   groups: LibraryGroup[];
   /**
@@ -224,6 +228,13 @@ export function CalendarPanel(props: Props) {
           ) : (
             <WeekGrid anchor={anchor} {...passthrough} />
           )
+        ) : narrow ? (
+          <MonthDots
+            month={month}
+            groups={props.groups}
+            onShowDay={showDay}
+            {...passthrough}
+          />
         ) : (
           <MonthGrid month={month} {...passthrough} />
         )}
