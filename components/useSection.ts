@@ -58,3 +58,32 @@ export function useSection(): [Page, (page: Page) => void] {
 
   return [chosen ?? (wide === false ? "today" : "month"), setChosen];
 }
+
+/**
+ * Whether the window is narrower than a tray-and-calendar layout needs.
+ *
+ * The same measurement `useSection` makes, asked as a yes-or-no by the two
+ * views that draw themselves differently on a phone. It is a *second* hook
+ * rather than a second return value because the two answers are used in
+ * different places for different reasons: `useSection` picks a landing
+ * section once, at the top of the app; this decides, every render, which of
+ * two drawings of the same week or month to render. Nothing reads both.
+ *
+ * **The server value is `true` — wide — and that is not a default, it is the
+ * hydration contract.** The markup that reaches the browser was drawn by a
+ * machine with no width, which `useSection` resolves as the wide case and the
+ * calendar resolves as the month grid. A hook that answered "narrow" during
+ * hydration would hand a boundary still holding that markup a different
+ * drawing to reconcile against it, which is the failure `useCalendarView`
+ * documents at length. So this agrees with the server until the commit after
+ * hydration, and tells the truth from then on.
+ */
+export function useNarrow(): boolean {
+  const wide = useSyncExternalStore(
+    subscribe,
+    () => media().matches, // browser: the real window
+    () => true, // server and hydration: what the markup was drawn for
+  );
+
+  return !wide;
+}

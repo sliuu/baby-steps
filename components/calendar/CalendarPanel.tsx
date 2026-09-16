@@ -14,7 +14,10 @@ import { MonthGrid } from "./MonthGrid";
 import { PeriodHeader } from "./PeriodHeader";
 import { TodayView } from "./TodayView";
 import { WeekGrid } from "./WeekGrid";
+import { WeekList } from "./WeekList";
+import { useSetCalendarView } from "./viewMode";
 import type { CalendarViewMode, PeriodProps } from "./period";
+import { useNarrow } from "@/components/useSection";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import {
   formatMonthTitle,
@@ -85,6 +88,13 @@ export function CalendarPanel(props: Props) {
     () => null, // server and hydration: we don't know yet
   );
 
+  // Which drawing of a period this window can hold. Narrow gets the phone's
+  // week and month; wide gets the seven columns and the forty-two cells. The
+  // hook agrees with the server's markup until hydration is done — see
+  // `useNarrow`, and `useCalendarView` for the failure that rule prevents.
+  const narrow = useNarrow();
+  const setView = useSetCalendarView();
+
   // Null until an arrow is pressed. While it's null the calendar follows the
   // clock, so a visitor who leaves the tab open overnight isn't stranded in
   // last month.
@@ -99,6 +109,21 @@ export function CalendarPanel(props: Props) {
       ? fromDayString(todayString)
       : fromMonthString(props.initialMonth);
   }, [chosenDay, todayString, props.initialMonth]);
+
+  /**
+   * Open one day, from the week list or the month grid.
+   *
+   * Two things at once, and they belong together: move the anchor, then ask
+   * the nav for the day view. The anchor is this component's own state and the
+   * section is the shell's, which is why the second half arrives through a
+   * context — see `useSetCalendarView`. Nothing in here can tell whether the
+   * view actually changed, and it doesn't need to: at a wide window the taps
+   * that call this don't exist.
+   */
+  const showDay = (day: Date) => {
+    setChosenDay(day);
+    setView("today");
+  };
 
   const week = props.view === "week";
   const month = useMemo(() => startOfMonth(anchor), [anchor]);
@@ -194,7 +219,11 @@ export function CalendarPanel(props: Props) {
         default="none"
       >
         {week ? (
-          <WeekGrid anchor={anchor} {...passthrough} />
+          narrow ? (
+            <WeekList anchor={anchor} onShowDay={showDay} {...passthrough} />
+          ) : (
+            <WeekGrid anchor={anchor} {...passthrough} />
+          )
         ) : (
           <MonthGrid month={month} {...passthrough} />
         )}

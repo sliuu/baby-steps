@@ -25,6 +25,26 @@ import type { CalendarViewMode } from "./period";
 const ViewModeContext = createContext<CalendarViewMode>("month");
 
 /**
+ * The way back up. Tapping a day in the week list or the month grid should
+ * *open* that day, and opening a day means changing a nav section two
+ * components above this one — the same seam `ViewModeContext` crosses, in the
+ * other direction.
+ *
+ * A second context rather than an object on the first, because the two have
+ * different readerships and different re-render costs: every calendar reads
+ * the view on every render, and exactly one of them ever needs the setter. A
+ * `{ view, setView }` value would be a new object each render of the shell,
+ * which is a re-render for all of them to deliver a function to one.
+ *
+ * The default is a no-op for the same reason the view defaults to `month`: a
+ * calendar rendered outside the shell is a test or a story, and the honest
+ * answer there is that tapping a day does nothing, not that it throws.
+ */
+const SetViewContext = createContext<(view: CalendarViewMode) => void>(
+  () => {},
+);
+
+/**
  * What the server drew, and therefore what the browser must hydrate against.
  *
  * The shell has no width on the server, so `useSection` lands on the month and
@@ -38,11 +58,27 @@ const noSubscription = () => () => {};
 
 export function CalendarViewProvider(props: {
   view: CalendarViewMode;
+  /** Usually the shell's own `setPage`. The three view modes are three of its
+   *  four pages, so it needs no adapter. */
+  onChangeView: (view: CalendarViewMode) => void;
   children: React.ReactNode;
 }) {
   return (
-    <ViewModeContext value={props.view}>{props.children}</ViewModeContext>
+    <ViewModeContext value={props.view}>
+      <SetViewContext value={props.onChangeView}>
+        {props.children}
+      </SetViewContext>
+    </ViewModeContext>
   );
+}
+
+/**
+ * Ask the nav for a different calendar. No hydration gate on this one — it is
+ * a function, not a value, so there is no markup for it to disagree with, and
+ * by the time anyone can press something the page has hydrated anyway.
+ */
+export function useSetCalendarView(): (view: CalendarViewMode) => void {
+  return useContext(SetViewContext);
 }
 
 /**

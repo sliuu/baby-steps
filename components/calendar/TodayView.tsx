@@ -19,6 +19,7 @@ import {
 import { dayMatches } from "@/lib/highlight";
 import { MOOD_LABEL, MOODS } from "@/lib/moods";
 import type { LibraryGroup } from "@/lib/queries/activities";
+import { PAGE_TITLE } from "@/lib/layout";
 import { ramp, wash } from "@/lib/palette";
 import { NO_STICKERS } from "@/lib/stickers";
 
@@ -137,7 +138,7 @@ export function TodayView(props: Props) {
             for the reason `PeriodHeader` documents: this size sets a line box
             no taller than the em, and Instrument Serif's descenders hang below
             it. "13 September" has a p in it. */}
-        <h1 className="-my-[0.125em] mt-1 font-heading text-page-title leading-[1.25]">
+        <h1 className={`-my-[0.125em] mt-1 leading-[1.25] ${PAGE_TITLE}`}>
           {formatDayTitle(day)}
         </h1>
       </header>

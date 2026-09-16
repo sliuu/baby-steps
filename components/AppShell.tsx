@@ -36,7 +36,13 @@ export function AppShell(props: Props) {
     // `<main>` rather than the calendar alone because `props.calendar` is a
     // node, not a component: there is nothing here to wrap it in that isn't
     // this.
-    <CalendarViewProvider view={isCalendar(page) ? page : "month"}>
+    <CalendarViewProvider
+      view={isCalendar(page) ? page : "month"}
+      // Tapping a day in the week list or the month grid opens it, and
+      // "opens it" means this. The three view modes are three of the four
+      // pages, so the setter goes down unadapted.
+      onChangeView={setPage}
+    >
       <TopNav page={page} onPageChange={setPage} user={props.user} />
       {/* 40px of top padding and not the old 56px. The target is a 14"
           laptop: 64px of nav plus 80px of padding leaves the page 144px to pay
