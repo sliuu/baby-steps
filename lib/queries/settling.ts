@@ -20,7 +20,7 @@
  * projects, and the token is already minted by the time any code here runs. The
  * one thing that does work is waiting: the token becomes valid on its own, at
  * the latest when the verifier's clock passes `iat`. So this waits and asks
- * again, twice, and only for this.
+ * again, four times, and only for this.
  *
  * Deliberately not a general-purpose retry. A retry that swallows *any* failure
  * turns a real broken query into a slow real broken query, and hides the
@@ -52,8 +52,30 @@ const SETTLING = /jwt\s*issued\s*at\s*future|jwtissuedatfuture|not\s*yet\s*valid
  * attempt up front plus one per entry here. Exported so the test can mirror the
  * real retry budget at zero delay rather than hardcoding a count beside it —
  * change this array and the test still asserts the right number of attempts.
+ *
+ * **It was `[350, 900]` and that was too short.** A sign-in on the deployed site
+ * hung and then failed with `Could not load notes: JWT issued at future`, which
+ * is this exact error arriving *after* the retries had run — so the drift was
+ * wider than the 1.25s of waiting the pair allowed for. The note above reasons
+ * from `iat` rounding, where a few hundred milliseconds of drift is enough to
+ * put the stamp one second ahead; what that reasoning missed is that the
+ * underlying clocks can be further apart than the rounding, and then the token
+ * is several seconds early rather than one.
+ *
+ * Six seconds of total waiting, then. The ceiling is a judgement rather than a
+ * measurement — the log line says the drift is over 1.25s and doesn't say how
+ * far over — and six is where two managed services being out of step stops being
+ * a race to absorb and starts being an infrastructure fault that should surface
+ * rather than be papered over.
+ *
+ * **Widening this is close to free, which is the reason it can be this
+ * generous.** The loop returns the moment an error isn't a settling one, and a
+ * successful query never enters it at all, so none of these waits are on the
+ * path that works. They only lengthen the path that currently ends in a broken
+ * page — and that path ends inside a `<Suspense>` boundary showing a skeleton,
+ * so the trade is a few more seconds of skeleton against a page that loads.
  */
-export const BACKOFF_MS = [350, 900];
+export const BACKOFF_MS = [350, 900, 1800, 3000];
 
 /**
  * Run a query, and give a token that is a second ahead of its verifier the
