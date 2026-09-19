@@ -43,10 +43,6 @@ export function AppShell(props: Props) {
       // Null travels down as null: the calendar draws both landings and
       // hides one, exactly as it does for the week and the month.
       view={page === null || isCalendar(page) ? page : "month"}
-      // Tapping a day in the week list or the month grid opens it, and
-      // "opens it" means this. The three view modes are three of the four
-      // pages, so the setter goes down unadapted.
-      onChangeView={setPage}
     >
       <TopNav page={page} onPageChange={setPage} user={props.user} />
       {/* 40px of top padding and not the old 56px. The target is a 14"

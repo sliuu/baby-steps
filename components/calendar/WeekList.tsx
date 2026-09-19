@@ -14,7 +14,7 @@ import { NO_STICKERS } from "@/lib/stickers";
 type Props = PeriodProps & {
   /** Any day inside the week being shown. `weekGrid` finds the Sunday. */
   anchor: Date;
-  /** Open one day. `CalendarPanel` moves the anchor and asks for Today. */
+  /** Open the day's sheet. `CalendarPanel` owns it — see `DaySheet`. */
   onShowDay: (day: Date) => void;
   /**
    * Which widths this drawing is for. `CalendarPanel` renders both the phone's
@@ -52,12 +52,16 @@ type Props = PeriodProps & {
  * week of notes is seven paragraphs, which is a different screen. And nothing
  * in here is draggable, so there are no slots and no caret.
  *
- * **A row is one tap target and it opens the day.** Not a sheet, and not
- * remove-on-tap: the day view is already the place this app adds and removes
- * things, it is one tap away, and it is a whole screen rather than a 32px
- * circle next to six of its neighbours. So the week is a way of finding a day,
- * and the day is where you change it. That also means a row has exactly one
- * gesture — there is nothing on it you can press by mistake and undo.
+ * **A row is one tap target and it opens the day's sheet.** Not remove-on-tap:
+ * a sticker here is a 32px circle with six neighbours, and the one gesture a
+ * row offers should not be one you can fire by mistake and have to undo. So the
+ * week is a way of finding a day, and the sheet is where you change it.
+ *
+ * It opens *over* the week rather than navigating to the day view, which is the
+ * one thing that changed here. Tapping Tuesday to add a sticker used to cost
+ * you the week you were reading; now the week is still behind the sheet, and
+ * closing it puts you back where you were with Tuesday's row already
+ * redrawn.
  *
  * The date column is 40px and fixed, so the seven numerals line up down the
  * left edge and the sticker areas all start at the same x. The mood is on the

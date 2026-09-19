@@ -589,6 +589,9 @@ export function CalendarBoard(props: Props) {
           <CalendarPanel
             initialDay={toDayString(new Date())}
             view={view}
+            // The day sheet's "New sticker" chip writes to the database, and
+            // the demo has none. Same omission the tray makes with its `+`.
+            local={props.local}
             // For the day view's picker only. The tray gets the same list
             // below — one query, two surfaces onto it, which is the point of
             // the library living up here rather than in either of them.

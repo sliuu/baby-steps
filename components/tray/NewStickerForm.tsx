@@ -25,6 +25,18 @@ type Props = {
    * form, and pinning the area would make it one.
    */
   defaultAreaId?: string;
+  /**
+   * Something else to press. The tray's `+` is a round icon button, and the
+   * day sheet's entry point is a dashed chip at the end of a wrapping row —
+   * same dialog, same action, different shape of doorway.
+   *
+   * A node rather than a `variant` prop, because the two triggers have nothing
+   * in common to parameterise: one is an icon, one is an icon and a word with a
+   * dashed edge, and the tray's carries three hover rules about the row it sits
+   * on. `DialogTrigger asChild` takes whatever it's handed, so the caller
+   * describing its own button is both shorter and honest about that.
+   */
+  trigger?: React.ReactNode;
 };
 
 /**
@@ -65,30 +77,32 @@ export function NewStickerForm(props: Props) {
             nudge would fix it for EB Garamond at one size and be wrong again in
             Georgia while the webfont is still loading. Drawn, it's centred by
             geometry in any font. */}
-        <Button
-          // Ghost and smaller on a heading, matching the eye beside it. The
-          // header's `+` keeps its outline: it's the one you're meant to find
-          // without hovering anything, and it has no neighbour to match.
-          variant={area ? "ghost" : "outline"}
-          size={area ? "icon-xs" : "icon-sm"}
-          // Six of these in a rail, all identical to a screen reader unless the
-          // area is in the name. Same problem the pencil had, same fix.
-          aria-label={area ? `New sticker in ${area.name}` : "New sticker"}
-          title={area ? `New sticker in ${area.name}` : "New sticker"}
-          // On a heading it fades in with the eye, off the same `group/row`.
-          // The header's `+` is always there — hiding the only unconditional
-          // way to add a sticker behind a hover would be hiding the feature.
-          className={
-            area
-              ? `shrink-0 self-center opacity-100
-                 [@media(hover:hover)]:opacity-0
-                 [@media(hover:hover)]:group-hover/row:opacity-100
-                 [@media(hover:hover)]:focus-visible:opacity-100`
-              : undefined
-          }
-        >
-          <Plus strokeWidth={1.5} />
-        </Button>
+        {props.trigger ?? (
+          <Button
+            // Ghost and smaller on a heading, matching the eye beside it. The
+            // header's `+` keeps its outline: it's the one you're meant to find
+            // without hovering anything, and it has no neighbour to match.
+            variant={area ? "ghost" : "outline"}
+            size={area ? "icon-xs" : "icon-sm"}
+            // Six of these in a rail, all identical to a screen reader unless the
+            // area is in the name. Same problem the pencil had, same fix.
+            aria-label={area ? `New sticker in ${area.name}` : "New sticker"}
+            title={area ? `New sticker in ${area.name}` : "New sticker"}
+            // On a heading it fades in with the eye, off the same `group/row`.
+            // The header's `+` is always there — hiding the only unconditional
+            // way to add a sticker behind a hover would be hiding the feature.
+            className={
+              area
+                ? `shrink-0 self-center opacity-100
+                   [@media(hover:hover)]:opacity-0
+                   [@media(hover:hover)]:group-hover/row:opacity-100
+                   [@media(hover:hover)]:focus-visible:opacity-100`
+                : undefined
+            }
+          >
+            <Plus strokeWidth={1.5} />
+          </Button>
+        )}
       </DialogTrigger>
 
       {/* No description, and `aria-describedby={undefined}` is what says that on
