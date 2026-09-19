@@ -82,6 +82,8 @@ type Props = Omit<PeriodProps, "todayString"> & {
    * See `LANDING_NARROW` in `lib/nav.ts`.
    */
   view: CalendarViewMode | null;
+  /** The last failed write. Passed through to the sheet, to be read aloud. */
+  error: string | null;
   /** The demo. Passed through to the sheet, which hides "New sticker" in it. */
   local?: boolean;
 };
@@ -388,6 +390,7 @@ export function CalendarPanel(props: Props) {
       groups={props.groups}
       stickersByDay={props.stickersByDay}
       onCommit={props.onCommit}
+      error={props.error}
       local={props.local}
     />
   );
