@@ -40,7 +40,7 @@ import type { Landed } from "@/components/calendar/period";
 import { useCalendarView } from "@/components/calendar/viewMode";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { applyChange, type CalendarChange } from "@/lib/changes";
-import { formatDayLong, toMonthString, type DayString } from "@/lib/dates";
+import { formatDayLong, toDayString, type DayString } from "@/lib/dates";
 import { buildHighlight, type Selection } from "@/lib/highlight";
 import { TRAY_INSET } from "@/lib/layout";
 import type { LibraryGroup } from "@/lib/queries/activities";
@@ -583,10 +583,11 @@ export function CalendarBoard(props: Props) {
             shrink below its content's width, so without it a wide grid would
             push the rail off the side instead of narrowing. */}
         <div className="min-w-0 flex-1">
-          {/* The server's month, so first paint isn't blank. CalendarPanel
-              corrects it on mount if the visitor's timezone disagrees. */}
+          {/* The server's day, so first paint isn't blank and isn't the 1st
+              of the month. CalendarPanel corrects it on mount if the visitor's
+              timezone disagrees — see `initialDay` there. */}
           <CalendarPanel
-            initialMonth={toMonthString(new Date())}
+            initialDay={toDayString(new Date())}
             view={view}
             // For the day view's picker only. The tray gets the same list
             // below — one query, two surfaces onto it, which is the point of

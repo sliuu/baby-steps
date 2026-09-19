@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { BottomNav } from "@/components/BottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useSection } from "@/components/useSection";
 import { CalendarViewProvider } from "@/components/calendar/viewMode";
 import { PAGE_WIDTH, segment } from "@/lib/layout";
-import { isCalendar, PAGES } from "@/lib/nav";
+import { isCalendar, LANDING_WIDE, PAGES, type Page } from "@/lib/nav";
 
 type Props = {
   calendar: React.ReactNode;
@@ -29,11 +30,16 @@ type Props = {
  * all that ships to the browser.
  */
 export function DemoShell(props: Props) {
-  const [page, setPage] = useSection();
+  // Null means "nothing pressed yet" — the mirror of `AppShell`, and the long
+  // note about why the landing section cannot be chosen in JavaScript is on
+  // `LANDING_NARROW` in `lib/nav.ts`.
+  const [page, setPage] = useState<Page | null>(null);
 
   return (
     <CalendarViewProvider
-      view={isCalendar(page) ? page : "month"}
+      // Null travels down as null: the calendar draws both landings and
+      // hides one, exactly as it does for the week and the month.
+      view={page === null || isCalendar(page) ? page : "month"}
       // Tapping a day in the week list or the month grid opens it, and
       // "opens it" means this. The three view modes are three of the four
       // pages, so the setter goes down unadapted.
@@ -62,7 +68,9 @@ export function DemoShell(props: Props) {
           <div className="hidden flex-1 justify-center lg:flex">
             <div className="flex items-center gap-1">
               {PAGES.map(({ id, label, href }) => {
-                const active = id === page;
+                // This pill is `hidden lg:flex`, so the only landing it
+                // can ever show is the wide one — same as `TopNav`.
+                const active = id === (page ?? LANDING_WIDE);
                 return (
                   <a
                     key={id}
@@ -98,7 +106,8 @@ export function DemoShell(props: Props) {
 
       {/* The bottom padding clears the phone's fixed bar — see `AppShell`. */}
       <main className={`${PAGE_WIDTH} flex-1 pt-10 pb-24 lg:pb-10`}>
-        {isCalendar(page) ? props.calendar : props.trends}
+        {/* Both landings are calendar sections, so null is a calendar. */}
+        {page === null || isCalendar(page) ? props.calendar : props.trends}
       </main>
 
       <BottomNav page={page} onPageChange={setPage} />

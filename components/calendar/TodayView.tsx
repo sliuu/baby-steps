@@ -22,6 +22,7 @@ import type { LibraryGroup } from "@/lib/queries/activities";
 import { PAGE_TITLE } from "@/lib/layout";
 import { ramp, wash } from "@/lib/palette";
 import { NO_STICKERS } from "@/lib/stickers";
+import { cn } from "@/lib/utils";
 
 type Props = PeriodProps & {
   /** The day on show. `CalendarPanel` owns it; this reports taps back. */
@@ -29,6 +30,12 @@ type Props = PeriodProps & {
   onPickDay: (day: Date) => void;
   /** Everything you could put on the day. See `CalendarPanel`. */
   groups: LibraryGroup[];
+  /**
+   * Which widths this drawing is for. `CalendarPanel` renders both the phone's
+   * landing and the desktop's and lets CSS choose — see the note on the branch
+   * there.
+   */
+  className?: string;
 };
 
 /** The most dots a strip cell draws before it stops counting. */
@@ -131,7 +138,7 @@ export function TodayView(props: Props) {
   // page reads as a form. What separates things here is space and a label,
   // which is what a single column has instead of a layout.
   return (
-    <section className="flex flex-col gap-9">
+    <section className={cn("flex flex-col gap-9", props.className)}>
       <header>
         <p className="eyebrow">{formatWeekdayLong(day)}</p>
         {/* `leading-[1.25]` with the extra pulled back off as negative margin,

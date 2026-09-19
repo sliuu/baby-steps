@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { BottomNav } from "./BottomNav";
 import { TopNav } from "./TopNav";
-import { useSection } from "./useSection";
 import { CalendarViewProvider } from "@/components/calendar/viewMode";
 import { PAGE_WIDTH } from "@/lib/layout";
-import { isCalendar } from "@/lib/nav";
+import { isCalendar, type Page } from "@/lib/nav";
 import type { SessionUser } from "@/lib/user";
 
 type Props = {
@@ -26,9 +27,11 @@ type Props = {
  * needs the individual fields, not finished markup.
  */
 export function AppShell(props: Props) {
-  // Not a plain `useState("month")` any more: the landing section depends on
-  // how wide the window is, and `useSection` is where that argument lives.
-  const [page, setPage] = useSection();
+  // Null means "nothing pressed yet", and it is a real state rather than a
+  // missing one: the landing section depends on the window, the server has no
+  // window, so the choice is deferred to CSS and both landings are drawn. See
+  // `LANDING_NARROW` in `lib/nav.ts`. A press fills this in permanently.
+  const [page, setPage] = useState<Page | null>(null);
 
   return (
     // Today, Week and Month are the same node, and the provider is how it
@@ -37,7 +40,9 @@ export function AppShell(props: Props) {
     // node, not a component: there is nothing here to wrap it in that isn't
     // this.
     <CalendarViewProvider
-      view={isCalendar(page) ? page : "month"}
+      // Null travels down as null: the calendar draws both landings and
+      // hides one, exactly as it does for the week and the month.
+      view={page === null || isCalendar(page) ? page : "month"}
       // Tapping a day in the week list or the month grid opens it, and
       // "opens it" means this. The three view modes are three of the four
       // pages, so the setter goes down unadapted.
@@ -55,7 +60,8 @@ export function AppShell(props: Props) {
           page's own 40px is 6rem. Above 64rem there is no bar and the bottom
           goes back to matching the top. */}
       <main className={`${PAGE_WIDTH} flex-1 pt-10 pb-24 lg:pb-10`}>
-        {isCalendar(page) ? props.calendar : props.trends}
+        {/* Both landings are calendar sections, so null is a calendar. */}
+        {page === null || isCalendar(page) ? props.calendar : props.trends}
       </main>
 
       <BottomNav page={page} onPageChange={setPage} />

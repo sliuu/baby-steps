@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useSyncExternalStore } from "react";
+import { createContext, useContext } from "react";
 
 import type { CalendarViewMode } from "./period";
 
@@ -19,10 +19,13 @@ import type { CalendarViewMode } from "./period";
  * The default is `month` rather than a throw-if-missing, because a missing
  * provider here means someone rendered a calendar outside the shell — a test,
  * a story — and the honest answer for that case is the ordinary view, not a
- * crash. It is the same `month` the server always renders, which is the next
- * comment's whole subject.
+ * crash. Note that it is a default for *no provider*, which is a different
+ * thing from the `null` the type now admits: null comes from a provider that
+ * is there and has nothing to report yet, because nobody has pressed a section
+ * — see `LANDING_NARROW` in `lib/nav.ts`, and `CalendarPanel` for what the
+ * calendar draws when it gets one.
  */
-const ViewModeContext = createContext<CalendarViewMode>("month");
+const ViewModeContext = createContext<CalendarViewMode | null>("month");
 
 /**
  * The way back up. Tapping a day in the week list or the month grid should
@@ -44,20 +47,9 @@ const SetViewContext = createContext<(view: CalendarViewMode) => void>(
   () => {},
 );
 
-/**
- * What the server drew, and therefore what the browser must hydrate against.
- *
- * The shell has no width on the server, so `useSection` lands on the month and
- * the markup that reaches the browser is a month grid — every time, for every
- * visitor, phone or laptop.
- */
-const SERVER_VIEW: CalendarViewMode = "month";
-
-/** The view never changes on its own; there is nothing to subscribe to. */
-const noSubscription = () => () => {};
-
 export function CalendarViewProvider(props: {
-  view: CalendarViewMode;
+  /** Null until a section is pressed. See `LANDING_NARROW` in `lib/nav.ts`. */
+  view: CalendarViewMode | null;
   /** Usually the shell's own `setPage`. The three view modes are three of its
    *  four pages, so it needs no adapter. */
   onChangeView: (view: CalendarViewMode) => void;
@@ -82,36 +74,23 @@ export function useSetCalendarView(): (view: CalendarViewMode) => void {
 }
 
 /**
- * Month grid, week strip or one day, as chosen in the top nav — but not until
- * this subtree has hydrated.
+ * Month grid, week strip or one day, as chosen in the top nav — or `null`,
+ * meaning nobody has chosen yet and `CalendarPanel` should draw both landings.
  *
- * **The gate is the load-bearing half, and it fixes a real hydration failure.**
- * The shell measures the window on its first client render and, on a phone,
- * switches the section to Today immediately. The calendar it is switching sits
- * behind its own `<Suspense>`, streamed in from the server, and a boundary that
- * has not hydrated yet still hydrates against *the HTML that arrived* — which
- * is a month grid. A context change reaching it first means React tries to
- * match a day view onto a month's markup, throws, and rebuilds the whole tree
- * on the client. Which is also why the fix cannot live in the provider: the
- * provider hydrates with the shell, early, and it is precisely that early
- * render that this boundary must not see.
+ * **There was a hydration gate here, and removing it is the point.** It held
+ * the view at a hardcoded `month` until this subtree had hydrated, because the
+ * shell used to measure the window on its first client render and switch a
+ * phone to Today immediately — and the calendar sits behind its own
+ * `<Suspense>`, streamed from the server, so a context change arriving before
+ * that boundary hydrated meant React trying to match a day view onto a month's
+ * markup. It threw and rebuilt the tree.
  *
- * So the consumer holds `SERVER_VIEW` until its own hydration is done, exactly
- * as `CalendarPanel` holds `todayString` at null — `useSyncExternalStore`'s
- * third argument is the value for the server *and* for hydration, and React
- * re-renders with the real one on the commit straight after. The nav has
- * already moved by then, so the first thing a phone paints is a month grid and
- * the second is the day. One frame, and it is the same frame the section
- * switch was always going to cost.
+ * Nothing changes the section between the server render and hydration any
+ * more: the shell starts at `null` and stays there until a press, which cannot
+ * happen before the page is interactive. So the gate has no event left to
+ * absorb — and keeping it would now *cause* the flash it was written to
+ * prevent, by forcing `month` over the null that both landings depend on.
  */
-export function useCalendarView(): CalendarViewMode {
-  const view = useContext(ViewModeContext);
-
-  const hydrated = useSyncExternalStore(
-    noSubscription,
-    () => true, // browser, after hydration: the nav's answer is safe to use
-    () => false, // server and hydration: only the markup that exists
-  );
-
-  return hydrated ? view : SERVER_VIEW;
+export function useCalendarView(): CalendarViewMode | null {
+  return useContext(ViewModeContext);
 }

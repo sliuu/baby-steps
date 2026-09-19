@@ -12,6 +12,11 @@ import { NO_STICKERS } from "@/lib/stickers";
 type Props = PeriodProps & {
   /** Any day inside the week being shown. `weekGrid` finds the Sunday. */
   anchor: Date;
+  /**
+   * Which widths this drawing is for. `CalendarPanel` renders both the phone's
+   * and the desktop's and lets CSS choose — see the note on the branch there.
+   */
+  className?: string;
 };
 
 /**
@@ -60,7 +65,7 @@ export function WeekGrid(props: Props) {
   );
 
   return (
-    <div className={`${RULE} bg-hairline`}>
+    <div className={`${RULE} bg-hairline ${props.className ?? ""}`}>
       <div className="grid grid-cols-7 gap-px">
         {days.map((day) => {
           const stickers = props.stickersByDay.get(day.day) ?? NO_STICKERS;

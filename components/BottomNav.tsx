@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { PAGES, type Page } from "@/lib/nav";
+import { LANDING_NARROW, PAGES, type Page } from "@/lib/nav";
 
 /**
  * A picture per section, because the labels alone are 10px on a phone.
@@ -27,7 +27,8 @@ const ICON: Record<Page, LucideIcon> = {
 };
 
 type Props = {
-  page: Page;
+  /** Null until a section is pressed. See `LANDING_NARROW` in `lib/nav.ts`. */
+  page: Page | null;
   onPageChange: (page: Page) => void;
 };
 
@@ -69,7 +70,9 @@ export function BottomNav(props: Props) {
     >
       <ul className="grid grid-cols-4">
         {PAGES.map(({ id, label, href }) => {
-          const active = id === props.page;
+          // The mirror of `TopNav`: this bar is `lg:hidden`, so the only
+          // landing it can show is the narrow one.
+          const active = id === (props.page ?? LANDING_NARROW);
           const Icon = ICON[id];
 
           return (

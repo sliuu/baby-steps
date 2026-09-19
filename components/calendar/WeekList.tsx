@@ -16,6 +16,11 @@ type Props = PeriodProps & {
   anchor: Date;
   /** Open one day. `CalendarPanel` moves the anchor and asks for Today. */
   onShowDay: (day: Date) => void;
+  /**
+   * Which widths this drawing is for. `CalendarPanel` renders both the phone's
+   * and the desktop's and lets CSS choose — see the note on the branch there.
+   */
+  className?: string;
 };
 
 /**
@@ -28,10 +33,14 @@ type Props = PeriodProps & {
  * phone already scrolls — and each line is short enough to say the one thing a
  * week is for: was there anything on this day, and how did it feel.
  *
- * It is chosen by window width rather than by section — see `useNarrow` — so a
- * narrow *desktop* window gets it too, and that is deliberate for the same
- * reason the day view is available at every width: a view that exists at one
- * size and not another is a view you can be stranded in by dragging a window.
+ * It is chosen by window width rather than by section — `CalendarPanel` renders
+ * this and `WeekGrid` together and lets `lg:hidden` pick — so a narrow
+ * *desktop* window gets it too, and that is deliberate for the same reason the
+ * day view is available at every width: a view that exists at one size and not
+ * another is a view you can be stranded in by dragging a window. Dragging the
+ * window is also why the choice is CSS rather than a hook: a resize crosses
+ * the breakpoint mid-session with no re-render to wait for.
+ *
  * The cost is that a narrow window's tray can no longer drop onto the week,
  * because there is nothing droppable in here. That is the trade the phone was
  * always going to make, and the way in is a tap now.
@@ -74,7 +83,7 @@ export function WeekList(props: Props) {
   );
 
   return (
-    <div>
+    <div className={props.className}>
       {/* One rule above and hairlines between, which is the house grammar —
           see `RULE`. No box: the rows are already seven bands of full page
           width, and an outline round them would be the card the week gave up

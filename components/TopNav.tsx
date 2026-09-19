@@ -2,6 +2,7 @@
 
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
+import { LANDING_WIDE } from "@/lib/nav";
 import { PAGE_WIDTH, segment } from "@/lib/layout";
 import { PAGES, type Page } from "@/lib/nav";
 import type { SessionUser } from "@/lib/user";
@@ -12,7 +13,8 @@ import type { SessionUser } from "@/lib/user";
  * page body needs it too.
  */
 type Props = {
-  page: Page;
+  /** Null until a section is pressed. See `LANDING_NARROW` in `lib/nav.ts`. */
+  page: Page | null;
   onPageChange: (page: Page) => void;
   user: SessionUser;
 };
@@ -33,7 +35,10 @@ export function TopNav(props: Props) {
         <div className="hidden flex-1 justify-center lg:flex">
           <div className="flex items-center gap-1">
             {PAGES.map(({ id, label, href }) => {
-              const active = id === props.page;
+              // Null is "nothing pressed yet". This pill is `hidden lg:flex`,
+              // so the only landing it can ever show is the wide one — no
+              // measurement needed, and none possible on the server.
+              const active = id === (props.page ?? LANDING_WIDE);
               return (
                 <a
                   key={id}

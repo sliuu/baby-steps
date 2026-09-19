@@ -12,6 +12,11 @@ import { NO_STICKERS } from "@/lib/stickers";
 type Props = PeriodProps & {
   /** The first of the month being shown. `CalendarPanel` derives it. */
   month: Date;
+  /**
+   * Which widths this drawing is for. `CalendarPanel` renders both the phone's
+   * and the desktop's and lets CSS choose — see the note on the branch there.
+   */
+  className?: string;
 };
 
 /**
@@ -54,7 +59,7 @@ export function MonthGrid(props: Props) {
     // thick rule above, thin lines between, no sides and no bottom. The
     // radius went with the border — there is no box left to round, and a
     // rounded corner with no edge to turn is just a clipped cell.
-    <div className={`${RULE} bg-hairline`}>
+    <div className={`${RULE} bg-hairline ${props.className ?? ""}`}>
       <div className="grid grid-cols-7 gap-px">
         {labels.map((label) => (
           <div key={label} className="daylabel bg-background py-2 text-center">

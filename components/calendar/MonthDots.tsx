@@ -32,6 +32,11 @@ type Props = PeriodProps & {
   groups: LibraryGroup[];
   /** Open one day. `CalendarPanel` moves the anchor and asks for Today. */
   onShowDay: (day: Date) => void;
+  /**
+   * Which widths this drawing is for. `CalendarPanel` renders both the phone's
+   * and the desktop's and lets CSS choose — see the note on the branch there.
+   */
+  className?: string;
 };
 
 /**
@@ -65,9 +70,10 @@ type Props = PeriodProps & {
  * and the three habits that came round most. That is `monthSummary`, and it is
  * a pure function in `lib/` so it can be tested without a browser.
  *
- * Chosen by window width rather than by section — see `useNarrow` — so a narrow
- * desktop window gets it too. The cost is the same one the week pays: there is
- * nothing droppable in here, so a narrow window's tray cannot reach the month.
+ * Chosen by window width rather than by section — `CalendarPanel` renders this
+ * and `MonthGrid` together and lets `lg:hidden` pick — so a narrow desktop
+ * window gets it too. The cost is the same one the week pays: there is nothing
+ * droppable in here, so a narrow window's tray cannot reach the month.
  */
 export function MonthDots(props: Props) {
   const cells = useMemo(
@@ -110,7 +116,7 @@ export function MonthDots(props: Props) {
     highlight && !matched ? "opacity-35" : "";
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className={`flex flex-col gap-5 ${props.className ?? ""}`}>
       <div>
         {/* The header row is inside the same grid as the cells, so the seven
             labels sit over the seven columns by construction rather than by two
