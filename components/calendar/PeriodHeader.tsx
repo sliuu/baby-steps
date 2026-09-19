@@ -2,12 +2,20 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ViewTransition } from "react";
 
 import type { CalendarViewMode } from "./period";
+import { PAGE_TITLE } from "@/lib/layout";
+
+/**
+ * The two periods you can step through. The day view has no arrows — it steps
+ * by tapping a date in its own week strip — and the type says so, which is
+ * what stops the arrows ever being labelled "Previous today".
+ */
+type SteppablePeriod = Exclude<CalendarViewMode, "today">;
 
 type Props = {
   /** "August 2026", or "9 – 15 August 2026". */
   title: string;
   /** Read-only here. It names the unit in the arrows, nothing more. */
-  view: CalendarViewMode;
+  view: SteppablePeriod;
   onStep: (by: number) => void;
 };
 
@@ -44,7 +52,7 @@ export function PeriodHeader(props: Props) {
           is what gets replaced. That ordering matters: a live region announces
           changes *within* itself, so remounting the region along with its
           contents can leave a screen reader with nothing to report. */}
-      <h1 aria-live="polite" className="min-w-0 font-heading text-page-title">
+      <h1 aria-live="polite" className={`min-w-0 ${PAGE_TITLE}`}>
         {/* Crossfades, with no sideways movement — the grid below does the
             travelling. A title sliding the same distance as the grid would read
             as one plane moving, and the period name isn't part of the deck;
@@ -93,7 +101,7 @@ export function PeriodHeader(props: Props) {
 type ArrowProps = {
   direction: "previous" | "next";
   /** Named in the label, because "Next" alone doesn't say next *what*. */
-  unit: CalendarViewMode;
+  unit: SteppablePeriod;
   onClick: () => void;
 };
 

@@ -263,9 +263,19 @@ export function StickerTray(props: Props) {
 
             And now literally a row. `col-span-full` so the five columns get the
             page's width in the stacked layout rather than one cell of it; in
-            the rail the grid is one column and this does nothing. */}
+            the rail the grid is one column and this does nothing.
+
+            **Hidden under `lg`, which is where the day view lives.** That view
+            already carries five faces under its date, and stacked on a phone
+            the tray sits on the same scroll as the calendar — so both rows are
+            on one screen, five identical faces twice, and only one of them
+            writes the mood down. The one that writes it wins. What goes with
+            this row is highlighting *by* mood on a phone, and dragging a face
+            onto a day: the first is a comparison, which is what the narrow
+            widths already give up, and the second is a gesture nobody makes on
+            a touchscreen when the day itself has the control. */}
         <MoodPicker
-          className="col-span-full"
+          className="col-span-full hidden lg:block"
           selected={selection?.kind === "mood" ? selection.mood : null}
           onToggle={(mood) => toggle({ kind: "mood", mood })}
         />

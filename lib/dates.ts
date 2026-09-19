@@ -82,6 +82,29 @@ export function formatDayShort(day: DayString): string {
   return format(fromDayString(day), "d MMM yyyy");
 }
 
+/**
+ * "Sunday" and "13 September" — the two halves of the day view's masthead.
+ *
+ * Two functions rather than one that returns a pair, because they are set in
+ * two different faces at two different sizes and nothing joins them back up.
+ *
+ * The title carries no year, which is a deliberate omission rather than a
+ * missing case. It sits directly under a strip of the seven days around it and
+ * directly under a nav that only reaches today by default, so the year is
+ * almost always the current one and printing it costs the line its shape —
+ * "13 September 2026" wraps on a 375px screen at this size and "13 September"
+ * doesn't. Stepping back far enough for that to mislead means stepping through
+ * the strip a week at a time; the month grid is the view for travelling, and
+ * it says the year in its own title.
+ */
+export function formatWeekdayLong(day: DayString): string {
+  return format(fromDayString(day), "EEEE");
+}
+
+export function formatDayTitle(day: DayString): string {
+  return format(fromDayString(day), "d MMMM");
+}
+
 /** "2026-08" — stable, sortable, and safe in a URL. */
 export function toMonthString(month: Date): string {
   return format(month, "yyyy-MM");

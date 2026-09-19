@@ -54,8 +54,18 @@
  *
  * `mx-auto` is load-bearing again now that there is something to centre
  * within.
+ *
+ * **The gutter is two numbers now, and the smaller one is the phone's.** 40px
+ * either side of a 375px screen leaves 295px of page, which is a fifth of the
+ * width spent on margin — enough that the day strip's seven columns stop
+ * fitting and a sticker name starts truncating at four words. 20px is the
+ * narrow value; the wide one is unchanged and takes over at the same
+ * breakpoint the top nav swaps its pill for the bottom bar, so the page's
+ * margin and the page's navigation change shape together rather than 200px
+ * apart.
  */
-export const PAGE_WIDTH = "mx-auto w-full max-w-(--breakpoint-2xl) px-10";
+export const PAGE_WIDTH =
+  "mx-auto w-full max-w-(--breakpoint-2xl) px-5 lg:px-10";
 
 /**
  * The tray's own gutter, and the same problem one level down.
@@ -147,3 +157,26 @@ export function segment(active: boolean): string {
     active ? "bg-secondary text-ink" : "text-ink-muted hover:text-ink"
   }`;
 }
+
+/**
+ * The page's own title: the day, the week, or the month.
+ *
+ * Three views set it and they have to agree, which is the ordinary reason a
+ * string like this exists. The reason it is *two* sizes is the week: "13 – 19
+ * September 2026" is twenty-two characters, and at 48px that is 500px of type
+ * on a 335px page. The month and the day fit at any size; the week is the one
+ * that decides, and a title that truncates on one view of three is worse than
+ * a title that is 32px on all of them.
+ *
+ * It takes over at the same 64rem the nav, the gutter and the two grids change
+ * at — the phone's layout is one decision, made in one place, and this is one
+ * of the things it decides.
+ *
+ * No line-height here, deliberately. Both call sites pull the line box open to
+ * 1.25 and take the extra straight back off as negative margin, because
+ * Instrument Serif's descenders hang below a line box set to the em — see the
+ * long note in `PeriodHeader`. That correction is written in ems, so it
+ * follows whichever of these two sizes is in force; putting a fixed leading
+ * here would fight it.
+ */
+export const PAGE_TITLE = "font-heading text-[2rem] lg:text-page-title";
