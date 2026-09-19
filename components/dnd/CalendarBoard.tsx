@@ -658,7 +658,26 @@ export function CalendarBoard(props: Props) {
             The five moods were the binding constraint before the sticker row
             was — five labelled columns wanted ~54px each — which is what
             losing their words bought. */}
-        <aside className="lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-9rem)] lg:w-56 lg:shrink-0 lg:flex-col">
+        {/* **Desktop only, and that is the mobile design rather than a
+            responsive afterthought.** This rail is a drag source: you pick a
+            sticker up here and drop it on a day. A touch screen cannot take
+            that gesture, so on a phone the whole interaction runs the other
+            way round — tap the day, then tap the sticker, in `DaySheet`. A tray
+            you can see and cannot use is worse than no tray, and at 375px it
+            is also a second full-height column below the calendar that the
+            page has to scroll past to get to nothing.
+
+            What a phone loses with it: editing a sticker, retiring one, and
+            the highlight that dims everything a selection didn't match. Making
+            one is the exception — the sheet carries its own "New sticker"
+            chip. The other three are still desktop-only and are the honest
+            next piece of work.
+
+            `hidden` first and then `lg:flex`, not `lg:block`: the rail is a
+            flex column and `twMerge` resolves the two display classes in
+            argument order, so the class that turns it back on has to be the
+            display it actually wants. */}
+        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-9rem)] lg:w-56 lg:shrink-0 lg:flex-col">
           <StickerTray
             groups={props.groups}
             selection={selection}
