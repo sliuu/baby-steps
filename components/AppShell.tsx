@@ -7,12 +7,17 @@ import { TopNav } from "./TopNav";
 import { CalendarViewProvider } from "@/components/calendar/viewMode";
 import { PAGE_WIDTH } from "@/lib/layout";
 import { isCalendar, type Page } from "@/lib/nav";
-import type { SessionUser } from "@/lib/user";
 
 type Props = {
   calendar: React.ReactNode;
   trends: React.ReactNode;
-  user: SessionUser;
+  /**
+   * The right-hand end of the nav, after the theme toggle: `UserMenu` when
+   * signed in, a "Sign in" link on `/demo`.
+   */
+  navEnd: React.ReactNode;
+  /** A band above the nav that scrolls away. Only `/demo` has one. */
+  banner?: React.ReactNode;
 };
 
 /**
@@ -23,8 +28,11 @@ type Props = {
  * from a Server Component is rendered on the server and handed over as
  * finished output. The switcher ships to the browser; the pages don't have to.
  *
- * `user` is plain data rather than a rendered node — it's small, and TopNav
- * needs the individual fields, not finished markup.
+ * **One shell for the signed-in app and `/demo`.** The two differ in the nav's
+ * last control and in the demo's banner, and both arrive as slots rather than
+ * as a user the shell would have to check for. Each page decides what goes
+ * there, so nothing in here asks "what if nobody is signed in" — and the
+ * padding, the switcher and the bottom bar exist once instead of twice.
  */
 export function AppShell(props: Props) {
   // Null means "nothing pressed yet", and it is a real state rather than a
@@ -44,14 +52,15 @@ export function AppShell(props: Props) {
       // hides one, exactly as it does for the week and the month.
       view={page === null || isCalendar(page) ? page : "month"}
     >
-      <TopNav page={page} onPageChange={setPage} user={props.user} />
+      {props.banner}
+      <TopNav page={page} onPageChange={setPage} end={props.navEnd} />
       {/* 40px of top padding and not the old 56px. The target is a 14"
           laptop: 64px of nav plus 80px of padding leaves the page 144px to pay
           for before it has drawn anything, and a week of columns has to fit in
           what's left. Anything less starts to read as cramped against the
           nav's hairline.
 
-          A phone gets 24px instead. Its screen is the short one, and every
+          A phone gets 20px instead. Its screen is the short one, and every
           pixel above the section's title is one less of the section.
 
           Underneath, the extra is the phone's fixed nav bar, paid for here

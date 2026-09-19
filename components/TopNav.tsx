@@ -1,11 +1,9 @@
 "use client";
 
 import { ThemeToggle } from "./ThemeToggle";
-import { UserMenu } from "./UserMenu";
 import { LANDING_WIDE } from "@/lib/nav";
 import { PAGE_WIDTH, segment } from "@/lib/layout";
 import { PAGES, type Page } from "@/lib/nav";
-import type { SessionUser } from "@/lib/user";
 
 /**
  * Presentational. It doesn't own which page is showing — it's told, and it
@@ -16,7 +14,8 @@ type Props = {
   /** Null until a section is pressed. See `LANDING_NARROW` in `lib/nav.ts`. */
   page: Page | null;
   onPageChange: (page: Page) => void;
-  user: SessionUser;
+  /** Whatever sits after the theme toggle. See `navEnd` on `AppShell`. */
+  end: React.ReactNode;
 };
 
 export function TopNav(props: Props) {
@@ -62,7 +61,7 @@ export function TopNav(props: Props) {
 
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
-          <UserMenu user={props.user} />
+          {props.end}
         </div>
       </nav>
     </header>

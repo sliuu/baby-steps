@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 
+import { AppShell } from "@/components/AppShell";
 import { CalendarBoard } from "@/components/dnd/CalendarBoard";
-import { DemoShell } from "@/components/demo/DemoShell";
 import { TrendsBoard } from "@/components/trends/TrendsBoard";
 import { today } from "@/lib/dates";
 import { demoLibrary, demoStickers } from "@/lib/demo";
+import { PAGE_WIDTH } from "@/lib/layout";
 
 export const metadata: Metadata = {
   title: "Baby Steps · Demo",
@@ -44,10 +45,41 @@ export default async function DemoPage() {
   const stickersByDay = demoStickers(end);
 
   return (
-    <DemoShell
-      // `local` is the whole of the difference between this and the signed-in
-      // app: the same board, the same drag, the same day modal, writing to
-      // memory instead of to Supabase. See the prop's own note.
+    <AppShell
+      // The same shell as `/`, with the two slots that differ filled in here:
+      // a banner saying what this is, and a way out where the account menu
+      // would be.
+      banner={
+        // Above the sticky header rather than inside it, and it scrolls away.
+        // A banner is an answer to "what am I looking at", which is a question
+        // you have once, on arrival — pinning it to the top of the window
+        // would spend a permanent band of the screen restating it. The way
+        // *out* of the demo is the part that has to stay reachable, and that
+        // is the link in the nav, which is sticky.
+        <div className="border-b border-hairline bg-secondary/60">
+          <p className={`${PAGE_WIDTH} py-2.5 text-[0.83rem] text-ink-muted`}>
+            <span className="text-ink">This is a demo.</span> A year of
+            invented stickers, ending today. Drag them about, change a mood,
+            write a note — nothing you do here is saved anywhere.
+          </p>
+        </div>
+      }
+      navEnd={
+        // A real navigation, not a router push: leaving the demo should drop
+        // everything in it, and a full load is the cheapest way to be sure a
+        // year of invented stickers is gone. `ml-1` because the nav's gap is
+        // sized for an avatar, and a bordered pill wants a little more room
+        // from the toggle.
+        <a
+          href="/login"
+          className="ml-1 rounded-full border border-hairline px-4 py-1.5 text-[0.875rem] transition-colors hover:bg-secondary"
+        >
+          Sign in
+        </a>
+      }
+      // `local` is the whole of the difference between the boards here and in
+      // the signed-in app: the same board, the same drag, the same day modal,
+      // writing to memory instead of to Supabase. See the prop's own note.
       calendar={
         <CalendarBoard groups={groups} stickersByDay={stickersByDay} local />
       }

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { UserMenu } from "@/components/UserMenu";
 import { CalendarSkeleton } from "@/components/views/CalendarSkeleton";
 import { CalendarView } from "@/components/views/CalendarView";
 import { TrendsSkeleton } from "@/components/views/TrendsSkeleton";
@@ -33,7 +34,7 @@ export default async function Home() {
 
   return (
     <AppShell
-      user={toSessionUser(user)}
+      navEnd={<UserMenu user={toSessionUser(user)} />}
       // Each view gets its own boundary, so the nav and the page frame paint
       // as soon as the auth check returns rather than waiting on Postgres.
       // Sibling boundaries resolve independently — neither tab blocks the

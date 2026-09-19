@@ -54,7 +54,7 @@ Three fixes rode along, all found while looking at the tab. The sign-in button n
 - **The tab has been seen; the dark tab strip has not.** The dark rules are asserted by the test and rendered by `qlmanage`, but no one has looked at this icon in a dark-themed browser. Safari's support for `prefers-color-scheme` inside a favicon is the patchy one; the fallback there is the light mark on a dark strip, which is legible but not the app's own treatment.
 - **The iOS tile has never been on an iPhone.** It is a correct PNG at the right size and that is all that is known.
 - **No `opengraph-image`.** A shared link still has no picture. Same drawing, different framing — it wants a wordmark beside the mark, which does not exist yet.
-- **The mark is not in the nav.** `TopNav.tsx:24` and `DemoShell.tsx:52` are still the words alone.
+- **The mark is not in the nav.** `TopNav.tsx` is still the words alone — and since `/demo` now uses the same `AppShell`, that is the only place to change.
 - **The candidate sheet is a scratchpad artifact, not in the repo.** 22 marks with notes and a squint row, kept for the next time this is revisited.
 
 ---
@@ -312,7 +312,7 @@ The Trends page there is the payoff. A star with all six vertices out, a ranking
 
 - Nothing here has been seen in a browser either. The banner, the nav's Sign in button, and the demo's own dark theme are all unlooked-at.
 - A generated day can carry nine stickers (8 September does, in the 2026-09-11 window). That is within what real data can do, but the month cell has never been asked to draw it.
-- Switching Month → Trends → Month drops whatever you dragged, because `DemoShell` unmounts the calendar to swap views and the demo's copy of the map is component state. The banner says nothing is saved, which is true, but this is a sharper edge than the words imply.
+- Switching Month → Trends → Month drops whatever you dragged, because `AppShell` (which `/demo` now shares — `DemoShell` is gone) unmounts the calendar to swap views and the demo's copy of the map is component state. The banner says nothing is saved, which is true, but this is a sharper edge than the words imply.
 - The Trends page in the demo shows the *generated* year, not your edits to it — the two boards hold separate copies.
 - `learning/` has no explainer for this step.
 
