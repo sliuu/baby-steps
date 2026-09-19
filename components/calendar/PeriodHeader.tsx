@@ -78,7 +78,9 @@ export function PeriodHeader(props: Props) {
 
               `truncate` is `overflow: hidden`, and `text-page-title` sets
               `line-height: 1` — a 48px line box for a 48px em, which is less
-              room than Instrument Serif's glyphs actually occupy. So the box
+              room than the heading face's glyphs actually occupy (found with
+              Instrument Serif, kept for Syne, whose descenders also hang
+              below the em). So the box
               clipped whatever hung below the baseline, and the tell was that it
               only happened *sometimes*: "May 2026" was fine and "Sep 2026" lost
               the tail of its p. Widening the line box to 1.25 gives the

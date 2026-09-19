@@ -174,7 +174,7 @@ export function segment(active: boolean): string {
  *
  * No line-height here, deliberately. Both call sites pull the line box open to
  * 1.25 and take the extra straight back off as negative margin, because
- * Instrument Serif's descenders hang below a line box set to the em — see the
+ * the heading face's descenders hang below a line box set to the em — see the
  * long note in `PeriodHeader`. That correction is written in ems, so it
  * follows whichever of these two sizes is in force; putting a fixed leading
  * here would fight it.

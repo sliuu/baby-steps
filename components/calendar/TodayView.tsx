@@ -121,7 +121,7 @@ export function TodayView(props: Props) {
         <p className="eyebrow">{formatWeekdayLong(day)}</p>
         {/* `leading-[1.25]` with the extra pulled back off as negative margin,
             for the reason `PeriodHeader` documents: this size sets a line box
-            no taller than the em, and Instrument Serif's descenders hang below
+            no taller than the em, and the heading face's descenders hang below
             it. "13 September" has a p in it. */}
         <h1 className={`-my-[0.125em] mt-1 leading-[1.25] ${PAGE_TITLE}`}>
           {formatDayTitle(day)}

@@ -26,7 +26,7 @@
 --------------------------------------------------------------------------- */
 @theme inline {
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-heading: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
   /* Space Mono, and the only thing wearing it is `eyebrow` below. Nothing in
      the app used `font-mono` before it was pointed here — no code blocks, no
      tabular figures — so this token was unoccupied and the eyebrows could take
@@ -55,6 +55,11 @@
      0.85, so every title was still six per cent too big. Instrument Serif is
      1.04/1.06 — within two per cent — which is why these are the original
      numbers again.
+
+     Syne went in on those same numbers, uncorrected, and it has no measured
+     factor yet. It is a wide face with a large x-height, so expect it to read
+     bigger and run longer than Instrument Serif at the same size; tune by eye
+     and write the number down here when it is found.
 
      Line heights are restated on every rung: a `--text-*` token with no
      companion leaves the utility setting font-size alone, and the heading
@@ -1184,6 +1189,24 @@
   h2,
   h3 {
     @apply font-heading;
+  }
+
+  /* Syne is drawn wide and spaced for display, and at title sizes the gaps
+     between letters read as air rather than rhythm. -0.03em pulls it back to
+     a set word. In ems so it scales with every size a heading is set at.
+
+     Here rather than as a companion on the `--font-heading` token, because
+     Tailwind only carries letter-spacing on `--text-*` tokens, and the titles
+     are set on four of those plus an arbitrary `text-[2rem]` on a phone. In
+     `base`, so any `tracking-*` utility or a class like `eyebrow` (an `h3`
+     wearing Space Mono) still wins. `.font-heading` covers the face wherever
+     it is set outside an h1–h3 — the wordmark, the Trends readouts, the month
+     count, the account menu — so Syne is spaced one way everywhere. */
+  h1,
+  h2,
+  h3,
+  .font-heading {
+    letter-spacing: -0.03em;
   }
 }
 

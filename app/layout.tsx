@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Instrument_Serif, Space_Mono } from "next/font/google";
+import { DM_Sans, Space_Mono, Syne } from "next/font/google";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -10,25 +10,25 @@ import "./globals.css";
  * book serif — then tried Merriweather over Karla, which fixed the fragility at
  * small sizes by making everything heavier and squarer than the app wanted.
  *
- * Instrument Serif is the third answer and a different kind of face: a
- * masthead, not a paragraph. High contrast, one weight, drawn to be set large,
- * with enough confidence in a title that it doesn't need bold to carry. DM Sans
- * underneath is deliberately plain — a geometric grotesque with no opinions, so
- * the serif is the only thing in the app doing any talking.
+ * Instrument Serif was the third answer: a high-contrast masthead serif, one
+ * weight, drawn to be set large. **Syne is the fourth**, and the first heading
+ * face that isn't a serif — a wide, idiosyncratic display sans, so the titles
+ * now differ from the body by shape and width rather than by serifs. DM Sans
+ * underneath is still deliberately plain — a geometric grotesque with no
+ * opinions, so the heading face is the only thing in the app doing any talking.
  *
- * **Instrument Serif ships one weight, 400, and nothing here may ask for
- * another.** There is no 500 and no 600, so a `font-medium` or `font-semibold`
- * on a heading would get a synthetic bold: the browser smearing the outline
- * sideways, which on a high-contrast serif looks like a printing fault. Every
- * heading call site had its weight utility removed when this landed, and the
- * dialog title in `components/ui/dialog.tsx` went from `font-medium` to
- * `font-normal` for the same reason. If a face with real weights comes back,
- * those classes come back with it.
+ * **The headings are all set at 400.** Instrument Serif had no other weight, so
+ * every heading call site had its weight utility removed and the dialog title
+ * in `components/ui/dialog.tsx` went from `font-medium` to `font-normal`. Syne
+ * does have real weights — it is loaded as a variable font, 400 to 800 on one
+ * axis — so a `font-semibold` on a heading would now be a real instance rather
+ * than a synthetic bold. None has been put back yet; that is a design decision
+ * to take on purpose, not a side effect of the swap.
  *
- * DM Sans is loaded as a variable font — no `weight` array — so `font-medium`
- * and `font-semibold` in body copy resolve to real instances off the `wght`
+ * DM Sans and Syne are both loaded as variable fonts — no `weight` array — so
+ * `font-medium` and `font-semibold` resolve to real instances off the `wght`
  * axis rather than to separate files. Italics are not loaded for any of the
- * three because nothing in the app is set in them.
+ * three because nothing in the app is set in them, and Syne has none to load.
  *
  * **Space Mono is the third, and it has exactly one job: the eyebrows.** The
  * small letterspaced caps that name a section — "MOOD", "WORK & STUDY", "MOST
@@ -49,10 +49,9 @@ import "./globals.css";
  * one being invented. Nothing in the app wore `font-mono` before this — there
  * was no code or tabular anything — so the token was free.
  */
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
-  weight: ["400"],
   display: "swap",
 });
 
@@ -87,7 +86,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${instrumentSerif.variable} ${dmSans.variable} ${spaceMono.variable} h-full antialiased`}
+      className={`${syne.variable} ${dmSans.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

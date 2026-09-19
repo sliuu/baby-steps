@@ -161,10 +161,10 @@ export function WeekList(props: Props) {
                        happening is a thing that happened, which is the one
                        claim this app is careful to keep making.
 
-                       Not italic, although it wants to be. The app loads one
-                       style of DM Sans and one weight of Instrument Serif, so
-                       an italic here would be the browser shearing an upright
-                       face — and a synthesised oblique at 13px is a smudge,
+                       Not italic, although it wants to be. The app loads no
+                       italics — DM Sans's aren't fetched and Syne has none —
+                       so an italic here would be the browser shearing an
+                       upright face — and a synthesised oblique at 13px is a smudge,
                        not a voice. Muted is the whole treatment. */
                     <span className="text-[0.83rem] text-ink-muted">Quiet</span>
                   )}
