@@ -712,6 +712,39 @@ export function CalendarBoard(props: Props) {
         </aside>
       </div>
 
+      {/* **The phone's copy of the same line, and it is not a duplicate for
+          long.** The rail above is `hidden` below 64rem, and a live region
+          inside `display: none` is invisible *and* silent — screen readers
+          skip it too. Without this, a failed write on a phone is a sticker
+          that appears and then vanishes when the optimistic value expires,
+          with nothing anywhere saying why.
+
+          Two nodes rather than one moved node, because the two placements are
+          genuinely different objects: the rail's line is a block at the foot
+          of a column that is already there, and this is a banner over a page
+          that has no spare room. Exactly one of them is ever displayed — this
+          is `lg:hidden` and the rail is `hidden lg:flex` — so there is exactly
+          one live region in play at any width, which is the thing that would
+          actually break if both showed at once.
+
+          Pinned to the top, and not above the bottom bar where the tap
+          happened. The likeliest way to see this at all is tapping a chip in
+          `DaySheet`, and the sheet occupies the bottom 85% of the screen — a
+          bar down there lands underneath it or on top of the thing you were
+          reading. `z-60` clears the sheet's own 50 for the same reason: a
+          failure notice that the sheet covers is the bug this is fixing. */}
+      <div
+        role="status"
+        aria-live="polite"
+        className="fixed inset-x-0 top-0 z-60 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] empty:hidden lg:hidden"
+      >
+        {error && (
+          <p className="mx-auto max-w-[34rem] rounded-md bg-ramp-red-soft px-3 py-2 text-[0.83rem] shadow-[0_4px_16px_rgb(70_50_20/0.18)]">
+            {error}
+          </p>
+        )}
+      </div>
+
       {/* The floating copy. It exists so the original can stay exactly where it
           is: nothing is removed from the tray mid-drag, so nothing below it
           jumps up to fill the gap while your hand is still moving.
