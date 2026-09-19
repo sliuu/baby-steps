@@ -100,6 +100,7 @@ export function monthSummary(
   let stickers = 0;
 
   for (const day of days) {
+    if (todayString && day > todayString) continue;
     const onDay = stickersByDay.get(day);
     if (!onDay || onDay.activities.length === 0) continue;
 
