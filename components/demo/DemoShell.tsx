@@ -40,10 +40,6 @@ export function DemoShell(props: Props) {
       // Null travels down as null: the calendar draws both landings and
       // hides one, exactly as it does for the week and the month.
       view={page === null || isCalendar(page) ? page : "month"}
-      // Tapping a day in the week list or the month grid opens it, and
-      // "opens it" means this. The three view modes are three of the four
-      // pages, so the setter goes down unadapted.
-      onChangeView={setPage}
     >
       {/* Above the sticky header rather than inside it, and it scrolls away.
           A banner is an answer to "what am I looking at", which is a question

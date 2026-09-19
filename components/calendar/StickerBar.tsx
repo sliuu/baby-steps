@@ -7,6 +7,11 @@ type Props = {
   sticker: StickerFace;
   /** Passed down for opacity and drag state — see `DraggableMark`. */
   className?: string;
+  /**
+   * Something to sit after the name, inside the bar. `DaySheet` puts the
+   * selected tick here — see the note about the trailing slot below.
+   */
+  trailing?: React.ReactNode;
 };
 
 /**
@@ -42,6 +47,15 @@ type Props = {
  * The name is real text here, not `sr-only`. That's the whole difference at
  * the accessibility layer too: the circle needs a label because the picture
  * isn't one, and the bar already says the word out loud.
+ *
+ * **`trailing` is a slot inside the bar, and inside is the point.** The day
+ * sheet's tick has to be part of the sticker — a check floating past the tinted
+ * edge reads as a mark *about* the sticker rather than a mark *on* it, and it
+ * takes the rim, the shadow and the tint with it when the chip is untinted. So
+ * the caller hands the tick in and it lands after the name, under the same
+ * border, taking the same `gap` as the mark on the other side. A caller that
+ * passes nothing gets exactly the bar that was here before: no wrapper, no
+ * extra gap, nothing to reflow.
  */
 export function StickerBar(props: Props) {
   const { sticker } = props;
@@ -74,6 +88,7 @@ export function StickerBar(props: Props) {
           ellipsing — and the column is a grid track, which means every other
           day widens with it. */}
       <span className="min-w-0 truncate">{sticker.name}</span>
+      {props.trailing}
     </span>
   );
 }
