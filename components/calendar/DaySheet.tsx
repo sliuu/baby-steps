@@ -40,6 +40,11 @@ type Props = {
   groups: LibraryGroup[];
   stickersByDay: StickersByDay;
   onCommit: (change: CalendarChange) => void;
+  /**
+   * The last failed write, or null. Only ever read aloud here — it is *seen* in
+   * the page's banner, which sits above the scrim. See the region below.
+   */
+  error: string | null;
   /** The demo, where there is no database to make a sticker in. */
   local?: boolean;
 };
@@ -187,6 +192,18 @@ export function DaySheet(props: Props) {
               <X className="size-4" strokeWidth={1.8} aria-hidden="true" />
             </DialogPrimitive.Close>
           </header>
+
+          {/* **Heard here, seen in the page's banner.** An open Radix dialog
+              marks everything outside its content `aria-hidden`, so the
+              `role="status"` banner in `CalendarBoard` is drawn over the scrim
+              but never announced — and a failed tap in this sheet is the
+              likeliest failure there is. This is the copy a screen reader can
+              reach. It is `sr-only` because the banner already says it on
+              screen, and it is mounted with the sheet and before any error, so
+              the text arriving is a change it can announce. */}
+          <div role="status" aria-live="polite" className="sr-only">
+            {props.error}
+          </div>
 
           {/* The one scrolling region. The header and the grabber stay put; in
               the day variant the mood row at the top and the note at the bottom

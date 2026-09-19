@@ -48,6 +48,8 @@ type Props = {
   groups: LibraryGroup[];
   onClose: () => void;
   onCommit: (change: CalendarChange) => void;
+  /** The last failed write, or null. Read aloud here; seen in the rail. */
+  error: string | null;
 };
 
 /**
@@ -73,7 +75,7 @@ type Props = {
  * is genuinely hard to get right by hand, and it's our file now.
  */
 export function DayModal(props: Props) {
-  const { day, stickers, groups, onClose, onCommit } = props;
+  const { day, stickers, groups, onClose, onCommit, error } = props;
 
   // Which activities are on this day, as a Set — the checkbox list is built
   // from the library, so every row asks this once and an array would make that
@@ -105,6 +107,14 @@ export function DayModal(props: Props) {
                 Tick what happened, and how it felt.
               </DialogDescription>
             </DialogHeader>
+
+            {/* The rail's error line is outside this dialog, and Radix hides
+                everything outside an open dialog from assistive technology —
+                so a failed tick here would be drawn in the rail and never
+                announced. Same fix, and same reasoning, as in `DaySheet`. */}
+            <div role="status" aria-live="polite" className="sr-only">
+              {error}
+            </div>
 
             <div
               className={`${SCROLL_PAD} flex max-h-[60vh] flex-col gap-6 overflow-y-auto py-1`}
