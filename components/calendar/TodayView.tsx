@@ -186,9 +186,6 @@ export function TodayView(props: Props) {
           })}
         </div>
 
-        <p className="mt-2 text-center text-[0.78rem] text-ink-muted">
-          Tap another day to look back.
-        </p>
       </div>
 
       <section>

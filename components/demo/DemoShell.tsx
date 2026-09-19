@@ -101,7 +101,7 @@ export function DemoShell(props: Props) {
       </header>
 
       {/* The bottom padding clears the phone's fixed bar — see `AppShell`. */}
-      <main className={`${PAGE_WIDTH} flex-1 pt-10 pb-24 lg:pb-10`}>
+      <main className={`${PAGE_WIDTH} flex-1 pt-5 pb-24 lg:pt-10 lg:pb-10`}>
         {/* Both landings are calendar sections, so null is a calendar. */}
         {page === null || isCalendar(page) ? props.calendar : props.trends}
       </main>

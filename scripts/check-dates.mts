@@ -5,6 +5,7 @@
 // date maths is the one part of Step 5 that can be quietly wrong for months.
 import {
   formatWeekTitle,
+  formatWeekTitleShort,
   monthGrid,
   stepMonth,
   stepWeek,
@@ -81,6 +82,10 @@ assert("a week can cross a year", toDayString(stepWeek(new Date(2026, 11, 30), 1
 assert("a week inside one month says the month once", formatWeekTitle(new Date(2026, 7, 12)), "9 – 15 August 2026");
 assert("a week across two months names both", formatWeekTitle(new Date(2026, 7, 31)), "30 Aug – 5 Sep 2026");
 assert("a week across two years names both", formatWeekTitle(new Date(2026, 11, 31)), "27 Dec 2026 – 2 Jan 2027");
+assert("the phone's week says Sept", formatWeekTitleShort(new Date(2026, 8, 16)), "13 – 19 Sept 2026");
+assert("the phone's week across two months", formatWeekTitleShort(new Date(2026, 7, 31)), "30 Aug – 5 Sept 2026");
+assert("the phone's week keeps June whole", formatWeekTitleShort(new Date(2026, 5, 10)), "7 – 13 June 2026");
+assert("the phone's week across two years", formatWeekTitleShort(new Date(2026, 11, 31)), "27 Dec 2026 – 2 Jan 2027");
 
 assert("the week key is its Sunday", toWeekString(new Date(2026, 7, 12)), "2026-08-09");
 

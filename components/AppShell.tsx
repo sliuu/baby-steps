@@ -51,11 +51,14 @@ export function AppShell(props: Props) {
           what's left. Anything less starts to read as cramped against the
           nav's hairline.
 
+          A phone gets 24px instead. Its screen is the short one, and every
+          pixel above the section's title is one less of the section.
+
           Underneath, the extra is the phone's fixed nav bar, paid for here
           rather than left for the page to collide with — 56px of bar plus the
           page's own 40px is 6rem. Above 64rem there is no bar and the bottom
           goes back to matching the top. */}
-      <main className={`${PAGE_WIDTH} flex-1 pt-10 pb-24 lg:pb-10`}>
+      <main className={`${PAGE_WIDTH} flex-1 pt-5 pb-24 lg:pt-10 lg:pb-10`}>
         {/* Both landings are calendar sections, so null is a calendar. */}
         {page === null || isCalendar(page) ? props.calendar : props.trends}
       </main>

@@ -257,3 +257,33 @@ export function formatWeekTitle(anchor: Date): string {
   }
   return `${format(first, "d MMM yyyy")} – ${format(last, "d MMM yyyy")}`;
 }
+
+/**
+ * The months as they're written by hand, and not date-fns's `MMM`. "Sept" and
+ * not "Sep"; June and July left whole, since cutting a letter off a four-letter
+ * word saves nothing and reads as a typo.
+ */
+const SHORT_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "June",
+  "July", "Aug", "Sept", "Oct", "Nov", "Dec",
+];
+
+/**
+ * "13 – 19 Sept 2026": the week's title for a phone, where the whole of
+ * "September" pushes the title into truncation beside the arrows. Same three
+ * shapes as `formatWeekTitle`, every month in its short form.
+ */
+export function formatWeekTitleShort(anchor: Date): string {
+  const first = startOfWeek(anchor);
+  const last = endOfWeek(anchor);
+  const dayMonth = (date: Date) =>
+    `${format(date, "d")} ${SHORT_MONTHS[date.getMonth()]}`;
+
+  if (isSameMonth(first, last)) {
+    return `${format(first, "d")} – ${dayMonth(last)} ${format(last, "yyyy")}`;
+  }
+  if (isSameYear(first, last)) {
+    return `${dayMonth(first)} – ${dayMonth(last)} ${format(last, "yyyy")}`;
+  }
+  return `${dayMonth(first)} ${format(first, "yyyy")} – ${dayMonth(last)} ${format(last, "yyyy")}`;
+}

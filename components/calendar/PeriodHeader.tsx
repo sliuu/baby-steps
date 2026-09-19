@@ -14,6 +14,11 @@ type SteppablePeriod = Exclude<CalendarViewMode, "today">;
 type Props = {
   /** "August 2026", or "9 – 15 August 2026". */
   title: string;
+  /**
+   * The same title with its months abbreviated, "13 – 19 Sept 2026", shown
+   * below 64rem in place of `title`. Omitted, `title` is shown everywhere.
+   */
+  shortTitle?: string;
   /** Read-only here. It names the unit in the arrows, nothing more. */
   view: SteppablePeriod;
   onStep: (by: number) => void;
@@ -85,7 +90,17 @@ export function PeriodHeader(props: Props) {
               Do not swap this for `overflow-visible`: the truncation is what
               stops a long week title from shoving the arrows off the row. */}
           <span className="-my-[0.125em] block truncate leading-[1.25]">
-            {props.title}
+            {/* Both spellings drawn and CSS choosing, like the landings: the
+                server has no window to pick one with. The hidden one is
+                `display: none`, so a screen reader only ever hears one. */}
+            {props.shortTitle ? (
+              <>
+                <span className="lg:hidden">{props.shortTitle}</span>
+                <span className="hidden lg:inline">{props.title}</span>
+              </>
+            ) : (
+              props.title
+            )}
           </span>
         </ViewTransition>
       </h1>

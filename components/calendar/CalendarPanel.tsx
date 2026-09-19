@@ -27,6 +27,7 @@ import type { LibraryGroup } from "@/lib/queries/activities";
 import {
   formatMonthTitle,
   formatWeekTitle,
+  formatWeekTitleShort,
   fromDayString,
   toDayString,
   type DayString,
@@ -220,6 +221,9 @@ export function CalendarPanel(props: Props) {
 
     const week = view === "week";
     const title = week ? formatWeekTitle(anchor) : formatMonthTitle(month);
+    // Only the week has a phone spelling. "September 2026" fits; "13 – 19
+    // September 2026" is the one that truncates beside the arrows.
+    const shortTitle = week ? formatWeekTitleShort(anchor) : undefined;
     // The key React watches to decide there is something to animate between.
     // It carries the view as well as the period, so switching Month to Week is
     // a swap rather than a morph of one grid into the other.
@@ -267,7 +271,12 @@ export function CalendarPanel(props: Props) {
         className={cn("flex flex-col gap-6", className)}
         data-period={periodKey}
       >
-        <PeriodHeader title={title} view={view} onStep={step} />
+        <PeriodHeader
+          title={title}
+          shortTitle={shortTitle}
+          view={view}
+          onStep={step}
+        />
 
         {/* `default="none"` is load-bearing, not tidiness. Every sticker change
             in this app commits inside a `startTransition` — see
