@@ -19,7 +19,7 @@ type Props = {
  * plainly, because "put it in a card too" is the obvious thing to do and it
  * would be wrong. A card is a frame, and a frame says "this is a picture, look
  * at it as a unit". The chart on the left is exactly that. This side is reading
- * matter — a sentence, then a table — and sitting it on the page ground lets it
+ * matter — a table, with its sentence now for screen readers only — and sitting it on the page ground lets it
  * behave like the rest of the app's text does. Two cards side by
  * side would also make the page a pair of panels with no hierarchy, when the
  * actual relationship is that one of them is the picture and the other is what
@@ -45,9 +45,8 @@ export function Readout(props: Props) {
     // chart card is a fixed ratio, so its height is set by how wide the column
     // is — it can't be stretched to meet this one. With the mood strip gone this
     // column is now the *shorter* of the two rather than the taller, which is a
-    // change in which one hangs: the gap stays at 6 because the sentence and the
-    // table are a pair and padding them apart to chase the card's bottom edge
-    // would space them by an accident of the chart's aspect ratio.
+    // change in which one hangs. The sentence is `sr-only` now, so on screen
+    // the gap separates nothing; it stays for whatever joins the table next.
     <div className="flex flex-col gap-6">
       {props.takeaway && <Sentence text={props.takeaway} />}
 
@@ -57,12 +56,17 @@ export function Readout(props: Props) {
 }
 
 /**
- * The chart, stated.
+ * The chart, stated — to a screen reader only.
  *
- * A chart shows a shape and leaves you to read it. This says the reading out
- * loud, which is a real accessibility feature and not only a nicety: the star
- * beside it is `aria-hidden`, so for a screen reader this line *is* the chart,
- * arriving before the table rather than instead of it.
+ * It used to be printed, big, above the table: "Work held the greatest share
+ * of your attention this month." It came off the screen because the star and
+ * the table already show it, and a sentence restating a picture you are
+ * looking at reads as the app talking over you.
+ *
+ * It stays in the page as `sr-only` because that was never the only job it
+ * did: the star beside it is `aria-hidden`, so for a screen reader this line
+ * *is* the chart, arriving before the table rather than instead of it.
+ * `sr-only` is absolutely positioned, so it takes no room and adds no gap.
  *
  * One line. A muted second line under it used to give the totals — "4 marks in
  * all, across 2 of your 6 areas" — and it sat directly above a table of the
@@ -72,11 +76,7 @@ export function Readout(props: Props) {
  */
 function Sentence(props: { text: string }) {
   return (
-    // `max-w-prose` even though the column is already narrow. The column's width
-    // is set by the grid and can change; a line length is a fact about reading.
-    <p className="max-w-prose font-heading text-[1.35rem] leading-snug">
-      {props.text}
-    </p>
+    <p className="sr-only">{props.text}</p>
   );
 }
 

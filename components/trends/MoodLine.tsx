@@ -107,16 +107,13 @@ export function MoodLine(props: Props) {
     <section className={`flex flex-col gap-4 ${PANEL}`}>
       <h2 className="eyebrow">Mood over time</h2>
 
-      {/* The reading, before the picture. Same job as `Readout`'s sentence and
-          the same reason it's a prop: the branching behind it is in
-          `moodTakeaway`, where `assert` can reach it. It is also what makes the
-          chart's `aria-hidden` legitimate — this line *is* the chart, for
-          anyone who isn't looking at it. */}
-      {props.takeaway && (
-        <p className="max-w-prose font-heading text-[1.35rem] leading-snug">
-          {props.takeaway}
-        </p>
-      )}
+      {/* The reading, before the picture — heard, not shown. Same job as
+          `Readout`'s sentence and off the screen for the same reason: the line
+          below shows it. It stays because it is what makes the chart's
+          `aria-hidden` legitimate — this line *is* the chart, for anyone who
+          isn't looking at it. The branching behind it is in `moodTakeaway`,
+          where `assert` can reach it. */}
+      {props.takeaway && <p className="sr-only">{props.takeaway}</p>}
 
       <div
         aria-hidden="true"

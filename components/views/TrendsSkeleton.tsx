@@ -55,17 +55,9 @@ export function TrendsSkeleton() {
             <Skeleton className="size-full rounded-none" />
           </ChartCard>
 
-          {/* The readout: a sentence, then the table. Two lines and a short
-              third is the shape of the takeaway paragraph — it wraps to about
-              that at this column width, and guessing one line would leave the
-              table jumping up when the real sentence arrives. */}
+          {/* The readout, which on screen is only the table now — its
+              sentence is for screen readers and takes no room. */}
           <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2.5">
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-2/3" />
-            </div>
-
             <div className="flex flex-col gap-4">
               {/* The header row, then one row per life area. Six, because six
                   is how many areas there are — every one gets a row even at
