@@ -30,7 +30,7 @@ type Props = PeriodProps & {
   month: Date;
   /** The library, for the activity-to-area map the summary counts through. */
   groups: LibraryGroup[];
-  /** Open one day. `CalendarPanel` moves the anchor and asks for Today. */
+  /** Open the day's sheet. `CalendarPanel` owns it — see `DaySheet`. */
   onShowDay: (day: Date) => void;
   /**
    * Which widths this drawing is for. `CalendarPanel` renders both the phone's
@@ -58,9 +58,11 @@ type Props = PeriodProps & {
  * cannot be operated. Dropping to a dot says plainly that this drawing is
  * evidence rather than a set of handles, and puts every gesture on the cell.
  *
- * So the cell is the tap target, it is the whole cell, and it opens the day —
- * the same bargain `WeekList` makes, for the same reason: the day view is where
- * this app adds and removes things, and it is one tap from here.
+ * So the cell is the tap target, it is the whole cell, and it opens that day's
+ * sheet — the same bargain `WeekList` makes, for the same reason. The sheet
+ * arrives over the month rather than replacing it, which matters more here than
+ * it does in the week: the thing you came to this screen for is the shape of
+ * thirty days at once, and filling in a Tuesday should not cost you the shape.
  *
  * **The summary underneath is not decoration, it is the other half of the
  * view.** The desktop month says how the month went by letting you read

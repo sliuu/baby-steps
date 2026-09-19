@@ -28,49 +28,33 @@ import type { CalendarViewMode } from "./period";
 const ViewModeContext = createContext<CalendarViewMode | null>("month");
 
 /**
- * The way back up. Tapping a day in the week list or the month grid should
- * *open* that day, and opening a day means changing a nav section two
- * components above this one — the same seam `ViewModeContext` crosses, in the
- * other direction.
+ * **There was a second context here, and the day sheet removed it.**
  *
- * A second context rather than an object on the first, because the two have
- * different readerships and different re-render costs: every calendar reads
- * the view on every render, and exactly one of them ever needs the setter. A
- * `{ view, setView }` value would be a new object each render of the shell,
- * which is a re-render for all of them to deliver a function to one.
+ * `SetViewContext` carried a setter *up* the same seam this one carries the
+ * view down: tapping a day in the week list or the month dots changed a nav
+ * section two components above the calendar, so that the tap landed you on the
+ * whole Today screen. It had exactly one consumer, `CalendarPanel.showDay`.
  *
- * The default is a no-op for the same reason the view defaults to `month`: a
- * calendar rendered outside the shell is a test or a story, and the honest
- * answer there is that tapping a day does nothing, not that it throws.
+ * Tapping a day now opens a sheet over the week you were reading — see
+ * `DaySheet` — which is a better answer to the same gesture and needs no
+ * setter, because nothing navigates. The context, its `useSetCalendarView`
+ * hook and the provider's `onChangeView` prop all lost their last reader at
+ * once, so they went together rather than being left as a channel nobody
+ * sends on.
+ *
+ * What is genuinely gone: there is no longer any way for the calendar to ask
+ * the nav for a different section. If something ever needs one again, it is a
+ * context with one consumer and this is roughly what it looked like.
  */
-const SetViewContext = createContext<(view: CalendarViewMode) => void>(
-  () => {},
-);
 
 export function CalendarViewProvider(props: {
   /** Null until a section is pressed. See `LANDING_NARROW` in `lib/nav.ts`. */
   view: CalendarViewMode | null;
-  /** Usually the shell's own `setPage`. The three view modes are three of its
-   *  four pages, so it needs no adapter. */
-  onChangeView: (view: CalendarViewMode) => void;
   children: React.ReactNode;
 }) {
   return (
-    <ViewModeContext value={props.view}>
-      <SetViewContext value={props.onChangeView}>
-        {props.children}
-      </SetViewContext>
-    </ViewModeContext>
+    <ViewModeContext value={props.view}>{props.children}</ViewModeContext>
   );
-}
-
-/**
- * Ask the nav for a different calendar. No hydration gate on this one — it is
- * a function, not a value, so there is no markup for it to disagree with, and
- * by the time anyone can press something the page has hydrated anyway.
- */
-export function useSetCalendarView(): (view: CalendarViewMode) => void {
-  return useContext(SetViewContext);
 }
 
 /**

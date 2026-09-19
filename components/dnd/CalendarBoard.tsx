@@ -589,6 +589,9 @@ export function CalendarBoard(props: Props) {
           <CalendarPanel
             initialDay={toDayString(new Date())}
             view={view}
+            // The day sheet's "New sticker" chip writes to the database, and
+            // the demo has none. Same omission the tray makes with its `+`.
+            local={props.local}
             // For the day view's picker only. The tray gets the same list
             // below — one query, two surfaces onto it, which is the point of
             // the library living up here rather than in either of them.
@@ -596,6 +599,7 @@ export function CalendarBoard(props: Props) {
             stickersByDay={stickersByDay}
             onOpenDay={setOpenDay}
             onCommit={commit}
+            error={error}
             highlight={highlight}
             target={target}
             // A mood lands on the day, not in it. The square lights up either
@@ -655,7 +659,26 @@ export function CalendarBoard(props: Props) {
             The five moods were the binding constraint before the sticker row
             was — five labelled columns wanted ~54px each — which is what
             losing their words bought. */}
-        <aside className="lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-9rem)] lg:w-56 lg:shrink-0 lg:flex-col">
+        {/* **Desktop only, and that is the mobile design rather than a
+            responsive afterthought.** This rail is a drag source: you pick a
+            sticker up here and drop it on a day. A touch screen cannot take
+            that gesture, so on a phone the whole interaction runs the other
+            way round — tap the day, then tap the sticker, in `DaySheet`. A tray
+            you can see and cannot use is worse than no tray, and at 375px it
+            is also a second full-height column below the calendar that the
+            page has to scroll past to get to nothing.
+
+            What a phone loses with it: editing a sticker, retiring one, and
+            the highlight that dims everything a selection didn't match. Making
+            one is the exception — the sheet carries its own "New sticker"
+            chip. The other three are still desktop-only and are the honest
+            next piece of work.
+
+            `hidden` first and then `lg:flex`, not `lg:block`: the rail is a
+            flex column and `twMerge` resolves the two display classes in
+            argument order, so the class that turns it back on has to be the
+            display it actually wants. */}
+        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-9rem)] lg:w-56 lg:shrink-0 lg:flex-col">
           <StickerTray
             groups={props.groups}
             selection={selection}
@@ -670,24 +693,62 @@ export function CalendarBoard(props: Props) {
           {/* Rendered always, filled sometimes. A live region the browser only
               discovers at the moment it gains text is a live region that often
               doesn't announce — it has to be in the tree beforehand for the
-              change to be a change. */}
-          <div
-            role="status"
-            aria-live="polite"
-            className="mt-6 empty:hidden lg:shrink-0"
-          >
+              change to be a change. So no `empty:hidden`: that is
+              `display: none`, which takes it out of the tree. The margin is on
+              the line instead, so an empty region is zero high. */}
+          <div role="status" aria-live="polite" className="lg:shrink-0">
             {/* Edge to edge like a row's highlight, with its text on the same
                 inset as the sticker names above it. Filled things span the
                 rail; words start at TRAY_INSET. */}
             {error && (
               <p
-                className={`${TRAY_INSET} rounded-md bg-ramp-red-soft py-2 text-[0.83rem]`}
+                className={`${TRAY_INSET} mt-6 rounded-md bg-ramp-red-soft py-2 text-[0.83rem]`}
               >
                 {error}
               </p>
             )}
           </div>
         </aside>
+      </div>
+
+      {/* **The phone's copy of the same line, and it is not a duplicate for
+          long.** The rail above is `hidden` below 64rem, and a live region
+          inside `display: none` is invisible *and* silent — screen readers
+          skip it too. Without this, a failed write on a phone is a sticker
+          that appears and then vanishes when the optimistic value expires,
+          with nothing anywhere saying why.
+
+          Two nodes rather than one moved node, because the two placements are
+          genuinely different objects: the rail's line is a block at the foot
+          of a column that is already there, and this is a banner over a page
+          that has no spare room. Exactly one of them is ever displayed — this
+          is `lg:hidden` and the rail is `hidden lg:flex` — so there is exactly
+          one live region in play at any width, which is the thing that would
+          actually break if both showed at once.
+
+          Pinned to the top, and not above the bottom bar where the tap
+          happened. The likeliest way to see this at all is tapping a chip in
+          `DaySheet`, and the sheet occupies the bottom 85% of the screen — a
+          bar down there lands underneath it or on top of the thing you were
+          reading. `z-60` clears the sheet's own 50 for the same reason: a
+          failure notice that the sheet covers is the bug this is fixing.
+
+          **Seen here, but only heard here when no sheet is open.** An open
+          Radix dialog hides everything outside it from assistive technology,
+          this included, so `DaySheet` carries its own `sr-only` copy of the
+          same line. Mounted always, for the reason the rail's is: no
+          `empty:hidden`, which is `display: none`. `pointer-events-none`
+          instead, so the empty strip across the top never eats a tap. */}
+      <div
+        role="status"
+        aria-live="polite"
+        className="pointer-events-none fixed inset-x-0 top-0 z-60 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] lg:hidden"
+      >
+        {error && (
+          <p className="mx-auto max-w-[34rem] rounded-md bg-ramp-red-soft px-3 py-2 text-[0.83rem] shadow-[0_4px_16px_rgb(70_50_20/0.18)]">
+            {error}
+          </p>
+        )}
       </div>
 
       {/* The floating copy. It exists so the original can stay exactly where it
@@ -772,6 +833,7 @@ export function CalendarBoard(props: Props) {
         groups={props.groups}
         onClose={() => setOpenDay(null)}
         onCommit={commit}
+        error={error}
       />
     </DndContext>
   );

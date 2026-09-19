@@ -223,6 +223,23 @@
      proportion on a large element would look like a bounce. */
   --animate-land: land var(--dur-land) var(--ease-enter) both;
 
+  /* The day sheet rising from the bottom edge — see `DaySheet`.
+
+     `--ease-deck` and not `--ease-enter`, which is the one choice here worth
+     stating. The deck curve is `cubic-bezier(0.32, 0.72, 0, 1)`, the same curve
+     vaul uses for its drawer, and a sheet is the one surface in this app that
+     is asking the same question the deck asks: a large object travelling a long
+     way, where the eye follows the whole journey rather than just noticing the
+     arrival. `--ease-enter` is tuned for the opposite — a small thing that
+     should be *there* almost immediately — and at 100% of a 560px sheet it
+     covers most of the screen in the first 60ms and then creeps.
+
+     Leaving is `--ease-exit` at the shorter duration, like every other panel:
+     an exit you watch is an interface holding you up.
+  */
+  --animate-sheet-in: sheet-up var(--dur-panel-in) var(--ease-deck) both;
+  --animate-sheet-out: sheet-down var(--dur-panel-out) var(--ease-exit) both;
+
   /* The signed-out page's three text elements, which now rise as one block —
      see `app/login/page.tsx`.
 
@@ -822,6 +839,31 @@
    transition rules below are hand-written CSS, not Tailwind classes, and
    Tailwind has no way to see that they need `deck-slide`.
 --------------------------------------------------------------------------- */
+
+/* The day sheet, in and out. `translate` rather than `transform`, so nothing
+   here fights the `-translate-x-1/2` that the centred dialog content uses —
+   these are different surfaces, but they share a stylesheet and the property
+   form is the house one (see `rise` and `fall`).
+
+   100% of the element's own height, which is what makes the distance correct
+   for a short sheet and a tall one without either of them knowing the number. */
+@keyframes sheet-up {
+  from {
+    translate: 0 100%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes sheet-down {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 100%;
+  }
+}
 
 /* A mark landing in a day cell. */
 @keyframes land {

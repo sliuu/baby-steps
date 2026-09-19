@@ -10,13 +10,13 @@ import {
 } from "react";
 import { startOfMonth } from "date-fns";
 
+import { DaySheet, type DaySheetVariant } from "./DaySheet";
 import { MonthDots } from "./MonthDots";
 import { MonthGrid } from "./MonthGrid";
 import { PeriodHeader } from "./PeriodHeader";
 import { TodayView } from "./TodayView";
 import { WeekGrid } from "./WeekGrid";
 import { WeekList } from "./WeekList";
-import { useSetCalendarView } from "./viewMode";
 import {
   LANDING_NARROW_VIEW,
   LANDING_WIDE_VIEW,
@@ -28,6 +28,8 @@ import {
   formatMonthTitle,
   formatWeekTitle,
   fromDayString,
+  toDayString,
+  type DayString,
   stepMonth,
   stepWeek,
   today,
@@ -80,6 +82,10 @@ type Props = Omit<PeriodProps, "todayString"> & {
    * See `LANDING_NARROW` in `lib/nav.ts`.
    */
   view: CalendarViewMode | null;
+  /** The last failed write. Passed through to the sheet, to be read aloud. */
+  error: string | null;
+  /** The demo. Passed through to the sheet, which hides "New sticker" in it. */
+  local?: boolean;
 };
 
 /** Today never changes mid-session, so there is nothing to subscribe to. */
@@ -118,8 +124,6 @@ export function CalendarPanel(props: Props) {
     () => null, // server and hydration: we don't know yet
   );
 
-  const setView = useSetCalendarView();
-
   // Null until an arrow is pressed. While it's null the calendar follows the
   // clock, so a visitor who leaves the tab open overnight isn't stranded in
   // last month.
@@ -137,18 +141,35 @@ export function CalendarPanel(props: Props) {
   }, [chosenDay, todayString, props.initialDay]);
 
   /**
-   * Open one day, from the week list or the month grid.
+   * The day sheet: which day it is editing, and which door it came in by.
    *
-   * Two things at once, and they belong together: move the anchor, then ask
-   * the nav for the day view. The anchor is this component's own state and the
-   * section is the shell's, which is why the second half arrives through a
-   * context — see `useSetCalendarView`. Nothing in here can tell whether the
-   * view actually changed, and it doesn't need to: at a wide window the taps
-   * that call this don't exist.
+   * One piece of state for both, because they are never set apart — a sheet
+   * with no day is a shut sheet, and `variant` only means anything while there
+   * is one. Null is closed.
+   */
+  const [sheet, setSheet] = useState<{
+    day: DayString;
+    variant: DaySheetVariant;
+  } | null>(null);
+
+  /**
+   * Open one day, from the week list or the month dots.
+   *
+   * **This used to navigate.** It set the anchor and then asked the nav for the
+   * day view, through a context that existed for that one call — tap a row in
+   * the week, land on the whole Today screen. The sheet replaced it, and the
+   * difference is where you end up: you were reading a week, you wanted to put
+   * a sticker on Tuesday, and you now do that without losing the week. Nothing
+   * navigates any more, so the context is gone; see the tombstone in
+   * `viewMode.tsx`.
+   *
+   * It leaves the anchor alone for the same reason. Moving it would step the
+   * week or the month you are looking at to the one containing the day you
+   * tapped — usually the same period, occasionally not, and a grid that shifts
+   * under a sheet you just opened is the flash this app keeps designing out.
    */
   const showDay = (day: Date) => {
-    setChosenDay(day);
-    setView("today");
+    setSheet({ day: toDayString(day), variant: "day" });
   };
 
   const month = useMemo(() => startOfMonth(anchor), [anchor]);
@@ -189,7 +210,9 @@ export function CalendarPanel(props: Props) {
           className={className}
           anchor={anchor}
           onPickDay={setChosenDay}
-          groups={props.groups}
+          onAddSticker={() =>
+            setSheet({ day: toDayString(anchor), variant: "add" })
+          }
           {...passthrough}
         />
       );
@@ -346,14 +369,46 @@ export function CalendarPanel(props: Props) {
    * a block container where `flex-col` and `gap-6` mean nothing and the header
    * sits flush against the grid.
    */
+  /**
+   * The sheet is rendered once, outside `body`, and that is load-bearing.
+   *
+   * `body` runs twice on a cold load — the phone's landing and the desktop's —
+   * and a `<DaySheet>` inside it would be two dialogs on one piece of state,
+   * both opening at once. Radix would trap focus in whichever mounted last and
+   * the other would sit underneath holding a second copy of the note field.
+   * Out here there is one, and both drawings point at it.
+   */
+  const sheetNode = (
+    <DaySheet
+      day={sheet?.day ?? null}
+      // Held at its last value while the sheet closes. The day goes null to
+      // shut it, and Radix keeps the content mounted through the exit
+      // animation — reading `variant` off a null sheet would swap a dated
+      // title for "Add a sticker" on the way out.
+      variant={sheet?.variant ?? "day"}
+      onClose={() => setSheet(null)}
+      groups={props.groups}
+      stickersByDay={props.stickersByDay}
+      onCommit={props.onCommit}
+      error={props.error}
+      local={props.local}
+    />
+  );
+
   if (props.view === null) {
     return (
       <>
         {body(LANDING_NARROW_VIEW, "lg:hidden")}
         {body(LANDING_WIDE_VIEW, "hidden lg:flex")}
+        {sheetNode}
       </>
     );
   }
 
-  return body(props.view);
+  return (
+    <>
+      {body(props.view)}
+      {sheetNode}
+    </>
+  );
 }
