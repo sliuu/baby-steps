@@ -1,17 +1,17 @@
 "use client";
 
+import { Tabs as TabsPrimitive } from "radix-ui";
 import { useMemo, useState, useSyncExternalStore } from "react";
 
+import { HabitList } from "./HabitList";
 import { HabitTable } from "./HabitTable";
 import { LifeStar } from "./LifeStar";
+import { MoodBars } from "./MoodBars";
 import { MoodLine } from "./MoodLine";
-import { MostDone } from "./MostDone";
 import { RangePicker } from "./RangePicker";
 import { captionFor, spanLabel } from "./rangeText";
-import { MoodStrip, Readout } from "./Readout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Readout } from "./Readout";
 import {
-  activityTally,
   moodSeries,
   moodTakeaway,
   moodTally,
@@ -22,7 +22,9 @@ import {
   type Range,
 } from "@/lib/analytics";
 import { today, type DayString } from "@/lib/dates";
-import { RULE } from "@/lib/layout";
+import { daysBetween } from "@/lib/daymath";
+import { earliestPlacement, habitTable, habitWindow } from "@/lib/habits";
+import { PAGE_TITLE, PILL_TRACK, RULE, pill } from "@/lib/layout";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
 
@@ -150,19 +152,66 @@ export function TrendsBoard(props: Props) {
   );
 
   /**
-   * The habit ranking. A third walk over the same map, at the grain the marks
-   * were placed at rather than rolled up to areas — see `activityTally`.
+   * The first day anything was ever placed, which is what closes an open left
+   * edge — "all time" is two nulls, and a rate needs a denominator. Its own
+   * memo because it is a scan of the whole map that only changes when the
+   * data does: switching range must not re-walk every day ever recorded.
    */
-  const ranking = useMemo(
-    () => activityTally(props.stickersByDay, bounds),
-    [props.stickersByDay, bounds],
+  const earliest = useMemo(
+    () => earliestPlacement(props.stickersByDay),
+    [props.stickersByDay],
   );
+
+  /** The range as a closed window, for the habit rows and their plot. */
+  const habitSpan = useMemo(
+    () => habitWindow(bounds, todayString, earliest),
+    [bounds, todayString, earliest],
+  );
+
+  /**
+   * Every habit's row, once, for both drawings of the tab: the phone's list
+   * and the wide screen's table. Both are mounted and CSS shows one, so
+   * counting inside each would walk the map twice for one screen's worth.
+   */
+  const habits = useMemo(
+    () => habitTable(props.stickersByDay, props.groups, habitSpan),
+    [props.stickersByDay, props.groups, habitSpan],
+  );
+
+  /** `HabitRow` doesn't say whether its sticker is archived; the library does. */
+  const archived = useMemo(
+    () =>
+      new Set(
+        props.groups.flatMap((group) =>
+          group.stickers
+            .filter((sticker) => sticker.archived)
+            .map((sticker) => sticker.id),
+        ),
+      ),
+    [props.groups],
+  );
+
+  /**
+   * The "13" in "12 of 13": the days the range has had so far. It stops at
+   * today — a month isn't short of moods for days that haven't happened — and
+   * an open left edge starts at the first thing you ever recorded, a mood or a
+   * mark. Null for a range that hasn't started.
+   */
+  const recordable = useMemo(() => {
+    const end = bounds.to && bounds.to < todayString ? bounds.to : todayString;
+    const start =
+      bounds.from ??
+      [series.from, earliest]
+        .filter((day): day is DayString => day !== null)
+        .sort()[0];
+    if (!start || start > end) return null;
+    return daysBetween(start, end) + 1;
+  }, [bounds, series.from, earliest, todayString]);
 
   const span = spanLabel(range, bounds);
 
   /**
-   * The range as an adverbial, used on all three tabs: inside the takeaway
-   * sentence, in the ranking's heading and in the mood heading. Computed here
+   * The range as an adverbial, inside both takeaway sentences. Computed here
    * so they can't drift into saying "this month" and "across the month" about
    * the same fortnight.
    */
@@ -178,73 +227,73 @@ export function TrendsBoard(props: Props) {
    *  branches worth a test, and `lib/analytics.test.ts` can reach it there. */
   const drift = useMemo(() => moodTakeaway(series, phrase), [series, phrase]);
 
+  const recordCaption = captionFor("Days by mood", range, bounds);
+
   return (
     // No PAGE_WIDTH here. `AppShell`'s <main> already carries it, and applying
     // it again would nest one max-width inside an identical one and pay the
     // horizontal padding twice — the page would look inset from itself.
     <div className="flex flex-col gap-5">
-      <h1 className="font-heading text-page-title">
-        Trends
-      </h1>
+      <h1 className={PAGE_TITLE}>Trends</h1>
 
-      <Tabs
+      {/* Radix's own primitive rather than `components/ui/tabs`. The shadcn
+          wrapper's two variants are a boxed list and an underline, and
+          restyling either into a tracked pill means overriding its active
+          state class by class. The primitive brings what the wrapper was
+          for — the tablist role, `aria-selected`, arrow keys — and nothing to
+          fight. */}
+      <TabsPrimitive.Root
         value={tab}
         onValueChange={(next) => setTab(next as TrendsTab)}
-        // The root is `flex flex-col gap-2`, which is a gap for tabs inside a
-        // popover. A page's panels need the same air the sections around them
-        // have.
-        className="gap-8"
+        className="flex flex-col gap-6 lg:gap-8"
       >
-        {/* One band: which lens on the left, which range on the right.
+        {/* One band: which lens, then which range.
 
             The range picker governs all three tabs, so it stays outside them —
             moving it inside would mean three copies of one control, or a
-            control that appears to reset when you switch. Sharing a line with
-            the tabs is what says "this applies to whichever of these you're
-            on". The one thing it doesn't filter is the year strip, which
-            answers that itself: the strip prints its own dates and says so in
-            words.
+            control that appears to reset when you switch.
 
-            `justify-between` with `flex-wrap`: on a narrow screen the range
-            drops to its own line under the tabs rather than squeezing them. */}
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          {/* `variant="line"` — underlined, not the nav's pill, and that is the
-              decision here rather than a default. Step 15's week entry records
-              why the Month/Week pill left the calendar: two segmented pills on
-              one screen read as two levels of navigation and you have to
-              remember which one holds what. The nav owns the pill. Sections
-              *within* a page get an underline, which is the same distinction
-              `MarkPicker` already draws inside its popover. */}
-          <TabsList variant="line">
+            Stacked on a phone, the pill full width and the range row under it
+            with the dates pushed to the far edge. On a wide screen the two sit
+            on one line, the pill on the left at a fixed width — three equal
+            segments stretched across 1500px are three buttons nobody can find
+            the edges of. */}
+        <div className="flex flex-col gap-[18px] lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          {/* **A pill, and the rule that used to forbid it is gone.** These
+              were underlined tabs, on the argument that two segmented pills
+              on one screen read as two levels of navigation. The phone's
+              navigation is now the same tracked pill — see `PILL_TRACK` — and
+              on a wide screen the nav's is a lighter drawing, so the pill here
+              reads as "one of three, all on screen" rather than as a second
+              menu. */}
+          <TabsPrimitive.List
+            aria-label="Trends"
+            className={`grid w-full grid-cols-3 gap-1 lg:w-[22rem] ${PILL_TRACK}`}
+          >
             {TABS.map((entry) => (
-              <TabsTrigger
+              <TabsPrimitive.Trigger
                 key={entry.id}
                 value={entry.id}
-                // Bumped off the component's `text-sm`, which is sized for
-                // eight icon tabs in a popover. These sit under a 3rem page
-                // title and are the page's primary control.
-                className="px-3 text-[0.95rem]"
+                className={pill(tab === entry.id)}
               >
                 {entry.label}
-              </TabsTrigger>
+              </TabsPrimitive.Trigger>
             ))}
-          </TabsList>
+          </TabsPrimitive.List>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center justify-between gap-3 lg:justify-end lg:gap-4">
             <RangePicker value={range} onChange={setRange} />
 
             {/* The dates the rule resolved to, right where the rule is set. The
                 dropdown says what you picked; this says what that means today,
-                and the pair is only useful side by side — a rule and its
-                resolution separated by a heading is two facts you have to hold
-                at once. */}
+                and the pair is only useful side by side. */}
             {span && (
               <p
                 // The dates change when the dropdown changes but the dropdown
                 // doesn't announce them, so a screen reader would hear the new
                 // rule and never the new period.
                 aria-live="polite"
-                className="tabular text-[0.83rem] text-ink-muted"
+                className="tabular text-right text-[0.78rem] text-ink-muted lg:text-[0.83rem]"
               >
                 {span}
               </p>
@@ -252,45 +301,46 @@ export function TrendsBoard(props: Props) {
           </div>
         </div>
 
-        {/* Areas — the six life areas, as a shape and as a table. */}
-        <TabsContent value="areas">
+        {/* Areas — the six life areas, as bars, and beside them on a wide
+            screen as a shape. */}
+        <TabsPrimitive.Content value="areas" className={CONTENT}>
           {totals.total === 0 ? (
             <Empty range={range} />
           ) : (
-            // Two columns: the picture on the left, what it says on the right.
-            //
-            // `lg` and not `md`. The break is set by what the right column
-            // needs rather than by a device — a three-column table stops being
-            // readable somewhere around 22rem, and at `md` each half is
-            // narrower than that. Below it they stack, chart first, which is
-            // the reading order the page already has on a phone.
+            // Two columns from `lg`: the star on the left, the bars on the
+            // right. Below it the star isn't drawn at all — a radar at 335px
+            // is six labels fighting for the edges, and the bars carry the
+            // same proportions in a shape a thumb can read.
             //
             // `items-start` matters more than it looks: without it the grid
             // stretches both columns to the taller one's height, and the chart
             // card — which is a fixed ratio by design — would be pulled out of
-            // shape by however long the table happens to be.
-            <div className="grid items-start gap-x-14 gap-y-10 lg:grid-cols-2">
-              {/* `min-w-0` for the reason `MostDone` needs it on its name cell:
-                  a grid column's default minimum is its content, and the card
-                  would otherwise refuse to shrink past its own contents' width
-                  and push the readout off the page. */}
-              <div className="min-w-0">
+            // shape by however long the bars happen to be.
+            <div className="grid items-start gap-x-14 gap-y-6 lg:grid-cols-2">
+              {/* `min-w-0` because a grid column's default minimum is its
+                  content, and the card would otherwise refuse to shrink and
+                  push the bars off the page. */}
+              <div className="hidden min-w-0 lg:block">
                 <LifeStar tally={totals} />
               </div>
 
-              <Readout
-                tally={totals}
-                takeaway={summary}
-                caption={captionFor("Marks by life area", range, bounds)}
-              />
+              {/* `PANEL`, spelled out behind `lg:` — the star's card wears the
+                  rule, and on a wide screen the two halves should read as one
+                  rule broken by the gap between them. On a phone the bars sit
+                  straight under the range row, which is rule enough. */}
+              <div className="min-w-0 lg:border-t-2 lg:border-rule lg:pt-4">
+                <Readout
+                  tally={totals}
+                  takeaway={summary}
+                  caption={captionFor("Marks by life area", range, bounds)}
+                />
+              </div>
 
               {/* Zero today, and it stays invisible while it is. It exists so
                   that once something can archive a sticker, marks that stop
                   being attributable say so instead of quietly leaving the
                   total. On this tab and not the others because it is a fact
-                  about *attribution to an area* — the ranking and the strip
-                  read habits off the placement and never needed the library to
-                  name them. */}
+                  about *attribution to an area*. */}
               {totals.unattributed > 0 && (
                 <p className="text-[0.83rem] text-ink-muted lg:col-span-2">
                   {totals.unattributed} mark
@@ -301,74 +351,84 @@ export function TrendsBoard(props: Props) {
               )}
             </div>
           )}
-        </TabsContent>
+        </TabsPrimitive.Content>
 
-        {/* Habits — the same marks at the grain they were placed at, twice
-            over: ranked for the range, then every habit as a row. Which you did
-            most, and then the numbers behind that.
-
-            **Stacked, and one of them used to be three panels.** There was an
-            eight-week strip between these two, a grid of every habit's last
-            fifty-six days at a fixed pitch, and the table below it drew the same
-            marks over whatever range you had picked. Two drawings of when, one
-            of them stuck on a window the range picker couldn't touch. The strip
-            is gone and its drawing moved into the table's own column, which is
-            the trade: you lose a day-by-day grid you could not re-aim, and gain
-            one that follows the range and sits beside the rate it explains.
-
-            Coarse to fine, top to bottom. The ranking is capped and the table
-            runs full width, because a ranking is short names with bars behind
-            them and stops improving past about twenty characters, while a table
-            of six columns squeezed into a narrow track is a table that wraps. */}
-        <TabsContent value="habits">
-          <div className="flex flex-col gap-10">
-            {ranking.activities.length === 0 ? (
-              // Not the full `Empty` card. The tab isn't empty — the table
-              // below carries its own range and may well have rows — so a
-              // dashed box announcing nothing would be contradicted by the
-              // thing under it.
-              <p className="text-ink-muted">
-                Nothing placed {phrase}, so there is no ranking to draw. The
-                table below sets its own range, so it may still have something
-                to show.
-              </p>
-            ) : (
-              <div className="max-w-2xl">
-                <MostDone ranking={ranking} phrase={phrase} />
-              </div>
-            )}
-
-            {/* No range props: it resolves its own. See the component's note —
-                the picker in the band above governs this ranking, and the one
-                inside the table governs the table. */}
-            <HabitTable
-              groups={props.groups}
-              stickersByDay={props.stickersByDay}
+        {/* Habits — the same marks at the grain they were placed at. One set
+            of rows, drawn twice: a list on a phone, where six columns would
+            scroll sideways, and the sortable table on a wide screen. The
+            ranked bars that used to sit above the table are gone — the table
+            opens sorted by marks, which is the same ranking with the numbers
+            beside it. */}
+        <TabsPrimitive.Content value="habits" className={CONTENT}>
+          <div className="lg:hidden">
+            <HabitList
+              rows={habits}
+              archived={archived}
+              caption={captionFor("Every habit", range, bounds)}
               today={todayString}
             />
           </div>
-        </TabsContent>
-
-        {/* Moods — days, not marks, which is exactly why they get their own
-            tab rather than a corner of the Areas one. They were the last thing
-            in the right-hand column, under a table of a different unit, and
-            being third in a stack is how a five-item answer gets missed. */}
-        <TabsContent value="moods">
-          {/* The line first, the distribution second, and the order is the
-              argument for having both. The line answers "which way is this
-              going" and says nothing about how often you felt any one way; the
-              strip answers "how many rough days" and says nothing about when.
-              Neither is a summary of the other, so neither is redundant — which
-              is the test the deleted donut failed. */}
-          <div className="flex flex-col gap-10">
-            <MoodLine series={series} takeaway={drift} />
-            <MoodStrip moods={moods} phrase={phrase} />
+          <div className="hidden lg:block">
+            <HabitTable
+              rows={habits}
+              window={habitSpan}
+              caption={captionFor("Every habit", range, bounds)}
+              today={todayString}
+            />
           </div>
-        </TabsContent>
-      </Tabs>
+        </TabsPrimitive.Content>
+
+        {/* Moods — days, not marks, which is why they get their own tab. How
+            many days felt each way, then which way it went. Neither is a
+            summary of the other: the bars say nothing about when, the line
+            says nothing about how often. Stacked on a phone; side by side on a
+            wide screen, the bars on the left because they are read first. */}
+        <TabsPrimitive.Content value="moods" className={CONTENT}>
+          <div className="flex flex-col gap-6">
+            <div className="grid items-start gap-x-14 gap-y-6 lg:grid-cols-2">
+              <section
+                aria-label={recordCaption}
+                className="flex min-w-0 flex-col gap-3 lg:border-t-2 lg:border-rule lg:pt-4"
+              >
+                {/* Wide screens only. On a phone the bars are the first thing
+                    under the range and need no name; beside a labelled chart
+                    they'd be the one column without one. */}
+                <h2 className="eyebrow hidden lg:block">By mood</h2>
+                <MoodBars moods={moods} />
+              </section>
+
+              {/* A hairline above it on a phone, the page's rule on a wide
+                  screen, where it heads a column of its own. */}
+              <MoodLine
+                series={series}
+                takeaway={drift}
+                className="min-w-0 border-t border-hairline pt-5 lg:border-t-2 lg:border-rule lg:pt-4"
+              />
+            </div>
+
+            {moods.total > 0 && recordable !== null && (
+              <div className="flex justify-between border-t border-hairline pt-3 text-[0.78rem] text-ink-muted">
+                <span>Days recorded</span>
+                <span className="tabular">
+                  {moods.total} of {Math.max(recordable, moods.total)}
+                </span>
+              </div>
+            )}
+          </div>
+        </TabsPrimitive.Content>
+      </TabsPrimitive.Root>
     </div>
   );
 }
+
+/**
+ * Every tab's panel. `text-sm` because the table inside Habits was written
+ * against the shadcn wrapper's panel, which sets it. The fade is the design's
+ * cross-fade on switching tab, and it doesn't slide: nothing about the three
+ * lenses is to the left or right of another.
+ */
+const CONTENT =
+  "text-sm outline-none animate-in fade-in-0 duration-150 motion-reduce:animate-none";
 
 /**
  * Nothing in range is not the same as nothing at all, so it says which.

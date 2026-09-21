@@ -297,8 +297,8 @@ export function tally(
  * The decimal place is what makes the trade cheap rather than free. Ties still
  * land on the same number (11/63 is 17.46% twice, so 17.5% twice), and the
  * column now drifts by a tenth or two instead of a whole point — small enough to
- * read as rounding. `AreaTable` prints the column's real sum in the total row so
- * that what's on screen always adds up to what's on screen.
+ * read as rounding. (The Areas bars print whole percentages from `share`
+ * instead: nothing there asks you to add them up.)
  */
 export function percent(count: number, total: number): number {
   if (total === 0) return 0;
@@ -659,8 +659,8 @@ function mean(values: number[]): number {
  * haven't earned. The direction is the finding; the count of logged days is
  * what tells you how much to trust it.
  *
- * Null for an empty series — there is no sentence for no data, and `MoodStrip`
- * below already says the useful thing about that case.
+ * Null for an empty series — there is no sentence for no data, and `MoodBars`
+ * already says the useful thing about that case.
  */
 export function moodTakeaway(series: MoodSeries, phrase: string): string | null {
   const n = series.points.length;

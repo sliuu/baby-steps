@@ -124,24 +124,22 @@ export const RULE = "border-t-2 border-rule";
  * indent every panel's text from the page's own gutter, which is the alignment
  * `PAGE_WIDTH` exists to keep.
  *
- * Thin lines inside a panel are still right: `AreaTable`'s rows are divided by
- * hairlines, and that is the same grammar one level down — thick says "a new
+ * Thin lines inside a panel are still right: the habit table's rows are divided
+ * by hairlines, and that is the same grammar one level down — thick says "a new
  * thing starts here", thin says "and it has parts".
  */
 export const PANEL = `${RULE} pt-4`;
 
 /**
- * A segment of a pill. The nav's three sections, and nothing else.
+ * A segment of the top nav's pill, on a wide screen.
  *
- * It had a second tenant — the Trends chart switcher — and outliving it is the
- * useful part of this note, because the appearance is now load-bearing in the
- * other direction. **The pill means top-level navigation.** Trends has tabs of
- * its own now (Areas, Habits, Moods) and they are deliberately *not* drawn with
- * this: they are the underlined `variant="line"` tabs, the same ones
- * `MarkPicker` uses inside its popover. Two segmented pills on one screen read
- * as two levels of navigation and you have to remember which one holds what —
- * which is exactly why the Month/Week pill left the calendar for the nav. One
- * pill per screen, and it is this one.
+ * It used to claim the pill shape for top-level navigation alone, and that
+ * rule is gone: Trends' Areas · Habits · Moods is a segmented pill now too, and
+ * so is the phone's bottom bar. Both of those are the *tracked* pill below —
+ * `PILL_TRACK` and `pill` — which is a different drawing from this one, a
+ * sunken track with a raised white thumb rather than a tinted segment on bare
+ * ground. The nav keeps this lighter version so the two pills on a wide
+ * Trends page don't read as the same control twice.
  *
  * Written as a function rather than three exported strings because the on/off
  * pair is the actual unit: an `active` segment that forgot to stop being muted
@@ -155,6 +153,41 @@ export const PANEL = `${RULE} pt-4`;
 export function segment(active: boolean): string {
   return `rounded-full px-5 py-1.5 text-[0.875rem] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 ${
     active ? "bg-secondary text-ink" : "text-ink-muted hover:text-ink"
+  }`;
+}
+
+/**
+ * The tracked pill: a sunken track holding equal segments, with the chosen one
+ * lifted out of it as a white thumb.
+ *
+ * Two tenants, and they are the reason it is a constant: Trends' three lenses
+ * and the phone's bottom bar. The bottom bar was an icon-over-word row and
+ * became this so that the phone's navigation and the one control on Trends
+ * look like the same kind of thing — which they are, a choice of one from a
+ * few that stay on screen.
+ *
+ * The track is ink at 6% rather than a cream hex. The page ground is already
+ * cream, and the design's `#f5f0e5` track over `#f7f4ed` is a two-point
+ * difference you'd have to look for; a translucent ink darkens whatever it
+ * sits on by the same amount, and flips with the theme for nothing.
+ *
+ * Only the active segment has a shadow, and it is the only one on the screen:
+ * one soft pixel that says "this one is on top" and nothing else.
+ */
+export const PILL_TRACK = "rounded-full bg-ink/[0.06] p-1";
+
+/**
+ * One segment of `PILL_TRACK`. 38px tall — with the track's 4px either side
+ * the control is 46px, over the 44px touch floor.
+ *
+ * `bg-surface` and not the page's `bg-background`: the thumb is the white paper
+ * of the app laid on the cream desk, the same relationship a card has.
+ */
+export function pill(active: boolean): string {
+  return `flex h-[38px] min-w-0 items-center justify-center gap-1.5 rounded-full px-2 text-[0.84rem] outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/50 ${
+    active
+      ? "bg-surface font-semibold text-ink shadow-[0_1px_2px_rgb(70_50_20/0.10)]"
+      : "text-ink-label hover:text-ink"
   }`;
 }
 

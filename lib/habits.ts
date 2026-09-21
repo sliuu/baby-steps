@@ -262,7 +262,7 @@ export function habitTable(
  * In the library rather than the component because every branch here is a
  * judgement about what a number means, and those are the ones worth a test.
  * What it is *not* is the dash: a column with nothing in it is the table's
- * business, and `AreaTable` already draws that decision for the same reason.
+ * business, and `AreaBars` already draws that decision for the same reason.
  *
  * "About", always, because it is a span over a count and not a schedule. A
  * habit done eight times in a month is about every four days whether you did it
@@ -290,7 +290,7 @@ export function frequencyLabel(row: HabitRow): string | null {
  *
  * No `name` here, and that is the one column whose header does not sort. The
  * habit is what every other cell in the row is *about* — it is the row's
- * label, the way `AreaTable`'s area is a `<th scope="row">` — and a table you
+ * label, the way a table's first cell is its `<th scope="row">` — and a table you
  * can only find a habit in by alphabetising it is a table you should have been
  * able to read anyway. Library order is also not arbitrary: the tray groups by
  * life area, so the unsorted table arrives in colour bands.

@@ -3,8 +3,6 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { RangePicker } from "./RangePicker";
-import { captionFor, spanLabel } from "./rangeText";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,16 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { resolveBounds, type Range } from "@/lib/analytics";
 import { daysBetween } from "@/lib/daymath";
 import { formatDayLong, formatDayShort, type DayString } from "@/lib/dates";
 import {
   SORT_START,
   blockLevel,
-  earliestPlacement,
   frequencyLabel,
-  habitTable,
-  habitWindow,
   pageCount,
   pageOf,
   plotBlocks,
@@ -36,15 +30,18 @@ import {
 } from "@/lib/habits";
 import { PANEL } from "@/lib/layout";
 import { ramp } from "@/lib/palette";
-import type { LibraryGroup } from "@/lib/queries/activities";
-import type { StickersByDay } from "@/lib/stickers";
 
 type Props = {
-  /** The whole library, archived stickers included. Every live one gets a row. */
-  groups: LibraryGroup[];
-  /** Every placement, keyed by day. The table counts its own marks. */
-  stickersByDay: StickersByDay;
-  /** The visitor's today. Resolves the range, and reads "last" as "3 days ago". */
+  /**
+   * Every habit's row over the page's range, from `habitTable`. Counted once
+   * on the page and shared with the phone's list, which draws the same rows.
+   */
+  rows: HabitRow[];
+  /** The closed window the rows were counted over. The plot is drawn to it. */
+  window: HabitWindow;
+  /** The table's accessible name, range included. See `captionFor`. */
+  caption: string;
+  /** The visitor's today, which reads "last" as "3 days ago". */
   today: DayString;
 };
 
@@ -120,50 +117,38 @@ function cellClass(column: (typeof COLUMNS)[number], last: boolean): string {
 /**
  * Every habit as a row, with a period measured against it.
  *
- * The panel you look something up in, as against the ranking above it, which is
- * a picture you read at a glance. It shows *all* of your habits, including the
+ * The wide screen's whole Habits tab: the panel you look something up in.
+ * The phone gets `HabitList` instead, the same rows without the columns. It
+ * shows *all* of your habits, including the
  * ones you did nothing of, and puts a rate beside each — the number you would
  * otherwise have to work out by counting.
  *
  * **It has no heading, and that is deliberate.** It is the only table on the tab
- * and it sits under its own rule with its dates in the top left; a title reading
- * "Every habit" would be a label on the only thing it could be labelling. What a
- * reader needs at the top is which period this is, so that is what is there —
- * and what they need at the bottom is how much more there is, which is what the
- * pager says. The accessible name the heading used to carry moved to the
+ * and it sits under its own rule with the range's dates printed just above it;
+ * a title reading "Every habit" would be a label on the only thing it could be
+ * labelling. What a reader needs at the bottom is how much more there is, which
+ * is what the pager says. The accessible name the heading used to carry moved to the
  * `<caption>`, where a screen reader still gets it.
  *
- * **It carries its own range.** The picker in the band above governs the
- * ranking, the star and the moods; this one governs the table and nothing else,
- * so a month's ranking can sit beside a year's rates. The cost is that two
- * dropdowns on one page can say two different things — which is the feature, and
- * why each prints the dates it resolved to right beside itself rather than
- * relying on you to remember which is which.
+ * **It follows the page's range.** It carried its own for a while, so a
+ * month's ranking could sit beside a year's rates. The ranking is gone from
+ * wide screens and the phone's list reads the page's range, and a second
+ * dropdown that only this table obeyed was two answers to "which period is
+ * this" on one page. The range is the one in the band above the tabs, shared
+ * by all three.
  *
- * Four controls, four kinds of question. The range sets *when*, the area
- * dropdown sets *what*, the headers set the order, the pager sets how much. They
- * compose — one area, by frequency, page 2 of a year — which is why each is its
- * own piece of state rather than one "view".
+ * Three controls here, three kinds of question. The area dropdown sets *what*,
+ * the headers set the order, the pager sets how much. They compose — one area,
+ * by frequency, page 2 — which is why each is its own piece of state rather
+ * than one "view".
  */
 export function HabitTable(props: Props) {
   /**
-   * This table's own period.
-   *
-   * UI state exactly like the page's: not a fact about your month but a way of
-   * reading one, so it should die on refresh rather than persist.
-   *
-   * It starts where the page's picker starts, so the first paint of the tab
-   * shows one period and not two — the independence is there when you reach for
-   * it and invisible until then.
-   */
-  const [range, setRange] = useState<Range>({ kind: "month" });
-
-  /**
    * Which column orders the table, and which way.
    *
-   * Marks descending to start: the table's first reading should be the same one
-   * the ranking above it gives, so that finding this panel doesn't feel like two
-   * different answers. Every other order is a click away.
+   * Marks descending to start: the same order the phone's list is in, so the
+   * two drawings of this tab give one answer. Every other order is a click
+   * away.
    */
   const [sort, setSort] = useState<{
     key: HabitSortKey;
@@ -182,35 +167,7 @@ export function HabitTable(props: Props) {
 
   const [page, setPage] = useState(1);
 
-  const bounds = useMemo(
-    () => resolveBounds(range, props.today),
-    [range, props.today],
-  );
-
-  /**
-   * The first day anything was ever placed, which is what closes an open left
-   * edge — "all time" is two nulls, and a rate needs a denominator.
-   *
-   * Its own memo because it is a scan of the whole map that only changes when
-   * the data does: switching range must not re-walk every day you have ever
-   * recorded to rediscover the same first one.
-   */
-  const earliest = useMemo(
-    () => earliestPlacement(props.stickersByDay),
-    [props.stickersByDay],
-  );
-
-  // `span`, not `window`: this is a client component, and a local named
-  // `window` shadows the global one for the whole function.
-  const span = useMemo(
-    () => habitWindow(bounds, props.today, earliest),
-    [bounds, props.today, earliest],
-  );
-
-  const rows = useMemo(
-    () => habitTable(props.stickersByDay, props.groups, span),
-    [props.stickersByDay, props.groups, span],
-  );
+  const { rows } = props;
 
   /** Every area with at least one row, in library order, for the dropdown. */
   const options = useMemo(() => {
@@ -244,8 +201,6 @@ export function HabitTable(props: Props) {
   const pages = pageCount(ordered.length);
   const current = Math.min(Math.max(page, 1), pages);
   const shown = pageOf(ordered, current);
-
-  const dates = spanLabel(range, bounds);
 
   function clickHeader(key: HabitSortKey) {
     setSort((previous) =>
@@ -289,38 +244,20 @@ export function HabitTable(props: Props) {
 
   return (
     <section className={`flex min-w-0 flex-col gap-4 ${PANEL}`}>
-      {/* The period on the left, the filter on the right, and no heading
-          between them. The dates come *before* the dropdown because they are
-          the answer and it is the question: you read what you are looking at,
-          and reach past it to change it. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          {dates && (
-            <p
-              // The dates change when the dropdown changes, and the dropdown
-              // announces only its own label — so without this a screen reader
-              // hears the new rule and never the new period.
-              aria-live="polite"
-              className="tabular text-[0.83rem] text-ink-muted"
-            >
-              {dates}
-            </p>
-          )}
-          <RangePicker value={range} onChange={setRange} />
-        </div>
-
-        {/* Only when there is a choice to make. One area means the dropdown
-            can only ever say "All areas", which is a control that does
-            nothing. */}
-        {options.length > 1 && (
+      {/* Only when there is a choice to make. One area means the dropdown
+          can only ever say "All areas", which is a control that does nothing.
+          Right-aligned, under the range picker in the band above: the two
+          filters on this tab stack in one column. */}
+      {options.length > 1 && (
+        <div className="flex justify-end">
           <AreaFilter
             options={options}
             selected={areas}
             onToggle={toggleArea}
             onClear={() => setAreas(new Set())}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* `overflow-x-auto` for the narrow case and nothing else. Six columns of
           short strings fit a laptop comfortably; on a phone the table scrolls
@@ -328,7 +265,7 @@ export function HabitTable(props: Props) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-2xl border-collapse text-left">
           <caption className="sr-only">
-            {captionFor("Every habit", range, bounds)}
+            {props.caption}
           </caption>
 
           <thead>
@@ -359,19 +296,19 @@ export function HabitTable(props: Props) {
 
                 <td className={cellClass(COLUMNS[1], false)}>
                   <span className="flex items-center gap-2.5">
-                    {/* The same bare dot as `AreaTable`'s, in the same size —
-                        the two tables are on two tabs and are read minutes
-                        apart, so an area has to look like itself in both. */}
+                    {/* The same bare dot as `AreaBars`', in the same size —
+                        the two are on two tabs and are read minutes apart, so
+                        an area has to look like itself in both. */}
                     <span
                       aria-hidden="true"
-                      className={`size-2.5 shrink-0 rounded-full ${ramp(row.colorKey).soft}`}
+                      className={`size-[9px] shrink-0 rounded-full ${ramp(row.colorKey).soft}`}
                     />
                     {row.areaName}
                   </span>
                 </td>
 
                 {/* `tabular` so the digits stop jittering as the range or the
-                    order changes — the same reason `AreaTable`'s numbers wear
+                    order changes — the same reason `AreaBars`' numbers wear
                     it. */}
                 <td className={`${cellClass(COLUMNS[2], false)} tabular`}>
                   {row.count === 0 ? <Nothing /> : row.count}
@@ -393,7 +330,7 @@ export function HabitTable(props: Props) {
                       ? `First on ${formatDayShort(row.first)}`
                       : "Nothing in this range"}
                   </span>
-                  <BlockPlot row={row} window={span} />
+                  <BlockPlot row={row} window={props.window} />
                 </td>
 
                 <td
@@ -426,7 +363,7 @@ export function HabitTable(props: Props) {
 /**
  * An em-dash where a number would be, for a habit with nothing in the window.
  *
- * `AreaTable`'s decision, extracted because this table makes it in four columns
+ * `AreaBars`' decision, extracted because this table makes it in four columns
  * rather than two: zero is a measurement and a dash is "nothing here", and at a
  * glance the eye skips the dash instead of reading it as a quantity.
  */
@@ -589,7 +526,7 @@ function blockTitle(name: string, block: PlotBlock): string {
  *
  * A menu of checkboxes rather than a `Select`, because this is the one control
  * on the panel whose answer can be several things at once — and the two look
- * different on purpose: the range pickers are `Select`s because a range is
+ * different on purpose: the range picker is a `Select` because a range is
  * exactly one choice. Radix's `DropdownMenuCheckboxItem` keeps the menu open
  * across a click, which is what makes picking three areas one gesture.
  */
@@ -746,7 +683,7 @@ function Pager(props: {
  * A future day is possible, in a custom range that runs past today, and it gets
  * its date rather than "-5 days ago".
  */
-function lastLabel(day: DayString, today: DayString): string {
+export function lastLabel(day: DayString, today: DayString): string {
   const ago = daysBetween(day, today);
   if (ago === 0) return "Today";
   if (ago === 1) return "Yesterday";

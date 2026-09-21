@@ -5,11 +5,11 @@ import { formatDayShort } from "@/lib/dates";
  * What a range rule resolves to, in dates, and what to call the thing it
  * filters.
  *
- * Shared rather than local because there are two range pickers on this page
- * now — the band above the tabs drives the star, the ranking and the moods, and
- * the habit table carries its own — and the two have to print a period the same
- * way. Two copies of "1 Sep — 13 Sep" is two chances for one of them to grow an
- * en dash or drop a year.
+ * Shared rather than local because more than one thing on this page prints a
+ * period — the dates beside the range picker, and the accessible name of every
+ * list and table under it — and they have to print it the same way. Two copies
+ * of "1 Sep — 13 Sep" is two chances for one of them to grow an en dash or
+ * drop a year.
  *
  * Not in `lib/analytics.ts`, which is where `Range` itself lives, because these
  * format dates: `lib/dates.ts` reaches date-fns, and analytics is one of the
@@ -42,16 +42,17 @@ export function spanLabel(range: Range, bounds: Bounds): string | null {
 }
 
 /**
- * A table's accessible name. Never drawn — see the prop's note in `AreaTable`.
+ * A list's or a table's accessible name. Never drawn — see the prop's note in
+ * `AreaBars`.
  *
  * Says more than `spanLabel` deliberately: on screen the rule and the dates sit
  * beside each other and the table is directly below them, so proximity does the
  * work. A screen reader entering the table has left all of that behind, so this
  * has to be self-contained.
  *
- * `what` is passed in rather than fixed because the two tables count two
- * different units and are on two different tabs — a shared caption would name
- * the wrong one on one of them.
+ * `what` is passed in rather than fixed because the lists count different
+ * units and are on different tabs — a shared caption would name the wrong one
+ * on all but one of them.
  */
 export function captionFor(what: string, range: Range, bounds: Bounds): string {
   const where = spanLabel(range, bounds);

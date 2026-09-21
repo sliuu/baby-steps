@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { PILL_TRACK, pill } from "@/lib/layout";
 import { LANDING_NARROW, PAGES, type Page } from "@/lib/nav";
 
 /**
@@ -61,14 +62,27 @@ type Props = {
  * Links, not buttons, for the same reason the pill uses them: they are real
  * hrefs that we cancel, so the section is focusable, has a URL you can see in
  * the status bar, and reads as navigation to a screen reader.
+ *
+ * **Drawn as a tracked pill.** It was a row of four icons each over a 10px
+ * word, with the active one a stroke heavier. It is now the same segmented
+ * control as Trends' Areas · Habits · Moods — see `PILL_TRACK` — with the icon
+ * beside the word, because the pill's 38px segments have no height to stack
+ * them in.
  */
 export function BottomNav(props: Props) {
   return (
     <nav
       aria-label="Sections"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-background/95 backdrop-blur-sm lg:hidden"
+      // The bar's own ground stays: the pill floats on it rather than on the
+      // page, so the last line of a scrolled page passes under a solid band
+      // instead of showing through the track's 6% ink.
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-background/95 px-5 py-2 backdrop-blur-sm lg:hidden"
     >
-      <ul className="grid grid-cols-4">
+      {/* The tracked pill — the same control Trends uses for Areas · Habits ·
+          Moods, from the same two helpers, so the two can't drift. Four equal
+          columns rather than segments sized to their words: a thumb that
+          changes width as it moves reads as the bar re-laying itself out. */}
+      <ul className={`grid grid-cols-4 gap-1 ${PILL_TRACK}`}>
         {PAGES.map(({ id, label, href }) => {
           // The mirror of `TopNav`: this bar is `lg:hidden`, so the only
           // landing it can show is the narrow one.
@@ -76,7 +90,7 @@ export function BottomNav(props: Props) {
           const Icon = ICON[id];
 
           return (
-            <li key={id}>
+            <li key={id} className="min-w-0">
               <a
                 href={href}
                 aria-current={active ? "page" : undefined}
@@ -84,15 +98,14 @@ export function BottomNav(props: Props) {
                   event.preventDefault();
                   props.onPageChange(id);
                 }}
-                // `min-h-14` is the tap target, not the type. 56px is
-                // comfortably over the 44px floor and leaves the icon and its
-                // word room to stack without the row feeling like a toolbar.
-                className={`flex min-h-14 flex-col items-center justify-center gap-1 transition-colors ${
-                  active ? "text-ink" : "text-ink-muted"
-                }`}
+                className={pill(active)}
               >
+                {/* Beside the word now, not above it: a 38px segment has no
+                    room to stack the two. Hidden under 22rem, where four
+                    icons and four words stop fitting a 320px screen and the
+                    word is the half that can't go. */}
                 <Icon
-                  className="size-5"
+                  className="size-4 shrink-0 max-[22rem]:hidden"
                   // The active section is drawn a shade heavier rather than in
                   // a different colour: the six ramp hues mean *life areas*
                   // everywhere else in this app, and spending one on "you are
@@ -100,7 +113,7 @@ export function BottomNav(props: Props) {
                   strokeWidth={active ? 2 : 1.5}
                   aria-hidden="true"
                 />
-                <span className="text-[0.625rem] leading-none">{label}</span>
+                <span className="truncate">{label}</span>
               </a>
             </li>
           );

@@ -32,8 +32,8 @@ type Props = { tally: Tally };
  * looked at rather than asserted.
  *
  * It draws `tally.areas` in the library's order, never sorted. That's the seam
- * `AreaTable` was written around in Step 12: the table ranks biggest-first
- * because it answers "what came top", and the star must not, because a polygon
+ * the bars beside it are written around: they rank biggest-first because they
+ * answer "what came top", and the star must not, because a polygon
  * whose vertices reorder by count changes shape for a reason that has nothing
  * to do with the data. Spirituality is the top spoke in January and in August,
  * so two ranges can be compared by their outline.
