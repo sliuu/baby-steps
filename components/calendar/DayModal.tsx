@@ -36,7 +36,7 @@ const NO_MOOD = "none";
  * wider than the content box is a horizontal scrollbar. Same rule as the rail,
  * and the same reason the numbers here have to match `SCROLL_PAD`.
  */
-const ROW = "-mx-2 flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-ink/5";
+const ROW = "-mx-2 flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-secondary/70";
 
 /** What `ROW` reaches back out of. The two are one decision; keep them equal. */
 const SCROLL_PAD = "-mx-2 px-2";

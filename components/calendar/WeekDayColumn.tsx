@@ -90,7 +90,7 @@ export function WeekDayColumn(props: Props) {
       // grows *it*. Grid rows stretch, so the tallest day of the week sets the
       // height of all seven and they stay level. The generous empty look comes
       // from `STACK_FLOOR` below instead.
-      className="group/day relative isolate flex w-full flex-col bg-background p-2.5 transition-colors hover:bg-ink/2"
+      className="group/day relative isolate flex w-full flex-col bg-background p-2.5 transition-colors hover:bg-secondary/50"
     >
       {/* The highlight's colour, behind everything. Same wash as a month cell. */}
       {lit && highlight && (

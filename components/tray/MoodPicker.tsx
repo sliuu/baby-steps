@@ -123,7 +123,7 @@ function MoodChoice(props: {
             ? "opacity-35"
             : props.selected
               ? `${wash(null)} cursor-grab active:cursor-grabbing`
-              : "cursor-grab hover:bg-ink/5 active:cursor-grabbing"
+              : "cursor-grab hover:bg-secondary/70 active:cursor-grabbing"
         }`}
       >
         {/* **No word under the face, and no `aria-hidden` over it.** Those two

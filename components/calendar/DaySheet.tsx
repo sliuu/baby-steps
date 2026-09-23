@@ -320,7 +320,7 @@ export function DaySheet(props: Props) {
                       trigger={
                         <button
                           type="button"
-                          className="flex min-h-[2.625rem] items-center gap-1.5 self-start rounded-sm border border-dashed border-rule px-2.5 text-[0.83rem] text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+                          className="flex min-h-[2.625rem] items-center gap-1.5 self-start rounded-sm border border-dashed border-rule px-2.5 text-[0.83rem] text-ink-muted transition-colors hover:bg-secondary/70 hover:text-ink"
                         >
                           <Plus
                             className="size-4"

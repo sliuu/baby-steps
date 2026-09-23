@@ -193,12 +193,6 @@
   --shadow-sticker: var(--sticker-shadow);
   --color-rule: var(--rule);
 
-  --color-mood-great: var(--mood-great);
-  --color-mood-good: var(--mood-good);
-  --color-mood-okay: var(--mood-okay);
-  --color-mood-low: var(--mood-low);
-  --color-mood-rough: var(--mood-rough);
-
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -308,7 +302,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Light — warm cream, near-black warm ink.
+   Light — soft off-white, near-black warm ink.
 --------------------------------------------------------------------------- */
 :root {
   /* Tells the browser which way *its own* furniture should lean — scrollbars,
@@ -387,16 +381,12 @@
      see `ENTER` in `FloatingStickers.tsx` for the arithmetic. */
   --dur-fall: 620ms;
 
-  /* The page stays cream; the things *on* it went white.
-
-     The old surface was cream-on-cream — #fdfcf8 over #f7f4ed is a four-point
-     difference, which is a card you have to look for. White is the paper and
-     the cream around it is the desk, and the two now separate on their own
-     without a heavier border doing the work. The sunken rung follows: it is
-     the shadow side of white rather than a deeper cream. */
-  --bg: #f7f4ed;
+  /* The page is an off-white rather than cream. It stays one quiet step below
+     the pure-white surfaces, so sheets and popovers still have an edge without
+     making the whole app feel laid on a beige desk. */
+  --bg: #fbfbfa;
   --surface: #ffffff;
-  --surface-sunken: #f2f0ec;
+  --surface-sunken: #f3f3f1;
   --ink: #1c1a17;
   --ink-muted: #8a8378;
   /* Between the two. Letterspaced caps are set small and spaced apart, which
@@ -404,7 +394,7 @@
      faint in a label. This is the weight a label needs to hold its own without
      competing with the thing it's naming. */
   --ink-label: #5b5449;
-  --hairline: #e7e3da;
+  --hairline: #e6e6e3;
 
   /* The scrollbar, which is furniture we draw ourselves now — see
      `scrollbar-app`. Two rungs, resting and hovered, and both are literal
@@ -412,13 +402,14 @@
      dropped renders as full-opacity ink, which here is a solid black bar down
      the side of the tray. Ink rather than a fixed grey so it sits in the
      palette, and translucent so it reads as laid over whatever it scrolls. */
-  --scroll-thumb: rgb(28 26 23 / 0.22);
-  --scroll-thumb-hover: rgb(28 26 23 / 0.38);
+  --scroll-thumb: rgb(28 28 27 / 0.22);
+  --scroll-thumb-hover: rgb(28 28 27 / 0.38);
 
   /* The one line heavier than a hairline: the rule the week hangs off. A
      hairline divides things that are already understood to be a set — two
      cells of one grid — and at 2px on its own above seven columns it reads as
-     a smudge rather than as a rule. This is the same ink four shades up.
+     a smudge rather than as a rule. It is neutral rather than borrowed from
+     the warm text ink, so it belongs to the off-white structural palette.
 
      Literal, and for the same reason `--sticker-shadow` is. The obvious
      spelling was a border utility taking ink through Tailwind's slash-opacity
@@ -429,7 +420,7 @@
 
      (And writing that utility's name out in this comment emitted it. The
      scanner reads comments — see the footnote in `lib/layout.ts`.) */
-  --rule: rgb(28 26 23 / 0.2);
+  --rule: rgb(28 28 27 / 0.2);
 
   /* Ramps are named by hue, because `life_areas.color_key` stores a hue. An
      area is a database row that points at one of these; it is not itself a
@@ -541,13 +532,6 @@
   --area-romance: var(--ramp-green);
   --area-friends: var(--ramp-purple);
 
-  /* Moods reuse the same five hues, deliberately. */
-  --mood-great: var(--area-exercise);
-  --mood-good: var(--area-romance);
-  --mood-okay: var(--area-creativity);
-  --mood-low: var(--area-work);
-  --mood-rough: var(--area-spirituality);
-
   /* shadcn's names, pointed at ours. */
   --background: var(--bg);
   --foreground: var(--ink);
@@ -557,16 +541,19 @@
   --popover-foreground: var(--ink);
   --primary: #221f1a;
   --primary-foreground: #faf8f2;
-  --secondary: #ece7dc;
+  /* Selected and muted controls follow the page's neutral off-white now. The
+     eleven-point step from --bg keeps the state visible without bringing the
+     old cream cast back through navigation, today rows, and hover furniture. */
+  --secondary: #f0f0ee;
   --secondary-foreground: var(--ink);
-  --muted: #ece7dc;
+  --muted: #f0f0ee;
   --muted-foreground: var(--ink-muted);
-  --accent: #ece7dc;
+  --accent: #f0f0ee;
   --accent-foreground: var(--ink);
   --destructive: var(--area-spirituality);
   --border: var(--hairline);
   --input: var(--hairline);
-  --ring: #b8ac97;
+  --ring: #a8a8a3;
 }
 
 /* ---------------------------------------------------------------------------

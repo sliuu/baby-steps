@@ -4,7 +4,7 @@ import { MOOD_SCORE, type MoodPoint, type MoodSeries } from "@/lib/analytics";
 import { round2 } from "@/lib/charts";
 import { formatDayShort, fromDayString, type DayString } from "@/lib/dates";
 import { addDays, daysBetween } from "@/lib/daymath";
-import { MOODS, MOOD_MOUTH, type Mood } from "@/lib/moods";
+import { MOODS, MOOD_COLOR, MOOD_MOUTH, type Mood } from "@/lib/moods";
 
 type Props = {
   series: MoodSeries;
@@ -12,9 +12,9 @@ type Props = {
   takeaway: string | null;
   /**
    * The rule above it, which the page decides: a hairline under the bars on a
-   * phone, the page's rule at the top of a column on a wide screen. A prop
-   * rather than a wrapper, because a wrapper would still draw its rule on the
-   * days this returns nothing.
+   * phone, none when the wide-screen grid already owns one shared panel rule.
+   * A prop rather than a wrapper, because a wrapper would still draw its rule
+   * on the days this returns nothing.
    */
   className?: string;
 };
@@ -33,13 +33,6 @@ const LINE_FROM = 2;
 const TOP_SCORE = MOODS.length;
 
 /**
- * The three faces on the axis: top, middle and bottom. Five would crowd a
- * 236px chart into a column of faces, and the two in between are implied by
- * the gridlines they sit halfway along.
- */
-const AXIS_FACES: Mood[] = ["great", "okay", "rough"];
-
-/**
  * How the mood went, day by day.
  *
  * This is the one chart in the app that draws *time* on an axis. The bars
@@ -56,10 +49,9 @@ const AXIS_FACES: Mood[] = ["great", "okay", "rough"];
  * elements at percentages of the plot. A dot is a circle at any width, and a
  * date is 10px whether the chart is 330px or 700px wide.
  *
- * **Grey, no hue, and that is not a styling default.** The six colours mean
- * the six life areas everywhere in the app, and this is the page where both
- * appear. A green line for a good stretch would be a seventh meaning for a
- * colour that already has one.
+ * **The points follow the mood scale.** Each one takes a flat pastel fill from
+ * the same yellow → green → blue sticker tints as the bars. The connecting line
+ * stays neutral: it shows continuity without adding a gradient between values.
  *
  * Positioned by date rather than by index — see `MoodPoint.at`. A fortnight you
  * didn't log is a fortnight of horizontal distance, and the line breaks across
@@ -80,7 +72,7 @@ export function MoodLine(props: Props) {
 
   return (
     <section className={`flex flex-col gap-3 ${props.className ?? ""}`}>
-      <h2 className="eyebrow">Day by day</h2>
+      <h2 className="font-heading text-panel-title leading-none">Day by day</h2>
 
       {/* The reading, before the picture — heard, not shown. It is what makes
           the chart's `aria-hidden` legitimate: this line *is* the chart, for
@@ -103,16 +95,19 @@ export function MoodLine(props: Props) {
               key={mood}
               style={{ top: `${(i / (MOODS.length - 1)) * 100}%` }}
               className={`absolute inset-x-0 border-t ${
-                mood === "okay" ? "border-dashed border-ink/15" : "border-hairline"
+                mood === "okay" ? "border-dashed border-rule" : "border-hairline"
               }`}
             />
           ))}
 
-          {AXIS_FACES.map((mood) => (
+          {/* All five faces are explicit scale labels. At this height each has
+              50px of separation, so the complete scale stays readable without
+              asking the gridlines to stand in for Good and Low. */}
+          {MOODS.map((mood) => (
             <span
               key={mood}
               style={{ top: `${level(MOOD_SCORE[mood])}%` }}
-              className="absolute -left-[30px] -translate-y-1/2 text-ink/35"
+              className="absolute -left-[30px] -translate-y-1/2 text-ink"
             >
               <Face mood={mood} />
             </span>
@@ -143,17 +138,18 @@ export function MoodLine(props: Props) {
             ))}
           </svg>
 
-          {/* The days themselves: open dots, page-coloured inside, so the
-              line visibly passes *into* each one. These are the measurements;
-              the segments between them are the only interpolation here. */}
+          {/* The days themselves: flat pastel dots over a neutral line. These
+              are the measurements; the segments between them are the only
+              interpolation here. */}
           {points.map((point) => (
             <span
               key={point.day}
               style={{
                 left: `${round2(point.at * 100)}%`,
                 top: `${round2(level(point.score))}%`,
+                backgroundColor: MOOD_COLOR[point.mood],
               }}
-              className="absolute size-[6.5px] -translate-1/2 rounded-full border-[1.4px] border-ink-label bg-background"
+              className="absolute size-2 -translate-1/2 rounded-full border border-ink/10"
             />
           ))}
 

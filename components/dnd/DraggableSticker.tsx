@@ -111,7 +111,7 @@ export function DraggableSticker(props: Props) {
           ? "opacity-35"
           : props.selected
             ? `${props.wash} cursor-grab active:cursor-grabbing`
-            : "cursor-grab hover:bg-ink/5 active:cursor-grabbing"
+            : "cursor-grab hover:bg-secondary/70 active:cursor-grabbing"
       }`}
     >
       {props.children}

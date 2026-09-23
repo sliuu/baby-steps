@@ -151,7 +151,7 @@ export function TodayView(props: Props) {
                     ? "bg-secondary"
                     : lit && highlight
                       ? wash(highlight.colorKey)
-                      : "hover:bg-ink/5"
+                      : "hover:bg-secondary/70"
                 }`}
               >
                 <span className="daylabel">{cell.weekday}</span>
@@ -243,7 +243,7 @@ export function TodayView(props: Props) {
                   })
                 }
                 aria-label={`Take ${sticker.name} off ${formatDayLong(day)}`}
-                className="grid size-9 shrink-0 place-items-center rounded-full text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+                className="grid size-9 shrink-0 place-items-center rounded-full text-ink-muted transition-colors hover:bg-secondary/70 hover:text-ink"
               >
                 <X className="size-4" strokeWidth={1.5} aria-hidden="true" />
               </button>
@@ -270,7 +270,7 @@ export function TodayView(props: Props) {
           type="button"
           onClick={props.onAddSticker}
           aria-haspopup="dialog"
-          className="mt-2 flex min-h-11 w-[calc(100%-2.5rem)] items-center justify-center gap-1.5 rounded-sm border border-dashed border-rule text-[0.83rem] text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+          className="mt-2 flex min-h-11 w-[calc(100%-2.5rem)] items-center justify-center gap-1.5 rounded-sm border border-dashed border-rule text-[0.83rem] text-ink-muted transition-colors hover:bg-secondary/70 hover:text-ink"
         >
           <Plus className="size-4" strokeWidth={1.5} aria-hidden="true" />
           Add a sticker

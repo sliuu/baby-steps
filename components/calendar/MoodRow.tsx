@@ -65,7 +65,7 @@ export function MoodRow(props: Props) {
               )
             }
             className={`flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-lg transition-colors ${
-              chosen ? "bg-secondary" : "hover:bg-ink/5"
+              chosen ? "bg-secondary" : "hover:bg-secondary/70"
             } ${faded}`}
           >
             {/* `MoodMark` carries its own "Mood: Great" for screen readers, so

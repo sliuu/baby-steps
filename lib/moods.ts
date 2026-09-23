@@ -1,3 +1,5 @@
+import { RAMP_TINT_VALUE } from "./rampValues.ts";
+
 /** The five moods, in the order the picker shows them. Matches the CHECK
  *  constraint on day_moods.mood — if these ever disagree, the database wins. */
 export const MOODS = ["great", "good", "okay", "low", "rough"] as const;
@@ -10,6 +12,22 @@ export const MOOD_LABEL: Record<Mood, string> = {
   okay: "Okay",
   low: "Low",
   rough: "Rough",
+};
+
+/**
+ * The CSS colour behind each rung of the mood scale.
+ *
+ * This is a yellow → green → blue slice through the exact pastel tint that
+ * fills stickers, not a second set of mood colours. Adjacent positive and
+ * negative moods share a hue; the face and fixed row order carry the finer
+ * distinction without inventing two colours between the sticker ramps.
+ */
+export const MOOD_COLOR: Record<Mood, string> = {
+  great: RAMP_TINT_VALUE.yellow,
+  good: RAMP_TINT_VALUE.yellow,
+  okay: RAMP_TINT_VALUE.green,
+  low: RAMP_TINT_VALUE.blue,
+  rough: RAMP_TINT_VALUE.blue,
 };
 
 /**

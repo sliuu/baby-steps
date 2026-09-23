@@ -158,7 +158,7 @@ export function MonthDots(props: Props) {
                     ? "bg-secondary"
                     : lit && highlight
                       ? wash(highlight.colorKey)
-                      : "hover:bg-ink/2"
+                      : "hover:bg-secondary/50"
                 }`}
               >
                 {/* Two visual pieces that read as "13" plus some colour, which

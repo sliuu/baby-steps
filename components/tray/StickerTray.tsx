@@ -416,7 +416,7 @@ function ArchivedGroup(props: {
   return (
     <details className={`group/fold ${props.className ?? ""}`}>
       <summary
-        className={`${TRAY_INSET} eyebrow flex cursor-pointer list-none items-center gap-1.5 rounded-md py-0.5 hover:bg-ink/5`}
+        className={`${TRAY_INSET} eyebrow flex cursor-pointer list-none items-center gap-1.5 rounded-md py-0.5 hover:bg-secondary/70`}
       >
         {/* Rotates a quarter turn when the fold opens. `list-none` above kills
             the browser's own triangle, which sits on a different baseline in

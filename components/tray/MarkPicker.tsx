@@ -300,7 +300,7 @@ function Pager(props: {
               aria-label={name}
               title={name}
               onClick={() => props.onPick(mark)}
-              className="grid size-7 place-items-center rounded-md text-base transition-colors hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink/40"
+              className="grid size-7 place-items-center rounded-md text-base transition-colors hover:bg-secondary/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink/40"
             >
               {icon ? (
                 <icon.Icon

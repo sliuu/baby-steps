@@ -3,9 +3,10 @@
 // belongs to the bundler. The type imports below are erased and cross freely,
 // which is why they can keep the alias.
 //
-// `./moods.ts` and `./daymath.ts` are the only value imports, and both are safe
-// to take because neither imports anything itself. A module with no imports can
-// always be pulled into a tested one; the rule that bites is depth, not count.
+// `./moods.ts` and `./daymath.ts` are the only value imports. Mood data reaches
+// one dependency deeper into `rampValues.ts`, a dependency-free object of CSS
+// strings; that leaf is safe under Node too. The rule that bites is UI depth,
+// not import count.
 import { addDays, daysBetween, startOfWeek } from "./daymath.ts";
 import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { DayString } from "@/lib/dates";

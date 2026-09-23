@@ -134,24 +134,22 @@ export function DayCell(props: Props) {
       // `isolate` gives the cell its own stacking context, so the negative
       // z-index on the wash below can't escape and paint behind the grid.
       //
-      // The page's own cream rather than the white it used to be: the month is
-      // the page now rather than a sheet laid on it, and with the card's
+      // The page's own off-white rather than the pure white it used to be: the
+      // month is the page now rather than a sheet laid on it, and with the card's
       // border gone as well there is nothing left for a white fill to be the
       // inside of. The white is described rather than spelled, because the
       // scanner reads comments and nothing in the app wears that class any
       // more — as it happens the rule survives regardless, since the sunken
-      // fill below contains the shorter name inside its own. What survives is the sunken rung for the
-      // days either side of the month, and it survives *because* it was never
-      // white — #f2f0ec is a shade under the cream, so with the white gone it
+      // fill below contains the shorter name inside its own. What survives is
+      // the neutral sunken rung for the days either side of the month, which
       // still reads as recessed rather than as a second surface. The numeral
       // was already dimmed for those days; this is the other half, and it is
       // now the only fill in the grid.
       //
-      // The hover wash is the same ink-at-low-opacity trick the tray rows use,
-      // but not the same number. 5% reads as a light touch across a 28px band
-      // and as a grey square across a 150px cell — tint is perceived by area, so
-      // the larger the surface the lower the number has to go to mean the same
-      // thing. It no longer means "click me"; it means "the pencil is here".
+      // The hover wash is half of the neutral selected-state surface. It stays
+      // quieter than an actual selection while avoiding a tint derived from
+      // the warm text ink. It no longer means "click me"; it means "the pencil
+      // is here".
       // A flex column of two things: a header, and everything that happened.
       //
       // The marks briefly wrapped *around* the date and the mood, using floats,
@@ -167,8 +165,8 @@ export function DayCell(props: Props) {
       // more than the empty ones is the mark size, not this.
       className={`group/day relative isolate flex min-h-24 w-full flex-col items-stretch justify-start p-2.5 transition-colors ${
         cell.inMonth
-          ? "bg-background hover:bg-ink/2"
-          : "bg-surface-sunken hover:bg-ink/2"
+          ? "bg-background hover:bg-secondary/50"
+          : "bg-surface-sunken hover:bg-secondary/50"
       }`}
     >
       {/* The highlight wash, and it sits *behind* the contents — `-z-10`, where
@@ -182,11 +180,9 @@ export function DayCell(props: Props) {
           pointing at, while the drop highlight is a 6% tint that genuinely
           should read on top of them.
 
-          Keeping the base surface underneath is also what makes the wash work
-          at all. Both of `wash()`'s answers are translucent now — the hue at
-          35% as well as `bg-ink/10` — so both need a real surface beneath
-          them; laid straight onto the cell they would show the grid's hairline
-          colour through the gaps. */}
+          Keeping the base surface underneath is also what makes the coloured
+          wash work: its hue is translucent at 35%, so it needs a real surface
+          beneath it rather than the grid's hairline colour through the gaps. */}
       {lit && highlight && (
         <div
           aria-hidden="true"

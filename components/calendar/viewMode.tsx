@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useSyncExternalStore } from "react";
 
 import type { CalendarViewMode } from "./period";
 
@@ -26,6 +26,11 @@ import type { CalendarViewMode } from "./period";
  * calendar draws when it gets one.
  */
 const ViewModeContext = createContext<CalendarViewMode | null>("month");
+
+/** Hydration status without an effect-driven setState. */
+const noSubscription = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
 
 /**
  * **There was a second context here, and the day sheet removed it.**
@@ -61,20 +66,21 @@ export function CalendarViewProvider(props: {
  * Month grid, week strip or one day, as chosen in the top nav — or `null`,
  * meaning nobody has chosen yet and `CalendarPanel` should draw both landings.
  *
- * **There was a hydration gate here, and removing it is the point.** It held
- * the view at a hardcoded `month` until this subtree had hydrated, because the
- * shell used to measure the window on its first client render and switch a
- * phone to Today immediately — and the calendar sits behind its own
- * `<Suspense>`, streamed from the server, so a context change arriving before
- * that boundary hydrated meant React trying to match a day view onto a month's
- * markup. It threw and rebuilt the tree.
- *
- * Nothing changes the section between the server render and hydration any
- * more: the shell starts at `null` and stays there until a press, which cannot
- * happen before the page is interactive. So the gate has no event left to
- * absorb — and keeping it would now *cause* the flash it was written to
- * prevent, by forcing `month` over the null that both landings depend on.
+ * The hydration gate is load-bearing because this subtree is streamed behind
+ * Suspense. AppShell restores a URL such as `#week` in its own effect, which
+ * can run after the shell hydrates but before this later boundary does. Reading
+ * that new context value during the boundary's first client render would try
+ * to match one Week section against the server's two responsive landing
+ * sections and React would discard the tree. Holding `null` through this
+ * boundary's hydration makes its first render match the server; the URL-backed
+ * view takes over immediately afterwards.
  */
 export function useCalendarView(): CalendarViewMode | null {
-  return useContext(ViewModeContext);
+  const view = useContext(ViewModeContext);
+  const hydrated = useSyncExternalStore(
+    noSubscription,
+    clientSnapshot,
+    serverSnapshot,
+  );
+  return hydrated ? view : null;
 }

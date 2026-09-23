@@ -382,27 +382,31 @@ export function TrendsBoard(props: Props) {
             many days felt each way, then which way it went. Neither is a
             summary of the other: the bars say nothing about when, the line
             says nothing about how often. Stacked on a phone; side by side on a
-            wide screen, the bars on the left because they are read first. */}
+            wide screen, the bars on the left because they are read first. One
+            rule spans both columns there, so they read as one data surface in
+            the same way the Habits table does. */}
         <TabsPrimitive.Content value="moods" className={CONTENT}>
           <div className="flex flex-col gap-6">
-            <div className="grid items-start gap-x-14 gap-y-6 lg:grid-cols-2">
+            <div className="grid items-start gap-x-14 gap-y-6 lg:grid-cols-2 lg:border-t-2 lg:border-rule lg:pt-4">
               <section
                 aria-label={recordCaption}
-                className="flex min-w-0 flex-col gap-3 lg:border-t-2 lg:border-rule lg:pt-4"
+                className="flex min-w-0 flex-col gap-3"
               >
                 {/* Wide screens only. On a phone the bars are the first thing
                     under the range and need no name; beside a labelled chart
                     they'd be the one column without one. */}
-                <h2 className="eyebrow hidden lg:block">By mood</h2>
+                <h2 className="hidden font-heading text-panel-title leading-none lg:block">
+                  By mood
+                </h2>
                 <MoodBars moods={moods} />
               </section>
 
-              {/* A hairline above it on a phone, the page's rule on a wide
-                  screen, where it heads a column of its own. */}
+              {/* A hairline separates it from the bars on a phone. The wide
+                  screen grid already owns the shared panel rule. */}
               <MoodLine
                 series={series}
                 takeaway={drift}
-                className="min-w-0 border-t border-hairline pt-5 lg:border-t-2 lg:border-rule lg:pt-4"
+                className="min-w-0 border-t border-hairline pt-5 lg:border-t-0 lg:pt-0"
               />
             </div>
 

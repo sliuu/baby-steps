@@ -88,7 +88,7 @@ export function DayMoodButton(props: Props) {
               // the day currently is as well as what it could be.
               aria-pressed={mood === props.mood}
               className={`flex flex-col items-center gap-1 rounded-md px-1.5 py-1.5 transition-colors ${
-                mood === props.mood ? "bg-ink/10" : "hover:bg-ink/5"
+                mood === props.mood ? "bg-secondary" : "hover:bg-secondary/70"
               }`}
             >
               <span aria-hidden="true">
@@ -107,7 +107,7 @@ export function DayMoodButton(props: Props) {
         <button
           type="button"
           onClick={() => choose({ kind: "clearMood", day: props.day })}
-          className="rounded-md py-1 text-[0.78rem] text-ink-muted transition-colors hover:bg-ink/5 hover:text-ink"
+          className="rounded-md py-1 text-[0.78rem] text-ink-muted transition-colors hover:bg-secondary/70 hover:text-ink"
         >
           Clear mood
         </button>

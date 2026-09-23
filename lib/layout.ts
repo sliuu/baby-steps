@@ -109,11 +109,11 @@ export const RULE = "border-t-2 border-rule";
  * of their own, and an outline around those read as a card with seven panels.
  * What replaced it was a single thick rule above and hairlines between, and the
  * page got quieter in a way that turned out to be worth spreading: Trends was
- * five rounded white boxes on a cream page, which is five objects announcing
+ * five rounded white boxes on an off-white page, which is five objects announcing
  * themselves where there are only three answers.
  *
  * So a panel here is a heading with a rule over it. No fill, because the page's
- * own cream is a perfectly good ground and a white box on it is a claim that
+ * own off-white is a perfectly good ground and a white box on it is a claim that
  * something separate is going on inside. No radius, because there is no box to
  * round. No side or bottom edges, so a panel ends where its content ends rather
  * than at a line drawn under it, and two panels side by side in a grid read as
@@ -166,27 +166,26 @@ export function segment(active: boolean): string {
  * look like the same kind of thing — which they are, a choice of one from a
  * few that stay on screen.
  *
- * The track is ink at 6% rather than a cream hex. The page ground is already
- * cream, and the design's `#f5f0e5` track over `#f7f4ed` is a two-point
- * difference you'd have to look for; a translucent ink darkens whatever it
- * sits on by the same amount, and flips with the theme for nothing.
+ * The track uses the shared selected-state surface. That keeps it in the same
+ * neutral family as calendar hovers and active navigation rather than deriving
+ * a faint brown from the warm text ink.
  *
  * Only the active segment has a shadow, and it is the only one on the screen:
  * one soft pixel that says "this one is on top" and nothing else.
  */
-export const PILL_TRACK = "rounded-full bg-ink/[0.06] p-1";
+export const PILL_TRACK = "rounded-full bg-secondary p-1";
 
 /**
  * One segment of `PILL_TRACK`. 38px tall — with the track's 4px either side
  * the control is 46px, over the 44px touch floor.
  *
- * `bg-surface` and not the page's `bg-background`: the thumb is the white paper
- * of the app laid on the cream desk, the same relationship a card has.
+ * `bg-surface` and not the page's `bg-background`: the thumb is the pure-white
+ * layer lifted one step above the off-white page.
  */
 export function pill(active: boolean): string {
   return `flex h-[38px] min-w-0 items-center justify-center gap-1.5 rounded-full px-2 text-[0.84rem] outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/50 ${
     active
-      ? "bg-surface font-semibold text-ink shadow-[0_1px_2px_rgb(70_50_20/0.10)]"
+      ? "bg-surface font-semibold text-ink shadow-[0_1px_2px_rgb(30_30_28/0.10)]"
       : "text-ink-label hover:text-ink"
   }`;
 }

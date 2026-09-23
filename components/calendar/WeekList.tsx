@@ -114,7 +114,7 @@ export function WeekList(props: Props) {
                     ? "bg-secondary"
                     : lit && highlight
                       ? wash(highlight.colorKey)
-                      : "hover:bg-ink/2"
+                      : "hover:bg-secondary/50"
                 }`}
               >
                 {/* The visible date is two pieces of typography and reads as
