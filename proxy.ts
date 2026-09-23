@@ -68,24 +68,23 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // getUser() — not getSession(). getSession() reads the cookie and believes
-  // it. getUser() asks Supabase's auth server to verify the token, and is the
-  // call that triggers a refresh when the token has expired.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // `getClaims()` verifies the token and refreshes it near expiry, but with
+  // asymmetric signing keys it normally does the verification locally instead
+  // of adding an Auth-server round trip to every request.
+  const { data } = await supabase.auth.getClaims();
+  const signedIn = Boolean(data?.claims.sub);
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some(
     (p) => path === p || path.startsWith(`${p}/`),
   );
 
-  if (!user && !isPublic) {
+  if (!signedIn && !isPublic) {
     const loginUrl = new URL("/login", request.nextUrl);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && path === "/login") {
+  if (signedIn && path === "/login") {
     return NextResponse.redirect(new URL("/", request.nextUrl));
   }
 

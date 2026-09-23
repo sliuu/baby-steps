@@ -32,6 +32,7 @@ import {
   type PlaceResult,
 } from "@/app/actions/stickers";
 import { CalendarPanel } from "@/components/calendar/CalendarPanel";
+import { useCalendarData } from "@/components/calendar/calendarData";
 import { DayModal } from "@/components/calendar/DayModal";
 import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerBar } from "@/components/calendar/StickerBar";
@@ -234,31 +235,32 @@ const collisionDetection: CollisionDetection = (args) => {
  * matters, which is the fetching.
  *
  * It also owns the optimistic copy of the calendar. `useOptimistic` takes the
- * server's Map and a reducer, and hands back a Map that includes drops still in
- * flight. When the transition ends it stops overriding and the value falls back
- * to the prop — which by then is either the server's new answer, or, if the
- * write failed, exactly what it was before. The rollback isn't code we write;
- * it's what happens when the lie expires.
+ * saved Map and a reducer, and hands back a Map that includes drops still in
+ * flight. A successful write is folded into that saved Map; a failed one is
+ * not, so the optimistic value rolls back when its transition expires. This
+ * avoids re-rendering and re-querying the entire route after every small edit.
  */
 export function CalendarBoard(props: Props) {
+  const { snapshot, setSnapshot } = useCalendarData();
   /**
-   * The demo's copy of the calendar, and only the demo's.
-   *
-   * Signed in, `props.stickersByDay` is the truth and this state is never
-   * written — the expression below picks the prop, so the board behaves exactly
-   * as it did before this existed. In a demo there is no server to be the
-   * truth, so `commit` folds each change into this instead and it becomes one.
-   *
-   * `useOptimistic` still wraps whichever of the two is in play. It is doing
-   * nothing useful in a demo, where the "in flight" window is zero frames wide,
-   * and leaving it in the path is what keeps there from being two versions of
-   * how a sticker reaches the screen.
+   * The last confirmed copy of the calendar. In the app, a successful Server
+   * Action advances it; in the demo, the local change does. If a wider server
+   * refresh replaces the prop (for example after editing a sticker), reset to
+   * that authoritative snapshot.
    */
-  const [saved, setSaved] = useState(props.stickersByDay);
-  const [stickersByDay, apply] = useOptimistic(
-    props.local ? saved : props.stickersByDay,
-    applyChange,
+  const [saved, setSaved] = useState(
+    snapshot?.source === props.stickersByDay
+      ? snapshot.data
+      : props.stickersByDay,
   );
+  const [savedSource, setSavedSource] = useState(
+    props.stickersByDay,
+  );
+  if (savedSource !== props.stickersByDay) {
+    setSavedSource(props.stickersByDay);
+    setSaved(props.stickersByDay);
+  }
+  const [stickersByDay, apply] = useOptimistic(saved, applyChange);
   const [dragging, setDragging] = useState<DragPayload | null>(null);
 
   /**
@@ -433,10 +435,33 @@ export function CalendarBoard(props: Props) {
       // handoff the server does, with the round trip taken out.
       if (props.local) {
         setSaved((current) => applyChange(current, change));
+        setSnapshot((current) => {
+          const base =
+            current?.source === props.stickersByDay
+              ? current.data
+              : props.stickersByDay;
+          return {
+            source: props.stickersByDay,
+            data: applyChange(base, change),
+          };
+        });
         return;
       }
       const result = await runChange(change);
       setError(result.ok ? null : result.message);
+      if (result.ok) {
+        setSaved((current) => applyChange(current, change));
+        setSnapshot((current) => {
+          const base =
+            current?.source === props.stickersByDay
+              ? current.data
+              : props.stickersByDay;
+          return {
+            source: props.stickersByDay,
+            data: applyChange(base, change),
+          };
+        });
+      }
     });
   }
 

@@ -1,4 +1,5 @@
--- A short note per day. Run once with `npm run db:notes`.
+-- Legacy repair script for deployments that predate the day-notes migration.
+-- New environments receive this table from `supabase/migrations`.
 --
 -- **This is a schema change, and the app will not load until it has run.**
 -- `getStickersByDay` selects from `day_notes` alongside `day_activities` and
@@ -39,6 +40,10 @@ create table if not exists public.day_notes (
 -- that pair — so there is no second index to add.
 
 alter table public.day_notes enable row level security;
+
+revoke all on table public.day_notes from public, anon;
+grant select, insert, update, delete on table public.day_notes to authenticated;
+grant all on table public.day_notes to service_role;
 
 -- Four policies rather than one `for all`, matching the rest of the schema:
 -- `using` is checked against rows that already exist and `with check` against

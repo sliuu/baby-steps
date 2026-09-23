@@ -12,9 +12,8 @@ import { toSessionUser } from "@/lib/user";
 
 export default async function Home() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
 
   // proxy.ts already bounced signed-out visitors, so this should never fire.
   // It stays anyway: the proxy is an optimistic pre-filter, and the real check
@@ -28,13 +27,13 @@ export default async function Home() {
   // The auth check is a single fast call, so paying for it before the shell
   // paints is cheap; the two page queries are the slow pair, and those are
   // what the boundaries are for.
-  if (!user) {
+  if (!claims) {
     redirect("/login");
   }
 
   return (
     <AppShell
-      navEnd={<UserMenu user={toSessionUser(user)} />}
+      navEnd={<UserMenu user={toSessionUser(claims)} />}
       // Each view gets its own boundary, so the nav and the page frame paint
       // as soon as the auth check returns rather than waiting on Postgres.
       // Sibling boundaries resolve independently — neither tab blocks the

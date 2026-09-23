@@ -26,6 +26,13 @@ const UNIQUE_VIOLATION = "23505";
 const FOREIGN_KEY_VIOLATION = "23503";
 const INVALID_TEXT_REPRESENTATION = "22P02";
 
+/** Verify the session locally when asymmetric JWT signing is available. */
+async function signedInClient() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  return { supabase, userId: data?.claims.sub ?? null };
+}
+
 /**
  * Make a new sticker.
  *
@@ -59,16 +66,13 @@ export async function createActivity(
   // the validator, and what comes back out is what gets written.
   const { name, mark, lifeAreaId } = check.draft;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const { supabase, userId } = await signedInClient();
+  if (!userId) {
     return { ok: false, field: null, message: "You're signed out." };
   }
 
   const { error } = await supabase.from("activities").insert({
-    user_id: user.id,
+    user_id: userId,
     life_area_id: lifeAreaId,
     name,
     mark,
@@ -144,11 +148,8 @@ export async function updateActivity(
   }
   const { name, mark, lifeAreaId } = check.draft;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const { supabase, userId } = await signedInClient();
+  if (!userId) {
     return { ok: false, field: null, message: "You're signed out." };
   }
 
@@ -231,11 +232,8 @@ export async function setArchived(
   activityId: string,
   archived: boolean,
 ): Promise<SaveResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const { supabase, userId } = await signedInClient();
+  if (!userId) {
     return { ok: false, field: null, message: "You're signed out." };
   }
 
@@ -293,11 +291,8 @@ export async function setArchived(
  * filtered it out" into a sentence rather than a silent success.
  */
 export async function deleteActivity(activityId: string): Promise<SaveResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const { supabase, userId } = await signedInClient();
+  if (!userId) {
     return { ok: false, field: null, message: "You're signed out." };
   }
 

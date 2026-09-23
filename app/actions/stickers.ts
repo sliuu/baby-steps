@@ -1,7 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
-
 import type { DayString } from "@/lib/dates";
 import { isMood } from "@/lib/moods";
 import { NOTE_MAX } from "@/lib/stickers";
@@ -36,11 +34,9 @@ const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
  */
 async function signedInClient() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
 
-  return { supabase, user };
+  return { supabase, userId: data?.claims.sub ?? null };
 }
 
 /**
@@ -137,8 +133,8 @@ export async function placeActivity(
     return { ok: false, message: "That isn't a day." };
   }
 
-  const { supabase, user } = await signedInClient();
-  if (!user) return { ok: false, message: "You're signed out." };
+  const { supabase, userId } = await signedInClient();
+  if (!userId) return { ok: false, message: "You're signed out." };
 
   const existing = await readDay(supabase, [day]);
   if (existing === null) {
@@ -151,7 +147,7 @@ export async function placeActivity(
 
   const { error } = await supabase.from("day_activities").upsert(
     order.map((id, position) => ({
-      user_id: user.id,
+      user_id: userId,
       day,
       activity_id: id,
       position,
@@ -163,12 +159,6 @@ export async function placeActivity(
     return { ok: false, message: "That sticker didn't stick. Try again." };
   }
 
-  // The page has no Next.js cache entry to invalidate — it reads cookies and
-  // queries Postgres on every request — so there is nothing to `revalidate`.
-  // What's stale is the *rendered* tree the browser is holding. `refresh()`
-  // re-runs this route on the server and ships the new RSC payload back in the
-  // same response as this return value: one round trip, not two.
-  refresh();
   return { ok: true };
 }
 
@@ -200,8 +190,8 @@ export async function removeActivity(
     return { ok: false, message: "That isn't a day." };
   }
 
-  const { supabase, user } = await signedInClient();
-  if (!user) return { ok: false, message: "You're signed out." };
+  const { supabase, userId } = await signedInClient();
+  if (!userId) return { ok: false, message: "You're signed out." };
 
   const { error } = await supabase
     .from("day_activities")
@@ -213,7 +203,6 @@ export async function removeActivity(
     return { ok: false, message: "That sticker wouldn't come off. Try again." };
   }
 
-  refresh();
   return { ok: true };
 }
 
@@ -251,8 +240,8 @@ export async function moveActivity(
     return { ok: false, message: "That isn't a day." };
   }
 
-  const { supabase, user } = await signedInClient();
-  if (!user) return { ok: false, message: "You're signed out." };
+  const { supabase, userId } = await signedInClient();
+  if (!userId) return { ok: false, message: "You're signed out." };
 
   const failed = { ok: false, message: "That sticker wouldn't move. Try again." } as const;
 
@@ -283,34 +272,36 @@ export async function moveActivity(
     const unchanged = rest.every((row, at) => row.id === source[at].id);
     if (unchanged) return { ok: true };
 
-    if (!(await writeOrder(supabase, user.id, [{ day: from, rows: rest }]))) {
+    if (!(await writeOrder(supabase, userId, [{ day: from, rows: rest }]))) {
       return failed;
     }
-    refresh();
     return { ok: true };
   }
 
   const target = rows.filter((row) => row.day === to);
 
   // The merge: nowhere for the row to land, so the source loses its mark and
-  // the target keeps the one it had. `removeActivity` refreshes for us; the
-  // source still needs closing up behind the gap.
+  // the target keeps the one it had. Delete with this already-authenticated
+  // client rather than calling another action and verifying the token twice.
   if (target.some((row) => row.activity_id === activityId)) {
-    const removed = await removeActivity(from, activityId);
-    if (!removed.ok) return removed;
-    await writeOrder(supabase, user.id, [{ day: from, rows: rest }]);
-    refresh();
+    const { error } = await supabase
+      .from("day_activities")
+      .delete()
+      .eq("day", from)
+      .eq("activity_id", activityId);
+    if (error || !(await writeOrder(supabase, userId, [{ day: from, rows: rest }]))) {
+      return failed;
+    }
     return { ok: true };
   }
 
   target.splice(clamp(index, target.length), 0, moving);
-  const written = await writeOrder(supabase, user.id, [
+  const written = await writeOrder(supabase, userId, [
     { day: from, rows: rest },
     { day: to, rows: target },
   ]);
   if (!written) return failed;
 
-  refresh();
   return { ok: true };
 }
 
@@ -335,18 +326,17 @@ export async function setDayMood(
     return { ok: false, message: "That isn't a mood." };
   }
 
-  const { supabase, user } = await signedInClient();
-  if (!user) return { ok: false, message: "You're signed out." };
+  const { supabase, userId } = await signedInClient();
+  if (!userId) return { ok: false, message: "You're signed out." };
 
   const { error } = await supabase
     .from("day_moods")
-    .upsert({ user_id: user.id, day, mood }, { onConflict: "user_id,day" });
+    .upsert({ user_id: userId, day, mood }, { onConflict: "user_id,day" });
 
   if (error) {
     return { ok: false, message: "That mood didn't save. Try again." };
   }
 
-  refresh();
   return { ok: true };
 }
 
@@ -365,8 +355,8 @@ export async function clearDayMood(day: DayString): Promise<PlaceResult> {
     return { ok: false, message: "That isn't a day." };
   }
 
-  const { supabase, user } = await signedInClient();
-  if (!user) return { ok: false, message: "You're signed out." };
+  const { supabase, userId } = await signedInClient();
+  if (!userId) return { ok: false, message: "You're signed out." };
 
   const { error } = await supabase.from("day_moods").delete().eq("day", day);
 
@@ -374,7 +364,6 @@ export async function clearDayMood(day: DayString): Promise<PlaceResult> {
     return { ok: false, message: "That mood wouldn't clear. Try again." };
   }
 
-  refresh();
   return { ok: true };
 }
 
@@ -412,14 +401,14 @@ export async function setDayNote(
     };
   }
 
-  const { supabase, user } = await signedInClient();
-  if (!user) return { ok: false, message: "You're signed out." };
+  const { supabase, userId } = await signedInClient();
+  if (!userId) return { ok: false, message: "You're signed out." };
 
   const { error } = text
     ? await supabase
         .from("day_notes")
         .upsert(
-          { user_id: user.id, day, note: text },
+          { user_id: userId, day, note: text },
           { onConflict: "user_id,day" },
         )
     : await supabase.from("day_notes").delete().eq("day", day);
@@ -428,6 +417,5 @@ export async function setDayNote(
     return { ok: false, message: "That note didn't save. Copy it somewhere and try again." };
   }
 
-  refresh();
   return { ok: true };
 }

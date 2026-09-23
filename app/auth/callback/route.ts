@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/redirects";
 
 /**
  * Where Supabase sends the browser after Google or GitHub has authenticated you.
@@ -17,8 +18,7 @@ export async function GET(request: NextRequest) {
   // Where to land afterwards. Relative paths only — an absolute URL here would
   // let someone craft a link that bounces you to their site carrying a fresh
   // session. Same reasoning as Supabase's redirect allow-list.
-  const nextParam = searchParams.get("next") ?? "/";
-  const next = nextParam.startsWith("/") ? nextParam : "/";
+  const next = safeInternalPath(searchParams.get("next"));
 
   // The provider reports refusals here too — "cancel" on Google's consent
   // screen arrives as ?error=access_denied, with no code.

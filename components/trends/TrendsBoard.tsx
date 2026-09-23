@@ -1,8 +1,9 @@
 "use client";
 
 import { Tabs as TabsPrimitive } from "radix-ui";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 
+import { useCalendarData } from "@/components/calendar/calendarData";
 import { HabitList } from "./HabitList";
 import { HabitTable } from "./HabitTable";
 import { LifeStar } from "./LifeStar";
@@ -21,12 +22,13 @@ import {
   tally,
   type Range,
 } from "@/lib/analytics";
-import { today, type DayString } from "@/lib/dates";
+import type { DayString } from "@/lib/dates";
 import { daysBetween } from "@/lib/daymath";
 import { earliestPlacement, habitTable, habitWindow } from "@/lib/habits";
 import { PAGE_TITLE, PILL_TRACK, RULE, pill } from "@/lib/layout";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
+import { useToday } from "@/lib/useToday";
 
 type Props = {
   groups: LibraryGroup[];
@@ -39,9 +41,6 @@ type Props = {
    */
   initialToday: DayString;
 };
-
-/** Today doesn't change mid-session, so there's nothing to subscribe to. */
-const noSubscription = () => () => {};
 
 /**
  * The three lenses, in reading order, each answering one question.
@@ -82,6 +81,11 @@ type TrendsTab = (typeof TABS)[number]["id"];
  * navigation, and this page had enough facts to need some.
  */
 export function TrendsBoard(props: Props) {
+  const { snapshot } = useCalendarData();
+  const stickersByDay =
+    snapshot?.source === props.stickersByDay
+      ? snapshot.data
+      : props.stickersByDay;
   /**
    * The visitor's own date, one frame late on purpose.
    *
@@ -95,11 +99,7 @@ export function TrendsBoard(props: Props) {
    * except that the server value arrives as a prop instead of being recomputed —
    * a value computed twice in two places is a value that can differ.
    */
-  const todayString = useSyncExternalStore(
-    noSubscription,
-    () => today(),
-    () => props.initialToday,
-  );
+  const todayString = useToday(props.initialToday);
 
   /**
    * Which stretch of time you're looking at. UI state, exactly like Step 11's
@@ -126,8 +126,8 @@ export function TrendsBoard(props: Props) {
    * be skippable.
    */
   const totals = useMemo(
-    () => tally(props.stickersByDay, props.groups, bounds),
-    [props.stickersByDay, props.groups, bounds],
+    () => tally(stickersByDay, props.groups, bounds),
+    [stickersByDay, props.groups, bounds],
   );
 
   /**
@@ -136,8 +136,8 @@ export function TrendsBoard(props: Props) {
    * against days — see the note on `moodTally`.
    */
   const moods = useMemo(
-    () => moodTally(props.stickersByDay, bounds),
-    [props.stickersByDay, bounds],
+    () => moodTally(stickersByDay, bounds),
+    [stickersByDay, bounds],
   );
 
   /**
@@ -147,8 +147,8 @@ export function TrendsBoard(props: Props) {
    * shape that every caller would take half of.
    */
   const series = useMemo(
-    () => moodSeries(props.stickersByDay, bounds),
-    [props.stickersByDay, bounds],
+    () => moodSeries(stickersByDay, bounds),
+    [stickersByDay, bounds],
   );
 
   /**
@@ -158,8 +158,8 @@ export function TrendsBoard(props: Props) {
    * data does: switching range must not re-walk every day ever recorded.
    */
   const earliest = useMemo(
-    () => earliestPlacement(props.stickersByDay),
-    [props.stickersByDay],
+    () => earliestPlacement(stickersByDay),
+    [stickersByDay],
   );
 
   /** The range as a closed window, for the habit rows and their plot. */
@@ -174,8 +174,8 @@ export function TrendsBoard(props: Props) {
    * counting inside each would walk the map twice for one screen's worth.
    */
   const habits = useMemo(
-    () => habitTable(props.stickersByDay, props.groups, habitSpan),
-    [props.stickersByDay, props.groups, habitSpan],
+    () => habitTable(stickersByDay, props.groups, habitSpan),
+    [stickersByDay, props.groups, habitSpan],
   );
 
   /** `HabitRow` doesn't say whether its sticker is archived; the library does. */

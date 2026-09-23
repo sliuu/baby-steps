@@ -5,7 +5,6 @@ import {
   startTransition,
   useMemo,
   useState,
-  useSyncExternalStore,
   ViewTransition,
 } from "react";
 import { startOfMonth } from "date-fns";
@@ -33,11 +32,11 @@ import {
   type DayString,
   stepMonth,
   stepWeek,
-  today,
   toMonthString,
   toWeekString,
 } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { useToday } from "@/lib/useToday";
 
 type Props = Omit<PeriodProps, "todayString"> & {
   /**
@@ -89,9 +88,6 @@ type Props = Omit<PeriodProps, "todayString"> & {
   local?: boolean;
 };
 
-/** Today never changes mid-session, so there is nothing to subscribe to. */
-const noSubscription = () => () => {};
-
 /**
  * Owns one piece of state: which day you're looking at. Everything visible is
  * *derived* from it — the month around it, the week around it, the title, the
@@ -119,11 +115,7 @@ const noSubscription = () => () => {};
  * paint is deliberately today-less, and no cell is wrongly marked.
  */
 export function CalendarPanel(props: Props) {
-  const todayString = useSyncExternalStore(
-    noSubscription,
-    () => today(), // browser: the visitor's own date
-    () => null, // server and hydration: we don't know yet
-  );
+  const todayString = useToday(null);
 
   // Null until an arrow is pressed. While it's null the calendar follows the
   // clock, so a visitor who leaves the tab open overnight isn't stranded in

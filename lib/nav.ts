@@ -4,9 +4,9 @@ export type Page = "today" | "week" | "month" | "trends";
 export type CalendarPage = Exclude<Page, "trends">;
 
 /**
- * The four sections, in nav order. Real hrefs so the links behave like links —
- * focusable, copyable, openable in a new tab — even though we cancel the
- * default navigation and swap the body in React state instead.
+ * The four sections, in nav order. Real hrefs keep them focusable, copyable,
+ * openable in a new tab, and restorable through browser history. Plain clicks
+ * swap the body in React state while AppShell records the fragment.
  *
  * Today, Week and Month are three sections rather than one Calendar section
  * with a lens inside it, which is the reverse of the earlier call. All three
@@ -29,6 +29,12 @@ export const PAGES: { id: Page; label: string; href: string }[] = [
   { id: "month", label: "Month", href: "#month" },
   { id: "trends", label: "Trends", href: "#trends" },
 ];
+
+/** Read a section from a URL fragment without trusting an arbitrary string. */
+export function pageFromHash(hash: string): Page | null {
+  const value = hash.startsWith("#") ? hash.slice(1) : hash;
+  return PAGES.some(({ id }) => id === value) ? (value as Page) : null;
+}
 
 /**
  * Everything that isn't Trends draws a calendar.
@@ -82,4 +88,3 @@ export function isCalendar(page: Page): page is CalendarPage {
  */
 export const LANDING_NARROW: CalendarPage = "today";
 export const LANDING_WIDE: CalendarPage = "month";
-

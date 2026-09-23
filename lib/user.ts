@@ -17,7 +17,12 @@ export type SessionUser = {
   initial: string;
 };
 
-export function toSessionUser(user: User): SessionUser {
+type UserProfile = {
+  email?: string;
+  user_metadata?: User["user_metadata"];
+};
+
+export function toSessionUser(user: UserProfile): SessionUser {
   // Google and GitHub don't agree on what to call things, so check both.
   const metadata = user.user_metadata ?? {};
   const name: string =

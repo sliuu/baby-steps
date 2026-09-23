@@ -44,7 +44,17 @@ export function TopNav(props: Props) {
                   href={href}
                   aria-current={active ? "page" : undefined}
                   onClick={(event) => {
-                    // Keep the browser out of it: no reload, no history entry.
+                    // Modified clicks keep native link behavior, including
+                    // opening this section in a new tab.
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    ) {
+                      return;
+                    }
                     event.preventDefault();
                     props.onPageChange(id);
                   }}
