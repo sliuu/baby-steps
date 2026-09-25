@@ -129,13 +129,15 @@ export function WeekList(props: Props) {
                   className="flex w-10 shrink-0 flex-col items-center gap-0.5"
                 >
                   <span className="daylabel">{day.weekday}</span>
-                  {/* The ring, not a fill, exactly as in the other two views —
-                      and here it is the only thing besides the row's own tint
-                      that says which day is today. */}
+                  {/* The red rule, not a fill, exactly as in the other three
+                      views — and here it is the only thing besides the row's
+                      own tint that says which day is today, which is the best
+                      argument for the mark being a colour nothing else in the
+                      app uses. */}
                   <time
                     dateTime={day.day}
-                    className={`oldstyle grid size-7 place-items-center rounded-full text-[0.95rem] ${
-                      day.isToday ? "font-medium ring-1 ring-ink" : ""
+                    className={`oldstyle grid size-7 place-items-center border-b-2 text-[0.95rem] ${
+                      day.isToday ? "border-today-mark font-medium" : "border-transparent"
                     }`}
                   >
                     {day.dayOfMonth}

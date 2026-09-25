@@ -130,8 +130,8 @@ export function WeekDayColumn(props: Props) {
           <span className="daylabel">{day.weekday}</span>
           <time
             dateTime={day.day}
-            className={`oldstyle grid size-7 place-items-center rounded-full text-[0.875rem] ${
-              day.isToday ? "font-medium text-ink ring-1 ring-ink" : "text-ink"
+            className={`oldstyle grid size-7 place-items-center border-b-2 text-[0.875rem] text-ink ${
+              day.isToday ? "border-today-mark font-medium" : "border-transparent"
             }`}
           >
             {day.dayOfMonth}

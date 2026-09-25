@@ -65,14 +65,22 @@ type Props = {
  * collide: Tailwind picks the winner by position in the compiled stylesheet,
  * not by the order you wrote them. So the numeral picks exactly one branch.
  *
- * Today is a ring around the numeral rather than a filled circle. A fill needs
- * the text to invert to stay legible, and inverted text is one token away from
- * unreadable — which is exactly what happened the first time.
+ * Today is a rule under the numeral — the app's one red, and its only job. It
+ * was a ring, and before that a filled circle; the fill needed the text to
+ * invert to stay legible, and inverted text is one token away from unreadable.
+ * The ring was safe but it made today look like a control you could press. An
+ * underline is the annotation a person makes on a printed calendar.
+ *
+ * Every branch carries a border so the box never changes size — `border-b-2
+ * border-transparent` on the other days holds the numeral at the same baseline
+ * as today's. And today keeps `font-medium`, so the day is never marked by
+ * colour alone; the red at 4.24:1 clears the 3:1 a rule needs but not the 4.5
+ * text would.
  */
 function numeralClasses(cell: DayCellData): string {
-  if (cell.isToday) return "font-medium text-ink ring-1 ring-ink";
-  if (cell.inMonth) return "text-ink";
-  return "text-ink-muted/60";
+  if (cell.isToday) return "font-medium text-ink border-b-2 border-today-mark";
+  if (cell.inMonth) return "text-ink border-b-2 border-transparent";
+  return "text-ink-muted/60 border-b-2 border-transparent";
 }
 
 /**
@@ -226,7 +234,7 @@ export function DayCell(props: Props) {
       <div className="flex items-center justify-between gap-2">
         <time
           dateTime={cell.day}
-          className={`oldstyle grid size-7 place-items-center rounded-full text-[0.875rem] ${numeralClasses(cell)}`}
+          className={`oldstyle grid size-7 place-items-center text-[0.875rem] ${numeralClasses(cell)}`}
         >
           {cell.dayOfMonth}
         </time>

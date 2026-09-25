@@ -155,14 +155,16 @@ export function TodayView(props: Props) {
                 }`}
               >
                 <span className="daylabel">{cell.weekday}</span>
-                {/* Today is a ring, the day on show is the filled box behind
-                    all of this, and the two are different questions — "which
-                    day is it" and "which day am I reading". On the day they
-                    agree you get both, correct rather than doubled. */}
+                {/* Today is the red rule, the day on show is the filled box
+                    behind all of this, and the two are different questions —
+                    "which day is it" and "which day am I reading". On the day
+                    they agree you get both, and now they are answered in two
+                    different languages, a mark and a surface, rather than in
+                    two weights of the same grey. */}
                 <time
                   dateTime={cell.day}
-                  className={`oldstyle grid size-7 place-items-center rounded-full text-[0.875rem] ${
-                    cell.isToday ? "font-medium ring-1 ring-ink" : ""
+                  className={`oldstyle grid size-7 place-items-center border-b-2 text-[0.875rem] ${
+                    cell.isToday ? "border-today-mark font-medium" : "border-transparent"
                   }`}
                 >
                   {cell.dayOfMonth}
