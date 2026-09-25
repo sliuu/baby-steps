@@ -20,8 +20,16 @@ const COUNTER_FROM = NOTE_MAX - 40;
  * Everything that decides how the text wraps, shared by the field and the
  * hidden twin that gives it its height. They have to wrap identically at every
  * width, so this is one string rather than two lists that look alike.
+ *
+ * `note` is in here rather than on the textarea alone for exactly that reason:
+ * the measuring twin has to be set in the same face at the same weight, or an
+ * italic serif in the field and an upright grotesque in the mirror would wrap
+ * at different words and the field would size itself to the wrong height. The
+ * face is also why this component is the one place the note style is decided —
+ * three views draw it (the week column, the day sheet and Today), and the
+ * thing they share is this file.
  */
-const NOTE_TYPE = "w-full text-[0.78rem] leading-[1.15rem]";
+const NOTE_TYPE = "note w-full text-[0.78rem] leading-[1.15rem]";
 
 /**
  * A line or two about the day, at the bottom of its column.

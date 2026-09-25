@@ -94,7 +94,10 @@ export function DayMoodButton(props: Props) {
               <span aria-hidden="true">
                 <MoodMark mood={mood} />
               </span>
-              <span className="text-[0.69rem] leading-none">
+              {/* `note`, the same as the five under the faces in `MoodRow` —
+                  this popover is the same five words doing the same job, and
+                  the two sit a swipe apart on a phone. */}
+              <span className="note text-[0.69rem] leading-none">
                 {MOOD_LABEL[mood]}
               </span>
             </button>

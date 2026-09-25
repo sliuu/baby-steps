@@ -72,9 +72,13 @@ export function MoodRow(props: Props) {
                 the visible word underneath is hidden from them to stop the
                 button reading the label twice. */}
             <MoodMark mood={mood} />
+            {/* `note`. A mood is the one thing on this screen that isn't a
+                fact about what was done — "Rough" is how a day felt, and the
+                italic is the app saying it in the visitor's voice rather than
+                labelling a button with it. */}
             <span
               aria-hidden="true"
-              className={`text-[0.69rem] leading-none ${
+              className={`note text-[0.69rem] leading-none ${
                 chosen ? "text-ink" : "text-ink-muted"
               }`}
             >

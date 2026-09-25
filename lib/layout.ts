@@ -205,9 +205,24 @@ export const PILL_TRACK = `${CONTROL_RADIUS} bg-secondary p-1`;
  *
  * `bg-surface` and not the page's `bg-background`: the thumb is the pure-white
  * layer lifted one step above the off-white page.
+ *
+ * **`px-1.5` and not `px-2`, and it is a quarter of a pixel that asked for
+ * it.** On a 390px phone the bottom bar's four segments are 82.5px each, and
+ * the longest word in them is the longest one that can also be *active* —
+ * "Trends", which the active state sets in semibold. At `px-2` the label is
+ * left 44.50px after the padding, the icon and the gap, and Schibsted Grotesk
+ * sets that word at 44.73: a 0.23px shortfall, which `truncate` answers with a
+ * full ellipsis. It read as "Tren…" on the one screen the word labels. DM Sans
+ * wanted 44.22 and fit, so this is the swap's doing and not a latent bug.
+ *
+ * Trimming the padding rather than the gap or the size because the segments
+ * are equal-width and their contents are centred, so nothing visibly moves —
+ * the 4px comes out of air that was never between two things. It buys 3.8px of
+ * slack, which is a margin rather than another coat of paint on the same
+ * quarter-pixel.
  */
 export function pill(active: boolean): string {
-  return `flex h-[38px] min-w-0 items-center justify-center gap-1.5 ${CONTROL_RADIUS} px-2 text-[0.84rem] outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/50 ${
+  return `flex h-[38px] min-w-0 items-center justify-center gap-1.5 ${CONTROL_RADIUS} px-1.5 text-[0.84rem] outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/50 ${
     active
       ? "bg-surface font-semibold text-ink shadow-[0_1px_2px_rgb(30_30_28/0.10)]"
       : "text-ink-label hover:text-ink"
@@ -224,6 +239,15 @@ export function pill(active: boolean): string {
  * that decides, and a title that truncates on one view of three is worse than
  * a title that is 32px on all of them.
  *
+ * **1.88rem and not 2rem**, which is 2rem times the 0.94 correction Schibsted
+ * Grotesk carries — the same factor the `--text-*` heading rungs take, spelled
+ * out here because this size is an arbitrary value rather than one of those
+ * tokens. Schibsted sets that twenty-two-character week about 11% wider than
+ * Syne did, which put "20 – 26 Sept 2026" at 251.6px inside a 252px box: it
+ * fit on a one-to-one screen and truncated on a retina one, which is the worst
+ * way for a measurement to be wrong. The correction leaves 15px of slack. See
+ * the heading block in `globals.css` for where 0.94 comes from.
+ *
  * It takes over at the same 64rem the nav, the gutter and the two grids change
  * at — the phone's layout is one decision, made in one place, and this is one
  * of the things it decides.
@@ -235,4 +259,4 @@ export function pill(active: boolean): string {
  * follows whichever of these two sizes is in force; putting a fixed leading
  * here would fight it.
  */
-export const PAGE_TITLE = "font-heading text-[2rem] lg:text-page-title";
+export const PAGE_TITLE = "font-heading text-[1.88rem] lg:text-page-title";

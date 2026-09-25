@@ -314,8 +314,13 @@ export function HabitTable(props: Props) {
                   {row.count === 0 ? <Nothing /> : row.count}
                 </td>
 
+                {/* `note`: the same sentence the phone list sets in italic,
+                    and for the same reason — every other cell in this row is a
+                    name, a count or a date, and this one is a reading of them.
+                    The column heading stays upright; a sortable header is a
+                    control. */}
                 <td
-                  className={`${cellClass(COLUMNS[3], false)} text-[0.9rem] whitespace-nowrap`}
+                  className={`${cellClass(COLUMNS[3], false)} note text-[0.9rem] whitespace-nowrap`}
                 >
                   {frequencyLabel(row) ?? <Nothing />}
                 </td>

@@ -161,12 +161,18 @@ export function WeekList(props: Props) {
                        happening is a thing that happened, which is the one
                        claim this app is careful to keep making.
 
-                       Not italic, although it wants to be. The app loads no
-                       italics — DM Sans's aren't fetched and Syne has none —
-                       so an italic here would be the browser shearing an
-                       upright face — and a synthesised oblique at 13px is a smudge,
-                       not a voice. Muted is the whole treatment. */
-                    <span className="text-[0.83rem] text-ink-muted">Quiet</span>
+                       Italic at last. This wanted to be italic from the day it
+                       was written and couldn't be: the app loaded no italics,
+                       so one here would have been the browser shearing an
+                       upright face, and a synthesised oblique at 13px is a
+                       smudge rather than a voice. `note` is a real one now —
+                       Spectral at 300 — and this is exactly what it is for.
+                       The word is the app being kind about an empty day rather
+                       than reporting a zero, which is the difference the
+                       second face exists to draw. */
+                    <span className="note text-[0.83rem] text-ink-muted">
+                      Quiet
+                    </span>
                   )}
                 </span>
 

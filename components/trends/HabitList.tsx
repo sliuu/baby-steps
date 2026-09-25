@@ -122,7 +122,14 @@ function Rows(props: { rows: HabitRow[]; today: DayString; ruled?: boolean }) {
                 rather than an ellipsis. */}
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-[0.9rem]">{row.name}</span>
-              <span className="text-[0.8rem] text-ink-muted">{often ?? "—"}</span>
+              {/* `note`, and the name above it deliberately not. The name is
+                  what the thing is called; "about every 11 days" is a reading
+                  of the count two columns over, offered rather than measured.
+                  The dash keeps the italic too — it stands in for the same
+                  sentence. */}
+              <span className="note text-[0.8rem] text-ink-muted">
+                {often ?? "—"}
+              </span>
             </span>
 
             <span className="flex shrink-0 flex-col items-end gap-0.5">
