@@ -650,14 +650,21 @@ export function CalendarBoard(props: Props) {
             rather than at the end of it, and a failure can't be scrolled out
             of sight.
 
-            `9rem` is that promise written down, and it has to be kept in step
-            with the page's own padding. The tray's top edge is 64px of nav plus
-            `main`'s 40px of top padding, and there are another 40px of bottom
-            padding under it: 144px, which is 9rem. A cap any larger and the
-            tray alone makes a page scroll that would otherwise have fit — it
-            was `8rem`, and 48 stray pixels of scrollbar on a week that ended
-            well above the fold is exactly what that bought. If `py-10` in
-            `AppShell` ever changes, this changes with it.
+            `145px` is that promise written down, and it has to be kept in step
+            with the page's own padding. The tray's top edge is the nav — 64px
+            of `h-16` **and the hairline under it** — plus `main`'s 40px of top
+            padding, and there are another 40px of bottom padding beneath it:
+            64 + 1 + 40 + 40. A cap any larger and the tray alone makes a page
+            scroll that would otherwise have fit — it was `8rem`, and 48 stray
+            pixels of scrollbar on a week that ended well above the fold is
+            exactly what that bought. Then it was `9rem`, which is the same
+            mistake one pixel wide: 144 forgets the hairline, so a full-screen
+            laptop showing the week or today got a scrollbar for a single
+            pixel, which is worse than a long scroll — it looks like a bug
+            rather than like content. Written in px rather than rem because one
+            of the four numbers it adds up is a border, and a border is not
+            going to be re-expressed in rem. If `py-10` in `AppShell` or the
+            nav's height ever changes, this changes with it.
 
             That scroll is vertical only wherever it lives, and keeping it that
             way is a rule, not a preference: nothing in here may be wider than
@@ -702,8 +709,18 @@ export function CalendarBoard(props: Props) {
             `hidden` first and then `lg:flex`, not `lg:block`: the rail is a
             flex column and `twMerge` resolves the two display classes in
             argument order, so the class that turns it back on has to be the
-            display it actually wants. */}
-        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-9rem)] lg:w-56 lg:shrink-0 lg:flex-col">
+            display it actually wants.
+
+            **`lg:overflow-hidden` is what stops the page scrolling past its
+            own content.** The list inside already scrolls on its own, and it
+            is capped at the viewport by `max-h` — but the overflow it hides
+            was still counted in the document's scroll height, so a tray with
+            more stickers than fit bought the *page* a few hundred pixels of
+            blank space below the fold. Nothing is clipped that wasn't already:
+            this only says that what the rail hides is hidden from the page
+            too. The drag preview is unaffected — `DragOverlay` renders at the
+            board, not in here. */}
+        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-145px)] lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-hidden">
           <StickerTray
             groups={props.groups}
             selection={selection}

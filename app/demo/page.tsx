@@ -68,11 +68,12 @@ export default async function DemoPage() {
         // A real navigation, not a router push: leaving the demo should drop
         // everything in it, and a full load is the cheapest way to be sure a
         // year of invented stickers is gone. `ml-1` because the nav's gap is
-        // sized for an avatar, and a bordered pill wants a little more room
-        // from the toggle.
+        // sized for an avatar, and a bordered control wants a little more room
+        // from the toggle. Its corner is the nav segments' — it stands in the
+        // same bar as them, and it was the last stadium left in it.
         <a
           href="/login"
-          className="ml-1 rounded-full border border-hairline px-4 py-1.5 text-[0.875rem] transition-colors hover:bg-secondary"
+          className="ml-1 rounded-sm border border-hairline px-4 py-1.5 text-[0.875rem] transition-colors hover:bg-secondary"
         >
           Sign in
         </a>

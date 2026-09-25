@@ -543,7 +543,14 @@ function AreaFilter(props: {
       <DropdownMenuTrigger asChild>
         {/* `font-normal`, matching the range picker's custom-range button. A
             filter is a thing you read, not a thing that shouts. */}
-        <Button variant="outline" size="sm" className="gap-1.5 font-normal">
+        {/* `rounded-sm` over the size variant's own corner: this sits a line
+            under the range picker, and the two dropdowns on the tab have to
+            turn the same one. See `CONTROL_RADIUS`. */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 rounded-sm font-normal"
+        >
           {filterLabel(options, selected)}
           <ChevronDown aria-hidden="true" className="size-3.5 opacity-60" />
         </Button>

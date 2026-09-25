@@ -131,6 +131,30 @@ export const RULE = "border-t-2 border-rule";
 export const PANEL = `${RULE} pt-4`;
 
 /**
+ * The corner every control in the app turns.
+ *
+ * **These were all `rounded-full`, and the page had four radii on it at once**
+ * — full-round nav segments, full-round dropdown triggers, 8px cards, and the
+ * week's 4.8px sticker bars. A stadium corner is a strong shape and it was
+ * being spent on five different controls that have nothing to do with each
+ * other, so nothing was distinguished by it.
+ *
+ * `rounded-sm` is the smallest step of the `--radius` family — 4.8px off an
+ * 8px base — and it is what the week view already draws its named sticker bars
+ * with. Picking the shape the calendar had rather than inventing a sixth one
+ * means the nav, Trends' lenses and the two dropdowns now turn the same corner
+ * as the thing they are all made of.
+ *
+ * Round is still round where round is the *drawing* rather than the chrome:
+ * sticker discs, day numerals, area dots, the avatar and the theme toggle are
+ * circles on purpose, and the bar charts keep their stadium ends.
+ *
+ * "Pill" survives in the names below as what this control *is* — one of a few
+ * choices, all on screen — not as the shape it's cut to.
+ */
+const CONTROL_RADIUS = "rounded-sm";
+
+/**
  * A segment of the top nav's pill, on a wide screen.
  *
  * It used to claim the pill shape for top-level navigation alone, and that
@@ -151,7 +175,7 @@ export const PANEL = `${RULE} pt-4`;
  * like focus.
  */
 export function segment(active: boolean): string {
-  return `rounded-full px-5 py-1.5 text-[0.875rem] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 ${
+  return `${CONTROL_RADIUS} px-5 py-1.5 text-[0.875rem] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 ${
     active ? "bg-secondary text-ink" : "text-ink-muted hover:text-ink"
   }`;
 }
@@ -173,7 +197,7 @@ export function segment(active: boolean): string {
  * Only the active segment has a shadow, and it is the only one on the screen:
  * one soft pixel that says "this one is on top" and nothing else.
  */
-export const PILL_TRACK = "rounded-full bg-secondary p-1";
+export const PILL_TRACK = `${CONTROL_RADIUS} bg-secondary p-1`;
 
 /**
  * One segment of `PILL_TRACK`. 38px tall — with the track's 4px either side
@@ -183,7 +207,7 @@ export const PILL_TRACK = "rounded-full bg-secondary p-1";
  * layer lifted one step above the off-white page.
  */
 export function pill(active: boolean): string {
-  return `flex h-[38px] min-w-0 items-center justify-center gap-1.5 rounded-full px-2 text-[0.84rem] outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/50 ${
+  return `flex h-[38px] min-w-0 items-center justify-center gap-1.5 ${CONTROL_RADIUS} px-2 text-[0.84rem] outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring/50 ${
     active
       ? "bg-surface font-semibold text-ink shadow-[0_1px_2px_rgb(30_30_28/0.10)]"
       : "text-ink-label hover:text-ink"

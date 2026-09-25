@@ -47,10 +47,10 @@ type Props = {
  * a dropdown. This control governs every number on the page, and it does so
  * quietly — a loud pill for a filter would out-shout the panels it filters.
  *
- * Its *trigger* is pill-shaped now, which is not the same thing: a rounded
+ * Its *trigger* is a bordered control now, which is not the same thing: an
  * outline around a label and a chevron, sitting under the Areas · Habits ·
- * Moods pill. It is still one value in a closed box, and opening it is still a
- * list.
+ * Moods pill and turning the same small corner it does — see `CONTROL_RADIUS`.
+ * It is still one value in a closed box, and opening it is still a list.
  */
 export function RangePicker(props: Props) {
   const { value, onChange } = props;
@@ -75,14 +75,14 @@ export function RangePicker(props: Props) {
             this is a form — there's no submission and no FormData for a hidden
             native select to land in. It's a control whose value lives in React
             state, which is what `value`/`onValueChange` are for. */}
-        {/* A rounded pill on white, sized to its label. It was a fixed 11rem
+        {/* An outlined box on white, sized to its label. It was a fixed 11rem
             rectangle; the width was there to stop the dates beside it jumping
             as the label changed length, and on a phone the dates sit at the
             far end of the row instead, where the label's width can't move
             them. `data-[size=default]:` because the trigger sets its height
             through that variant, and a bare `h-9` loses to it. */}
         <SelectTrigger
-          className="gap-[7px] rounded-full border-hairline bg-surface pr-2.5 pl-3 text-[0.8rem] data-[size=default]:h-9 dark:bg-surface"
+          className="gap-[7px] rounded-sm border-hairline bg-surface pr-2.5 pl-3 text-[0.8rem] data-[size=default]:h-9 dark:bg-surface"
           aria-label="Date range"
         >
           <SelectValue />
@@ -138,7 +138,7 @@ function CustomRange(props: CustomProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="h-9 gap-2 rounded-full font-normal">
+        <Button variant="outline" className="h-9 gap-2 rounded-sm font-normal">
           <CalendarIcon className="size-4" />
           {label(props.from, props.to)}
         </Button>
