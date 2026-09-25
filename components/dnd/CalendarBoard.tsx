@@ -674,8 +674,11 @@ export function CalendarBoard(props: Props) {
             horizontal scrollbar, and hiding it would only move the problem.
             Long names truncate; hit areas fill the width rather than reaching
             past it. */}
-        {/* `lg:w-56` — 14rem. It was 18rem, then 13, and this is 13 plus the
-            scrollbar.
+        {/* `lg:w-64` — 16rem. It was 18rem, then 13, then 13 plus the
+            scrollbar, and now that plus the hairline's 2rem of clearance; the
+            note on the tag below has the arithmetic. What follows is where
+            the 13 came from, and it is still the floor everything else is
+            measured against.
 
             13rem was measured as close to the floor: `TRAY_INSET` costs 16px,
             the mark is 26, the gap to the name is 10, and the eye on the right
@@ -720,7 +723,26 @@ export function CalendarBoard(props: Props) {
             this only says that what the rail hides is hidden from the page
             too. The drag preview is unaffected — `DragOverlay` renders at the
             board, not in here. */}
-        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-145px)] lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-hidden">
+        {/* **The hairline, and the 2rem the rail grew to pay for it.** The
+            line is a left border on this element rather than a divider of its
+            own, so it inherits the rail's own height and stickiness for free:
+            it starts under the nav because the rail does, it ends where the
+            rail's cap ends, and there is no second thing to keep in sync. It
+            is `lg:`-prefixed like everything else here, so it disappears with
+            the rail below 64rem — where the tray stacks and a vertical rule
+            would be drawing a line down the middle of nothing.
+
+            `lg:w-64` and not `lg:w-56` is the part that isn't in the brief.
+            The border and its `pl-8` take 33px out of the *inside* of a
+            fixed-width rail, and the width above was measured rather than
+            picked: 13rem of content plus a rem for the list's own scrollbar.
+            Left at 14rem, a sticker name's slot went from 136px to 103px —
+            18 characters down to 13, against a `NAME_MAX` of 24 — so a third
+            of the names people can actually type would have started
+            truncating. 16rem hands back exactly what the line costs and the
+            slot lands at 135px. What pays for it is the calendar, which is
+            `flex-1`: seven columns share the loss, about 4.5px each. */}
+        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-145px)] lg:w-64 lg:shrink-0 lg:flex-col lg:overflow-hidden lg:border-l lg:border-hairline lg:pl-8">
           <StickerTray
             groups={props.groups}
             selection={selection}
