@@ -79,11 +79,23 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
   ]);
 
   if (placed.error || !placed.data) {
+    console.error("Placed stickers query failed", {
+      message: placed.error?.message ?? "no rows returned",
+      code: placed.error?.code,
+      details: placed.error?.details,
+      hint: placed.error?.hint,
+    });
     throw new Error(
       `Could not load placed stickers: ${placed.error?.message ?? "no rows returned"}`,
     );
   }
   if (moods.error || !moods.data) {
+    console.error("Moods query failed", {
+      message: moods.error?.message ?? "no rows returned",
+      code: moods.error?.code,
+      details: moods.error?.details,
+      hint: moods.error?.hint,
+    });
     throw new Error(
       `Could not load moods: ${moods.error?.message ?? "no rows returned"}`,
     );
@@ -91,6 +103,12 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
   // A missing `day_notes` relation lands here, not as an empty list — which is
   // exactly what you see if `npm run db:notes` hasn't been run yet.
   if (notes.error || !notes.data) {
+    console.error("Day notes query failed", {
+      message: notes.error?.message ?? "no rows returned",
+      code: notes.error?.code,
+      details: notes.error?.details,
+      hint: notes.error?.hint,
+    });
     throw new Error(
       `Could not load notes: ${notes.error?.message ?? "no rows returned"}`,
     );

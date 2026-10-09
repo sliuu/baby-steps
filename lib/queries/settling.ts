@@ -31,10 +31,18 @@
  * broken refresh as a slow page.
  */
 
+/** The error fields PostgREST returns and that are safe to put in server logs. */
+export type QueryError = {
+  message: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+};
+
 /** The shape every `supabase.from(...).select(...)` settles to. */
 type QueryResult<T> = {
   data: T | null;
-  error: { message: string } | null;
+  error: QueryError | null;
 };
 
 /**

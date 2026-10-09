@@ -85,6 +85,15 @@ export const getStickerLibrary = cache(async function getStickerLibrary(): Promi
   );
 
   if (error || !data) {
+    // The client only receives a digest for a Server Component error. Keep the
+    // structured PostgREST fields in the server log so a transient auth error,
+    // a missing relation and a network failure are distinguishable there.
+    console.error("Sticker library query failed", {
+      message: error?.message ?? "no rows returned",
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+    });
     throw new Error(
       `Could not load your stickers: ${error?.message ?? "no rows returned"}`,
     );

@@ -34,6 +34,20 @@ const PUBLIC_PATHS = [
 ];
 
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const isPublic = PUBLIC_PATHS.some(
+    (p) => path === p || path.startsWith(`${p}/`),
+  );
+
+  // These routes never need to know who is visiting. In particular, `/demo`
+  // is generated data and the callback exchanges its one-time code itself.
+  // Returning before the Supabase client is created keeps a session check off
+  // their critical path. `/login` is intentionally excluded: it still needs
+  // to redirect an already-signed-in visitor back to the app.
+  if (isPublic && path !== "/login") {
+    return NextResponse.next({ request });
+  }
+
   const { url, anonKey } = supabaseEnv();
 
   // Starts as a pass-through. `setAll` replaces it if tokens were refreshed.
@@ -73,11 +87,6 @@ export async function proxy(request: NextRequest) {
   // of adding an Auth-server round trip to every request.
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims.sub);
-
-  const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some(
-    (p) => path === p || path.startsWith(`${p}/`),
-  );
 
   if (!signedIn && !isPublic) {
     const loginUrl = new URL("/login", request.nextUrl);

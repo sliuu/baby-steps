@@ -1,8 +1,10 @@
+import type { QueryError } from "./settling";
+
 export const DATA_PAGE_SIZE = 1000;
 
 type PageResult<T> = {
   data: T[] | null;
-  error: { message: string } | null;
+  error: QueryError | null;
 };
 
 /** Read every PostgREST page instead of silently stopping at its row cap. */

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 
@@ -18,18 +17,16 @@ import { Button } from "@/components/ui/button";
  * is where the known transient one is actually handled, and it retries before
  * anything reaches here. This is the floor under everything that isn't known.
  *
- * `error.tsx` must be a Client Component: it receives `reset`, which is a
- * function, and functions do not cross the server boundary.
+ * `error.tsx` must be a Client Component: it receives `unstable_retry`, which
+ * is a function, and functions do not cross the server boundary.
  */
 export default function ErrorBoundary({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }) {
-  const router = useRouter();
-
   // The server's copy of the message is the one worth having. In production
   // `error.message` is replaced with a generic string and only `digest`
   // survives to correlate the two, so log both rather than assuming the text
@@ -48,17 +45,12 @@ export default function ErrorBoundary({
         Your stickers are safe — this was the page, not your calendar. Trying
         again usually does it.
       </p>
-      <Button
-        onClick={() => {
-          // Both, in this order, and neither is redundant. `router.refresh()`
-          // throws away the cached Server Component payload — without it a
-          // retry re-renders the same failed result and nothing changes.
-          // `reset()` is what clears the boundary so the fresh payload is
-          // allowed to render.
-          router.refresh();
-          reset();
-        }}
-      >
+      {/* Next 16.2 gives route error boundaries a retry that does both jobs in
+          one operation: it re-fetches the failed segment, then replaces the
+          fallback only if that fresh render succeeds. `reset()` merely
+          re-rendered the already-failed contents, while starting
+          `router.refresh()` beside it left the two operations racing. */}
+      <Button onClick={unstable_retry}>
         Try again
       </Button>
     </main>
