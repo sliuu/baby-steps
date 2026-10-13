@@ -145,37 +145,15 @@ export function WeekList(props: Props) {
                 </span>
 
                 <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                  {stickers.activities.length > 0 ? (
-                    stickers.activities.map((sticker) => (
-                      <StickerMark
-                        key={sticker.activityId}
-                        sticker={sticker}
-                        className={faded(
-                          highlight?.activityIds.has(sticker.activityId) ??
-                            false,
-                        )}
-                      />
-                    ))
-                  ) : (
-                    /* "Quiet", and not "No stickers" or an empty row. A week
-                       with four blank days should read as a week with four
-                       quiet days — the word is there to say that nothing
-                       happening is a thing that happened, which is the one
-                       claim this app is careful to keep making.
-
-                       Italic at last. This wanted to be italic from the day it
-                       was written and couldn't be: the app loaded no italics,
-                       so one here would have been the browser shearing an
-                       upright face, and a synthesised oblique at 13px is a
-                       smudge rather than a voice. `note` is a real one now —
-                       Spectral at 300 — and this is exactly what it is for.
-                       The word is the app being kind about an empty day rather
-                       than reporting a zero, which is the difference the
-                       second face exists to draw. */
-                    <span className="note text-[0.83rem] text-ink-muted">
-                      Quiet
-                    </span>
-                  )}
+                  {stickers.activities.map((sticker) => (
+                    <StickerMark
+                      key={sticker.activityId}
+                      sticker={sticker}
+                      className={faded(
+                        highlight?.activityIds.has(sticker.activityId) ?? false,
+                      )}
+                    />
+                  ))}
                 </span>
 
                 <span className="flex w-6 shrink-0 justify-end">

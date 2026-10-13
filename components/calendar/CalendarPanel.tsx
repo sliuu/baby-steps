@@ -396,7 +396,10 @@ export function CalendarPanel(props: Props) {
     />
   );
 
-  if (props.view === null) {
+  // Today is a phone section. Pressed on a phone and then carried across
+  // 64rem — a rotated tablet, a dragged window — it draws the month on the
+  // wide side, exactly as the cold load does, so the desktop never shows it.
+  if (props.view === null || props.view === "today") {
     return (
       <>
         {body(LANDING_NARROW_VIEW, "lg:hidden")}

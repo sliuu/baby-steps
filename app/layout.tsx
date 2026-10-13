@@ -44,8 +44,8 @@ import "./globals.css";
  * loaded.** One weight, one style: 300 italic, and nothing in the app can set
  * it upright or bold. It has exactly one job, the `note` utility, and the
  * things wearing it are the ones that are somebody *writing* rather than the
- * app reporting — the note under a day, the word for how a day felt, "Quiet"
- * on a day with nothing on it, "about every 11 days" under a habit. Every one
+ * app reporting — the note under a day, the word for how a day felt, "about
+ * every 11 days" under a habit. Every one
  * of those is a sentence in the first person or a reading offered softly, and
  * a light italic serif is the oldest way to say so. Everything that counts,
  * labels or names stays in the grotesque.

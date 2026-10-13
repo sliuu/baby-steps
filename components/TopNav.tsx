@@ -5,6 +5,9 @@ import { LANDING_WIDE } from "@/lib/nav";
 import { PAGE_WIDTH, segment } from "@/lib/layout";
 import { PAGES, type Page } from "@/lib/nav";
 
+/** Today is a phone section. A laptop opens on the month and stays there. */
+const DESKTOP_PAGES = PAGES.filter(({ id }) => id !== "today");
+
 /**
  * Presentational. It doesn't own which page is showing — it's told, and it
  * reports clicks upward. State lives one level up in AppShell, because the
@@ -26,18 +29,24 @@ export function TopNav(props: Props) {
           Baby Steps
         </span>
 
-        {/* Gone below 64rem, where `BottomNav` takes over. Four segments at
+        {/* Gone below 64rem, where `BottomNav` takes over. Three segments at
             this padding want most of a phone's width on their own, and the
             wordmark and the two controls still have to fit beside them. The
             two switchers are mutually exclusive by construction — same
             breakpoint, opposite sign — so there is never a screen with both. */}
         <div className="hidden flex-1 justify-center lg:flex">
           <div className="flex items-center gap-1">
-            {PAGES.map(({ id, label, href }) => {
+            {DESKTOP_PAGES.map(({ id, label, href }) => {
               // Null is "nothing pressed yet". This pill is `hidden lg:flex`,
               // so the only landing it can ever show is the wide one — no
-              // measurement needed, and none possible on the server.
-              const active = id === (props.page ?? LANDING_WIDE);
+              // measurement needed, and none possible on the server. Today is
+              // phone-only, so a `#today` carried across 64rem reads as Month,
+              // which is what `CalendarPanel` draws for it at this width.
+              const active =
+                id ===
+                (props.page === null || props.page === "today"
+                  ? LANDING_WIDE
+                  : props.page);
               return (
                 <a
                   key={id}

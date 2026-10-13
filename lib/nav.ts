@@ -18,10 +18,12 @@ export type CalendarPage = Exclude<Page, "trends">;
  * **Today is first, and it is first because of the phone.** The order is the
  * zoom level, widest last, and the narrowest one is the only section that fits
  * a 375px screen without asking anything of it — seven columns of named bars
- * do not, and forty-two cells really do not. It leads the row on the desktop
- * pill too rather than being a mobile-only destination, because a section that
- * exists at one width and not another is a section you can be stranded in when
- * the window changes size.
+ * do not, and forty-two cells really do not.
+ *
+ * **It is phone-only.** `TopNav` leaves it off the desktop pill, and a `#today`
+ * that reaches a wide window — a link, or a phone-sized window dragged past
+ * 64rem — draws the month there instead; see the end of `CalendarPanel`. That
+ * is what keeps it from being a section you can be stranded in.
  */
 export const PAGES: { id: Page; label: string; href: string }[] = [
   { id: "today", label: "Today", href: "#today" },
