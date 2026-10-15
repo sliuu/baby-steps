@@ -111,3 +111,35 @@ export async function whileTokenSettles<T>(
 
   return result;
 }
+
+/**
+ * The settling error, still unsettled after every wait above.
+ *
+ * **Waiting inside the request turned out not to be enough.** Twice a sign-in
+ * on the deployed site has outlasted the full budget — `Could not load notes`,
+ * then `Could not load moods: JWT issued at future` — and both times the
+ * queries that ran *beside* the failing one, with the same token and the same
+ * retry schedule, had succeeded. So it is not one clock that a few more seconds
+ * would catch up with; some verifiers accept the token while another keeps
+ * refusing it. What has always worked is a fresh request: a reload, or the
+ * error page's "Try again". The views catch this class and do that for you —
+ * see `components/views/SettlingRetry.tsx`.
+ *
+ * A class rather than a message match because the views run on the server,
+ * where `instanceof` holds; the message only reaches the browser as a digest.
+ */
+export class TokenSettlingError extends Error {
+  name = "TokenSettlingError";
+}
+
+/**
+ * The error a failed query throws: `TokenSettlingError` for the timing family,
+ * a plain `Error` for everything else, worded `<what>: <PostgREST message>` so
+ * the server log line stays greppable.
+ */
+export function queryFailure(what: string, error: QueryError | null): Error {
+  const message = `${what}: ${error?.message ?? "no rows returned"}`;
+  return error && SETTLING.test(error.message)
+    ? new TokenSettlingError(message)
+    : new Error(message);
+}

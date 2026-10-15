@@ -6,7 +6,7 @@ import type { DayStickers, StickersByDay } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
 import { getStickerLibrary } from "./activities";
 import { readAllPages } from "./paginate";
-import { whileTokenSettles } from "./settling";
+import { queryFailure, whileTokenSettles } from "./settling";
 
 // The shapes this returns live in `lib/stickers.ts`, not here. This module
 // reaches `next/headers` through the Supabase server client, so anything
@@ -85,9 +85,7 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
       details: placed.error?.details,
       hint: placed.error?.hint,
     });
-    throw new Error(
-      `Could not load placed stickers: ${placed.error?.message ?? "no rows returned"}`,
-    );
+    throw queryFailure("Could not load placed stickers", placed.error);
   }
   if (moods.error || !moods.data) {
     console.error("Moods query failed", {
@@ -96,9 +94,7 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
       details: moods.error?.details,
       hint: moods.error?.hint,
     });
-    throw new Error(
-      `Could not load moods: ${moods.error?.message ?? "no rows returned"}`,
-    );
+    throw queryFailure("Could not load moods", moods.error);
   }
   // A missing `day_notes` relation lands here, not as an empty list — which is
   // exactly what you see if `npm run db:notes` hasn't been run yet.
@@ -109,9 +105,7 @@ export const getStickersByDay = cache(async function getStickersByDay(): Promise
       details: notes.error?.details,
       hint: notes.error?.hint,
     });
-    throw new Error(
-      `Could not load notes: ${notes.error?.message ?? "no rows returned"}`,
-    );
+    throw queryFailure("Could not load notes", notes.error);
   }
 
   const byDay: StickersByDay = new Map();

@@ -2,7 +2,7 @@ import { cache } from "react";
 
 import type { StickerFace } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
-import { whileTokenSettles } from "./settling";
+import { queryFailure, whileTokenSettles } from "./settling";
 
 export type LibrarySticker = StickerFace & {
   /** The activities row — the sticker itself, not any placement of it. */
@@ -94,9 +94,7 @@ export const getStickerLibrary = cache(async function getStickerLibrary(): Promi
       details: error?.details,
       hint: error?.hint,
     });
-    throw new Error(
-      `Could not load your stickers: ${error?.message ?? "no rows returned"}`,
-    );
+    throw queryFailure("Could not load your stickers", error);
   }
 
   return data.map((area) => ({

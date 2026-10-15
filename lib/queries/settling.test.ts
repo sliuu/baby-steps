@@ -10,7 +10,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { BACKOFF_MS, whileTokenSettles } from "./settling.ts";
+import {
+  BACKOFF_MS,
+  queryFailure,
+  TokenSettlingError,
+  whileTokenSettles,
+} from "./settling.ts";
 
 /** The real retry budget, with the waiting taken out. */
 const NOW = BACKOFF_MS.map(() => 0);
@@ -73,4 +78,39 @@ test("skew that outlasts the backoff gives up and reports the real error", async
   assert.equal(result.error?.message, "JWT issued at future");
   // One first attempt plus one per backoff step, and no more.
   assert.equal(q.attempts, BACKOFF_MS.length + 1);
+});
+
+// What the views do after the in-request retries rests on this split: a
+// `TokenSettlingError` is quietly re-requested from the browser, anything else
+// goes straight to the error page. So a real failure must never be classified
+// as settling.
+test("a settling failure that outlasts the retries throws TokenSettlingError", () => {
+  const error = queryFailure("Could not load moods", {
+    message: "JWT issued at future",
+    code: "PGRST303",
+  });
+  assert.ok(error instanceof TokenSettlingError);
+  assert.equal(error.message, "Could not load moods: JWT issued at future");
+});
+
+test("an ordinary failure throws a plain Error", () => {
+  const error = queryFailure("Could not load moods", {
+    message: 'relation "day_moods" does not exist',
+  });
+  assert.ok(!(error instanceof TokenSettlingError));
+  assert.equal(error.message, 'Could not load moods: relation "day_moods" does not exist');
+});
+
+test("an expired token is not settling either", () => {
+  assert.ok(
+    !(queryFailure("Could not load moods", { message: "JWT expired" }) instanceof
+      TokenSettlingError),
+  );
+});
+
+test("no rows and no error still says so", () => {
+  assert.equal(
+    queryFailure("Could not load notes", null).message,
+    "Could not load notes: no rows returned",
+  );
 });

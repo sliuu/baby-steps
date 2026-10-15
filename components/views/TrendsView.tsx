@@ -1,7 +1,11 @@
 import { TrendsBoard } from "@/components/trends/TrendsBoard";
 import { today } from "@/lib/dates";
 import { getStickerLibrary } from "@/lib/queries/activities";
+import { TokenSettlingError } from "@/lib/queries/settling";
 import { getStickersByDay } from "@/lib/queries/stickers";
+
+import { SettlingRetry } from "./SettlingRetry";
+import { TrendsSkeleton } from "./TrendsSkeleton";
 
 /**
  * Async, and a Server Component — the same seam as `CalendarView`, and the same
@@ -18,10 +22,21 @@ import { getStickersByDay } from "@/lib/queries/stickers";
  * areas is what tells you the six exist, the same argument the tray makes.
  */
 export async function TrendsView() {
-  const [groups, stickersByDay] = await Promise.all([
-    getStickerLibrary(),
-    getStickersByDay(),
-  ]);
+  let data;
+  try {
+    data = await Promise.all([getStickerLibrary(), getStickersByDay()]);
+  } catch (error) {
+    // The same recovery as CalendarView's, for the same error.
+    if (error instanceof TokenSettlingError) {
+      return (
+        <SettlingRetry>
+          <TrendsSkeleton />
+        </SettlingRetry>
+      );
+    }
+    throw error;
+  }
+  const [groups, stickersByDay] = data;
 
   return (
     <TrendsBoard
