@@ -1,7 +1,7 @@
 # 01 · Rename life areas to categories
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** d386604
 - **Severity:** foundation (everything after this uses the new names)
 - **Category:** refactor + migration
 - **Estimated scope:** ~30 files, one migration, no visual change
