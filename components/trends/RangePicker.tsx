@@ -48,7 +48,7 @@ type Props = {
  * quietly — a loud pill for a filter would out-shout the panels it filters.
  *
  * Its *trigger* is a bordered control now, which is not the same thing: an
- * outline around a label and a chevron, sitting under the Areas · Habits ·
+ * outline around a label and a chevron, sitting under the Categories · Habits ·
  * Moods pill and turning the same small corner it does — see `CONTROL_RADIUS`.
  * It is still one value in a closed box, and opening it is still a list.
  */

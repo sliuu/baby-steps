@@ -87,19 +87,19 @@ describe("cadence", () => {
 });
 
 describe("monthSummary", () => {
-  const areaOf = new Map([
+  const categoryOf = new Map([
     ["gym", "Body"],
     ["read", "Mind"],
     ["journal", "Mind"],
   ]);
 
   it("is all zeroes for an empty month", () => {
-    const summary = monthSummary(SEPTEMBER, days({}), areaOf, "2026-09-16");
+    const summary = monthSummary(SEPTEMBER, days({}), categoryOf, "2026-09-16");
 
     assert.deepEqual(summary, {
       daysMarked: 0,
       stickers: 0,
-      areas: 0,
+      categories: 0,
       elapsed: 16,
       leaders: [],
     });
@@ -115,7 +115,7 @@ describe("monthSummary", () => {
         "2026-09-01": [sticker("gym"), sticker("read")],
         "2026-09-02": [sticker("gym")],
       }),
-      areaOf,
+      categoryOf,
       "2026-09-16",
     );
 
@@ -133,7 +133,7 @@ describe("monthSummary", () => {
         "2026-10-01": [sticker("gym")],
         "2026-09-03": [sticker("gym")],
       }),
-      areaOf,
+      categoryOf,
       "2026-09-16",
     );
 
@@ -141,8 +141,8 @@ describe("monthSummary", () => {
     assert.equal(summary.stickers, 1);
   });
 
-  it("counts areas through the library, not through the hue", () => {
-    // Two habits in Mind and one in Body is two areas, even though the three
+  it("counts categories through the library, not through the hue", () => {
+    // Two habits in Mind and one in Body is two categories, even though the three
     // placements carry three different hues.
     const summary = monthSummary(
       SEPTEMBER,
@@ -150,16 +150,16 @@ describe("monthSummary", () => {
         "2026-09-01": [sticker("gym", "red"), sticker("read", "blue")],
         "2026-09-02": [sticker("journal", "green")],
       }),
-      areaOf,
+      categoryOf,
       "2026-09-16",
     );
 
-    assert.equal(summary.areas, 2);
+    assert.equal(summary.categories, 2);
   });
 
   it("falls back to the hue for a habit the library has lost", () => {
     // Deleted, or simply not loaded. Two unknown habits sharing a hue are one
-    // area; a third in a hue of its own is a second.
+    // category; a third in a hue of its own is a second.
     const summary = monthSummary(
       SEPTEMBER,
       days({
@@ -170,7 +170,7 @@ describe("monthSummary", () => {
       "2026-09-16",
     );
 
-    assert.equal(summary.areas, 2);
+    assert.equal(summary.categories, 2);
   });
 
   it("ranks leaders by count, then by name", () => {
@@ -181,7 +181,7 @@ describe("monthSummary", () => {
         "2026-09-02": [sticker("journal"), sticker("gym")],
         "2026-09-03": [sticker("gym")],
       }),
-      areaOf,
+      categoryOf,
       "2026-09-16",
     );
 
@@ -205,7 +205,7 @@ describe("monthSummary", () => {
       days({
         "2026-09-01": [sticker("read"), sticker("journal"), sticker("gym")],
       }),
-      areaOf,
+      categoryOf,
       "2026-09-16",
     );
 
@@ -241,7 +241,7 @@ describe("monthSummary", () => {
       marked[`2026-09-${String(day).padStart(2, "0")}`] = [sticker("gym")];
     }
 
-    const summary = monthSummary(SEPTEMBER, days(marked), areaOf, "2026-09-16");
+    const summary = monthSummary(SEPTEMBER, days(marked), categoryOf, "2026-09-16");
 
     assert.equal(summary.elapsed, 16);
     assert.equal(summary.leaders[0].count, 8);
@@ -254,7 +254,7 @@ describe("monthSummary", () => {
     const summary = monthSummary(
       SEPTEMBER,
       days({ "2026-09-01": [sticker("gym", "green")] }),
-      areaOf,
+      categoryOf,
       "2026-09-16",
     );
 

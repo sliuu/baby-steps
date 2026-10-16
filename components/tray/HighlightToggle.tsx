@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  /** What it lights, for the accessible name: a sticker, a mood, an area. */
+  /** What it lights, for the accessible name: a sticker, a mood, a category. */
   name: string;
   lit: boolean;
   onToggle: () => void;
@@ -43,7 +43,7 @@ export function HighlightToggle(props: Props) {
       type="button"
       // `icon-xs` is 1.5rem against `icon-sm`'s 1.75rem. A group heading is a
       // 0.7rem eyebrow, so the row-sized button would set the heading's height
-      // by itself and space the six areas further apart than the stickers
+      // by itself and space the six categories further apart than the stickers
       // inside them.
       size={props.compact ? "icon-xs" : "icon-sm"}
       variant="ghost"

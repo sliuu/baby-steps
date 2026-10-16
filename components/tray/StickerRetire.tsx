@@ -40,7 +40,7 @@ type Props = {
  *
  * They're offered together on purpose. Almost every "I don't do this any more"
  * is an archive: the row leaves the tray, the marks stay on the calendar, the
- * life area keeps its count, and it's one click to undo. Delete is for the
+ * category keeps its count, and it's one click to undo. Delete is for the
  * other case — the sticker made by mistake, the one you'd rather not see again
  * — and it takes every mark with it and cannot be undone.
  *

@@ -27,7 +27,7 @@ import { queryFailure, whileTokenSettles } from "./settling";
  * figures; the fix is a date range on both queries, and nothing above here
  * changes.
  *
- * No .eq("user_id", …) in either query. See lib/queries/lifeAreas.ts.
+ * No .eq("user_id", …): RLS scopes rows to the caller.
  *
  * `cache` for the same reason `getStickerLibrary` has it: both tabs render on
  * every request and both want this map, so without it the page opens four

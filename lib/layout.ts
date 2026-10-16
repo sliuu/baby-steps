@@ -146,7 +146,7 @@ export const PANEL = `${RULE} pt-4`;
  * as the thing they are all made of.
  *
  * Round is still round where round is the *drawing* rather than the chrome:
- * sticker discs, day numerals, area dots, the avatar and the theme toggle are
+ * sticker discs, day numerals, category dots, the avatar and the theme toggle are
  * circles on purpose, and the bar charts keep their stadium ends.
  *
  * "Pill" survives in the names below as what this control *is* — one of a few
@@ -158,7 +158,7 @@ const CONTROL_RADIUS = "rounded-sm";
  * A segment of the top nav's pill, on a wide screen.
  *
  * It used to claim the pill shape for top-level navigation alone, and that
- * rule is gone: Trends' Areas · Habits · Moods is a segmented pill now too, and
+ * rule is gone: Trends' Categories · Habits · Moods is a segmented pill now too, and
  * so is the phone's bottom bar. Both of those are the *tracked* pill below —
  * `PILL_TRACK` and `pill` — which is a different drawing from this one, a
  * sunken track with a raised white thumb rather than a tinted segment on bare

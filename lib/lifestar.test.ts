@@ -105,7 +105,7 @@ describe("starPoints", () => {
 
   it("agrees with ringPoints when every share is 1", () => {
     // The outer ring and a maxed-out star have to be the same polygon, or a
-    // full area would sit visibly off its own gridline.
+    // full category would sit visibly off its own gridline.
     const star = starPoints([1, 1, 1, 1, 1, 1], 92, 230, 142);
     const ring = ringPoints(6, 92, 230, 142);
     star.forEach((p, i) => assertPoint(p, ring[i], `vertex ${i}`));

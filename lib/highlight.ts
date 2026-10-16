@@ -21,7 +21,7 @@ import { MOOD_LABEL, type Mood } from "./moods.ts";
  */
 export type Selection =
   | { kind: "activity"; activityId: string }
-  | { kind: "area"; areaId: string }
+  | { kind: "category"; categoryId: string }
   | { kind: "mood"; mood: Mood };
 
 /**
@@ -36,7 +36,7 @@ export function sameSelection(
   if (!a || !b || a.kind !== b.kind) return false;
   if (a.kind === "activity" && b.kind === "activity")
     return a.activityId === b.activityId;
-  if (a.kind === "area" && b.kind === "area") return a.areaId === b.areaId;
+  if (a.kind === "category" && b.kind === "category") return a.categoryId === b.categoryId;
   if (a.kind === "mood" && b.kind === "mood") return a.mood === b.mood;
   return false;
 }
@@ -45,9 +45,9 @@ export function sameSelection(
  * A selection resolved against the library: everything the calendar needs to
  * draw it, worked out once instead of 42 times.
  *
- * Note what collapses here. An area and a single sticker arrive as different
+ * Note what collapses here. A category and a single sticker arrive as different
  * kinds and leave as the same shape — a set of activity ids — so nothing
- * downstream branches on which one you clicked. Selecting an area is just
+ * downstream branches on which one you clicked. Selecting a category is just
  * selecting several stickers at once.
  */
 export type Highlight = {
@@ -89,14 +89,14 @@ export function buildHighlight(
     };
   }
 
-  if (selection.kind === "area") {
-    const group = groups.find((g) => g.areaId === selection.areaId);
+  if (selection.kind === "category") {
+    const group = groups.find((g) => g.categoryId === selection.categoryId);
     if (!group) return null;
     return {
       activityIds: new Set(group.stickers.map((sticker) => sticker.id)),
       mood: null,
       colorKey: group.colorKey,
-      label: group.areaName,
+      label: group.categoryName,
     };
   }
 

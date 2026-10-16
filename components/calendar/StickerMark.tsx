@@ -21,7 +21,7 @@ type Props = {
 };
 
 /**
- * A circle filled with its life area's colour, with the mark inside. The same
+ * A circle filled with its category's colour, with the mark inside. The same
  * component renders on a day and in the tray — that's why it takes a
  * StickerFace, the three fields it actually draws, rather than a row from
  * either table. Nothing here knows where it sits, so there is no variant prop

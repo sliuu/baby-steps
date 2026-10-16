@@ -31,7 +31,7 @@ type Props = { tally: Tally };
  * is which element goes in which order, and that genuinely does have to be
  * looked at rather than asserted.
  *
- * It draws `tally.areas` in the library's order, never sorted. That's the seam
+ * It draws `tally.categories` in the library's order, never sorted. That's the seam
  * the bars beside it are written around: they rank biggest-first because they
  * answer "what came top", and the star must not, because a polygon
  * whose vertices reorder by count changes shape for a reason that has nothing
@@ -39,21 +39,21 @@ type Props = { tally: Tally };
  * so two ranges can be compared by their outline.
  */
 export function LifeStar(props: Props) {
-  const { areas } = props.tally;
+  const { categories } = props.tally;
   const { cx, cy, radius } = VIEW;
 
   // A polygon needs corners. Nothing in this app produces a user with no life
-  // areas, but a chart that throws is a worse answer than a chart that admits
+  // categories, but a chart that throws is a worse answer than a chart that admits
   // it has nothing to draw.
-  if (areas.length === 0) return null;
+  if (categories.length === 0) return null;
 
   /**
-   * Distance from the centre is a share of the *busiest* area, not of the
+   * Distance from the centre is a share of the *busiest* category, not of the
    * total — so the fullest spoke always reaches the outer ring and the shape
    * reads as balance rather than volume. See `normalize`, which also explains
    * what that costs.
    */
-  const shares = normalize(areas.map((area) => area.count));
+  const shares = normalize(categories.map((category) => category.count));
   const vertices = starPoints(shares, radius, cx, cy);
 
   return (
@@ -72,7 +72,7 @@ export function LifeStar(props: Props) {
         {RINGS.map((ring) => (
           <polygon
             key={ring}
-            points={toPoints(ringPoints(areas.length, radius * ring, cx, cy))}
+            points={toPoints(ringPoints(categories.length, radius * ring, cx, cy))}
             className="fill-none stroke-hairline"
             strokeWidth={1}
             // Without this, the stroke scales with the drawing: the viewBox is
@@ -85,13 +85,13 @@ export function LifeStar(props: Props) {
         ))}
 
         {/* Spokes, from the centre out to the outer ring. Drawn even for an
-            area with no marks — an empty spoke is the fact that the area exists
+            category with no marks — an empty spoke is the fact that the category exists
             and is at zero, which is different from it not being there. */}
-        {areas.map((area, i) => {
-          const end = polar(cx, cy, radius, spokeAngle(i, areas.length));
+        {categories.map((category, i) => {
+          const end = polar(cx, cy, radius, spokeAngle(i, categories.length));
           return (
             <line
-              key={area.areaId}
+              key={category.categoryId}
               x1={cx}
               y1={cy}
               x2={end.x}
@@ -105,7 +105,7 @@ export function LifeStar(props: Props) {
 
         {/* The star. Filled neutral rather than blended from six hues — six
             colours meeting inside one polygon makes a muddy shape that belongs
-            to no area, and the vertex dots carry the colour instead.
+            to no category, and the vertex dots carry the colour instead.
             `stroke-linejoin: round` keeps a sharp spike from growing a spur at
             its tip, which is what a mitred join does at a narrow angle. */}
         <polygon
@@ -116,7 +116,7 @@ export function LifeStar(props: Props) {
           vectorEffect="non-scaling-stroke"
         />
 
-        {/* A dot per vertex, in the area's own colour. Drawn after the polygon
+        {/* A dot per vertex, in the category's own colour. Drawn after the polygon
             so the stroke doesn't cut across them.
 
             No stroke of its own. These carried a ring through three versions —
@@ -128,31 +128,31 @@ export function LifeStar(props: Props) {
 
             What the ring also did was keep two dots apart on a pinched
             (near-zero) polygon, where vertices crowd toward the centre. That
-            case is now carried by hue alone — adjacent areas are different
+            case is now carried by hue alone — adjacent categories are different
             colours, and at this depth they separate. Worth a look if a range
-            ever puts two near-empty areas side by side. */}
-        {areas.map((area, i) => (
+            ever puts two near-empty categories side by side. */}
+        {categories.map((category, i) => (
           <circle
-            key={area.areaId}
+            key={category.categoryId}
             cx={vertices[i].x}
             cy={vertices[i].y}
             r={4}
-            className={ramp(area.colorKey).softFill}
+            className={ramp(category.colorKey).softFill}
           />
         ))}
 
-        {/* "Area · count" at each spoke end, just outside the outer ring. */}
-        {areas.map((area, i) => {
-          const angle = spokeAngle(i, areas.length);
+        {/* "Category · count" at each spoke end, just outside the outer ring. */}
+        {categories.map((category, i) => {
+          const angle = spokeAngle(i, categories.length);
           const at = polar(cx, cy, radius + LABEL_GAP, angle);
           return (
             <text
-              key={area.areaId}
+              key={category.categoryId}
               x={at.x}
               y={at.y}
               // Which end of the text attaches to the spoke, and how it sits
               // vertically. Both are computed from the angle rather than
-              // written out per area — the six-area version of this is a table
+              // written out per category — the six-category version of this is a table
               // of anchors that silently becomes wrong at seven.
               textAnchor={labelAnchor(angle)}
               dominantBaseline={labelBaseline(angle)}
@@ -163,10 +163,10 @@ export function LifeStar(props: Props) {
               // was budgeted against it, so changing it can clip a long name.
               className="fill-ink text-[12px]"
             >
-              {area.areaName}
+              {category.categoryName}
               {/* The count in the same muted grey and tabular figures the table
                   uses, so the two readings of one number match. */}
-              <tspan className="tabular fill-ink-muted"> · {area.count}</tspan>
+              <tspan className="tabular fill-ink-muted"> · {category.count}</tspan>
             </text>
           );
         })}

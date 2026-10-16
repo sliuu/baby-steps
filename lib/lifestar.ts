@@ -28,12 +28,12 @@ export const RINGS = [0.25, 0.5, 0.75, 1] as const;
  * The angle of spoke `i` of `n`, in radians.
  *
  * `(2π / n) · i` — the whole "write it for N, not 6" rule in one expression.
- * Nothing here knows the app has six life areas; hand it seven and it draws
+ * Nothing here knows the app has six categories; hand it seven and it draws
  * seven spokes 51.4° apart. Hardcoding 60° would cost the same line today and
- * a rewrite of three charts the day an area is added.
+ * a rewrite of three charts the day a category is added.
  *
  * `TOP` puts spoke 0 at twelve o'clock and sends the rest round clockwise,
- * which is the order someone reads a list of areas in. See `polar` in
+ * which is the order someone reads a list of categories in. See `polar` in
  * `charts.ts` for why a quarter turn has to be subtracted to get "up".
  */
 export function spokeAngle(i: number, n: number): number {

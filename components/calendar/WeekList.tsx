@@ -64,7 +64,7 @@ type Props = PeriodProps & {
  * redrawn.
  *
  * The date column is 40px and fixed, so the seven numerals line up down the
- * left edge and the sticker areas all start at the same x. The mood is on the
+ * left edge and the sticker categories all start at the same x. The mood is on the
  * right in a slot of its own, kept whether or not there is a face in it, for
  * the same reason: a row with a mood and a row without have to be the same
  * shape or the stickers shuffle sideways from line to line.

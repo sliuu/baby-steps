@@ -135,14 +135,14 @@ export function DayModal(props: Props) {
                   (sticker) => !sticker.archived || placed.has(sticker.id),
                 );
 
-                // A life area whose stickers are all archived and all unused
+                // A category whose stickers are all archived and all unused
                 // today has nothing to say. The heading would be the only
                 // thing in it.
                 if (visible.length === 0) return null;
 
                 return (
-                <section key={group.areaId}>
-                  <h3 className="eyebrow">{group.areaName}</h3>
+                <section key={group.categoryId}>
+                  <h3 className="eyebrow">{group.categoryName}</h3>
                   {/* Tight, because each row now carries its own vertical
                       padding — it's a hover band, not a line of text. Same
                       adjustment the tray made for the same reason. */}

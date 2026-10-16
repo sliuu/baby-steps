@@ -25,21 +25,21 @@ import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
 
 /**
- * Two areas, three habits, one retired — the deleted strip's fixture,
+ * Two categories, three habits, one retired — the deleted strip's fixture,
  * because the two modules share their row rule and a shared rule deserves a
  * shared shape of test. Walk is archived and that is the point: the same
  * library has to produce a different number of rows depending on whether Walk
  * was placed inside the window.
  *
- * The areas are named so that alphabetical order ("Health", "Spirituality")
+ * The categories are named so that alphabetical order ("Health", "Spirituality")
  * matches library order, and the sort tests below rely on being able to tell
  * those two apart — so one test deliberately builds a library in the other
  * order.
  */
 const GROUPS: LibraryGroup[] = [
   {
-    areaId: "area-health",
-    areaName: "Health",
+    categoryId: "category-health",
+    categoryName: "Health",
     colorKey: "green",
     stickers: [
       { id: "act-gym", name: "Gym", mark: "G", colorKey: "green", archived: false },
@@ -47,8 +47,8 @@ const GROUPS: LibraryGroup[] = [
     ],
   },
   {
-    areaId: "area-spirit",
-    areaName: "Spirituality",
+    categoryId: "category-spirit",
+    categoryName: "Spirituality",
     colorKey: "red",
     stickers: [
       { id: "act-med", name: "Meditation", mark: "M", colorKey: "red", archived: false },
@@ -224,15 +224,15 @@ describe("habitTable · which rows exist", () => {
 });
 
 describe("habitTable · what a row says", () => {
-  it("names the habit from the library and the area from its group", () => {
+  it("names the habit from the library and the category from its group", () => {
     const rows = habitTable(days({ "2026-09-05": ["act-gym"] }), GROUPS, WINDOW);
     const gym = rowFor(rows, "act-gym");
     // Not `joined-act-gym`: the fixture's placement name is wrong on purpose.
     assert.equal(gym.name, "Gym");
     assert.equal(gym.mark, "G");
     assert.equal(gym.colorKey, "green");
-    assert.equal(gym.areaId, "area-health");
-    assert.equal(gym.areaName, "Health");
+    assert.equal(gym.categoryId, "category-health");
+    assert.equal(gym.categoryName, "Health");
   });
 
   it("counts marks, not days", () => {
@@ -355,8 +355,8 @@ describe("frequencyLabel", () => {
       name: "Gym",
       mark: "G",
       colorKey: "green",
-      areaId: "area-health",
-      areaName: "Health",
+      categoryId: "category-health",
+      categoryName: "Health",
       count: 0,
       days: 0,
       hits: [],
@@ -402,7 +402,7 @@ describe("SORT_START", () => {
     // ascends because the smallest interval is the most-done habit. Same
     // intent, opposite arrows, which is why it is a table.
     assert.deepEqual(SORT_START, {
-      area: "asc",
+      category: "asc",
       count: "desc",
       interval: "asc",
       last: "desc",
@@ -418,8 +418,8 @@ describe("sortHabits", () => {
       name: "Alpha",
       mark: "A",
       colorKey: "green",
-      areaId: "area-1",
-      areaName: "Body",
+      categoryId: "category-1",
+      categoryName: "Body",
       count: 9,
       days: 9,
       hits: [{ offset: 1, count: 1 }],
@@ -432,8 +432,8 @@ describe("sortHabits", () => {
       name: "Bravo",
       mark: "B",
       colorKey: "red",
-      areaId: "area-2",
-      areaName: "Craft",
+      categoryId: "category-2",
+      categoryName: "Craft",
       count: 2,
       days: 2,
       hits: [{ offset: 5, count: 1 }],
@@ -446,8 +446,8 @@ describe("sortHabits", () => {
       name: "Charlie",
       mark: "C",
       colorKey: "blue",
-      areaId: "area-3",
-      areaName: "Admin",
+      categoryId: "category-3",
+      categoryName: "Admin",
       count: 1,
       days: 1,
       hits: [{ offset: 20, count: 1 }],
@@ -460,8 +460,8 @@ describe("sortHabits", () => {
       name: "Delta",
       mark: "D",
       colorKey: "yellow",
-      areaId: "area-4",
-      areaName: "Zeal",
+      categoryId: "category-4",
+      categoryName: "Zeal",
       count: 0,
       days: 0,
       hits: [],
@@ -484,9 +484,9 @@ describe("sortHabits", () => {
     assert.deepEqual(ids(sortHabits(ROWS, "count", "asc")), ["d", "c", "b", "a"]);
   });
 
-  it("orders by area name, alphabetically", () => {
-    assert.deepEqual(ids(sortHabits(ROWS, "area", "asc")), ["c", "a", "b", "d"]);
-    assert.deepEqual(ids(sortHabits(ROWS, "area", "desc")), ["d", "b", "a", "c"]);
+  it("orders by category name, alphabetically", () => {
+    assert.deepEqual(ids(sortHabits(ROWS, "category", "asc")), ["c", "a", "b", "d"]);
+    assert.deepEqual(ids(sortHabits(ROWS, "category", "desc")), ["d", "b", "a", "c"]);
   });
 
   it("treats a single mark as rarer than any rate", () => {
@@ -526,7 +526,7 @@ describe("sortHabits", () => {
   });
 
   it("handles every key without throwing on an empty table", () => {
-    const keys: HabitSortKey[] = ["area", "count", "interval", "last"];
+    const keys: HabitSortKey[] = ["category", "count", "interval", "last"];
     for (const key of keys) {
       assert.deepEqual(sortHabits([], key, "asc"), []);
     }
@@ -556,7 +556,7 @@ describe("pageOf", () => {
   });
 
   it("clamps a page past the end to the last one", () => {
-    // What happens when you filter to one area while on page 3: the rows are
+    // What happens when you filter to one category while on page 3: the rows are
     // still there, so show the last page rather than an empty table.
     assert.deepEqual(pageOf(rows, 9, 10), [20, 21, 22]);
   });

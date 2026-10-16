@@ -192,7 +192,7 @@ type Floater = {
  * Everything else shows at every size, because a percentage of the screen is
  * always somewhere on the screen — which is the point of the rewrite.
  *
- * The marks and colours are the six life areas the app seeds, not a random
+ * The marks and colours are the six categories the app seeds, not a random
  * assortment: this is a preview of what the thing behind the login actually
  * looks like, so a sticker here should be one you could plausibly make. The
  * `name` is the real accessible name `StickerMark` renders — invisible here

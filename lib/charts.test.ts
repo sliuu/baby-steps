@@ -88,11 +88,11 @@ describe("polar", () => {
 describe("normalize", () => {
   it("scales against the largest count, not the total", () => {
     // Total would make these 0.5 / 0.3 / 0.2. The largest is what pins the
-    // busiest area to the full extent.
+    // busiest category to the full extent.
     assert.deepEqual(normalize([10, 6, 4]), [1, 0.6, 0.4]);
   });
 
-  it("draws an even shape when every area is equal", () => {
+  it("draws an even shape when every category is equal", () => {
     assert.deepEqual(normalize([7, 7, 7, 7]), [1, 1, 1, 1]);
   });
 
@@ -113,12 +113,12 @@ describe("normalize", () => {
 
   it("survives an empty array", () => {
     // `Math.max()` with no arguments is -Infinity, which would make every share
-    // -0. There are no zero-area users, but a chart that throws on an empty
+    // -0. There are no zero-category users, but a chart that throws on an empty
     // list is a chart that throws during a migration.
     assert.deepEqual(normalize([]), []);
   });
 
-  it("puts a zero area at the far end while others are drawn", () => {
+  it("puts a zero category at the far end while others are drawn", () => {
     assert.deepEqual(normalize([4, 0, 2]), [1, 0, 0.5]);
   });
 });

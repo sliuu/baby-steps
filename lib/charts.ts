@@ -69,7 +69,7 @@ export const TOP = -Math.PI / 2;
  * the star's side labels at 30° off horizontal, which pulls them in by a
  * factor of 0.866; six *slices* starting at the top put the donut's labels at
  * the slice middles, and two of those land at exactly three and nine o'clock.
- * Same six areas, 17 units further out, and a box budgeted for the star alone
+ * Same six categories, 17 units further out, and a box budgeted for the star alone
  * clips the donut. A shared frame has to satisfy the worse of its tenants.
  *
  * It's also why the donut sets its percentage on a second line rather than
@@ -79,7 +79,7 @@ export const TOP = -Math.PI / 2;
  *
  * 520 leaves ~30 units of slack each side. The character-width figure is an
  * estimate — there is no way to measure a font from Node — so the slack is the
- * point, and a genuinely long area name is still worth checking on screen.
+ * point, and a genuinely long category name is still worth checking on screen.
  * Height is set by the top and bottom labels, both of which can now be two
  * lines: `2·(radius + gap + 2·line)`.
  */
@@ -170,10 +170,10 @@ export function polar(
  * and *not* by the donut — which is the interesting part, so it's written down
  * here rather than in either caller.
  *
- * Share of the maximum pins the busiest area to the full extent and draws every
+ * Share of the maximum pins the busiest category to the full extent and draws every
  * other one relative to it, so the picture is about **balance**: a lopsided
  * month is a spike, an even one is a regular hexagon or a stack of near-equal
- * bars, whatever the totals were. Share of the *total* would make six areas at
+ * bars, whatever the totals were. Share of the *total* would make six categories at
  * 20 marks each draw a small shape at 16.7% that says nothing the number 20
  * didn't.
  *

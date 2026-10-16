@@ -21,8 +21,8 @@ export type MonthSummary = {
   daysMarked: number;
   /** Stickers placed, counting a habit once per day it appears on. */
   stickers: number;
-  /** Life areas with at least one sticker in the month. */
-  areas: number;
+  /** Categories with at least one sticker in the month. */
+  categories: number;
   /** Days of the month that have actually happened. See `elapsedDays`. */
   elapsed: number;
   /** The three most-marked habits, most first. Shorter if there aren't three. */
@@ -75,13 +75,13 @@ export function cadence(count: number, elapsed: number): string {
  * them belong to the neighbours, and a September summary that counted two days
  * of August would be wrong in a way nobody would ever catch by looking.
  *
- * **`areaOf` is a map from activity to life area, and the fallback matters.**
- * A sticker on a day carries its hue but not the area it came from, and the
- * two are not the same question — six areas happen to have six hues today,
- * and nothing stops a seventh area picking a hue already in use. So the map is
+ * **`categoryOf` is a map from activity to category, and the fallback matters.**
+ * A sticker on a day carries its hue but not the category it came from, and the
+ * two are not the same question — six categories happen to have six hues today,
+ * and nothing stops a seventh category picking a hue already in use. So the map is
  * built from the library and consulted first. A placement whose activity is
  * not in the library any more (deleted, or simply not loaded) falls back to
- * its hue, which is the closest thing to an area it still knows about.
+ * its hue, which is the closest thing to a category it still knows about.
  *
  * Nothing in here reads a clock or a locale. That is what lets it be tested,
  * and it is the same rule `monthGrid` follows for the same reason.
@@ -89,12 +89,12 @@ export function cadence(count: number, elapsed: number): string {
 export function monthSummary(
   days: DayString[],
   stickersByDay: StickersByDay,
-  areaOf: Map<string, string>,
+  categoryOf: Map<string, string>,
   todayString: DayString | null,
 ): MonthSummary {
   const elapsed = elapsedDays(days, todayString);
 
-  const areas = new Set<string>();
+  const categories = new Set<string>();
   const counts = new Map<string, MonthLeader>();
   let daysMarked = 0;
   let stickers = 0;
@@ -108,7 +108,7 @@ export function monthSummary(
     stickers += onDay.activities.length;
 
     for (const sticker of onDay.activities) {
-      areas.add(areaOf.get(sticker.activityId) ?? `hue:${sticker.colorKey}`);
+      categories.add(categoryOf.get(sticker.activityId) ?? `hue:${sticker.colorKey}`);
 
       const seen = counts.get(sticker.activityId);
       if (seen) {
@@ -136,5 +136,5 @@ export function monthSummary(
     .slice(0, 3)
     .map((leader) => ({ ...leader, cadence: cadence(leader.count, elapsed) }));
 
-  return { daysMarked, stickers, areas: areas.size, elapsed, leaders };
+  return { daysMarked, stickers, categories: categories.size, elapsed, leaders };
 }

@@ -30,22 +30,22 @@ import type { StickersByDay } from "@/lib/stickers";
 const TODAY = "2026-08-22";
 
 /**
- * A library of three areas, one of them empty, one sticker retired.
+ * A library of three categories, one of them empty, one sticker retired.
  *
- * The empty one is not padding: an area with no stickers has to survive into the
- * output as a zero row, because the Life Star in Step 13 draws a spoke per area
+ * The empty one is not padding: a category with no stickers has to survive into the
+ * output as a zero row, because the Life Star in Step 13 draws a spoke per category
  * and a missing one would silently change the shape of the chart.
  *
  * Walk is archived, and that's load-bearing too. `tally` is supposed to keep
- * counting a retired sticker's past marks under its area — you stopped doing
+ * counting a retired sticker's past marks under its category — you stopped doing
  * the habit, you didn't stop having done it — so the fixture is built with one
  * already retired. Every count below includes it, which means the day anyone
  * "helpfully" filters archived stickers out of the library, these break.
  */
 const GROUPS: LibraryGroup[] = [
   {
-    areaId: "area-health",
-    areaName: "Health",
+    categoryId: "category-health",
+    categoryName: "Health",
     colorKey: "green",
     stickers: [
       { id: "act-gym", name: "Gym", mark: "G", colorKey: "green", archived: false },
@@ -53,14 +53,14 @@ const GROUPS: LibraryGroup[] = [
     ],
   },
   {
-    areaId: "area-spirit",
-    areaName: "Spirituality",
+    categoryId: "category-spirit",
+    categoryName: "Spirituality",
     colorKey: "red",
     stickers: [
       { id: "act-med", name: "Meditation", mark: "M", colorKey: "red", archived: false },
     ],
   },
-  { areaId: "area-work", areaName: "Work", colorKey: "blue", stickers: [] },
+  { categoryId: "category-work", categoryName: "Work", colorKey: "blue", stickers: [] },
 ];
 
 /**
@@ -251,43 +251,43 @@ describe("tally · counting", () => {
       ALL,
     );
     assert.equal(result.total, 3);
-    assert.equal(result.areas[0].count, 3); // Health has all three
+    assert.equal(result.categories[0].count, 3); // Health has all three
   });
 
-  it("puts each mark under its activity's area", () => {
+  it("puts each mark under its activity's category", () => {
     const result = tally(
       days({ "2026-08-10": ["act-gym", "act-med"] }),
       GROUPS,
       ALL,
     );
-    assert.equal(result.areas[0].count, 1); // Health
-    assert.equal(result.areas[1].count, 1); // Spirituality
+    assert.equal(result.categories[0].count, 1); // Health
+    assert.equal(result.categories[1].count, 1); // Spirituality
   });
 
-  it("keeps areas in the library's order, empty ones included", () => {
+  it("keeps categories in the library's order, empty ones included", () => {
     const result = tally(days({ "2026-08-10": ["act-med"] }), GROUPS, ALL);
     assert.deepEqual(
-      result.areas.map((area) => area.areaName),
+      result.categories.map((category) => category.categoryName),
       ["Health", "Spirituality", "Work"],
     );
-    assert.equal(result.areas[2].count, 0);
+    assert.equal(result.categories[2].count, 0);
   });
 
-  it("returns every area at zero when nothing has been placed", () => {
+  it("returns every category at zero when nothing has been placed", () => {
     const result = tally(new Map(), GROUPS, ALL);
     assert.equal(result.total, 0);
-    assert.equal(result.areas.length, 3);
+    assert.equal(result.categories.length, 3);
     assert.deepEqual(
-      result.areas.map((area) => area.count),
+      result.categories.map((category) => category.count),
       [0, 0, 0],
     );
   });
 
-  it("carries each area's name and colour through", () => {
+  it("carries each category's name and colour through", () => {
     const result = tally(new Map(), GROUPS, ALL);
-    assert.equal(result.areas[1].areaName, "Spirituality");
-    assert.equal(result.areas[1].colorKey, "red");
-    assert.equal(result.areas[1].areaId, "area-spirit");
+    assert.equal(result.categories[1].categoryName, "Spirituality");
+    assert.equal(result.categories[1].colorKey, "red");
+    assert.equal(result.categories[1].categoryId, "category-spirit");
   });
 
   it("ignores moods — a mood is not a mark", () => {
@@ -326,7 +326,7 @@ describe("tally · the range", () => {
       resolveBounds({ kind: "custom", from: "2020-01-01", to: "2020-12-31" }, TODAY),
     );
     assert.equal(result.total, 0);
-    assert.equal(result.areas.length, 3);
+    assert.equal(result.categories.length, 3);
   });
 });
 
@@ -337,36 +337,36 @@ describe("tally · shares", () => {
       GROUPS,
       ALL,
     );
-    assert.equal(result.areas[0].share, 2 / 3);
-    assert.equal(result.areas[1].share, 1 / 3);
+    assert.equal(result.categories[0].share, 2 / 3);
+    assert.equal(result.categories[1].share, 1 / 3);
   });
 
   it("share is 0 rather than NaN when the range is empty", () => {
     const result = tally(new Map(), GROUPS, ALL);
-    assert.equal(result.areas[0].share, 0);
-    assert.equal(result.areas[0].percent, 0);
+    assert.equal(result.categories[0].share, 0);
+    assert.equal(result.categories[0].percent, 0);
   });
 
-  it("gives two areas with the same count the same percent", () => {
+  it("gives two categories with the same count the same percent", () => {
     // The case that decided the rounding, and the reason `percents` is gone.
     // Apportioning a leftover point has to give it to *one* of two equal rows,
     // and the table sorts by count — so the two rows it splits end up adjacent,
     // showing the same number of marks and different shares.
     const result = tally(days({ "2026-08-10": ["act-gym", "act-med"] }), GROUPS, ALL);
-    assert.equal(result.areas[0].count, result.areas[1].count);
-    assert.equal(result.areas[0].percent, result.areas[1].percent);
+    assert.equal(result.categories[0].count, result.categories[1].count);
+    assert.equal(result.categories[0].percent, result.categories[1].percent);
   });
 
   it("percents land within a rounding step of 100", () => {
     // Not *exactly* 100 — that's the price of rounding each row on its own, and
     // it's paid deliberately. One tenth per row is the most any row can be off,
-    // so three areas can drift at most 0.15. The table prints the real sum.
+    // so three categories can drift at most 0.15. The table prints the real sum.
     const result = tally(
       days({ "2026-08-10": ["act-gym", "act-walk", "act-med"] }),
       GROUPS,
       ALL,
     );
-    const sum = result.areas.reduce((n, area) => n + area.percent, 0);
+    const sum = result.categories.reduce((n, category) => n + category.percent, 0);
     assert.ok(
       Math.abs(sum - 100) <= 0.15,
       `percents summed to ${sum}, more than a rounding step from 100`,
@@ -390,7 +390,7 @@ describe("tally · unattributed", () => {
     // Still in the total: it happened. It just has nowhere to sit.
     assert.equal(result.total, 2);
     assert.equal(
-      result.areas.reduce((n, area) => n + area.count, 0),
+      result.categories.reduce((n, category) => n + category.count, 0),
       1,
     );
   });
@@ -420,7 +420,7 @@ describe("percent", () => {
     assert.equal(percent(0, 0), 0);
   });
 
-  it("gives a lone area the whole 100", () => {
+  it("gives a lone category the whole 100", () => {
     assert.equal(percent(5, 5), 100);
   });
 
@@ -531,7 +531,7 @@ describe("activityTally", () => {
   });
 
   it("leaves out habits with nothing in range, rather than listing zeros", () => {
-    // The opposite of `tally`, which keeps every area at zero. See the note on
+    // The opposite of `tally`, which keeps every category at zero. See the note on
     // `activityTally` for why the two disagree on purpose.
     const ranking = activityTally(faced({ "2026-08-01": ["act-gym"] }), ALL);
 
@@ -902,7 +902,7 @@ describe("moodTakeaway", () => {
 });
 
 describe("leaders", () => {
-  it("returns the single biggest area", () => {
+  it("returns the single biggest category", () => {
     const result = leaders(
       tally(
         days({
@@ -914,10 +914,10 @@ describe("leaders", () => {
       ),
     );
 
-    assert.deepEqual(result.map((a) => a.areaName), ["Health"]);
+    assert.deepEqual(result.map((a) => a.categoryName), ["Health"]);
   });
 
-  it("returns every area tied at the top", () => {
+  it("returns every category tied at the top", () => {
     const result = leaders(
       tally(
         days({ "2026-08-01": ["act-gym", "act-med"] }),
@@ -929,22 +929,22 @@ describe("leaders", () => {
     // Both on 1. Picking one would name Health and quietly not name
     // Spirituality, which has exactly as good a claim — the same mistake Step
     // 12's percentage column made with equal counts.
-    assert.deepEqual(result.map((a) => a.areaName), ["Health", "Spirituality"]);
+    assert.deepEqual(result.map((a) => a.categoryName), ["Health", "Spirituality"]);
   });
 
   it("keeps ties in library order, not sorted", () => {
     const result = leaders(tally(days({ "2026-08-01": ["act-med", "act-gym"] }), GROUPS, ALL));
-    assert.deepEqual(result.map((a) => a.areaId), ["area-health", "area-spirit"]);
+    assert.deepEqual(result.map((a) => a.categoryId), ["category-health", "category-spirit"]);
   });
 
   it("is empty when nothing is in range", () => {
-    // Every area at zero. Without the explicit guard, `Math.max` of an empty
-    // list is -Infinity, which matches no area and returns [] by luck; with
-    // areas present at zero it would return all of them, which is a lie.
+    // Every category at zero. Without the explicit guard, `Math.max` of an empty
+    // list is -Infinity, which matches no category and returns [] by luck; with
+    // categories present at zero it would return all of them, which is a lie.
     assert.deepEqual(leaders(tally(days({}), GROUPS, ALL)), []);
   });
 
-  it("is empty when there are no areas at all", () => {
+  it("is empty when there are no categories at all", () => {
     assert.deepEqual(leaders(tally(days({}), [], ALL)), []);
   });
 });
@@ -1015,23 +1015,23 @@ describe("takeaway", () => {
     const groups: LibraryGroup[] = [
       ...GROUPS,
       {
-        areaId: "area-play",
-        areaName: "Play",
+        categoryId: "category-play",
+        categoryName: "Play",
         colorKey: "yellow",
         stickers: [
           { id: "act-piano", name: "Piano", mark: "P", colorKey: "yellow", archived: false },
         ],
       },
       {
-        areaId: "area-rest",
-        areaName: "Rest",
+        categoryId: "category-rest",
+        categoryName: "Rest",
         colorKey: "purple",
         stickers: [
           { id: "act-nap", name: "Nap", mark: "N", colorKey: "purple", archived: false },
         ],
       },
     ];
-    // Four areas on 1, Work on 0 — so it's a four-way tie, not a flat range.
+    // Four categories on 1, Work on 0 — so it's a four-way tie, not a flat range.
     const result = takeaway(
       tally(
         days({ "2026-08-01": ["act-gym", "act-med", "act-piano", "act-nap"] }),
@@ -1043,7 +1043,7 @@ describe("takeaway", () => {
 
     assert.equal(
       result,
-      "4 areas tied for the greatest share of your attention this month.",
+      "4 categories tied for the greatest share of your attention this month.",
     );
   });
 
@@ -1059,7 +1059,7 @@ describe("takeaway", () => {
 
     assert.equal(
       result,
-      "Your attention was spread evenly across every area this month.",
+      "Your attention was spread evenly across every category this month.",
     );
   });
 

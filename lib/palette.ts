@@ -59,7 +59,7 @@ export function ramp(colorKey: string) {
 
 /**
  * The tint a highlighted thing wears: the day cells it lights, its own row in
- * the tray, and the area label above it.
+ * the tray, and the category label above it.
  *
  * One function so those three can't drift — the same argument as `validateDraft`
  * in Step 10, and it's why the tray row you clicked is visibly the same colour

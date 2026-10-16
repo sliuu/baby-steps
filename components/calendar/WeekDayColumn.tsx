@@ -162,7 +162,7 @@ export function WeekDayColumn(props: Props) {
 
           It does not `grow`, and that is the point. A growing stack pins the
           note to the bottom of the column, so a note gaining a line takes that
-          line off its own top and expands *upwards* into the sticker area —
+          line off its own top and expands *upwards* into the sticker category —
           the hairline above it climbs, the column's bottom edge never moves,
           and nothing else on the page notices. Fixed instead, the hairline
           stays put in all seven days, the note grows downwards, and the column

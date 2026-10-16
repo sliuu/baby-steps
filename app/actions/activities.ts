@@ -9,7 +9,7 @@ import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
  * Same shape as `PlaceResult` in `stickers.ts`, plus which field to point at.
  *
  * Shared by both writers below rather than one type each. They fail in exactly
- * the same ways — a bad draft, a name already taken, an area that isn't yours —
+ * the same ways — a bad draft, a name already taken, a category that isn't yours —
  * and the form that renders the failure is literally the same component, so two
  * identical types would be two places to remember to change.
  *
@@ -48,9 +48,9 @@ async function signedInClient() {
  * check here is the one that counts; the one in the browser is there so a typo
  * doesn't cost a round trip.
  *
- * What's deliberately *not* checked: whether `lifeAreaId` is one of yours. The
+ * What's deliberately *not* checked: whether `categoryId` is one of yours. The
  * row is written with your own `user_id`, and `activities` references
- * `(life_area_id, user_id)` as a pair — so an area belonging to someone else
+ * `(life_area_id, user_id)` as a pair — so a category belonging to someone else
  * has no row to point at and Postgres rejects the insert. Same reasoning as
  * `placeActivity`, and the same reason `lib/queries/` carries no `user_id`
  * filter: one answer to the question, in the place that can't be skipped.
@@ -64,7 +64,7 @@ export async function createActivity(
   }
   // The cleaned-up draft, not the raw fields — trimming happens once, inside
   // the validator, and what comes back out is what gets written.
-  const { name, mark, lifeAreaId } = check.draft;
+  const { name, mark, categoryId } = check.draft;
 
   const { supabase, userId } = await signedInClient();
   if (!userId) {
@@ -73,7 +73,7 @@ export async function createActivity(
 
   const { error } = await supabase.from("activities").insert({
     user_id: userId,
-    life_area_id: lifeAreaId,
+    life_area_id: categoryId,
     name,
     mark,
   });
@@ -86,7 +86,7 @@ export async function createActivity(
       return {
         ok: false,
         field: "name",
-        message: `You already have a sticker called “${name}” in that area.`,
+        message: `You already have a sticker called “${name}” in that category.`,
       };
     }
     if (
@@ -95,8 +95,8 @@ export async function createActivity(
     ) {
       return {
         ok: false,
-        field: "lifeArea",
-        message: "That life area isn't one of yours.",
+        field: "category",
+        message: "That category isn't one of yours.",
       };
     }
     return {
@@ -146,7 +146,7 @@ export async function updateActivity(
   if (!check.ok) {
     return { ok: false, field: check.field, message: check.message };
   }
-  const { name, mark, lifeAreaId } = check.draft;
+  const { name, mark, categoryId } = check.draft;
 
   const { supabase, userId } = await signedInClient();
   if (!userId) {
@@ -155,7 +155,7 @@ export async function updateActivity(
 
   const { data, error } = await supabase
     .from("activities")
-    .update({ life_area_id: lifeAreaId, name, mark })
+    .update({ life_area_id: categoryId, name, mark })
     .eq("id", activityId)
     // The rows that were actually written. This is the part an update needs and
     // an insert doesn't: under RLS, a row that isn't yours doesn't raise — the
@@ -167,13 +167,13 @@ export async function updateActivity(
 
   if (error) {
     // The unique constraint is (user_id, life_area_id, name), so this fires on
-    // a rename *and* on a move into an area that already has that name — which
-    // is why the sentence names the area rather than just the sticker.
+    // a rename *and* on a move into a category that already has that name — which
+    // is why the sentence names the category rather than just the sticker.
     if (error.code === UNIQUE_VIOLATION) {
       return {
         ok: false,
         field: "name",
-        message: `You already have a sticker called “${name}” in that area.`,
+        message: `You already have a sticker called “${name}” in that category.`,
       };
     }
     if (
@@ -182,8 +182,8 @@ export async function updateActivity(
     ) {
       return {
         ok: false,
-        field: "lifeArea",
-        message: "That life area isn't one of yours.",
+        field: "category",
+        message: "That category isn't one of yours.",
       };
     }
     return {
@@ -204,7 +204,7 @@ export async function updateActivity(
   // Wider than the insert's `refresh()` has to be, and worth saying why. A new
   // sticker only ever appears in the tray. An edited one is already *on days* —
   // its mark and colour are drawn on the calendar grid, its name is in the day
-  // modal, and its area decides which bar it lands in on Trends. All of those
+  // modal, and its category decides which bar it lands in on Trends. All of those
   // come from the same server render, so one `refresh()` still covers it; the
   // point is that the blast radius is the whole page rather than one list.
   refresh();
@@ -222,11 +222,11 @@ export async function updateActivity(
  * What archiving does *not* do is the point of it. The row stays, every
  * `day_activities` row pointing at it stays, and `getStickerLibrary` still
  * returns it. The marks you already placed keep being drawn on the calendar and
- * keep counting under their life area in Trends. All that changes is that the
+ * keep counting under their category in Trends. All that changes is that the
  * tray stops offering it: you can't drag it onto a day and you can't tick it in
  * the day modal. Archiving is a statement about the future, and the alternative
  * — dropping its history out of the totals — would mean the number for a life
- * area changed because of a decision about a tray.
+ * category changed because of a decision about a tray.
  */
 export async function setArchived(
   activityId: string,

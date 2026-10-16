@@ -32,7 +32,7 @@ import type {
  * window ends on whatever day you happen to arrive.
  *
  * **It is the same library the seed script installs**, mark for mark. That is
- * the point of a demo — the six life areas and the thirteen starter habits are
+ * the point of a demo — the six categories and the thirteen starter habits are
  * what you get when you sign in, so the demo is a picture of the app you would
  * actually have, not a showreel with invented content in it.
  *
@@ -77,7 +77,7 @@ const MOOD_SHARE = 0.85;
  */
 type DemoHabit = {
   slug: string;
-  area: string;
+  category: string;
   name: string;
   mark: string;
   base: number;
@@ -88,11 +88,11 @@ type DemoHabit = {
 };
 
 /**
- * The six life areas, in the order `seed_life_areas` creates them, with the
+ * The six categories, in the order `seed_life_areas` creates them, with the
  * same names, slugs and hues. If those two ever disagree the migration wins —
  * it is the one that makes real accounts.
  */
-const AREAS: { slug: string; name: string; colorKey: string }[] = [
+const CATEGORIES: { slug: string; name: string; colorKey: string }[] = [
   { slug: "spirituality", name: "Spirituality", colorKey: "red" },
   { slug: "exercise", name: "Exercise", colorKey: "blue" },
   { slug: "work", name: "Work", colorKey: "orange" },
@@ -111,7 +111,7 @@ const AREAS: { slug: string; name: string; colorKey: string }[] = [
  * the density of the calendar is set in one place by one constant. Edit a
  * weight here and the average holds.
  *
- * They *are* tuned so the six areas come out within about three to one of each
+ * They *are* tuned so the six categories come out within about three to one of each
  * other, which is the one place the demo is flattering rather than realistic.
  * A plausible year is mostly work: two work habits at their honest rate put
  * eight times as many marks on the board as Romance & Adventure, and the Life
@@ -122,7 +122,7 @@ const AREAS: { slug: string; name: string; colorKey: string }[] = [
 const HABITS: DemoHabit[] = [
   {
     slug: "meditation",
-    area: "spirituality",
+    category: "spirituality",
     name: "Meditation",
     mark: "icon:sparkles",
     base: 0.38,
@@ -130,7 +130,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "journaling",
-    area: "spirituality",
+    category: "spirituality",
     name: "Journaling",
     mark: "icon:notebook-pen",
     base: 0.26,
@@ -138,7 +138,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "gym",
-    area: "exercise",
+    category: "exercise",
     name: "Gym",
     mark: "icon:dumbbell",
     base: 0.4,
@@ -147,7 +147,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "run",
-    area: "exercise",
+    category: "exercise",
     name: "Run",
     mark: "icon:footprints",
     base: 0.28,
@@ -156,7 +156,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "yoga",
-    area: "exercise",
+    category: "exercise",
     name: "Yoga",
     mark: "icon:person-standing",
     base: 0.24,
@@ -164,7 +164,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "deep-work",
-    area: "work",
+    category: "work",
     name: "Deep work",
     mark: "icon:brain",
     base: 0.42,
@@ -173,7 +173,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "inbox-zero",
-    area: "work",
+    category: "work",
     name: "Inbox zero",
     mark: "icon:inbox",
     base: 0.24,
@@ -182,7 +182,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "drawing",
-    area: "creativity",
+    category: "creativity",
     name: "Drawing",
     mark: "icon:pen-tool",
     base: 0.32,
@@ -190,7 +190,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "piano",
-    area: "creativity",
+    category: "creativity",
     name: "Piano",
     mark: "icon:piano",
     base: 0.28,
@@ -198,7 +198,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "date-night",
-    area: "romance",
+    category: "romance",
     name: "Date night",
     mark: "icon:heart",
     base: 0.34,
@@ -207,7 +207,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "adventure",
-    area: "romance",
+    category: "romance",
     name: "Adventure",
     mark: "icon:mountain",
     base: 0.26,
@@ -216,7 +216,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "called-home",
-    area: "friends",
+    category: "friends",
     name: "Called home",
     mark: "icon:phone-call",
     base: 0.3,
@@ -225,7 +225,7 @@ const HABITS: DemoHabit[] = [
   },
   {
     slug: "saw-friends",
-    area: "friends",
+    category: "friends",
     name: "Saw friends",
     mark: "icon:handshake",
     base: 0.38,
@@ -241,7 +241,7 @@ const OFF_DAY = 0.35;
 /** No habit is ever certain, however heavily the weights land on it. */
 const P_MAX = 0.95;
 
-export const DEMO_AREA_COUNT = AREAS.length;
+export const DEMO_CATEGORY_COUNT = CATEGORIES.length;
 export const DEMO_HABIT_COUNT = HABITS.length;
 
 /**
@@ -253,16 +253,16 @@ export const DEMO_HABIT_COUNT = HABITS.length;
  * than matching somebody's row.
  */
 export function demoLibrary(): LibraryGroup[] {
-  return AREAS.map((area) => ({
-    areaId: `demo-area-${area.slug}`,
-    areaName: area.name,
-    colorKey: area.colorKey,
-    stickers: HABITS.filter((habit) => habit.area === area.slug).map(
+  return CATEGORIES.map((category) => ({
+    categoryId: `demo-category-${category.slug}`,
+    categoryName: category.name,
+    colorKey: category.colorKey,
+    stickers: HABITS.filter((habit) => habit.category === category.slug).map(
       (habit) => ({
         id: `demo-${habit.slug}`,
         name: habit.name,
         mark: habit.mark,
-        colorKey: area.colorKey,
+        colorKey: category.colorKey,
         archived: false,
       }),
     ),
@@ -304,13 +304,13 @@ export function demoStickers(end: DayString): StickersByDay {
       // the year for the twelve that were already there.
       if (random(day, habit.slug) >= chance(habit, day, t, factor)) continue;
 
-      const area = AREAS.find((candidate) => candidate.slug === habit.area)!;
+      const category = CATEGORIES.find((candidate) => candidate.slug === habit.category)!;
       activities.push({
         id: `demo-${day}-${habit.slug}`,
         activityId: `demo-${habit.slug}`,
         name: habit.name,
         mark: habit.mark,
-        colorKey: area.colorKey,
+        colorKey: category.colorKey,
       });
     }
 

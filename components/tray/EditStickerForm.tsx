@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { updateActivity } from "@/app/actions/activities";
-import { StickerFields, type FormArea } from "@/components/tray/StickerFields";
+import { StickerFields, type FormCategory } from "@/components/tray/StickerFields";
 import {
   DeleteWarning,
   StickerRetire,
@@ -29,9 +29,9 @@ type Props = {
    * and the fixtures in `analytics.test.ts` are built to catch.
    */
   sticker: LibrarySticker;
-  /** Which life area it currently sits in, so the dropdown opens on it. */
-  lifeAreaId: string;
-  areas: FormArea[];
+  /** Which category it currently sits in, so the dropdown opens on it. */
+  categoryId: string;
+  categories: FormCategory[];
   /** Days this sticker is on, for the delete confirmation. See `StickerRetire`. */
   markCount: number;
   /** Always true where this is rendered — the tray mounts it only while editing. */
@@ -117,18 +117,18 @@ export function EditStickerForm(props: Props) {
             type, cancel, open it again: the second mount reads the props fresh
             and the typing is gone, with no reset code anywhere. */}
         <StickerFields
-          areas={props.areas}
+          categories={props.categories}
           action={(formData) => updateActivity(props.sticker.id, formData)}
           initial={{
             name: props.sticker.name,
             mark: props.sticker.mark,
-            lifeAreaId: props.lifeAreaId,
+            categoryId: props.categoryId,
           }}
-          // The same area, said twice on purpose: once as where the dropdown
+          // The same category, said twice on purpose: once as where the dropdown
           // opens, once as where this sticker's existing marks live. They start
           // equal and the first one moves — which is the entire question the
           // warning under the dropdown asks.
-          historyArea={props.lifeAreaId}
+          historyCategory={props.categoryId}
           submitLabel="Save changes"
           pendingLabel="Saving…"
           onDone={() => onOpenChange(false)}

@@ -19,8 +19,8 @@
 /* ---------------------------------------------------------------------------
    Bridge: turn CSS variables into Tailwind utilities.
 
-   Everything named here becomes a class. `--color-area-work` gives you
-   `bg-area-work`, `text-area-work`, `border-area-work`. The values live in
+   Everything named here becomes a class. `--color-category-work` gives you
+   `bg-category-work`, `text-category-work`, `border-category-work`. The values live in
    :root / .dark below, so a utility resolves differently per theme without a
    single class name changing.
 --------------------------------------------------------------------------- */
@@ -218,12 +218,12 @@
   --color-ramp-green-tint: var(--ramp-green-tint);
   --color-ramp-purple-tint: var(--ramp-purple-tint);
 
-  --color-area-spirituality: var(--area-spirituality);
-  --color-area-exercise: var(--area-exercise);
-  --color-area-work: var(--area-work);
-  --color-area-creativity: var(--area-creativity);
-  --color-area-romance: var(--area-romance);
-  --color-area-friends: var(--area-friends);
+  --color-category-spirituality: var(--category-spirituality);
+  --color-category-exercise: var(--category-exercise);
+  --color-category-work: var(--category-work);
+  --color-category-creativity: var(--category-creativity);
+  --color-category-romance: var(--category-romance);
+  --color-category-friends: var(--category-friends);
 
   /* The die-cut rim and the lift, as `border-sticker-edge` and
      `shadow-sticker`. Both are declared on `:root` / `.dark` like everything
@@ -499,7 +499,7 @@
      Three things it is deliberately not. It is not `--accent`: shadcn spends
      that on hover and selected surfaces, so anything put there would tint half
      the furniture in the app. It is not `--destructive`, which stays the red
-     area ramp — an error and a date are different claims on the same colour,
+     category ramp — an error and a date are different claims on the same colour,
      and the loud one should not be the one you see every day. And it is not
      for links or buttons; the moment a second thing is red, neither is a mark.
 
@@ -509,9 +509,7 @@
      colour alone. */
   --today-mark: #d4271c;
 
-  /* Ramps are named by hue, because `life_areas.color_key` stores a hue. An
-     area is a database row that points at one of these; it is not itself a
-     colour. Adding a seventh area later means picking a ramp, not editing CSS. */
+  /* Ramps are named by hue: a category row stores a hue in `color_key`. */
   --ramp-red: #c4483c;
   --ramp-blue: #3178b5;
   --ramp-orange: #d9762b;
@@ -541,10 +539,10 @@
      arithmetic rather than as six hex values.
 
      It was 20% over the surface, because the sticker also wore a 1px ring in
-     the full hue and the ring was what named the area — a fill that faint is
+     the full hue and the ring was what named the category — a fill that faint is
      there to stay out of the way. The ring is gone now and the fill has to
      carry the hue on its own, so it moved up to 45%: enough colour that six
-     circles on a Tuesday read as six areas at a glance, short of the mid-tone
+     circles on a Tuesday read as six categories at a glance, short of the mid-tone
      that made an emoji fight its own background at the old 48% soft rung.
 
      Written as a `color-mix` because 45% is a design decision someone will
@@ -613,12 +611,12 @@
     0 2px 5px rgb(20 20 20 / 0.09);
 
   /* The default six, by name. Aliases — the ramp above is the real value. */
-  --area-spirituality: var(--ramp-red);
-  --area-exercise: var(--ramp-blue);
-  --area-work: var(--ramp-orange);
-  --area-creativity: var(--ramp-yellow);
-  --area-romance: var(--ramp-green);
-  --area-friends: var(--ramp-purple);
+  --category-spirituality: var(--ramp-red);
+  --category-exercise: var(--ramp-blue);
+  --category-work: var(--ramp-orange);
+  --category-creativity: var(--ramp-yellow);
+  --category-romance: var(--ramp-green);
+  --category-friends: var(--ramp-purple);
 
   /* shadcn's names, pointed at ours. */
   --background: var(--bg);
@@ -642,15 +640,15 @@
   --muted-foreground: var(--ink-muted);
   --accent: #e0dfd8;
   --accent-foreground: var(--ink);
-  /* Still the red area ramp, and still not `--today-mark`. See that token. */
-  --destructive: var(--area-spirituality);
+  /* Still the red category ramp, and still not `--today-mark`. See that token. */
+  --destructive: var(--category-spirituality);
   --border: var(--hairline);
   --input: var(--hairline);
   --ring: #a6a49b;
 }
 
 /* ---------------------------------------------------------------------------
-   Dark — neutral charcoal, not blue-black and no longer warm. Area hues lift
+   Dark — neutral charcoal, not blue-black and no longer warm. Category hues lift
    ~12% so they hold their contrast against a dark ground. **Proposed values:
    see the note at the top of the block.**
 --------------------------------------------------------------------------- */
@@ -704,7 +702,7 @@
      See the light theme's token for why this colour has exactly one job. */
   --today-mark: #ff5a47;
 
-  /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
+  /* Lifted ~12% in lightness. Only the ramps are redefined — the category aliases
      and the mood aliases follow automatically. */
   --ramp-red: #d75f52;
   --ramp-blue: #4a93ce;
@@ -786,8 +784,8 @@
   --muted-foreground: var(--ink-muted);
   --accent: #292826;
   --accent-foreground: var(--ink);
-  /* Still the red area ramp, and still not `--today-mark`. See that token. */
-  --destructive: var(--area-spirituality);
+  /* Still the red category ramp, and still not `--today-mark`. See that token. */
+  --destructive: var(--category-spirituality);
   --border: var(--hairline);
   --input: var(--hairline);
   --ring: #5a5852;
@@ -836,7 +834,7 @@
 
 /* ---------------------------------------------------------------------------
    The small letterspaced caps that name a section: SUN–SAT over the grid, a
-   life area over its stickers, the line above a page title.
+   category over its stickers, the line above a page title.
 
    One utility rather than five copies of the same four classes, which had
    already drifted into three sizes and two tracking values. Size lives here

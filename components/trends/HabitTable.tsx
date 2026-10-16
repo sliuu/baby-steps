@@ -72,7 +72,7 @@ const EMPTY_BLOCK = "color-mix(in srgb, var(--ink) 7%, transparent)";
  * `sort` is null for the two columns whose headers are labels rather than
  * controls. The habit is the row's own `<th scope="row">`, and what it would
  * sort into — the alphabet — is a worse order than the one it arrives in, since
- * library order already bands the table by life area. The plot is a shape rather
+ * library order already bands the table by category. The plot is a shape rather
  * than a value: it has no single number to order by, and the two it might borrow
  * (first mark, last mark) are the "Last" column's job.
  */
@@ -85,7 +85,7 @@ const COLUMNS: {
   width?: string;
 }[] = [
   { key: "habit", label: "Habit", sort: null, align: "left" },
-  { key: "area", label: "Area", sort: "area", align: "left" },
+  { key: "category", label: "Category", sort: "category", align: "left" },
   { key: "count", label: "Marks", sort: "count", align: "right" },
   { key: "interval", label: "How often", sort: "interval", align: "left" },
   { key: "when", label: "When", sort: null, align: "left", width: "w-[28%] min-w-36" },
@@ -137,8 +137,8 @@ function cellClass(column: (typeof COLUMNS)[number], last: boolean): string {
  * this" on one page. The range is the one in the band above the tabs, shared
  * by all three.
  *
- * Three controls here, three kinds of question. The area dropdown sets *what*,
- * the headers set the order, the pager sets how much. They compose — one area,
+ * Three controls here, three kinds of question. The category dropdown sets *what*,
+ * the headers set the order, the pager sets how much. They compose — one category,
  * by frequency, page 2 — which is why each is its own piece of state rather
  * than one "view".
  */
@@ -156,33 +156,33 @@ export function HabitTable(props: Props) {
   }>({ key: "count", direction: "desc" });
 
   /**
-   * Which areas are shown. Empty means all of them, rather than none.
+   * Which categories are shown. Empty means all of them, rather than none.
    *
-   * The honest alternative is seeding the set with every area, and it goes wrong
-   * the moment the library changes: a set written when you had five areas keeps
+   * The honest alternative is seeding the set with every category, and it goes wrong
+   * the moment the library changes: a set written when you had five categories keeps
    * hiding the sixth you add later, and nothing on screen explains why. An empty
    * set has no opinion, so "all" stays true as the library moves under it.
    */
-  const [areas, setAreas] = useState<Set<string>>(new Set());
+  const [categories, setCategories] = useState<Set<string>>(new Set());
 
   const [page, setPage] = useState(1);
 
   const { rows } = props;
 
-  /** Every area with at least one row, in library order, for the dropdown. */
+  /** Every category with at least one row, in library order, for the dropdown. */
   const options = useMemo(() => {
     const seen = new Map<string, { name: string; colorKey: string }>();
     for (const row of rows) {
-      if (!seen.has(row.areaId)) {
-        seen.set(row.areaId, { name: row.areaName, colorKey: row.colorKey });
+      if (!seen.has(row.categoryId)) {
+        seen.set(row.categoryId, { name: row.categoryName, colorKey: row.colorKey });
       }
     }
     return [...seen].map(([id, rest]) => ({ id, ...rest }));
   }, [rows]);
 
   const filtered = useMemo(
-    () => (areas.size === 0 ? rows : rows.filter((row) => areas.has(row.areaId))),
-    [rows, areas],
+    () => (categories.size === 0 ? rows : rows.filter((row) => categories.has(row.categoryId))),
+    [rows, categories],
   );
 
   const ordered = useMemo(
@@ -193,7 +193,7 @@ export function HabitTable(props: Props) {
   /**
    * The page actually shown, clamped rather than corrected.
    *
-   * Filtering to one area while on page 3 leaves `page` past the end. Clamping
+   * Filtering to one category while on page 3 leaves `page` past the end. Clamping
    * on read — here and in `pageOf`, which does the same thing — means there is
    * no effect that resets the state and no render where the table is briefly
    * empty. `page` is a request; this is the answer.
@@ -219,14 +219,14 @@ export function HabitTable(props: Props) {
     setPage(1);
   }
 
-  function toggleArea(id: string) {
-    setAreas((previous) => {
+  function toggleCategory(id: string) {
+    setCategories((previous) => {
       const next = new Set(previous);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      // Every area checked is the same table as none checked, so it collapses
-      // back to the empty set — which keeps the trigger saying "All areas"
-      // instead of "6 areas" for the identical view.
+      // Every category checked is the same table as none checked, so it collapses
+      // back to the empty set — which keeps the trigger saying "All categories"
+      // instead of "6 categories" for the identical view.
       return next.size === options.length ? new Set() : next;
     });
   }
@@ -244,17 +244,17 @@ export function HabitTable(props: Props) {
 
   return (
     <section className={`flex min-w-0 flex-col gap-4 ${PANEL}`}>
-      {/* Only when there is a choice to make. One area means the dropdown
-          can only ever say "All areas", which is a control that does nothing.
+      {/* Only when there is a choice to make. One category means the dropdown
+          can only ever say "All categories", which is a control that does nothing.
           Right-aligned, under the range picker in the band above: the two
           filters on this tab stack in one column. */}
       {options.length > 1 && (
         <div className="flex justify-end">
-          <AreaFilter
+          <CategoryFilter
             options={options}
-            selected={areas}
-            onToggle={toggleArea}
-            onClear={() => setAreas(new Set())}
+            selected={categories}
+            onToggle={toggleCategory}
+            onClear={() => setCategories(new Set())}
           />
         </div>
       )}
@@ -296,19 +296,19 @@ export function HabitTable(props: Props) {
 
                 <td className={cellClass(COLUMNS[1], false)}>
                   <span className="flex items-center gap-2.5">
-                    {/* The same bare dot as `AreaBars`', in the same size —
+                    {/* The same bare dot as `CategoryBars`', in the same size —
                         the two are on two tabs and are read minutes apart, so
-                        an area has to look like itself in both. */}
+                        a category has to look like itself in both. */}
                     <span
                       aria-hidden="true"
                       className={`size-[9px] shrink-0 rounded-full ${ramp(row.colorKey).soft}`}
                     />
-                    {row.areaName}
+                    {row.categoryName}
                   </span>
                 </td>
 
                 {/* `tabular` so the digits stop jittering as the range or the
-                    order changes — the same reason `AreaBars`' numbers wear
+                    order changes — the same reason `CategoryBars`' numbers wear
                     it. */}
                 <td className={`${cellClass(COLUMNS[2], false)} tabular`}>
                   {row.count === 0 ? <Nothing /> : row.count}
@@ -368,7 +368,7 @@ export function HabitTable(props: Props) {
 /**
  * An em-dash where a number would be, for a habit with nothing in the window.
  *
- * `AreaBars`' decision, extracted because this table makes it in four columns
+ * `CategoryBars`' decision, extracted because this table makes it in four columns
  * rather than two: zero is a measurement and a dash is "nothing here", and at a
  * glance the eye skips the dash instead of reading it as a quantity.
  */
@@ -428,7 +428,7 @@ function Header(props: {
       <button
         type="button"
         onClick={() => props.onClick(key)}
-        // `eyebrow` on the button rather than the cell, so the hit area is the
+        // `eyebrow` on the button rather than the cell, so the hit category is the
         // words and not the whole column's width — a header you can click
         // three centimetres to the right of reads as an accident.
         className={`eyebrow group inline-flex cursor-pointer items-center gap-1 rounded-sm hover:text-ink focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
@@ -527,15 +527,15 @@ function blockTitle(name: string, block: PlotBlock): string {
 }
 
 /**
- * Which areas to show, as checkboxes.
+ * Which categories to show, as checkboxes.
  *
  * A menu of checkboxes rather than a `Select`, because this is the one control
  * on the panel whose answer can be several things at once — and the two look
  * different on purpose: the range picker is a `Select` because a range is
  * exactly one choice. Radix's `DropdownMenuCheckboxItem` keeps the menu open
- * across a click, which is what makes picking three areas one gesture.
+ * across a click, which is what makes picking three categories one gesture.
  */
-function AreaFilter(props: {
+function CategoryFilter(props: {
   options: { id: string; name: string; colorKey: string }[];
   selected: Set<string>;
   onToggle: (id: string) => void;
@@ -562,20 +562,20 @@ function AreaFilter(props: {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-48">
-        {options.map((area) => (
+        {options.map((category) => (
           <DropdownMenuCheckboxItem
-            key={area.id}
+            key={category.id}
             // An empty selection means all of them, so every box reads as
             // checked — which is what the table is showing. See the state's
             // note for why "all" isn't stored as a full set.
-            checked={selected.size === 0 || selected.has(area.id)}
-            onCheckedChange={() => props.onToggle(area.id)}
+            checked={selected.size === 0 || selected.has(category.id)}
+            onCheckedChange={() => props.onToggle(category.id)}
           >
             <span
               aria-hidden="true"
-              className={`size-2.5 shrink-0 rounded-full ${ramp(area.colorKey).soft}`}
+              className={`size-2.5 shrink-0 rounded-full ${ramp(category.colorKey).soft}`}
             />
-            {area.name}
+            {category.name}
           </DropdownMenuCheckboxItem>
         ))}
 
@@ -585,7 +585,7 @@ function AreaFilter(props: {
             {/* The way back, in one click. Unchecking your way back to all six
                 is five clicks to return to where you started. */}
             <DropdownMenuItem onSelect={props.onClear}>
-              Show all areas
+              Show all categories
             </DropdownMenuItem>
           </>
         )}
@@ -597,21 +597,21 @@ function AreaFilter(props: {
 /**
  * What the filter's trigger says.
  *
- * Names the area when there is one, because a filter that has been applied
+ * Names the category when there is one, because a filter that has been applied
  * should say what it was set to — the same rule the custom range's button
- * follows. Past one it counts them: three area names on a button is wider than
+ * follows. Past one it counts them: three category names on a button is wider than
  * the column it is filtering.
  */
 function filterLabel(
   options: { id: string; name: string }[],
   selected: Set<string>,
 ): string {
-  if (selected.size === 0 || selected.size === options.length) return "All areas";
+  if (selected.size === 0 || selected.size === options.length) return "All categories";
   if (selected.size === 1) {
-    const only = options.find((area) => selected.has(area.id));
+    const only = options.find((category) => selected.has(category.id));
     if (only) return only.name;
   }
-  return `${selected.size} areas`;
+  return `${selected.size} categories`;
 }
 
 /**

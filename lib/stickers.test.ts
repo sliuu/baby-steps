@@ -12,11 +12,11 @@ import { describe, it } from "node:test";
 
 import { NAME_MAX, readDraft, validateDraft } from "./stickers.ts";
 
-const AREA = "11111111-1111-1111-1111-111111111111";
+const CATEGORY = "11111111-1111-1111-1111-111111111111";
 
 /** A draft that passes, so each test can spoil exactly one thing. */
 function draft(overrides: Partial<Parameters<typeof validateDraft>[0]> = {}) {
-  return { name: "Gym", mark: "G", lifeAreaId: AREA, ...overrides };
+  return { name: "Gym", mark: "G", categoryId: CATEGORY, ...overrides };
 }
 
 describe("validateDraft · the happy path", () => {
@@ -26,7 +26,7 @@ describe("validateDraft · the happy path", () => {
     assert.deepEqual(result.ok && result.draft, {
       name: "Gym",
       mark: "G",
-      lifeAreaId: AREA,
+      categoryId: CATEGORY,
     });
   });
 
@@ -41,13 +41,13 @@ describe("validateDraft · the happy path", () => {
     // "  Gym  " and "Gym" must not become two rows the unique constraint sees
     // as different names.
     const result = validateDraft(
-      draft({ name: "  Gym  ", mark: " G ", lifeAreaId: ` ${AREA} ` }),
+      draft({ name: "  Gym  ", mark: " G ", categoryId: ` ${CATEGORY} ` }),
     );
     assert.equal(result.ok, true);
     assert.deepEqual(result.ok && result.draft, {
       name: "Gym",
       mark: "G",
-      lifeAreaId: AREA,
+      categoryId: CATEGORY,
     });
   });
 
@@ -136,20 +136,20 @@ describe("validateDraft · the mark", () => {
   });
 });
 
-describe("validateDraft · the life area", () => {
-  it("rejects a missing area", () => {
+describe("validateDraft · the category", () => {
+  it("rejects a missing category", () => {
     // What an untouched Select sends: nothing at all.
-    const result = validateDraft(draft({ lifeAreaId: "" }));
+    const result = validateDraft(draft({ categoryId: "" }));
     assert.equal(result.ok, false);
-    assert.equal(result.ok === false && result.field, "lifeArea");
+    assert.equal(result.ok === false && result.field, "category");
   });
 
-  it("does not check that the area exists", () => {
+  it("does not check that the category exists", () => {
     // Deliberate, and the same reasoning as `lib/queries/`: whether an id is
     // *yours* is the composite foreign key's job, inside Postgres. A check
     // here would be a second answer to the same question, and the wrong one
     // would still typecheck.
-    assert.equal(validateDraft(draft({ lifeAreaId: "not-a-uuid" })).ok, true);
+    assert.equal(validateDraft(draft({ categoryId: "not-a-uuid" })).ok, true);
   });
 });
 
@@ -158,12 +158,12 @@ describe("readDraft", () => {
     const form = new FormData();
     form.set("name", "Gym");
     form.set("mark", "G");
-    form.set("lifeArea", AREA);
+    form.set("category", CATEGORY);
 
     assert.deepEqual(readDraft(form), {
       name: "Gym",
       mark: "G",
-      lifeAreaId: AREA,
+      categoryId: CATEGORY,
     });
   });
 
@@ -173,7 +173,7 @@ describe("readDraft", () => {
     assert.deepEqual(readDraft(new FormData()), {
       name: "",
       mark: "",
-      lifeAreaId: "",
+      categoryId: "",
     });
   });
 

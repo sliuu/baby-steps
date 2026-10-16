@@ -43,7 +43,7 @@ export function spanLabel(range: Range, bounds: Bounds): string | null {
 
 /**
  * A list's or a table's accessible name. Never drawn — see the prop's note in
- * `AreaBars`.
+ * `CategoryBars`.
  *
  * Says more than `spanLabel` deliberately: on screen the rule and the dates sit
  * beside each other and the table is directly below them, so proximity does the

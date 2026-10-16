@@ -46,7 +46,7 @@ type Props = {
    * Demo mode: the calendar keeps changes in memory and writes nothing.
    *
    * Everything the tray does to the *calendar* — dragging a sticker onto a
-   * day, lighting an area, picking a mood — works unchanged in a demo, because
+   * day, lighting a category, picking a mood — works unchanged in a demo, because
    * all of it goes through the board's `commit` and never touches the network.
    * What the tray also does is manage the library itself: the `+`, the editor,
    * the restore button. Those are Server Actions with no in-memory version, and
@@ -62,7 +62,7 @@ type Props = {
 
 /**
  * The palette beside the calendar: the five moods, then every sticker you own,
- * grouped by life area.
+ * grouped by category.
  *
  * Still presentational, and Step 11 kept it that way on purpose. It renders the
  * selection it's handed and reports clicks upward; it doesn't decide that
@@ -105,7 +105,7 @@ export function StickerTray(props: Props) {
   const shape = useCalendarView() === "week" ? "bar" : "mark";
 
   /**
-   * The six areas in the shape both dialogs want.
+   * The six categories in the shape both dialogs want.
    *
    * Built once here rather than inside each row, because the edit form needs
    * the same list the `+` does and there are fifteen rows. The tray hands it
@@ -113,19 +113,19 @@ export function StickerTray(props: Props) {
    * on screen, and two queries for one list is how a dropdown and the groups it
    * describes end up disagreeing.
    */
-  const areas = props.groups.map((group) => ({
-    id: group.areaId,
-    name: group.areaName,
+  const categories = props.groups.map((group) => ({
+    id: group.categoryId,
+    name: group.categoryName,
     colorKey: group.colorKey,
   }));
 
   /**
-   * The retired ones, from every area at once.
+   * The retired ones, from every category at once.
    *
-   * Flattened rather than left under their headings, because six areas each
+   * Flattened rather than left under their headings, because six categories each
    * with an "Archived" fold under it is six folds to open to find one sticker,
    * and the reason you're looking is usually that you don't remember where you
-   * put it. They keep their area's colour, so the grouping is still legible
+   * put it. They keep their category's colour, so the grouping is still legible
    * without being structural.
    *
    * `getStickerLibrary` returns these alongside the active ones now — the query
@@ -138,9 +138,9 @@ export function StickerTray(props: Props) {
   );
 
   /**
-   * The sticker being edited, and the area it sits under, found together.
+   * The sticker being edited, and the category it sits under, found together.
    *
-   * The area comes from the group it's drawn in rather than from a lookup on
+   * The category comes from the group it's drawn in rather than from a lookup on
    * the sticker, which is the same rule the pencil followed: the grouping is
    * what's on screen, and if those two ever disagreed the dropdown should open
    * on the one you can see.
@@ -148,7 +148,7 @@ export function StickerTray(props: Props) {
   const open = props.groups.flatMap((group) =>
     group.stickers
       .filter((sticker) => sticker.id === editing)
-      .map((sticker) => ({ sticker, lifeAreaId: group.areaId })),
+      .map((sticker) => ({ sticker, categoryId: group.categoryId })),
   )[0];
 
   /** Lit when it's what's selected, and pressing the eye again clears it. */
@@ -190,11 +190,11 @@ export function StickerTray(props: Props) {
       <header className={`${TRAY_INSET} lg:shrink-0`}>
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-heading text-panel-title leading-none">Your stickers</h2>
-          {/* The `+` and everything behind it. The tray hands it the six areas
+          {/* The `+` and everything behind it. The tray hands it the six categories
               it is already grouped by, rather than the form fetching them:
               they're the same six rows, and two queries for one list is how
               the dropdown and the groups end up disagreeing. */}
-          {!props.local && <NewStickerForm areas={areas} />}
+          {!props.local && <NewStickerForm categories={categories} />}
         </div>
 
         {/* The line under the heading does double duty, because a mode with no
@@ -247,7 +247,7 @@ export function StickerTray(props: Props) {
           preference: `overflow-y` promotes the other axis from `visible` to
           `auto` alongside it, so one child wider than the rail is a horizontal
           scrollbar, and hiding it would only move the problem. Long names
-          truncate; hit areas fill the width rather than reaching past it. */}
+          truncate; hit categories fill the width rather than reaching past it. */}
       <div className="scrollbar-app grid grid-cols-2 items-start gap-x-8 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:min-h-0 lg:grid-cols-1 lg:overflow-y-auto">
         {/* First, and not from the database: the five moods are fixed by the
             CHECK constraint on day_moods, so there is nothing to fetch.
@@ -255,10 +255,10 @@ export function StickerTray(props: Props) {
             They sat at the bottom until recently, on the ordering "the things
             you own, then the things that come with the app". Moving them up is
             the other ordering, the one that matches how a day gets filled in:
-            how it felt is the thing you always have to say, and the six areas
+            how it felt is the thing you always have to say, and the six categories
             below are the ones you say something about only if you did them.
             Being fixed is what makes them a good first row rather than a
-            leftover — the list above the areas is the one list in the tray that
+            leftover — the list above the categories is the one list in the tray that
             never changes shape.
 
             And now literally a row. `col-span-full` so the five columns get the
@@ -281,39 +281,39 @@ export function StickerTray(props: Props) {
         />
 
         {props.groups.map((group) => {
-          const areaSelection: Selection = {
-            kind: "area",
-            areaId: group.areaId,
+          const categorySelection: Selection = {
+            kind: "category",
+            categoryId: group.categoryId,
           };
 
           // The rows you can still reach for. Clicking the heading above them
           // still lights the archived ones' days too, which is right: the
-          // highlight is a question about the *area*, and those marks are
-          // still that area's.
+          // highlight is a question about the *category*, and those marks are
+          // still that category's.
           const stickers = group.stickers.filter(
             (sticker) => !sticker.archived,
           );
 
           return (
             <TrayGroup
-              key={group.areaId}
-              label={group.areaName}
+              key={group.categoryId}
+              label={group.categoryName}
               // Clicking the label lights every sticker under it at once —
               // which downstream is just a bigger set of activity ids, not a
               // second kind of highlight.
-              onSelect={() => toggle(areaSelection)}
-              selected={sameSelection(selection, areaSelection)}
+              onSelect={() => toggle(categorySelection)}
+              selected={sameSelection(selection, categorySelection)}
               wash={wash(group.colorKey)}
               // The same form the header's `+` opens, with one field already
               // answered. Six more triggers and no second component, because
               // the only thing that differs is a value.
               action={
                 props.local ? undefined : (
-                  <NewStickerForm areas={areas} defaultAreaId={group.areaId} />
+                  <NewStickerForm categories={categories} defaultCategoryId={group.categoryId} />
                 )
               }
             >
-              {/* An area with nothing in it was a bare label with a gap under it
+              {/* A category with nothing in it was a bare label with a gap under it
                   until Step 10 — which read as something failing to load. Now
                   that the `+` works it's a state you can be in on purpose and
                   get out of, so it says so. Sits inside the <ul> as a real <li>,
@@ -380,8 +380,8 @@ export function StickerTray(props: Props) {
         <EditStickerForm
           key={open.sticker.id}
           sticker={open.sticker}
-          lifeAreaId={open.lifeAreaId}
-          areas={areas}
+          categoryId={open.categoryId}
+          categories={categories}
           markCount={props.markCounts.get(open.sticker.id) ?? 0}
           open
           onOpenChange={(next) => {

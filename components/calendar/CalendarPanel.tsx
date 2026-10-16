@@ -59,14 +59,14 @@ type Props = Omit<PeriodProps, "todayString"> & {
    */
   initialDay: string;
   /**
-   * The sticker library: the day view's picker, and the phone month's areas.
+   * The sticker library: the day view's picker, and the phone month's categories.
    *
    * Deliberately not in `PeriodProps`, and the reason has survived a second
    * tenant. The grids draw the stickers that are *on* the days they show and
    * have no business knowing what else exists; the two places that need the
    * catalogue need it for something other than drawing a day. The day view is
-   * where you add from. `MonthDots` counts areas touched, and a placement
-   * carries its hue but not the area it came from — the map from one to the
+   * where you add from. `MonthDots` counts categories touched, and a placement
+   * carries its hue but not the category it came from — the map from one to the
    * other only exists here.
    */
   groups: LibraryGroup[];

@@ -46,17 +46,17 @@ type Props = {
  * The three lenses, in reading order, each answering one question.
  *
  * The split is by *unit*, not by chart type, and that's what makes it a real
- * division rather than three drawers to put panels in. Areas counts marks
- * rolled up to the six life areas; Habits counts them at the grain they were
+ * division rather than three drawers to put panels in. Categories counts marks
+ * rolled up to the six categories; Habits counts them at the grain they were
  * placed at; Moods counts days. Every panel that shares a unit is on one tab,
  * and no tab holds two.
  *
- * Areas leads because it's the page's summary — the sentence at the top of it
+ * Categories leads because it's the page's summary — the sentence at the top of it
  * is the one line that answers "how did this month go" without you reading
  * anything else.
  */
 const TABS = [
-  { id: "areas", label: "Areas" },
+  { id: "categories", label: "Categories" },
   { id: "habits", label: "Habits" },
   { id: "moods", label: "Moods" },
 ] as const;
@@ -111,7 +111,7 @@ export function TrendsBoard(props: Props) {
   /** Which lens. UI state for the same reason `range` is, and not in the URL
    *  for the same reason: the nav's three sections are places you can be sent
    *  to, and these are not — they're where you happen to be looking on one. */
-  const [tab, setTab] = useState<TrendsTab>("areas");
+  const [tab, setTab] = useState<TrendsTab>("categories");
 
   const bounds = useMemo(
     () => resolveBounds(range, todayString),
@@ -119,7 +119,7 @@ export function TrendsBoard(props: Props) {
   );
 
   /**
-   * The reason this is memoized isn't speed — six areas and a few hundred marks
+   * The reason this is memoized isn't speed — six categories and a few hundred marks
    * is nothing. It's identity. This object becomes props for the table and the
    * star, and a fresh object every render means both re-render on every
    * keystroke anywhere on the page. `useMemo` is what lets the things below it
@@ -301,9 +301,9 @@ export function TrendsBoard(props: Props) {
           </div>
         </div>
 
-        {/* Areas — the six life areas, as bars, and beside them on a wide
+        {/* Categories — the six categories, as bars, and beside them on a wide
             screen as a shape. */}
-        <TabsPrimitive.Content value="areas" className={CONTENT}>
+        <TabsPrimitive.Content value="categories" className={CONTENT}>
           {totals.total === 0 ? (
             <Empty range={range} />
           ) : (
@@ -332,7 +332,7 @@ export function TrendsBoard(props: Props) {
                 <Readout
                   tally={totals}
                   takeaway={summary}
-                  caption={captionFor("Marks by life area", range, bounds)}
+                  caption={captionFor("Marks by category", range, bounds)}
                 />
               </div>
 
@@ -340,13 +340,13 @@ export function TrendsBoard(props: Props) {
                   that once something can archive a sticker, marks that stop
                   being attributable say so instead of quietly leaving the
                   total. On this tab and not the others because it is a fact
-                  about *attribution to an area*. */}
+                  about *attribution to a category*. */}
               {totals.unattributed > 0 && (
                 <p className="text-[0.83rem] text-ink-muted lg:col-span-2">
                   {totals.unattributed} mark
                   {totals.unattributed === 1 ? "" : "s"} came from stickers that
                   are no longer in your tray, so they aren&rsquo;t counted under
-                  any area.
+                  any category.
                 </p>
               )}
             </div>
@@ -449,7 +449,7 @@ function Empty(props: { range: Range }) {
     // other panel's, and what says "this band is empty" is the rule being
     // broken rather than a frame drawn round a sentence. Same weight and same
     // colour as a real panel's rule, because this *is* a panel — it is the
-    // Areas answer, in the case where the answer is "nothing".
+    // Categories answer, in the case where the answer is "nothing".
     <div className={`${RULE} border-dashed px-10 py-16 text-center`}>
       <p className="text-ink-muted">{emptyMessage(range)}</p>
     </div>

@@ -12,14 +12,14 @@ import type { LibraryGroup } from "./queries/activities.ts";
 import type { ActivitySticker, DayStickers } from "./stickers.ts";
 
 /**
- * Two areas, three stickers. Small enough to hold in your head, and it has the
- * one shape that matters: an area with more than one sticker in it, so
- * "selecting an area" has something to collapse.
+ * Two categories, three stickers. Small enough to hold in your head, and it has the
+ * one shape that matters: a category with more than one sticker in it, so
+ * "selecting a category" has something to collapse.
  */
 const GROUPS: LibraryGroup[] = [
   {
-    areaId: "area-health",
-    areaName: "Health",
+    categoryId: "category-health",
+    categoryName: "Health",
     colorKey: "green",
     stickers: [
       { id: "act-gym", name: "Gym", mark: "G", colorKey: "green", archived: false },
@@ -30,8 +30,8 @@ const GROUPS: LibraryGroup[] = [
     ],
   },
   {
-    areaId: "area-spirit",
-    areaName: "Spirituality",
+    categoryId: "category-spirit",
+    categoryName: "Spirituality",
     colorKey: "red",
     stickers: [
       { id: "act-med", name: "Meditation", mark: "🕯️", colorKey: "red", archived: false },
@@ -83,12 +83,12 @@ describe("sameSelection", () => {
   });
 
   it("separates the kinds even when the ids collide", () => {
-    // The whole reason this isn't an id comparison: an area and an activity
+    // The whole reason this isn't an id comparison: a category and an activity
     // could in principle carry the same uuid, and they'd mean different things.
     assert.equal(
       sameSelection(
         { kind: "activity", activityId: "same" },
-        { kind: "area", areaId: "same" },
+        { kind: "category", categoryId: "same" },
       ),
       false,
     );
@@ -104,11 +104,11 @@ describe("sameSelection", () => {
     );
   });
 
-  it("distinguishes two areas", () => {
+  it("distinguishes two categories", () => {
     assert.equal(
       sameSelection(
-        { kind: "area", areaId: "area-health" },
-        { kind: "area", areaId: "area-spirit" },
+        { kind: "category", categoryId: "category-health" },
+        { kind: "category", categoryId: "category-spirit" },
       ),
       false,
     );
@@ -134,7 +134,7 @@ describe("sameSelection", () => {
 });
 
 describe("buildHighlight · an activity", () => {
-  it("resolves to that one sticker, its area's colour, and its name", () => {
+  it("resolves to that one sticker, its category's colour, and its name", () => {
     const highlight = highlightFor({ kind: "activity", activityId: "act-med" });
 
     assert.deepEqual([...highlight.activityIds], ["act-med"]);
@@ -158,9 +158,9 @@ describe("buildHighlight · an activity", () => {
   });
 });
 
-describe("buildHighlight · an area", () => {
+describe("buildHighlight · a category", () => {
   it("collapses to every sticker in it", () => {
-    const highlight = highlightFor({ kind: "area", areaId: "area-health" });
+    const highlight = highlightFor({ kind: "category", categoryId: "category-health" });
 
     assert.deepEqual([...highlight.activityIds].sort(), ["act-gym", "act-sleep"]);
     assert.equal(highlight.colorKey, "green");
@@ -168,24 +168,24 @@ describe("buildHighlight · an area", () => {
   });
 
   it("comes out the same shape as an activity, so nothing downstream branches", () => {
-    const area = highlightFor({ kind: "area", areaId: "area-spirit" });
+    const category = highlightFor({ kind: "category", categoryId: "category-spirit" });
     const activity = highlightFor({ kind: "activity", activityId: "act-med" });
 
-    assert.deepEqual([...area.activityIds], [...activity.activityIds]);
-    assert.equal(area.mood, activity.mood);
+    assert.deepEqual([...category.activityIds], [...activity.activityIds]);
+    assert.equal(category.mood, activity.mood);
   });
 
-  it("resolves an area with no stickers to an empty set rather than null", () => {
-    // An empty area exists and is selectable — it just lights no days. That's
-    // different from an area that doesn't exist.
+  it("resolves a category with no stickers to an empty set rather than null", () => {
+    // An empty category exists and is selectable — it just lights no days. That's
+    // different from a category that doesn't exist.
     const empty: LibraryGroup = {
-      areaId: "area-empty",
-      areaName: "Career",
+      categoryId: "category-empty",
+      categoryName: "Career",
       colorKey: "blue",
       stickers: [],
     };
     const highlight = buildHighlight(
-      { kind: "area", areaId: "area-empty" },
+      { kind: "category", categoryId: "category-empty" },
       [...GROUPS, empty],
     );
 
@@ -194,8 +194,8 @@ describe("buildHighlight · an area", () => {
     assert.equal(highlight.label, "Career");
   });
 
-  it("is null for an area that isn't in the library", () => {
-    assert.equal(buildHighlight({ kind: "area", areaId: "nope" }, GROUPS), null);
+  it("is null for a category that isn't in the library", () => {
+    assert.equal(buildHighlight({ kind: "category", categoryId: "nope" }, GROUPS), null);
   });
 });
 
@@ -258,15 +258,15 @@ describe("dayMatches · an activity", () => {
   });
 });
 
-describe("dayMatches · an area", () => {
-  const highlight = highlightFor({ kind: "area", areaId: "area-health" });
+describe("dayMatches · a category", () => {
+  const highlight = highlightFor({ kind: "category", categoryId: "category-health" });
 
   it("lights a day carrying any sticker from it", () => {
     assert.equal(dayMatches(highlight, day([placed("act-sleep", "2026-08-11")])), true);
     assert.equal(dayMatches(highlight, day([placed("act-gym", "2026-08-11")])), true);
   });
 
-  it("leaves a day carrying only another area's stickers alone", () => {
+  it("leaves a day carrying only another category's stickers alone", () => {
     assert.equal(dayMatches(highlight, day([placed("act-med", "2026-08-11")])), false);
   });
 });

@@ -23,6 +23,19 @@ areas in four different shapes, which makes every later plan harder to read:
   `app/actions/activities.ts`, tray forms, `DaySheet`, `DayModal`, `MonthDots`,
   `scripts/seed.sql`, and the tests next to those libs.
 
+## Amended 2026-10-16: database names stay
+
+The linked Supabase project is production, and this branch won't merge until
+the redesign ships, so renaming the table would break the live site. Decision
+(Stephanie): **the database keeps `life_areas`, `life_area_id` and
+`seed_life_areas`**. No migration. Everything in TypeScript, CSS and copy is
+renamed. The old names appear only where the code talks to the database
+(`lib/queries/activities.ts`, `app/actions/activities.ts`, `scripts/seed*.sql`,
+`lib/database.types.ts`). Later plans that write SQL against `categories`,
+`category_id` or `seed_categories()` must translate those to the real names.
+Steps 1, 2 and 5's table rename are skipped, and step 7's sweep is expected to
+match those files.
+
 ## Target
 
 The word "area" no longer appears in code, SQL or copy, except inside old

@@ -22,7 +22,7 @@ type Props = {
  *
  * They were five full-width tray rows, which is 170-odd pixels of rail spent on
  * a list that never changes and whose entries are one word each. As a row of
- * five it's about a third of that, and the six life areas — the part of the tray
+ * five it's about a third of that, and the six categories — the part of the tray
  * that actually grows — start higher up the page.
  *
  * The words are gone too now, and the faces carry the five apart on their own —
@@ -37,7 +37,7 @@ type Props = {
  * the two still share is the thing that matters, which is `DragPayload`.
  *
  * The one behaviour that genuinely changed with the shape: **clicking a mood
- * lights it.** In a life area that's the eye's job, because a sticker row has
+ * lights it.** In a category that's the eye's job, because a sticker row has
  * three verbs — drag, edit, highlight — and the third always needs its own
  * control. A mood has two. There's nothing behind it to open, so its body was a
  * drag handle whose click did nothing at all, and handing that click to the

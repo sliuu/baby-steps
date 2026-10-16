@@ -76,7 +76,7 @@ type Props = {
  * **The tick is not decoration.** Colour alone can't carry the selected state:
  * a tinted chip and an untinted one are the same chip to anyone reading in
  * greyscale or with a colour deficiency, and the tint is already doing the job
- * of saying which life area a sticker belongs to. So selected chips gain a
+ * of saying which category a sticker belongs to. So selected chips gain a
  * check mark, and the chip widens slightly to hold it. `aria-pressed` says the
  * same thing to a screen reader.
  *
@@ -95,7 +95,7 @@ export function DaySheet(props: Props) {
   );
 
   /**
-   * The library, grouped, with the empty areas dropped.
+   * The library, grouped, with the empty categories dropped.
    *
    * Archived stickers are left out here and *not* filtered out of `placed`
    * above — a retired sticker that is already on the day still has to be
@@ -112,10 +112,10 @@ export function DaySheet(props: Props) {
     }))
     .filter((group) => group.stickers.length > 0);
 
-  /** The six areas in the shape `NewStickerForm` wants. Same map as the tray's. */
-  const areas = props.groups.map((group) => ({
-    id: group.areaId,
-    name: group.areaName,
+  /** The six categories in the shape `NewStickerForm` wants. Same map as the tray's. */
+  const categories = props.groups.map((group) => ({
+    id: group.categoryId,
+    name: group.categoryName,
     colorKey: group.colorKey,
   }));
 
@@ -208,7 +208,7 @@ export function DaySheet(props: Props) {
           {/* The one scrolling region. The header and the grabber stay put; in
               the day variant the mood row at the top and the note at the bottom
               scroll with the library between them rather than pinning to the
-              edges — a note pinned under a scroller is a second scroll area on
+              edges — a note pinned under a scroller is a second scroll category on
               a phone, and the keyboard would then open over the thing it is
               editing. */}
           <div className="-mx-[1.125rem] flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-[1.125rem] pt-0.5 pb-1">
@@ -217,7 +217,7 @@ export function DaySheet(props: Props) {
                 {/* First, above the library, which is the tray's own
                     ordering on a wide screen and the day view's under its
                     date. The argument is the same in all three: how it felt is
-                    the thing you always have to say, and the areas below are
+                    the thing you always have to say, and the categories below are
                     the ones you say something about only if you did them. It
                     is also the fixed row — five faces, never a different five —
                     so it makes a better opening than a list whose shape depends
@@ -237,8 +237,8 @@ export function DaySheet(props: Props) {
 
                 <div className="flex flex-col gap-3.5">
                   {shown.map((group) => (
-                    <section key={group.areaId}>
-                      <h3 className="eyebrow">{group.areaName}</h3>
+                    <section key={group.categoryId}>
+                      <h3 className="eyebrow">{group.categoryName}</h3>
                       <ul className="mt-2 flex flex-wrap gap-2">
                         {group.stickers.map((sticker) => {
                           const on = placed.has(sticker.id);
@@ -308,7 +308,7 @@ export function DaySheet(props: Props) {
                   ))}
 
                   {/* Last, and after the groups rather than inside one: a new
-                      sticker has no area yet, which is the first field of the
+                      sticker has no category yet, which is the first field of the
                       form behind it. Dashed, the same grammar the day view's
                       add button uses — the shape of a sticker that isn't there.
 
@@ -316,7 +316,7 @@ export function DaySheet(props: Props) {
                       to. The tray makes the same omission the same way. */}
                   {!props.local && (
                     <NewStickerForm
-                      areas={areas}
+                      categories={categories}
                       trigger={
                         <button
                           type="button"

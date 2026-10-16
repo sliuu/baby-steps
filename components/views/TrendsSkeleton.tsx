@@ -8,8 +8,8 @@ import { PILL_TRACK } from "@/lib/layout";
  * Same argument as `CalendarSkeleton`: the wrapper classes are `TrendsBoard`'s,
  * copied so the fallback reserves the height the real page will take.
  *
- * **It only draws the Areas tab, and that is the point of tabs paying off.**
- * Only one tab is ever mounted, Areas is always the one you land on, and the
+ * **It only draws the Categories tab, and that is the point of tabs paying off.**
+ * Only one tab is ever mounted, Categories is always the one you land on, and the
  * other two are behind a click that will happen after the data has arrived.
  * There is nothing to guess about them.
  *
@@ -50,7 +50,7 @@ export function TrendsSkeleton() {
           </div>
 
           {/* The bars: six rows of name-and-count over a track, because every
-              area gets a row even at zero. Under the page's rule on a wide
+              category gets a row even at zero. Under the page's rule on a wide
               screen, like the real column. */}
           <div className="flex flex-col gap-3.5 lg:border-t-2 lg:border-rule lg:pt-4">
             {Array.from({ length: 6 }, (_, i) => (

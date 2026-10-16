@@ -13,7 +13,7 @@ type Props = {
 };
 
 /**
- * Bring an archived sticker back to its life area.
+ * Bring an archived sticker back to its category.
  *
  * One click, no confirmation, and that asymmetry is the design: archiving is
  * reversible so it doesn't need a gate, and this is the reverse of a reversible
@@ -22,7 +22,7 @@ type Props = {
  *
  * No optimistic update either, unlike a drop. `refresh()` re-renders the tray
  * on the server and the row moves from the archived section back up to its
- * area — which is a change of *where a thing is*, not of what it looks like.
+ * category — which is a change of *where a thing is*, not of what it looks like.
  * Faking that would mean rendering the row in two places for the length of a
  * round trip.
  */

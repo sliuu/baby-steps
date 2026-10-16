@@ -672,7 +672,7 @@ export function CalendarBoard(props: Props) {
             alone — CSS promotes `overflow-x` from `visible` to `auto`
             alongside it — so a single child bleeding past the edge is a
             horizontal scrollbar, and hiding it would only move the problem.
-            Long names truncate; hit areas fill the width rather than reaching
+            Long names truncate; hit categories fill the width rather than reaching
             past it. */}
         {/* `lg:w-64` — 16rem. It was 18rem, then 13, then 13 plus the
             scrollbar, and now that plus the hairline's 2rem of clearance; the

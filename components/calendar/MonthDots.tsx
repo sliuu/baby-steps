@@ -28,7 +28,7 @@ const DOT_CAP = 4;
 type Props = PeriodProps & {
   /** The first of the month being shown. */
   month: Date;
-  /** The library, for the activity-to-area map the summary counts through. */
+  /** The library, for the activity-to-category map the summary counts through. */
   groups: LibraryGroup[];
   /** Open the day's sheet. `CalendarPanel` owns it — see `DaySheet`. */
   onShowDay: (day: Date) => void;
@@ -68,7 +68,7 @@ type Props = PeriodProps & {
  * view.** The desktop month says how the month went by letting you read
  * forty-two cells of named marks. Dots can't do that — they carry a hue and
  * nothing else — so the sentences that a wide screen gets for free have to be
- * written out: how many days were marked, how many stickers, how many areas,
+ * written out: how many days were marked, how many stickers, how many categories,
  * and the three habits that came round most. That is `monthSummary`, and it is
  * a pure function in `lib/` so it can be tested without a browser.
  *
@@ -92,24 +92,24 @@ export function MonthDots(props: Props) {
   );
 
   /**
-   * Activity to life area, built from the library.
+   * Activity to category, built from the library.
    *
    * Here rather than in `monthSummary` because the summary is a pure function
    * over data and this is a reshape of a prop — and because the map is stable
    * across every render where the library hasn't changed, while the summary is
    * recomputed whenever a sticker moves.
    */
-  const areaOf = useMemo(() => {
+  const categoryOf = useMemo(() => {
     const map = new Map<string, string>();
     for (const group of props.groups) {
-      for (const sticker of group.stickers) map.set(sticker.id, group.areaName);
+      for (const sticker of group.stickers) map.set(sticker.id, group.categoryName);
     }
     return map;
   }, [props.groups]);
 
   const summary = useMemo(
-    () => monthSummary(ownDays, props.stickersByDay, areaOf, props.todayString),
-    [ownDays, props.stickersByDay, areaOf, props.todayString],
+    () => monthSummary(ownDays, props.stickersByDay, categoryOf, props.todayString),
+    [ownDays, props.stickersByDay, categoryOf, props.todayString],
   );
 
   const { highlight } = props;
@@ -223,7 +223,7 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
         <div className="flex items-end gap-6">
           <Figure value={summary.daysMarked} label="days marked" />
           <Figure value={summary.stickers} label="stickers" />
-          <Figure value={summary.areas} label="areas touched" />
+          <Figure value={summary.categories} label="categories touched" />
         </div>
       </div>
 

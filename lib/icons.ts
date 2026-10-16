@@ -575,7 +575,7 @@ export type IconGroup = {
 /**
  * Four hundred and thirty-two icons in eight groups of fifty-four.
  *
- * The groups are the life areas the app seeds, loosely — move, mind, reading,
+ * The groups are the categories the app seeds, loosely — move, mind, reading,
  * work, make, home, health, people — but only loosely, because a set this size
  * is browsed rather than navigated and a tab is a place to start looking, not a
  * taxonomy. What a group actually guarantees is that the thing beside what you

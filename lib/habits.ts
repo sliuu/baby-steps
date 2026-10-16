@@ -97,10 +97,10 @@ export type HabitRow = {
   activityId: string;
   name: string;
   mark: string;
-  /** The area's ramp, carried on the sticker. The dot and the ticks share it. */
+  /** The category's ramp, carried on the sticker. The dot and the ticks share it. */
   colorKey: string;
-  areaId: string;
-  areaName: string;
+  categoryId: string;
+  categoryName: string;
   /** Placements in the window. Two on one Tuesday are two marks. */
   count: number;
   /** Days in the window carrying at least one mark. What the plot draws. */
@@ -163,17 +163,17 @@ export type HabitRow = {
  * an empty row for it is a question nobody asked, while a month you spent doing
  * it is still your month.
  *
- * **The area comes from the library, the name and colour from the placement.**
+ * **The category comes from the library, the name and colour from the placement.**
  * That split is `tally` and `activityTally`'s between them, and both halves are
- * deliberate: an area is a fact about the activity *now*, so re-filing a habit
+ * deliberate: a category is a fact about the activity *now*, so re-filing a habit
  * moves its whole history with it, while the name is joined onto every
  * placement by `getStickersByDay`, so a rename arrives already applied. A row
  * built from the library for both would be the same answer; a row built from
- * the placement for both could not name an area at all.
+ * the placement for both could not name a category at all.
  *
  * Marks whose activity has left the library entirely are dropped rather than
  * counted under an invented row — the deleted-and-not-yet-refetched window that
- * `Tally.unattributed` announces on the Areas tab.
+ * `Tally.unattributed` announces on the Categories tab.
  *
  * Library order, not sorted. Sorting is the table's own state and it belongs
  * with the control that sets it; see `sortHabits`, which is the other half of
@@ -199,8 +199,8 @@ export function habitTable(
         name: sticker.name,
         mark: sticker.mark,
         colorKey: sticker.colorKey,
-        areaId: group.areaId,
-        areaName: group.areaName,
+        categoryId: group.categoryId,
+        categoryName: group.categoryName,
         count: 0,
         days: 0,
         hits: [],
@@ -262,7 +262,7 @@ export function habitTable(
  * In the library rather than the component because every branch here is a
  * judgement about what a number means, and those are the ones worth a test.
  * What it is *not* is the dash: a column with nothing in it is the table's
- * business, and `AreaBars` already draws that decision for the same reason.
+ * business, and `CategoryBars` already draws that decision for the same reason.
  *
  * "About", always, because it is a span over a count and not a schedule. A
  * habit done eight times in a month is about every four days whether you did it
@@ -293,7 +293,7 @@ export function frequencyLabel(row: HabitRow): string | null {
  * label, the way a table's first cell is its `<th scope="row">` — and a table you
  * can only find a habit in by alphabetising it is a table you should have been
  * able to read anyway. Library order is also not arbitrary: the tray groups by
- * life area, so the unsorted table arrives in colour bands.
+ * category, so the unsorted table arrives in colour bands.
  *
  * The plot column is the other one that doesn't sort, and it used to. It sorted
  * by the day the marks begin, which is a real fact and the wrong one to hang a
@@ -301,7 +301,7 @@ export function frequencyLabel(row: HabitRow): string | null {
  * blocks is a shape you read across, not a value you rank. Two of the six
  * headers being inert is also what makes the four that work look like controls.
  */
-export type HabitSortKey = "area" | "count" | "interval" | "last";
+export type HabitSortKey = "category" | "count" | "interval" | "last";
 
 export type SortDirection = "asc" | "desc";
 
@@ -316,7 +316,7 @@ export type SortDirection = "asc" | "desc";
  * table rather than six guesses at a call site.
  */
 export const SORT_START: Record<HabitSortKey, SortDirection> = {
-  area: "asc",
+  category: "asc",
   count: "desc",
   interval: "asc",
   last: "desc",
@@ -363,7 +363,7 @@ function emptyRank(row: HabitRow, key: HabitSortKey): number {
       return row.count === 0 ? 1 : 0;
     case "last":
       return row.last === null ? 1 : 0;
-    case "area":
+    case "category":
     case "count":
       return 0;
   }
@@ -371,8 +371,8 @@ function emptyRank(row: HabitRow, key: HabitSortKey): number {
 
 function compare(a: HabitRow, b: HabitRow, key: HabitSortKey): number {
   switch (key) {
-    case "area":
-      return a.areaName.localeCompare(b.areaName);
+    case "category":
+      return a.categoryName.localeCompare(b.categoryName);
     case "count":
       return a.count - b.count;
     case "interval":
@@ -415,7 +415,7 @@ export function pageCount(total: number, size = HABITS_PER_PAGE): number {
 /**
  * One page of rows, with the page number clamped rather than trusted.
  *
- * Filtering to one area while on page 3 leaves the page number past the end,
+ * Filtering to one category while on page 3 leaves the page number past the end,
  * and the honest answer is the last page rather than an empty table — the rows
  * are still there, you just aren't looking at them. Clamping here rather than
  * resetting the state to 1 keeps the "page" concept in one place, and nothing

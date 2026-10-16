@@ -19,8 +19,8 @@ import { MARK_ICON_SIZE, MARK_STROKE, iconFor } from "@/lib/icons";
 import { ramp } from "@/lib/palette";
 import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
 
-/** The life areas, as the form needs them: an id, a name, and a colour. */
-export type FormArea = {
+/** The categories, as the form needs them: an id, a name, and a colour. */
+export type FormCategory = {
   id: string;
   name: string;
   colorKey: string;
@@ -30,13 +30,13 @@ export type FormArea = {
 export type StickerValues = {
   name: string;
   mark: string;
-  lifeAreaId: string;
+  categoryId: string;
 };
 
-const BLANK: StickerValues = { name: "", mark: "", lifeAreaId: "" };
+const BLANK: StickerValues = { name: "", mark: "", categoryId: "" };
 
 type Props = {
-  areas: FormArea[];
+  categories: FormCategory[];
   /**
    * The row being written, already bound.
    *
@@ -51,13 +51,13 @@ type Props = {
   /** Pre-filled values. Omitted when making a new sticker from scratch. */
   initial?: StickerValues;
   /**
-   * The area this sticker's existing marks sit under — so changing the dropdown
+   * The category this sticker's existing marks sit under — so changing the dropdown
    * can warn that they'd all move. Only the edit dialog has an answer.
    *
-   * This was derived until the `+` on each life area arrived. The old rule was
-   * `initial.lifeAreaId !== ""`, on the reasoning that only an edit arrives with
-   * an area already chosen — self-answering, and documented as the reason there
-   * was no `mode` prop. A create that opens with its area pre-filled breaks
+   * This was derived until the `+` on each category arrived. The old rule was
+   * `initial.categoryId !== ""`, on the reasoning that only an edit arrives with
+   * a category already chosen — self-answering, and documented as the reason there
+   * was no `mode` prop. A create that opens with its category pre-filled breaks
    * exactly that assumption, and the symptom would have been a brand-new sticker
    * warning you about past marks it cannot have.
    *
@@ -66,7 +66,7 @@ type Props = {
    * sentence is actually about. The old version was a proxy for it that happened
    * to agree.
    */
-  historyArea?: string;
+  historyCategory?: string;
   /** "Add sticker" / "Save changes". */
   submitLabel: string;
   /** "Adding…" / "Saving…". */
@@ -92,8 +92,8 @@ type Problem = { field: DraftField | null; message: string } | null;
  * The three fields and the buttons — shared by both dialogs.
  *
  * There used to be a preview above them: the sticker as the tray would draw it,
- * updating as you typed. It went when the area moved to the top, because at
- * that point the mark field could wear the area's colour itself and the preview
+ * updating as you typed. It went when the category moved to the top, because at
+ * that point the mark field could wear the category's colour itself and the preview
  * was a second copy of a thing already on screen. Two circles saying the same
  * sentence, one of them hidden from screen readers because every word in it had
  * been typed two inches below.
@@ -118,11 +118,11 @@ type Problem = { field: DraftField | null; message: string } | null;
  * to handle.
  */
 export function StickerFields(props: Props) {
-  const { areas, initial = BLANK, onDone } = props;
+  const { categories, initial = BLANK, onDone } = props;
 
   const [name, setName] = useState(initial.name);
   const [mark, setMark] = useState(initial.mark);
-  const [lifeAreaId, setLifeAreaId] = useState(initial.lifeAreaId);
+  const [categoryId, setCategoryId] = useState(initial.categoryId);
 
   /**
    * Unique per mounted form, rather than one constant string.
@@ -179,18 +179,18 @@ export function StickerFields(props: Props) {
    */
   const markIcon = iconFor(mark);
 
-  const area = areas.find((candidate) => candidate.id === lifeAreaId);
-  /** The chosen area's colour, worn by the mark field. `ramp` has a fallback. */
-  const { tint } = ramp(area?.colorKey ?? "");
+  const category = categories.find((candidate) => candidate.id === categoryId);
+  /** The chosen category's colour, worn by the mark field. `ramp` has a fallback. */
+  const { tint } = ramp(category?.colorKey ?? "");
 
   /**
-   * Are we about to move an existing sticker's history to a different area?
+   * Are we about to move an existing sticker's history to a different category?
    *
-   * Only true when there is history — `historyArea` is undefined for both kinds
-   * of create, including the one that opens with an area already chosen.
+   * Only true when there is history — `historyCategory` is undefined for both kinds
+   * of create, including the one that opens with a category already chosen.
    */
   const moving =
-    props.historyArea !== undefined && lifeAreaId !== props.historyArea;
+    props.historyCategory !== undefined && categoryId !== props.historyCategory;
 
   /**
    * Mark the field the complaint is about, and point it at the sentence.
@@ -210,38 +210,38 @@ export function StickerFields(props: Props) {
 
   return (
     <form action={submit} className="flex flex-col gap-4">
-      {/* Life area first, and that ordering is what let the preview go. The
-          area decides the colour, so once it's chosen the mark field below can
+      {/* Category first, and that ordering is what let the preview go. The
+          category decides the colour, so once it's chosen the mark field below can
           simply *be* the sticker — same fill, same glyph the tray
           will draw. A separate preview panel was showing you a copy of a thing
           the form can just show you directly. */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`${errorId}-area`}>Life area</Label>
+        <Label htmlFor={`${errorId}-category`}>Category</Label>
         {/* `name` is what makes a Radix Select part of the form: given one, it
             renders a hidden native <select> alongside the button, so the value
             arrives in FormData like any other field. Without it the trigger is
-            just a button and `lifeArea` would always be empty. */}
+            just a button and `category` would always be empty. */}
         <Select
-          name="lifeArea"
-          value={lifeAreaId}
-          onValueChange={setLifeAreaId}
+          name="category"
+          value={categoryId}
+          onValueChange={setCategoryId}
         >
           <SelectTrigger
-            id={`${errorId}-area`}
+            id={`${errorId}-category`}
             className="w-full"
-            {...fieldProps("lifeArea")}
+            {...fieldProps("category")}
           >
             <SelectValue placeholder="Choose one" />
           </SelectTrigger>
           <SelectContent>
-            {areas.map((option) => (
+            {categories.map((option) => (
               <SelectItem key={option.id} value={option.id}>
                 {/* The soft end. This dot used to be the full ramp, because
-                    tint is perceived by area and 10px is no area at all. That
+                    tint is perceived by category and 10px is no category at all. That
                     was right about the problem and wrong about the fix — the
                     answer was to deepen the ramp rather than to saturate one
                     dot, and now the swatch matches both the sticker it will
-                    produce and the identical dot in Trends' area table. Three
+                    produce and the identical dot in Trends' category table. Three
                     places, one dot, one meaning. */}
                 <span
                   aria-hidden="true"
@@ -256,30 +256,30 @@ export function StickerFields(props: Props) {
         {/* One sentence, and only when it applies.
 
             Moving a sticker doesn't just change what colour it is from now on —
-            `tally` reads an activity's area as it stands *now*, so every mark
+            `tally` reads an activity's category as it stands *now*, so every mark
             it has ever made moves with it, and last month's Trends page
             redraws. That was decided deliberately back in Step 12 ("you
             reclassified the habit, not the days") and it is the right
             behaviour, but it is not a thing anyone would guess from a dropdown.
 
             It used to share the line with a resting sentence — "it takes that
-            area's colour, and names are unique within it" — which was a line of
+            category's colour, and names are unique within it" — which was a line of
             permanent text explaining two things the form now demonstrates: the
-            mark below wears the colour the moment you pick an area, and the
+            mark below wears the colour the moment you pick a category, and the
             uniqueness rule only matters at the moment you break it, when the
             error says so in the same words. A warning that is only sometimes
             true doesn't need a filler sentence to keep its seat warm. */}
         {moving && (
           <p className="text-[0.735rem] text-ink-muted">
             Marks you’ve already placed move with it, so past months will show
-            it under the new area.
+            it under the new category.
           </p>
         )}
       </div>
 
       <div className="flex items-end gap-3">
         {/* The mark field *is* the preview: the same fill `StickerMark` draws
-            in the tray, wrapped around the input you type into. Before an area
+            in the tray, wrapped around the input you type into. Before a category
             is chosen it wears `ramp()`'s fallback, which is what the grid shows
             for an unrecognised colour too — one fallback, one appearance.
 

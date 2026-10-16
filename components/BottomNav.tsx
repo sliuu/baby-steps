@@ -65,7 +65,7 @@ type Props = {
  *
  * **Drawn as a tracked pill.** It was a row of four icons each over a 10px
  * word, with the active one a stroke heavier. It is now the same segmented
- * control as Trends' Areas · Habits · Moods — see `PILL_TRACK` — with the icon
+ * control as Trends' Categories · Habits · Moods — see `PILL_TRACK` — with the icon
  * beside the word, because the pill's 38px segments have no height to stack
  * them in.
  */
@@ -78,7 +78,7 @@ export function BottomNav(props: Props) {
       // instead of showing through the track's 6% ink.
       className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-background/95 px-5 py-2 backdrop-blur-sm lg:hidden"
     >
-      {/* The tracked pill — the same control Trends uses for Areas · Habits ·
+      {/* The tracked pill — the same control Trends uses for Categories · Habits ·
           Moods, from the same two helpers, so the two can't drift. Four equal
           columns rather than segments sized to their words: a thumb that
           changes width as it moves reads as the bar re-laying itself out. */}
@@ -116,9 +116,9 @@ export function BottomNav(props: Props) {
                 <Icon
                   className="size-4 shrink-0 max-[22rem]:hidden"
                   // The active section is drawn a shade heavier rather than in
-                  // a different colour: the six ramp hues mean *life areas*
+                  // a different colour: the six ramp hues mean *categories*
                   // everywhere else in this app, and spending one on "you are
-                  // here" would make the nav look like a seventh area.
+                  // here" would make the nav look like a seventh category.
                   strokeWidth={active ? 2 : 1.5}
                   aria-hidden="true"
                 />

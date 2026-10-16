@@ -17,9 +17,9 @@ import { TrendsSkeleton } from "./TrendsSkeleton";
  * per range change is the whole reason switching to "All time" is instant.
  *
  * `getStickerLibrary` is the second query, and trends needs it for two things
- * the placements can't answer: which area each activity belongs to, and which
- * areas exist at all. An area you've never used still gets a row — six labelled
- * areas is what tells you the six exist, the same argument the tray makes.
+ * the placements can't answer: which category each activity belongs to, and which
+ * categories exist at all. A category you've never used still gets a row — six labelled
+ * categories is what tells you the six exist, the same argument the tray makes.
  */
 export async function TrendsView() {
   let data;

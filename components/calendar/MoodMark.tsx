@@ -11,7 +11,7 @@ type Props = {
  * different place — you can tell them apart without reading either.
  *
  * No colour at all. The five moods are distinguished by the mouth, which means
- * they still work in greyscale and never compete with the six area hues below.
+ * they still work in greyscale and never compete with the six category hues below.
  */
 export function MoodMark(props: Props) {
   return (

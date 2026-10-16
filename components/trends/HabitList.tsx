@@ -34,7 +34,7 @@ type Props = {
  *
  * Archived habits fold away under their own row, and only the ones with marks
  * in the range: an archived habit you didn't do is not a fact about this
- * period. They are still counted in `Areas`, which is why they are here at all.
+ * period. They are still counted in `Categories`, which is why they are here at all.
  */
 export function HabitList(props: Props) {
   const [open, setOpen] = useState(false);

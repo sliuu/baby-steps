@@ -13,7 +13,7 @@ import type { StickerFace } from "@/lib/stickers";
 type Props = {
   label: string;
   /**
-   * Lighting the whole area.
+   * Lighting the whole category.
    *
    * Required, and it wasn't until the moods left. They were the one group with
    * no eye — a heading naming five separately highlightable things rather than
@@ -27,7 +27,7 @@ type Props = {
   wash: string;
   /**
    * A control belonging to the heading rather than to the highlight — the `+`
-   * that makes a sticker in this area.
+   * that makes a sticker in this category.
    *
    * Sits between the label and the eye, so the eye stays on the same right-hand
    * line every row in the tray puts it on. A slot for the reason `TrayRow` had
@@ -39,7 +39,7 @@ type Props = {
 };
 
 /**
- * A labelled section of the tray: one life area, its stickers under it.
+ * A labelled section of the tray: one category, its stickers under it.
  *
  * It drew the mood group too until Step 16, on the strength of "it takes a
  * label and a list". That stopped being true when the moods became five columns
@@ -63,7 +63,7 @@ export function TrayGroup(props: Props) {
           the same one every sticker uses, and the heading is a sibling of the
           <ul>, so nothing nests. The inset moves onto the wrapper so the label's
           first letter still sits directly above the first circle it names, and a
-          lit area's wash spans the rail exactly like a row's. */}
+          lit category's wash spans the rail exactly like a row's. */}
       <div
         className={`group/row ${TRAY_INSET} flex items-center gap-2 rounded-md pr-2 ${
           props.selected ? props.wash : ""
@@ -197,7 +197,7 @@ export function ArchivedRow(props: {
   return (
     <li className={`${TRAY_INSET} flex items-center gap-2.5 py-1 pr-2`}>
       {/* Dimmed as a group, so the rim and the shadow fade with the name. The
-          colour still reads — it's the same area it always belonged to — just
+          colour still reads — it's the same category it always belonged to — just
           quieter than the stickers you can still reach for.
 
           Same shape as a live row, which is the point: a drawer of circles
@@ -247,7 +247,7 @@ export function TrayRow(props: RowProps) {
   return (
     // `group/row` is named rather than bare, because the tray already nests
     // groups inside groups and an unnamed `group-hover` binds to the nearest
-    // one — which would light every eye in a life area at once.
+    // one — which would light every eye in a category at once.
     //
     // `pr-2` matches TRAY_INSET on the other side, so the eye stops on the same
     // line the `+` in the header does. It's on the <li> rather than on the

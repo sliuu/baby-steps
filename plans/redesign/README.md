@@ -29,8 +29,10 @@ is a reference, not a dependency.
 
 ## Decisions already made (do not relitigate)
 
-- **"Category", not "life area".** Plan 01 renames it everywhere: table,
-  columns, function, types, variables, copy.
+- **"Category", not "life area".** Plan 01 renames it in types, variables,
+  CSS and copy. **The database keeps `life_areas` / `life_area_id` /
+  `seed_life_areas`** (production shares the database; see plan 01). Translate
+  any SQL in later plans accordingly.
 - **Every activity is the user's own.** There is no `is_custom` flag and no
   shared catalogue table. "Suggestions" are a static list in code
   (`lib/suggestions.ts`) that onboarding and the new-sticker form offer;

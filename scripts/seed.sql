@@ -18,7 +18,7 @@ create temporary table seed_user on commit drop as
   select id from auth.users order by created_at limit 1;
 
 -- ---------------------------------------------------------------------------
--- Starter activities. Two or three per life area, matched to its slug.
+-- Starter activities. Two or three per category, matched to its slug.
 --
 -- The marks are icon names rather than letters now — `icon:` plus one of the
 -- fifty-four ids in `lib/icons.ts`, which is what `StickerMark` resolves into a
@@ -50,7 +50,7 @@ join (values
   ('romance',      'Adventure',    'icon:mountain'),
   ('friends',      'Called home',  'icon:phone-call'),
   ('friends',      'Saw friends',  'icon:handshake')
-) as a(area_slug, name, mark) on a.area_slug = la.slug
+) as a(category_slug, name, mark) on a.category_slug = la.slug
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------

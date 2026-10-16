@@ -1,17 +1,17 @@
 import type { Tally } from "@/lib/analytics";
 
-import { AreaBars } from "./AreaBars";
+import { CategoryBars } from "./CategoryBars";
 
 type Props = {
   tally: Tally;
   /** The sentence, already composed. Null when there's nothing to say. */
   takeaway: string | null;
-  /** `AreaBars`' accessible name. See the prop's note there. */
+  /** `CategoryBars`' accessible name. See the prop's note there. */
   caption: string;
 };
 
 /**
- * Areas in words and numbers: the whole tab on a phone, and the right-hand
+ * Categories in words and numbers: the whole tab on a phone, and the right-hand
  * column beside the star on a wide screen.
  *
  * It composes rather than computes. Every number arrives as a prop, including
@@ -20,7 +20,7 @@ type Props = {
  * that's tedious to check by rendering and trivial to check with `assert`.
  *
  * It was a table of counts and one-decimal shares under a header row. It is the
- * bar list now — see `AreaBars` — which is the same six numbers with a picture
+ * bar list now — see `CategoryBars` — which is the same six numbers with a picture
  * of their proportions beside each, and on a wide screen it sits opposite a
  * star drawing the same proportions as a shape.
  */
@@ -29,7 +29,7 @@ export function Readout(props: Props) {
     <div className="flex flex-col">
       {props.takeaway && <Sentence text={props.takeaway} />}
 
-      <AreaBars tally={props.tally} caption={props.caption} />
+      <CategoryBars tally={props.tally} caption={props.caption} />
     </div>
   );
 }

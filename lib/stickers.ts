@@ -135,11 +135,11 @@ export const NO_STICKERS: DayStickers = {
 export type StickerDraft = {
   name: string;
   mark: string;
-  lifeAreaId: string;
+  categoryId: string;
 };
 
 /** Which field a complaint belongs to, so the form can point at it. */
-export type DraftField = "name" | "mark" | "lifeArea";
+export type DraftField = "name" | "mark" | "category";
 
 export type DraftCheck =
   /** `draft` is the cleaned-up version — trimmed. Write *this*, not the input. */
@@ -169,7 +169,7 @@ export function readDraft(form: FormData): StickerDraft {
   return {
     name: readField(form, "name"),
     mark: readField(form, "mark"),
-    lifeAreaId: readField(form, "lifeArea"),
+    categoryId: readField(form, "category"),
   };
 }
 
@@ -202,7 +202,7 @@ function readField(form: FormData, key: string): string {
 export function validateDraft(draft: StickerDraft): DraftCheck {
   const name = draft.name.trim();
   const mark = draft.mark.trim();
-  const lifeAreaId = draft.lifeAreaId.trim();
+  const categoryId = draft.categoryId.trim();
 
   if (!name) {
     return { ok: false, field: "name", message: "Give your sticker a name." };
@@ -234,13 +234,13 @@ export function validateDraft(draft: StickerDraft): DraftCheck {
     };
   }
 
-  if (!lifeAreaId) {
+  if (!categoryId) {
     return {
       ok: false,
-      field: "lifeArea",
-      message: "Choose a life area.",
+      field: "category",
+      message: "Choose a category.",
     };
   }
 
-  return { ok: true, draft: { name, mark, lifeAreaId } };
+  return { ok: true, draft: { name, mark, categoryId } };
 }

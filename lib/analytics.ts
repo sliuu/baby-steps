@@ -168,9 +168,9 @@ export function inBounds(day: DayString, bounds: Bounds): boolean {
   return true;
 }
 
-export type AreaTally = {
-  areaId: string;
-  areaName: string;
+export type CategoryTally = {
+  categoryId: string;
+  categoryName: string;
   colorKey: string;
   /** Placements in range — one sticker on one day is one mark. */
   count: number;
@@ -181,8 +181,8 @@ export type AreaTally = {
 };
 
 export type Tally = {
-  /** Every area the user has, in their own order — including empty ones. */
-  areas: AreaTally[];
+  /** Every category the user has, in their own order — including empty ones. */
+  categories: CategoryTally[];
   total: number;
   /**
    * Marks in range whose activity isn't in the library any more.
@@ -191,7 +191,7 @@ export type Tally = {
    * `getStickerLibrary` deliberately doesn't filter `archived` — the archived
    * stickers come back carrying the flag, and each list decides for itself
    * whether to draw them — so a retired sticker's past marks are still
-   * attributable to an area and still counted here. Retiring a habit doesn't
+   * attributable to a category and still counted here. Retiring a habit doesn't
    * rewrite the months you did it.
    *
    * What can land in this field is a mark whose activity was *deleted*, in the
@@ -204,7 +204,7 @@ export type Tally = {
 };
 
 /**
- * Counts per life area, for the days inside `bounds`.
+ * Counts per category, for the days inside `bounds`.
  *
  * Grouped in the browser, from data the page already has. That's the cheap and
  * correct choice at this size and not the general one: `getStickersByDay`
@@ -216,13 +216,13 @@ export type Tally = {
  * everything — a few thousand rows, per the note on `getStickersByDay` — and
  * both would move together.
  *
- * The area an activity belongs to comes from `groups`, not from the placement.
+ * The category an activity belongs to comes from `groups`, not from the placement.
  * A `day_activities` row carries only which activity it is, and the activity's
- * area is a fact about the activity *now* — so moving a sticker to another life
- * area moves its whole history with it. That is the right behaviour for a habit
+ * category is a fact about the activity *now* — so moving a sticker to another life
+ * category moves its whole history with it. That is the right behaviour for a habit
  * tracker (you reclassified the habit, not the days) and it's a deliberate
  * position rather than an accident of the join, because the alternative is
- * stamping an area onto every placement and never being able to correct it.
+ * stamping a category onto every placement and never being able to correct it.
  */
 export function tally(
   stickersByDay: StickersByDay,
@@ -230,10 +230,10 @@ export function tally(
   bounds: Bounds,
 ): Tally {
   // One pass over the library builds the lookup; without it, attributing each
-  // placement would be a scan of every area's sticker list.
-  const areaOf = new Map<string, string>();
+  // placement would be a scan of every category's sticker list.
+  const categoryOf = new Map<string, string>();
   for (const group of groups) {
-    for (const sticker of group.stickers) areaOf.set(sticker.id, group.areaId);
+    for (const sticker of group.stickers) categoryOf.set(sticker.id, group.categoryId);
   }
 
   const counts = new Map<string, number>();
@@ -248,22 +248,22 @@ export function tally(
       // two marks with two `id`s and one `activityId` — the same distinction
       // `dayMatches` turns on, and the same one that would silently produce
       // zeroes here if it were got wrong.
-      const areaId = areaOf.get(sticker.activityId);
+      const categoryId = categoryOf.get(sticker.activityId);
       total++;
-      if (!areaId) {
+      if (!categoryId) {
         unattributed++;
         continue;
       }
-      counts.set(areaId, (counts.get(areaId) ?? 0) + 1);
+      counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1);
     }
   }
 
-  const ordered = groups.map((group) => counts.get(group.areaId) ?? 0);
+  const ordered = groups.map((group) => counts.get(group.categoryId) ?? 0);
 
   return {
-    areas: groups.map((group, i) => ({
-      areaId: group.areaId,
-      areaName: group.areaName,
+    categories: groups.map((group, i) => ({
+      categoryId: group.categoryId,
+      categoryName: group.categoryName,
       colorKey: group.colorKey,
       count: ordered[i],
       share: total === 0 ? 0 : ordered[i] / total,
@@ -286,7 +286,7 @@ export function tally(
  * The reasoning was that a percentage column reading 99 is the kind of thing you
  * notice and then stop trusting the table.
  *
- * Real data killed it. Two areas at 11 marks each out of 63 came out as 18% and
+ * Real data killed it. Two categories at 11 marks each out of 63 came out as 18% and
  * 17%: identical counts, different shares, sitting on adjacent rows because the
  * table sorts by count. Apportionment has to break the tie *somehow* — there was
  * one leftover point and two equal claims on it — so it went to the earlier row.
@@ -298,7 +298,7 @@ export function tally(
  * The decimal place is what makes the trade cheap rather than free. Ties still
  * land on the same number (11/63 is 17.46% twice, so 17.5% twice), and the
  * column now drifts by a tenth or two instead of a whole point — small enough to
- * read as rounding. (The Areas bars print whole percentages from `share`
+ * read as rounding. (The Categories bars print whole percentages from `share`
  * instead: nothing there asks you to add them up.)
  */
 export function percent(count: number, total: number): number {
@@ -332,11 +332,11 @@ export type ActivityRanking = {
  * Which habits you actually did, ranked.
  *
  * The other half of the question `tally` answers. `tally` rolls placements up
- * to the six life areas, which is the balance picture — this leaves them at the
+ * to the six categories, which is the balance picture — this leaves them at the
  * grain you placed them at, which is the "what did I do most" one. Both walk
  * the same map for the same reason, and neither is derivable from the other.
  *
- * **No library argument, and that's the difference from `tally`.** An area is a
+ * **No library argument, and that's the difference from `tally`.** A category is a
  * fact about an activity that a placement doesn't carry, so attributing a mark
  * to one needs the groups. A habit's own name, mark and colour *are* on the
  * placement — `getStickersByDay` joins them live, so a renamed sticker's whole
@@ -345,7 +345,7 @@ export type ActivityRanking = {
  *
  * That also decides the empty rows: there are none. A habit you never did in
  * range simply isn't in a ranking of what you did. `tally` keeps its zero rows
- * because six areas are a fixed frame you read the month against; a list of
+ * because six categories are a fixed frame you read the month against; a list of
  * habits isn't a frame, and twenty rows of nothing above the four you did would
  * bury the answer.
  *
@@ -687,27 +687,27 @@ export function moodTakeaway(series: MoodSeries, phrase: string): string | null 
 }
 
 /**
- * The areas tied at the top, in library order.
+ * The categories tied at the top, in library order.
  *
- * A list rather than one area, because ties are real and this app has already
+ * A list rather than one category, because ties are real and this app has already
  * been bitten by pretending otherwise. Step 12's percentage column tried to
- * break a tie between two areas at 11 marks and produced 18% and 17% for equal
- * counts; the fix was to stop breaking ties. Same shape here: picking `areas[0]`
+ * break a tie between two categories at 11 marks and produced 18% and 17% for equal
+ * counts; the fix was to stop breaking ties. Same shape here: picking `categories[0]`
  * after a sort would name Exercise and quietly not name Friends & Family, which
  * has exactly as good a claim. The sentence can say "tied" — but only if the
  * function that feeds it doesn't decide first.
  *
- * Empty when there is nothing to lead: no areas, no marks, or every area at
+ * Empty when there is nothing to lead: no categories, no marks, or every category at
  * zero. `Math.max()` of nothing is `-Infinity`, which would otherwise sail
  * through the filter and match nobody, so the guard is explicit.
  */
-export function leaders(tally: Tally): AreaTally[] {
-  if (tally.areas.length === 0) return [];
+export function leaders(tally: Tally): CategoryTally[] {
+  if (tally.categories.length === 0) return [];
 
-  const top = Math.max(...tally.areas.map((area) => area.count));
+  const top = Math.max(...tally.categories.map((category) => category.count));
   if (top === 0) return [];
 
-  return tally.areas.filter((area) => area.count === top);
+  return tally.categories.filter((category) => category.count === top);
 }
 
 /**
@@ -758,8 +758,8 @@ export function rangePhrase(range: Range): string {
  * - Two or three tied leaders get named, because "tied" is more informative
  *   than a coin flip and the names still fit in a line.
  * - Four or more get counted instead of named. A sentence listing five life
- *   areas is a list wearing a sentence's clothes.
- * - Every area tied is not a tie at all, it's a flat month, and calling that a
+ *   categories is a list wearing a sentence's clothes.
+ * - Every category tied is not a tie at all, it's a flat month, and calling that a
  *   tie for the lead would be technically true and useless.
  *
  * Returns null when nothing is in range. The caller doesn't render the panel at
@@ -767,7 +767,7 @@ export function rangePhrase(range: Range): string {
  * state competing with the one already on the page.
  *
  * One sentence, not two. It used to return a second line as well — "4 marks in
- * all, across 2 of your 6 areas" — on the theory that a reading should say what
+ * all, across 2 of your 6 categories" — on the theory that a reading should say what
  * it's out of. On the page that turned out to be a number you have to hold in
  * your head to use, printed directly above a table that gives you the same
  * totals broken down and doesn't ask you to hold anything. The lead is the part
@@ -777,11 +777,11 @@ export function takeaway(tally: Tally, phrase: string): string | null {
   const top = leaders(tally);
   if (top.length === 0) return null;
 
-  const names = top.map((area) => area.areaName);
-  const everyArea = top.length === tally.areas.length && tally.areas.length > 1;
+  const names = top.map((category) => category.categoryName);
+  const everyCategory = top.length === tally.categories.length && tally.categories.length > 1;
 
-  if (everyArea) {
-    return `Your attention was spread evenly across every area ${phrase}.`;
+  if (everyCategory) {
+    return `Your attention was spread evenly across every category ${phrase}.`;
   }
   if (names.length === 1) {
     return `${names[0]} held the greatest share of your attention ${phrase}.`;
@@ -789,7 +789,7 @@ export function takeaway(tally: Tally, phrase: string): string | null {
   if (names.length <= 3) {
     return `${listNames(names)} tied for the greatest share of your attention ${phrase}.`;
   }
-  return `${names.length} areas tied for the greatest share of your attention ${phrase}.`;
+  return `${names.length} categories tied for the greatest share of your attention ${phrase}.`;
 }
 
 /**

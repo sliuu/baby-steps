@@ -8,7 +8,7 @@ import { MOOD_COLOR } from "@/lib/moods";
  * that gave the numbers and no sense of their proportion.
  *
  * **A five-step colour scale.** Calendar mood faces stay neutral so they do not
- * compete with life-area stickers. This chart has a different job: it needs to
+ * compete with category stickers. This chart has a different job: it needs to
  * make the ordered scale legible at a glance, so great → rough moves from the
  * sticker palette's yellow through green to blue. Every bar is a flat pastel
  * fill — the exact tint layer used by stickers, not a chart-only gradient.
@@ -16,7 +16,7 @@ import { MOOD_COLOR } from "@/lib/moods";
  * All five always, in the scale's order — never ranked, never filtered. See
  * `MoodTally.moods`: these are a scale running great → rough, so their order is
  * information, and a zero is the useful measurement "no rough days". The bars
- * are sized against the largest count, like `AreaBars`, so the commonest mood
+ * are sized against the largest count, like `CategoryBars`, so the commonest mood
  * always runs the full width.
  *
  * No word beside the face. The mouth is the mood's name in this app — the
@@ -63,7 +63,7 @@ export function MoodBars(props: { moods: MoodTally }) {
             />
           </span>
 
-          {/* Same dash-for-zero rule as `AreaBars` a tab away, for the same
+          {/* Same dash-for-zero rule as `CategoryBars` a tab away, for the same
               reason: zero is a measurement, a dash is nothing here, and the eye
               skips it instead of reading it. */}
           <span className="tabular w-[22px] text-right text-[0.75rem] text-ink-label">

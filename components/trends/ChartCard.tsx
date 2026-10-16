@@ -20,7 +20,7 @@ type Props = { children: ReactNode };
  * cannot disagree is by rendering the same component.
  *
  * `aspectRatio` is an inline style rather than a class for the reason
- * `AreaBars` sets its bar widths that way: Tailwind cannot generate a class for
+ * `CategoryBars` sets its bar widths that way: Tailwind cannot generate a class for
  * a number it never sees, and this one is read from `VIEW` on purpose. Deriving
  * it means the card cannot drift from the viewBox it's supposed to match.
  * `min-h-fit` is the escape hatch for a narrow screen, where the ratio would
@@ -32,7 +32,7 @@ type Props = { children: ReactNode };
  * the reason the file still exists either way.
  *
  * The card owns `aria-hidden`. It belongs to the panel rather than to the
- * drawing: what makes it correct is that `AreaBars` prints these same numbers
+ * drawing: what makes it correct is that `CategoryBars` prints these same numbers
  * as text beside it, and that fact is about the page, not about the chart. If
  * a step ever shows a chart without those bars, this is the single place that
  * has to change.
