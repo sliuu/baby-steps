@@ -1,7 +1,7 @@
 # 13 · Trends restyle
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 9795ada
 - **Severity:** medium
 - **Category:** screen
 - **Estimated scope:** `components/trends/*` (`TrendsBoard` 471, `HabitTable` 704, `LifeStar` 176, `MoodLine` 247, `MoodBars` 87, `CategoryBars`, `RangePicker`, `ChartCard`, `Readout`)
