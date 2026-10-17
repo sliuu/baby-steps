@@ -81,6 +81,13 @@ Put the angle/arc/polar helpers in `lib/balance-geometry.ts` and test the
 non-trivial ones (label arc flipping). `lib/lifestar.ts` may reuse them, but
 don't refactor LifeStar in this plan.
 
+> **Amended (as built):**
+> - Weeks start on Sunday (`weekStartsOn` defaults to 0), matching the calendar's `startOfWeek`.
+> - Label arcs: r 118 on top, r 127 below (glyphs hang inward there). Flipped when the angle is below the centre line, so three and nine o'clock read like the top.
+> - Pie rings run 16→56→80→104, the flower's guide rings.
+> - SVG label colours come from a new `textFill` key in `lib/palette.ts`.
+> - `/dev/system` doesn't exist until plan 14; checked on a throwaway page instead.
+
 ## Verify
 
 - `npm test` covers `balance.ts`.
