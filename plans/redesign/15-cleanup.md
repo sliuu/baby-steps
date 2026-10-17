@@ -1,7 +1,7 @@
 # 15 · Remove what the redesign replaced
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 4753ac6
 - **Severity:** low
 - **Category:** cleanup
 - **Estimated scope:** whatever is now unused

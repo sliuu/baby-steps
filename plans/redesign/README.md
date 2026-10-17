@@ -119,7 +119,7 @@ is a reference, not a dependency.
 | [12](12-onboarding.md) | Onboarding: life pie, activities, stay in touch | 04–07, 10 | DONE (4da4b7f) |
 | [13](13-trends.md) | Trends restyle | 02–06 | DONE (9795ada) |
 | [14](14-design-system-page.md) | `/dev/system` living reference | 02–07 | DONE (9dc0c04) |
-| [15](15-cleanup.md) | Remove what the redesign replaced | all | TODO |
+| [15](15-cleanup.md) | Remove what the redesign replaced | all | DONE (4753ac6) |
 
 ## Order
 
