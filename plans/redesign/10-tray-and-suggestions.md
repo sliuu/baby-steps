@@ -1,7 +1,7 @@
 # 10 · Sticker tray, tap-to-add, suggestions
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 9b5b55b
 - **Severity:** high
 - **Category:** component + data
 - **Estimated scope:** `components/tray/*`, new `lib/suggestions.ts` + test
