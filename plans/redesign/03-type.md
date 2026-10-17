@@ -57,6 +57,14 @@ and Outfit.
    `formatDateNumeric(d) → "10/15/2026"` using date-fns `format(d, "M/d/yyyy")`.
    Do not change any date math; display only.
 
+> **Amended (as built):** old names map onto the scale: `display-lg`→display-xl,
+> `page-title`→display-sm, `section-title`→heading, `panel-title`→subhead,
+> `dialog-title`→body-lg size; Tailwind `xs`/`sm`/`base`→caption/label/ui
+> (`lg`+ unchanged until components move). `eyebrow` lost its caps and tracking
+> (label size, ink-muted); `daylabel` is caption. `note` is the display face at
+> 300, upright. Existing copy was not lowercased; that happens as each surface
+> is restyled. Body text is Outfit 400, not 300 (Stephanie asked to try it).
+
 ## Copy convention (applies from here on)
 
 All UI copy is lowercase. Exceptions: proper nouns typed by the user (sticker

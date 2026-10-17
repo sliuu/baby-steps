@@ -11,6 +11,11 @@ import {
   startOfWeek,
 } from "date-fns";
 
+/** "10/15/2026". Display only. */
+export function formatDateNumeric(date: Date): string {
+  return format(date, "M/d/yyyy");
+}
+
 /** A calendar day, as stored in Postgres: "2026-08-12". */
 export type DayString = string;
 
