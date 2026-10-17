@@ -1,7 +1,7 @@
 # 08 · Today view
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** f578672
 - **Severity:** high (the main screen)
 - **Category:** screen
 - **Estimated scope:** `components/calendar/TodayView.tsx`, a balance query
