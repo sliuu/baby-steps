@@ -1,0 +1,57 @@
+import type { Metadata } from "next";
+
+import { PageFrame } from "@/components/ui/PageFrame";
+import { getStickerLibrary } from "@/lib/queries/activities";
+import { createClient } from "@/lib/supabase/server";
+import { suggestionsFor } from "@/lib/suggestions";
+import { PieStep, ActivitiesStep, TouchStep, type StepCategory } from "./Steps";
+
+export const metadata: Metadata = { title: "welcome · baby steps" };
+
+type Props = { searchParams: Promise<{ step?: string | string[] }> };
+
+/** Three steps after first sign-in: life pie, activities, stay in touch. */
+export default async function OnboardingPage(props: Props) {
+  const raw = (await props.searchParams).step;
+  const step = raw === "2" ? 2 : raw === "3" ? 3 : 1;
+
+  const supabase = await createClient();
+  const [library, ratings, profile] = await Promise.all([
+    getStickerLibrary(),
+    // Newest first; the first row per category wins.
+    supabase.from("category_ratings").select("category_id, level").order("rated_at", { ascending: false }),
+    supabase.from("profiles").select("phone").maybeSingle(),
+  ]);
+
+  const levels: Record<string, number> = {};
+  for (const row of ratings.data ?? []) levels[row.category_id] ??= row.level;
+
+  const categories: StepCategory[] = library.map((group) => {
+    const owned = group.stickers.filter((s) => !s.archived).map((s) => s.name);
+    return {
+      id: group.categoryId,
+      name: group.categoryName.toLowerCase(),
+      slug: group.slug ?? "",
+      colorKey: group.colorKey,
+      owned,
+      suggestions: suggestionsFor(group.slug ?? "", owned),
+    };
+  });
+
+  return (
+    <PageFrame
+      header={
+        <header className="flex h-16 items-center justify-between gap-4 border-b border-rule-strong px-5 lg:px-10">
+          <span className="font-heading text-subhead text-accent-ink">baby steps</span>
+          <span className="text-caption text-ink-muted">{step} of 3</span>
+        </header>
+      }
+    >
+      <main className="w-full max-w-180 px-5 pt-12 pb-20 sm:pt-16 lg:px-10">
+        {step === 1 && <PieStep categories={categories} initial={levels} />}
+        {step === 2 && <ActivitiesStep categories={categories} />}
+        {step === 3 && <TouchStep phone={profile.data?.phone ?? null} />}
+      </main>
+    </PageFrame>
+  );
+}

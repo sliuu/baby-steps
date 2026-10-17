@@ -89,6 +89,14 @@ create table public.category_ratings (   -- the onboarding life pie
   `onboarded_at = now()` and goes to today.
 - **No texts are sent.** This only stores consent.
 
+> **Amended (as built):**
+> - SQL translated: `category_id` references `life_areas`; no `seed_categories()`. The existing `handle_new_user()` is replaced to also insert the `profiles` row (same trigger).
+> - Extra guards in the migration: `phone` must look like E.164, and a phone needs `texts_opt_in`. The ratings insert policy also checks the category is yours.
+> - No category icon exists, so "add your own" takes the category's first suggestion's mark (`defaultMark()` in `lib/suggestions.ts`); unknown categories get the name's first letter.
+> - Step is `?step=1|2|3`. Step 1 prefills from your latest ratings; step 2 shows stickers you already have as chosen (locked) chips; step 3 prefills your number.
+> - The proxy fails open: no profile row, or a query error, means no redirect.
+> - The three steps also render in `/dev/system` (plan 14's rule), and the verdict line there is now in.
+
 ## Verify
 
 - New test user: sign in → step 1 → 2 → 3 → today, with chosen stickers in the

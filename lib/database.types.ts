@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   graphql_public: {
     Tables: {
@@ -74,6 +74,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "life_areas"
             referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      category_ratings: {
+        Row: {
+          category_id: string
+          level: number
+          rated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          level: number
+          rated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          level?: number
+          rated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_ratings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "life_areas"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -186,6 +215,30 @@ export type Database = {
           name?: string
           slug?: string
           sort_order?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          onboarded_at: string | null
+          phone: string | null
+          texts_opt_in: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          onboarded_at?: string | null
+          phone?: string | null
+          texts_opt_in?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          onboarded_at?: string | null
+          phone?: string | null
+          texts_opt_in?: boolean
           user_id?: string
         }
         Relationships: []

@@ -11,11 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/Chip";
 import { MoodDot, MoodFace } from "@/components/ui/Mood";
 import { PageFrame } from "@/components/ui/PageFrame";
-import type { Balance, Level } from "@/lib/balance";
+import { ActivitiesStep, PieStep, TouchStep, type StepCategory } from "@/app/onboarding/Steps";
+import { verdict, type Balance, type Level } from "@/lib/balance";
 import { today } from "@/lib/dates";
 import { PANEL } from "@/lib/layout";
 import { MOODS, type Mood } from "@/lib/moods";
 import { CATEGORY_COLORS, categoryColor, type CategoryColor } from "@/lib/palette";
+import { suggestionsFor } from "@/lib/suggestions";
 
 const SURFACES = ["frame", "on-frame", "paper", "raised", "ink", "ink-muted", "ink-subtle", "accent-ink"];
 const RULES = ["rule-strong", "rule", "rule-grid", "rule-input"];
@@ -118,6 +120,10 @@ export function Reference() {
 
         <Section title="balance">
           <BalanceSamples />
+        </Section>
+
+        <Section title="onboarding">
+          <OnboardingSamples />
         </Section>
       </main>
     </PageFrame>
@@ -374,6 +380,32 @@ function BalanceSamples() {
           <figcaption className="text-caption text-ink-muted">same levels</figcaption>
         </figure>
       </div>
+      <p className="text-center text-body-lg text-ink">{verdict(levels, CATEGORIES)}</p>
+    </div>
+  );
+}
+
+const STEP_CATEGORIES: StepCategory[] = CATEGORIES.map((c, i) => ({
+  ...c,
+  slug: c.id,
+  owned: i === 1 ? ["gym"] : [],
+  suggestions: suggestionsFor(c.id, i === 1 ? ["gym"] : []),
+}));
+
+/** The three steps with sample categories. Buttons call the real actions. */
+function OnboardingSamples() {
+  return (
+    <div className="flex flex-col gap-14">
+      {[
+        <PieStep key={1} categories={STEP_CATEGORIES} initial={{ exercise: 3, work: 2 }} />,
+        <ActivitiesStep key={2} categories={STEP_CATEGORIES} />,
+        <TouchStep key={3} phone={null} />,
+      ].map((step, i) => (
+        <figure key={i} className="flex flex-col gap-3">
+          <figcaption className="text-caption text-ink-muted">step {i + 1} of 3</figcaption>
+          <div className="max-w-180 border border-rule px-5 pt-8 pb-10">{step}</div>
+        </figure>
+      ))}
     </div>
   );
 }

@@ -50,3 +50,19 @@ export function balanceSpread(b: Balance): number {
   if (levels.length === 0) return 0;
   return Math.max(...levels) - Math.min(...levels);
 }
+
+/** Onboarding line under the pie. Ties go to the first category; names lowercase. Copy is Stephanie's. */
+export function verdict(levels: Balance, categories: { id: string; name: string }[]): string {
+  const level = (c: { id: string }) => levels[c.id] ?? 0;
+  const all = Object.fromEntries(categories.map((c) => [c.id, level(c)]));
+  if (balanceSpread(all) <= 1) {
+    return "looks like your pie is well balanced! let's try to keep it that way";
+  }
+  let lowest = categories[0];
+  let highest = categories[0];
+  for (const c of categories) {
+    if (level(c) < level(lowest)) lowest = c;
+    if (level(c) > level(highest)) highest = c;
+  }
+  return `looks like ${lowest.name.toLowerCase()} is trailing behind, but you're filling your cup with ${highest.name.toLowerCase()}`;
+}

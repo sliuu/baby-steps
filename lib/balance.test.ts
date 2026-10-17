@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 // Relative, with the extension — see the note in `analytics.test.ts`.
-import { balanceLevels, balanceSpread } from "./balance.ts";
+import { balanceLevels, balanceSpread, verdict } from "./balance.ts";
 import { isFlipped, itemAngle, labelArc } from "./balance-geometry.ts";
 
 // Wed 14 Oct 2026. Sunday weeks: 11–17 Oct, 4–10 Oct, 27 Sep–3 Oct.
@@ -88,4 +88,35 @@ describe("label arcs", () => {
     assert.match(labelArc(itemAngle(0, 6), 0.5), / 0 0 1 /);
     assert.match(labelArc(itemAngle(3, 6), 0.5), / 0 0 0 /);
   });
+});
+
+describe("verdict", () => {
+  const cats = [
+    { id: "a", name: "Spirituality" },
+    { id: "b", name: "Exercise" },
+    { id: "c", name: "Work" },
+  ];
+  const balanced = "looks like your pie is well balanced! let's try to keep it that way";
+
+  it("is balanced at spread 0 or 1", () => {
+    assert.equal(verdict({ a: 0, b: 0, c: 0 }, cats), balanced);
+    assert.equal(verdict({ a: 1, b: 2, c: 2 }, cats), balanced);
+  });
+  it("names the lowest and highest, lowercase", () => {
+    assert.equal(
+      verdict({ a: 3, b: 0, c: 1 }, cats),
+      "looks like exercise is trailing behind, but you're filling your cup with spirituality",
+    );
+  });
+  it("breaks ties by order", () => {
+    assert.equal(
+      verdict({ a: 0, b: 0, c: 3 }, cats).startsWith("looks like spirituality is trailing"),
+      true,
+    );
+    assert.match(verdict({ a: 3, b: 3, c: 0 }, cats), /cup with spirituality$/);
+  });
+  it("treats missing levels as 0", () => {
+    assert.match(verdict({ c: 2 }, cats), /^looks like spirituality is trailing/);
+  });
+  it("is balanced with no categories", () => assert.equal(verdict({}, []), balanced));
 });

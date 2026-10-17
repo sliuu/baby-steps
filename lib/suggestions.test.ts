@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { validateDraft } from "./stickers.ts";
-import { SUGGESTIONS, suggestionsFor } from "./suggestions.ts";
+import { SUGGESTIONS, defaultMark, suggestionsFor } from "./suggestions.ts";
 
 const names = (list: { name: string }[]) => list.map((s) => s.name);
 
@@ -43,4 +43,16 @@ describe("SUGGESTIONS", () => {
       assert.equal(new Set(keys).size, keys.length);
     });
   }
+});
+
+describe("defaultMark", () => {
+  it("uses the category's first suggestion", () => {
+    assert.equal(defaultMark("exercise", "climb"), SUGGESTIONS.exercise[0].mark);
+  });
+  it("falls back to the first letter", () => assert.equal(defaultMark("custom", "Knit"), "k"));
+  it("passes validation either way", () => {
+    for (const mark of [defaultMark("work", "x"), defaultMark("custom", "Knit")]) {
+      assert.equal(validateDraft({ name: "x", mark, categoryId: "c" }).ok, true);
+    }
+  });
 });

@@ -70,3 +70,9 @@ export function suggestionsFor(slug: string, existing: string[]): Suggestion[] {
   const owned = new Set(existing.map(key));
   return SUGGESTIONS[slug].filter((s) => !owned.has(key(s.name)));
 }
+
+/** Mark for an "add your own": the category's first suggestion, else the name's first letter. */
+export function defaultMark(slug: string, name: string): string {
+  if (isCategorySlug(slug)) return SUGGESTIONS[slug][0].mark;
+  return Array.from(name.trim())[0]?.toLowerCase() ?? "•";
+}
