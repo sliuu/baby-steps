@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { PageFrame } from "@/components/ui/PageFrame";
+import { SheetHeader } from "@/components/ui/SheetHeader";
+import { LOGO, PAGE_WIDTH } from "@/lib/layout";
 import { getStickerLibrary } from "@/lib/queries/activities";
 import { createClient } from "@/lib/supabase/server";
 import { suggestionsFor } from "@/lib/suggestions";
@@ -41,13 +43,13 @@ export default async function OnboardingPage(props: Props) {
   return (
     <PageFrame
       header={
-        <header className="flex h-16 items-center justify-between gap-4 border-b border-rule-strong px-5 lg:px-10">
-          <span className="font-heading text-subhead text-accent-ink">baby steps</span>
-          <span className="text-caption text-ink-muted">{step} of 3</span>
-        </header>
+        <SheetHeader
+          start={<span className={`${LOGO} text-subhead sm:text-heading`}>baby steps</span>}
+          end={<span className="text-caption text-ink-muted">{step} of 3</span>}
+        />
       }
     >
-      <main className="w-full max-w-180 px-5 pt-12 pb-20 sm:pt-16 lg:px-10">
+      <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-16`}>
         {step === 1 && <PieStep categories={categories} initial={levels} />}
         {step === 2 && <ActivitiesStep categories={categories} />}
         {step === 3 && <TouchStep phone={profile.data?.phone ?? null} />}

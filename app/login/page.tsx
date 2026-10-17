@@ -3,6 +3,8 @@ import type { CSSProperties } from "react";
 
 import { SignInButton } from "@/components/auth/SignInButtons";
 import { PageFrame } from "@/components/ui/PageFrame";
+import { SheetHeader } from "@/components/ui/SheetHeader";
+import { LOGO, PAGE_WIDTH } from "@/lib/layout";
 
 // Copy is Stephanie's; keep it verbatim.
 const STRUCK = ["habit tracker", "activity logger", "life manager"];
@@ -12,15 +14,17 @@ export default function LoginPage() {
   return (
     <PageFrame
       header={
-        <header className="flex h-16 items-center justify-between gap-4 border-b border-rule-strong px-5 lg:px-10">
-          <Link href="/" className="font-heading text-subhead text-accent-ink">
-            baby steps
-          </Link>
-          <SignInButton provider="google" look="sm" />
-        </header>
+        <SheetHeader
+          start={
+            <Link href="/" className={`${LOGO} text-subhead sm:text-heading`}>
+              baby steps
+            </Link>
+          }
+          end={<SignInButton provider="google" look="sm" />}
+        />
       }
     >
-      <main className="w-full max-w-180 px-5 pt-12 pb-20 sm:pt-24 lg:px-10">
+      <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-20`}>
         <h1 className="font-display text-display font-light text-accent-ink sm:text-display-xl">
           welcome to baby steps!
         </h1>

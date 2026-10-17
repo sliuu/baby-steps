@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+import { LOGO, PAGE_WIDTH } from "@/lib/layout";
 import { PageFrame } from "./PageFrame";
+import { SheetHeader } from "./SheetHeader";
 
 type Props = {
   eyebrow: string;
@@ -17,14 +19,16 @@ export function NoticePage(props: Props) {
   return (
     <PageFrame
       header={
-        <header className="flex h-16 items-center border-b border-rule-strong px-5 lg:px-10">
-          <Link href="/" className="font-heading text-subhead text-accent-ink">
-            baby steps
-          </Link>
-        </header>
+        <SheetHeader
+          start={
+            <Link href="/" className={`${LOGO} text-subhead sm:text-heading`}>
+              baby steps
+            </Link>
+          }
+        />
       }
     >
-      <main className="w-full max-w-180 px-5 pt-12 pb-20 sm:pt-24 lg:px-10">
+      <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-20`}>
         {props.picture}
         <p className="eyebrow animate-rise">{props.eyebrow}</p>
         <h1 className="mt-3 animate-rise font-display text-heading font-light text-ink text-balance sm:text-display-sm">

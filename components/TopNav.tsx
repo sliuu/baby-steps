@@ -1,5 +1,7 @@
 "use client";
 
+import { SheetHeader } from "@/components/ui/SheetHeader";
+import { LOGO } from "@/lib/layout";
 import { NAV_ITEMS, isPlainClick, navItemFor, type Page } from "@/lib/nav";
 
 type Props = {
@@ -22,44 +24,49 @@ export function TopNav(props: Props) {
   const current = navItemFor(props.page);
 
   return (
-    <header className="flex h-16 items-center gap-8 border-b border-rule-strong px-5 lg:px-10">
-      <a
-        href="#today"
-        onClick={(event) => {
-          if (!isPlainClick(event)) return;
-          event.preventDefault();
-          props.onPageChange("today");
-        }}
-        className="font-heading text-subhead text-accent-ink"
-      >
-        baby steps
-      </a>
+    <SheetHeader
+      start={
+        <a
+          href="#today"
+          onClick={(event) => {
+            if (!isPlainClick(event)) return;
+            event.preventDefault();
+            props.onPageChange("today");
+          }}
+          className={`${LOGO} text-heading sm:text-display-sm`}
+        >
+          baby steps
+        </a>
+      }
+      end={
+        <>
+          <nav aria-label="Sections" className="hidden sm:block">
+            <ul className="flex items-center gap-8">
+              {NAV_ITEMS.map((item) => {
+                const active = item.id === current;
+                return (
+                  <li key={item.id}>
+                    <a
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      onClick={(event) => {
+                        if (!isPlainClick(event)) return;
+                        event.preventDefault();
+                        props.onPageChange(item.page);
+                      }}
+                      className={navLinkClass(active)}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-      <nav aria-label="Sections" className="ml-auto hidden sm:block">
-        <ul className="flex items-center gap-8">
-          {NAV_ITEMS.map((item) => {
-            const active = item.id === current;
-            return (
-              <li key={item.id}>
-                <a
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  onClick={(event) => {
-                    if (!isPlainClick(event)) return;
-                    event.preventDefault();
-                    props.onPageChange(item.page);
-                  }}
-                  className={navLinkClass(active)}
-                >
-                  {item.label}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div className="ml-auto flex items-center sm:ml-0">{props.end}</div>
-    </header>
+          <div className="flex items-center">{props.end}</div>
+        </>
+      }
+    />
   );
 }

@@ -11,10 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/Chip";
 import { MoodDot, MoodFace } from "@/components/ui/Mood";
 import { PageFrame } from "@/components/ui/PageFrame";
+import { SheetHeader } from "@/components/ui/SheetHeader";
 import { ActivitiesStep, PieStep, TouchStep, type StepCategory } from "@/app/onboarding/Steps";
 import { verdict, type Balance, type Level } from "@/lib/balance";
 import { today } from "@/lib/dates";
-import { PANEL } from "@/lib/layout";
+import { LOGO, PAGE_WIDTH, PANEL } from "@/lib/layout";
 import { MOODS, type Mood } from "@/lib/moods";
 import { CATEGORY_COLORS, categoryColor, type CategoryColor } from "@/lib/palette";
 import { suggestionsFor } from "@/lib/suggestions";
@@ -68,13 +69,13 @@ export function Reference() {
   return (
     <PageFrame
       header={
-        <header className="flex h-16 items-center justify-between gap-4 border-b border-rule-strong px-5 lg:px-10">
-          <span className="font-heading text-subhead text-accent-ink">baby steps · system</span>
-          <FrameToggle />
-        </header>
+        <SheetHeader
+          start={<span className={`${LOGO} text-subhead sm:text-heading`}>baby steps · system</span>}
+          end={<FrameToggle />}
+        />
       }
     >
-      <main className="flex w-full flex-col gap-11 px-5 pt-10 pb-20 lg:px-10">
+      <main className={`${PAGE_WIDTH} flex flex-col gap-11 pt-10 pb-20`}>
         <Section title="colour">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[...SURFACES, ...RULES].map((name) => (
@@ -410,11 +411,11 @@ function OnboardingSamples() {
   );
 }
 
-/** Blush or espresso frame, via `data-frame` on <html>. */
+/** Espresso (default) or blush frame, via `data-frame` on <html>. */
 function FrameToggle() {
-  const [frame, setFrame] = useState<"blush" | "espresso">("blush");
+  const [frame, setFrame] = useState<"blush" | "espresso">("espresso");
   useEffect(() => {
-    if (frame === "espresso") document.documentElement.dataset.frame = "espresso";
+    if (frame === "blush") document.documentElement.dataset.frame = "blush";
     else delete document.documentElement.dataset.frame;
     return () => {
       delete document.documentElement.dataset.frame;
@@ -423,7 +424,7 @@ function FrameToggle() {
 
   return (
     <nav aria-label="frame" className="text-label text-ink-muted">
-      {(["blush", "espresso"] as const).map((name, i) => (
+      {(["espresso", "blush"] as const).map((name, i) => (
         <span key={name}>
           {i > 0 && <span aria-hidden="true"> · </span>}
           <button

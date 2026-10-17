@@ -1,6 +1,9 @@
-/** Page gutter and cap, shared by nav and body. Cap is the 2xl breakpoint (1536px). */
+/** Page gutter and cap, shared by header and body. Cap is the 2xl breakpoint (1536px). */
 export const PAGE_WIDTH =
-  "mx-auto w-full max-w-(--breakpoint-2xl) px-5 lg:px-10";
+  "mx-auto w-full max-w-(--breakpoint-2xl) px-5 sm:px-10 xl:px-20";
+
+/** The wordmark. Size per call site. */
+export const LOGO = "font-heading font-light leading-none text-ink";
 
 /** A section starts here: 1px rule along the top. Composes with `border-dashed`. */
 export const RULE = "border-t border-rule";

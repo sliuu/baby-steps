@@ -262,7 +262,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Light — stationery: ivory paper in a blush frame, bottle-green ink, oxblood accent.
+   Light — stationery: ivory paper in an espresso frame, bottle-green ink, oxblood accent.
 --------------------------------------------------------------------------- */
 :root {
   color-scheme: light;
@@ -276,8 +276,8 @@
   --oxblood: #7A1F1F;
 
   /* ── semantic: use these, not primitives ── */
-  --frame: var(--blush);
-  --on-frame: var(--bottle);
+  --frame: var(--espresso);
+  --on-frame: var(--ivory);
   --paper: var(--ivory);
   --raised: var(--cream);
   --ink: var(--bottle);
@@ -366,9 +366,9 @@
   }
 }
 
-[data-frame="espresso"] {
-  --frame: var(--espresso);
-  --on-frame: var(--ivory);
+[data-frame="blush"] {
+  --frame: var(--blush);
+  --on-frame: var(--bottle);
 }
 
 /* ---------------------------------------------------------------------------
