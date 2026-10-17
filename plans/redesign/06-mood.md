@@ -1,7 +1,7 @@
 # 06 · Mood picker and mood dot
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 3afbdb1
 - **Severity:** medium
 - **Category:** component
 - **Estimated scope:** `components/tray/MoodPicker.tsx`, `components/calendar/MoodMark.tsx`, `lib/moods.ts`
