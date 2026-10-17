@@ -17,8 +17,7 @@ import { TodayView } from "./TodayView";
 import { WeekGrid } from "./WeekGrid";
 import { WeekList } from "./WeekList";
 import {
-  LANDING_NARROW_VIEW,
-  LANDING_WIDE_VIEW,
+  LANDING_VIEW,
   type CalendarViewMode,
   type PeriodProps,
 } from "./period";
@@ -76,10 +75,7 @@ type Props = Omit<PeriodProps, "todayString"> & {
    * here to change it *with* any more: Week and Month are nav sections now, and
    * the pill that used to sit beside the arrows is gone.
    *
-   * **Null means nobody has pressed a section yet**, and it is not the same as
-   * "month". A cold load lands on the day on a phone and the month on a laptop,
-   * and the server cannot tell which — so null draws both and lets CSS pick.
-   * See `LANDING_NARROW` in `lib/nav.ts`.
+   * Null (nothing pressed yet) draws the landing, Today.
    */
   view: CalendarViewMode | null;
   /** The last failed write. Passed through to the sheet, to be read aloud. */
@@ -349,36 +345,7 @@ export function CalendarPanel(props: Props) {
     );
   };
 
-  /**
-   * Nothing pressed yet, so draw both landings and let CSS choose — the same
-   * bargain the week and the month strike one level down, one level up.
-   *
-   * It is the heaviest instance of it in the app: the phone's landing is the
-   * day view, which carries the whole sticker picker, and the desktop's is a
-   * month grid. A cold load ships both. The alternative is the flash, and a
-   * section changing under the reader a second into the page is worse than
-   * markup they never see.
-   *
-   * Two `<section>`s side by side rather than one wrapper with both inside,
-   * because the wrapper would be a box around a page-level section for no
-   * reason anyone reading the DOM could reconstruct.
-   *
-   * `lg:flex` and not `lg:block`, which is the one detail here that bites.
-   * `twMerge` sees `hidden` arrive against the section's own `flex` and drops
-   * the `flex`, as it should — so the class that turns the section back *on*
-   * above 64rem has to be the display it actually wants, or the month lands on
-   * a block container where `flex-col` and `gap-6` mean nothing and the header
-   * sits flush against the grid.
-   */
-  /**
-   * The sheet is rendered once, outside `body`, and that is load-bearing.
-   *
-   * `body` runs twice on a cold load — the phone's landing and the desktop's —
-   * and a `<DaySheet>` inside it would be two dialogs on one piece of state,
-   * both opening at once. Radix would trap focus in whichever mounted last and
-   * the other would sit underneath holding a second copy of the note field.
-   * Out here there is one, and both drawings point at it.
-   */
+  // One sheet, outside `body`.
   const sheetNode = (
     <DaySheet
       day={sheet?.day ?? null}
@@ -396,22 +363,9 @@ export function CalendarPanel(props: Props) {
     />
   );
 
-  // Today is a phone section. Pressed on a phone and then carried across
-  // 64rem — a rotated tablet, a dragged window — it draws the month on the
-  // wide side, exactly as the cold load does, so the desktop never shows it.
-  if (props.view === null || props.view === "today") {
-    return (
-      <>
-        {body(LANDING_NARROW_VIEW, "lg:hidden")}
-        {body(LANDING_WIDE_VIEW, "hidden lg:flex")}
-        {sheetNode}
-      </>
-    );
-  }
-
   return (
     <>
-      {body(props.view)}
+      {body(props.view ?? LANDING_VIEW)}
       {sheetNode}
     </>
   );

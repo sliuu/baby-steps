@@ -16,14 +16,8 @@ import type { CalendarViewMode } from "./period";
  * provider is a Client Component, the consumer is a Client Component, and the
  * server-rendered markup in between simply passes it along.
  *
- * The default is `month` rather than a throw-if-missing, because a missing
- * provider here means someone rendered a calendar outside the shell — a test,
- * a story — and the honest answer for that case is the ordinary view, not a
- * crash. Note that it is a default for *no provider*, which is a different
- * thing from the `null` the type now admits: null comes from a provider that
- * is there and has nothing to report yet, because nobody has pressed a section
- * — see `LANDING_NARROW` in `lib/nav.ts`, and `CalendarPanel` for what the
- * calendar draws when it gets one.
+ * No provider (tests, stories) → `month`. Null from a provider → nothing
+ * pressed yet; `CalendarPanel` draws `LANDING_VIEW`.
  */
 const ViewModeContext = createContext<CalendarViewMode | null>("month");
 
@@ -53,7 +47,7 @@ const serverSnapshot = () => false;
  */
 
 export function CalendarViewProvider(props: {
-  /** Null until a section is pressed. See `LANDING_NARROW` in `lib/nav.ts`. */
+  /** Null until a section is pressed; draws `LANDING_VIEW`. */
   view: CalendarViewMode | null;
   children: React.ReactNode;
 }) {

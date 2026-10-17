@@ -1,44 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { RULE, TRAY_INSET } from "@/lib/layout";
-import { WEEKS_IN_GRID } from "@/lib/dates";
+import { TRAY_INSET } from "@/lib/layout";
 
 /**
- * What the Calendar tab looks like before its two queries come back.
- *
- * The outer classes are copied from `CalendarBoard`, and the duplication is the
- * point rather than an oversight. A skeleton's whole job is to reserve the
- * exact space the real thing will take, so that when the data lands the page
- * doesn't jump — the browser reflows when a Suspense fallback is swapped out,
- * and a fallback of the wrong height is a visible lurch on every load. Sharing
- * a layout component between the two would be the usual instinct, but the real
- * board's wrapper is inside a `DndContext` and holds a dozen handlers; the part
- * worth sharing is four class names.
- *
- * What that costs is honest: change the calendar's layout and this has to
- * follow. `WEEKS_IN_GRID` and `TRAY_INSET` are imported rather than retyped
- * because those two are the numbers that would actually drift unnoticed — a
- * six-row grid standing in for a five-row one is exactly the lurch this is
- * supposed to prevent.
- *
- * **There are two of them now, and CSS picks.** This drew the desktop month at
- * every width for as long as there was only one month to draw, and the day the
- * phone got its own the omission became the worst lurch in the app: 42 cells at
- * `min-h-32` is a 5,000px column of grey that collapses to a 300px dot grid the
- * moment the queries land. A fallback of the wrong height is the one thing a
- * skeleton must never be, and "the wrong height" now depends on the window. So
- * the shape is chosen the same way the real calendar chooses it — both drawn,
- * one hidden — and for the same reason: the server has no window to measure, so
- * anything decided in JavaScript is decided too late to matter here. A skeleton
- * corrected after hydration has already done the damage it exists to prevent.
- *
- * **And the narrow one is a day, not a month.** It was a month for one round of
- * this, which was the same mistake one level along: a cold load on a phone
- * lands on Today — see `LANDING_NARROW` in `lib/nav.ts` — so a phone-shaped
- * month grid here is a skeleton of a screen the visitor was never going to be
- * shown. It handed over to a masthead and a sticker list, which is a lurch
- * that reads as the page changing its mind. The pairing is the rule: the
- * fallback for a landing is a drawing of *that* landing, and there are two
- * landings.
+ * The calendar before its queries return. Copies `CalendarBoard`'s outer classes so nothing jumps on handover.
+ * Every width lands on Today, so this draws Today.
  */
 export function CalendarSkeleton() {
   return (
@@ -54,54 +19,6 @@ export function CalendarSkeleton() {
       <div className="min-w-0 flex-1">
         <NarrowDaySkeleton />
 
-        {/* `gap-6`, which is `CalendarPanel`'s own number for this section —
-            the skeleton had 8 and the handover moved everything below the
-            header by 8px. */}
-        <section className="hidden flex-col gap-6 lg:flex">
-          {/* The month name and its two arrows. `PAGE_TITLE`'s wide size is
-              48px; the arrows are 36px at every width. The phone's copy of
-              this line lives in `NarrowDaySkeleton`, where it has no arrows
-              at all, because the day view steps by tapping its own strip. */}
-          <div className="flex items-end justify-between gap-6">
-            <Skeleton className="h-12 w-64" />
-            <div className="flex items-center gap-1 pb-2">
-              <Skeleton className="size-9 rounded-full" />
-              <Skeleton className="size-9 rounded-full" />
-            </div>
-          </div>
-
-          {/* The same chrome the real grid uses, down to the hairline
-              background showing through a one-pixel gap between cells. Drawing
-              the lines for real rather than as a grey slab is what makes this
-              read as "the calendar is coming" instead of "something is broken".
-
-              Which is also why the cells are `bg-background`: the month has no
-              surface of its own any more, and a skeleton in white would hand
-              over to a grid in cream. The box around it went for the same
-              reason — the month is a rule above and hairlines inside now, and
-              a framed skeleton would pop its own border off the moment the
-              data landed. Every number in here is a copy of one in `MonthGrid`
-              and `DayCell` — if those change, this is the second place to
-              change. */}
-          <div className={`${RULE} bg-hairline`}>
-            <div className="grid grid-cols-7 gap-px">
-              {Array.from({ length: 7 }, (_, i) => (
-                <div key={`label-${i}`} className="bg-background py-3">
-                  <Skeleton className="mx-auto h-3 w-7" />
-                </div>
-              ))}
-
-              {/* Always the full six rows, because the real grid always is —
-                  see `monthGrid`. A skeleton that guessed five would shrink the
-                  page by a row the moment the data arrived. */}
-              {Array.from({ length: WEEKS_IN_GRID * 7 }, (_, i) => (
-                <div key={i} className="min-h-32 bg-background p-2.5">
-                  <Skeleton className="h-4 w-5" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
       </div>
 
       {/* `lg:w-56` — the rail's real width. It sat at the old 18rem through
@@ -147,7 +64,7 @@ export function CalendarSkeleton() {
 }
 
 /**
- * The phone's landing, before its queries come back: `TodayView`, in grey.
+ * The landing, before its queries come back: `TodayView`, in grey.
  *
  * Every number in here is a copy of one in `TodayView` — `gap-9` between the
  * blocks, the 64px strip and mood cells, the 44px add button — because the one
@@ -162,7 +79,7 @@ export function CalendarSkeleton() {
  */
 function NarrowDaySkeleton() {
   return (
-    <section className="flex flex-col gap-9 lg:hidden">
+    <section className="flex flex-col gap-9">
       <header>
         {/* The weekday over the date. 2rem at 1.25 leading is a 40px title on
             a phone; the eyebrow above it is Space Mono at about 10px. */}

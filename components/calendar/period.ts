@@ -26,14 +26,8 @@ import type { StickersByDay } from "@/lib/stickers";
  */
 export type CalendarViewMode = "month" | "week" | "today";
 
-/**
- * The two landing views, declared here for the same reason the three strings
- * above are: the calendar may not import the nav. `LANDING_NARROW` and
- * `LANDING_WIDE` in `lib/nav.ts` are the same two answers asked as sections,
- * and the long note about why there are two of them lives there.
- */
-export const LANDING_NARROW_VIEW: CalendarViewMode = "today";
-export const LANDING_WIDE_VIEW: CalendarViewMode = "month";
+/** The landing view; mirrors `LANDING` in `lib/nav.ts` (the calendar may not import the nav). */
+export const LANDING_VIEW: CalendarViewMode = "today";
 
 /**
  * The one mark that just arrived, if any.

@@ -66,6 +66,13 @@ Build these first; later plans use them.
   text items with the same active underline, no icons-only buttons.
 - Footer stays, under the sheet, above the bottom nav's safe area.
 
+> **Amended (as built):**
+> - Button variants live in the existing `components/ui/button.tsx`, because `Button.tsx` would collide with it on macOS. The default variant is unchanged, so existing buttons keep their look until their own plans.
+> - Routes stay `#today`/`#week`/`#month`/`#trends`. "calendar" opens Month, and Week is reachable only by `#week` until plan 09.
+> - Today is the landing at every width. Desktop shows the phone layout stretched until plan 08.
+> - Footer links go to `#`. Light is forced; `ThemeToggle`/`lib/theme.ts` are left unused.
+> - Header and bottom-nav switch at `sm` (640px). Calendar layouts still switch at `lg`.
+
 ## Verify
 
 - 1440: sheet centred with 44px of frame on every side; footer outside the

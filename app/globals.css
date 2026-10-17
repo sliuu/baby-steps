@@ -415,6 +415,10 @@
   /* ── size ── */
   --radius: 0.5rem;
 
+  /* Page frame: padding around the sheet; phone bottom nav height. */
+  --frame-pad: 0.875rem;
+  --bottom-nav-h: 3.5rem;
+
   /* ── motion ── */
   /* Real properties, not @theme, so reduced-motion below can override them.
      Exits ~2/3 of entrances; bigger things take longer. */
@@ -428,6 +432,12 @@
   --dur-hero: 420ms;
   /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --frame-pad: 2.75rem;
+  }
 }
 
 [data-frame="espresso"] {
