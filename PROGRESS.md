@@ -61,12 +61,12 @@ The plan grew a step: editing a sticker was inserted as Step 16, so motion and d
 - **Header on Today:** the date sits beside the logo in oxblood ("baby steps 10/17/2026"). Phones show it small above the heading instead, since the header has no room.
 - **Heading:** "what have you been up to?" replaces the weekday and big date.
 - **Mood** reads "mood" inline with the five faces, without words under them. The day panel and sheet keep their words.
-- **Stickers stand on notebook lines** (at least two). The dashed "+" circle is gone. An empty day says "nothing yet. tap a sticker below to add it.", which scrolls to the tray.
+- **Stickers stand on notebook lines**, one per row. The dashed "+" circle is gone. An empty day says "add stickers below", which scrolls to the tray.
 - **Flower caption:** "the last few weeks".
 - **Your stickers:** each category has a dot and its name in the slab. The "tap one to add…" helper is gone, but "showing X · clear" still appears while highlighting.
 
 **Decisions**
-- **Kept the note line**, though the board has none. Removing it would hide notes people have written. Say if you want it gone.
+- **No note line on Today**, as on the board. Notes are still written and read in the calendar's day panel.
 
 **Changed**
 - `components/calendar/TodayView.tsx`, `components/TopNav.tsx` (date via `useToday`)

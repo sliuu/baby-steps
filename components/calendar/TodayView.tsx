@@ -5,7 +5,6 @@ import { X } from "lucide-react";
 import { useMemo } from "react";
 
 import { Flower } from "@/components/balance/Flower";
-import { DayNote } from "./DayNote";
 import { MoodRow } from "./MoodRow";
 import { StickerMark } from "./StickerMark";
 import type { PeriodProps } from "./period";
@@ -25,7 +24,7 @@ type Props = PeriodProps & {
   className?: string;
 };
 
-/** Today: the question, mood, stickers on ruled lines, note; the flower beside (lg) or below. */
+/** Today: the question, mood, stickers on ruled lines; the flower beside (lg) or below. */
 export function TodayView(props: Props) {
   const { day, highlight } = props;
   const stickers = props.stickersByDay.get(day) ?? NO_STICKERS;
@@ -96,8 +95,8 @@ export function TodayView(props: Props) {
             today&rsquo;s stickers
           </h2>
 
-          {/* Two lines at least; stickers stand on them. */}
-          <ul className="ruled flex min-h-56 flex-wrap gap-x-5.5">
+          {/* One line per row; stickers stand on them. */}
+          <ul className="ruled flex min-h-28 flex-wrap gap-x-5.5">
             {empty && (
               <li className="flex h-28 items-end pb-3">
                 <button
@@ -105,7 +104,7 @@ export function TodayView(props: Props) {
                   onClick={props.onAddSticker}
                   className="text-label text-ink-muted underline-offset-4 hover:text-ink hover:underline"
                 >
-                  nothing yet. tap a sticker below to add it.
+                  add stickers below
                 </button>
               </li>
             )}
@@ -139,9 +138,6 @@ export function TodayView(props: Props) {
             ))}
           </ul>
         </section>
-
-        {/* `key`: a new day resets the draft. */}
-        <DayNote key={day} day={day} note={stickers.note} onCommit={props.onCommit} variant="page" />
       </div>
 
       <figure className="flex flex-col items-center gap-2 lg:pt-6">
