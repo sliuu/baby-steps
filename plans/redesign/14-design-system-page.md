@@ -1,7 +1,7 @@
 # 14 · `/dev/system` living reference
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 9dc0c04
 - **Severity:** low (internal), but high value for keeping the system clean
 - **Category:** tooling
 - **Estimated scope:** `app/dev/system/page.tsx`, small helper components
