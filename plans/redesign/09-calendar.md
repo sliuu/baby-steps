@@ -1,7 +1,7 @@
 # 09 · Month and week views, day sheet
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** e159be6
 - **Severity:** high
 - **Category:** screen
 - **Estimated scope:** `MonthGrid.tsx`, `WeekGrid.tsx`, `DayCell.tsx`, `DaySheet.tsx`, `DayModal.tsx`, `MonthDots.tsx`, calendar page

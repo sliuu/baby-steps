@@ -113,7 +113,7 @@ is a reference, not a dependency.
 | [06](06-mood.md) | Mood picker and mood dot | 02 | DONE (3afbdb1) |
 | [07](07-balance-flower.md) | Balance level + the flower | 05 | DONE (e3a68fa) |
 | [08](08-today.md) | Today view | 04, 05, 06, 07 | DONE (f578672) |
-| [09](09-calendar.md) | Month and week views, day sheet | 04, 05, 06 | TODO |
+| [09](09-calendar.md) | Month and week views, day sheet | 04, 05, 06 | DONE (e159be6) |
 | [10](10-tray-and-suggestions.md) | Sticker tray, tap-to-add, suggestions | 05 | DONE (9b5b55b) |
 | [11](11-sign-in.md) | Sign-in page | 04, 05 | TODO |
 | [12](12-onboarding.md) | Onboarding: life pie, activities, stay in touch | 04–07, 10 | TODO |
