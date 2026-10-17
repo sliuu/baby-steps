@@ -1,7 +1,7 @@
 # 11 · Sign-in page
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 45edfc5
 - **Severity:** medium
 - **Category:** screen
 - **Estimated scope:** `app/login/page.tsx`, `components/auth/*`
