@@ -1,7 +1,7 @@
 # 04 · Frame, sheet, header, account menu, footer
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 6ac928c
 - **Severity:** high (every signed-in screen)
 - **Category:** layout
 - **Estimated scope:** `components/AppShell.tsx`, `TopNav.tsx`, `BottomNav.tsx`, `UserMenu.tsx`, `ThemeToggle.tsx`, `lib/nav.ts`, new `components/ui/` primitives
