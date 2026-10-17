@@ -1,7 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useMemo } from "react";
 
 import { Flower } from "@/components/balance/Flower";
@@ -10,12 +10,7 @@ import { MoodRow } from "./MoodRow";
 import { StickerMark } from "./StickerMark";
 import type { PeriodProps } from "./period";
 import { balanceLevels } from "@/lib/balance";
-import {
-  formatDateNumeric,
-  formatWeekdayLong,
-  fromDayString,
-  type DayString,
-} from "@/lib/dates";
+import { formatDateNumeric, fromDayString, type DayString } from "@/lib/dates";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import { NO_STICKERS } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
@@ -30,7 +25,7 @@ type Props = PeriodProps & {
   className?: string;
 };
 
-/** Today: date, mood, stickers, note; the flower beside (lg) or below. */
+/** Today: the question, mood, stickers on ruled lines, note; the flower beside (lg) or below. */
 export function TodayView(props: Props) {
   const { day, highlight } = props;
   const stickers = props.stickersByDay.get(day) ?? NO_STICKERS;
@@ -62,17 +57,6 @@ export function TodayView(props: Props) {
   const faded = (matched: boolean) => (highlight && !matched ? "opacity-35" : "");
   const empty = stickers.activities.length === 0;
 
-  const addButton = (
-    <button
-      type="button"
-      onClick={props.onAddSticker}
-      aria-label="add a sticker"
-      className="grid size-sticker-lg shrink-0 place-items-center rounded-full border border-dashed border-rule-input text-ink-muted transition-colors hover:border-ink hover:text-ink"
-    >
-      <Plus className="size-5" strokeWidth={1.5} aria-hidden="true" />
-    </button>
-  );
-
   return (
     <section
       className={cn(
@@ -82,18 +66,21 @@ export function TodayView(props: Props) {
     >
       <div className="flex min-w-0 flex-col gap-7.5">
         <header>
-          <p className="text-label text-ink-muted">{formatWeekdayLong(day).toLowerCase()}</p>
-          <h1 className="font-display text-display font-light text-ink">
-            <time dateTime={day}>{formatDateNumeric(fromDayString(day))}</time>
+          {/* Phones only; the header shows it from sm. */}
+          <time dateTime={day} className="font-display text-body-lg font-light text-accent-ink sm:hidden">
+            {formatDateNumeric(fromDayString(day))}
+          </time>
+          <h1 className="font-display text-heading font-light text-ink sm:text-display-sm">
+            what have you been up to?
           </h1>
         </header>
 
-        <section aria-labelledby="today-mood">
-          <h2 id="today-mood" className="font-sans text-label text-ink-muted">
-            how are you feeling?
+        <section aria-labelledby="today-mood" className="flex items-center gap-6">
+          <h2 id="today-mood" className="font-display text-body-lg text-ink">
+            mood
           </h2>
-          <div className="mt-3.5 max-w-md">
-            <MoodRow day={day} mood={stickers.mood} onCommit={props.onCommit} highlight={highlight} />
+          <div className="w-full max-w-xs">
+            <MoodRow day={day} mood={stickers.mood} onCommit={props.onCommit} highlight={highlight} labels={false} />
           </div>
         </section>
 
@@ -105,48 +92,52 @@ export function TodayView(props: Props) {
             />
           )}
 
-          <h2 id="today-stickers" className="font-sans text-label text-ink-muted">
-            today
+          <h2 id="today-stickers" className="sr-only">
+            today&rsquo;s stickers
           </h2>
 
-          {empty ? (
-            <div className="mt-3.5 flex items-center gap-3.5">
-              {addButton}
-              <p className="text-label text-ink-muted">nothing yet. tap a sticker to add it.</p>
-            </div>
-          ) : (
-            <ul className="mt-3.5 flex flex-wrap gap-x-5.5 gap-y-3.5">
-              {stickers.activities.map((sticker) => (
-                <li
-                  key={sticker.activityId}
-                  className={cn(
-                    "group/sticker relative flex w-20 flex-col items-center gap-2",
-                    props.landed?.day === day &&
-                      props.landed.activityId === sticker.activityId &&
-                      "animate-land",
-                    faded(highlight?.activityIds.has(sticker.activityId) ?? false),
-                  )}
+          {/* Two lines at least; stickers stand on them. */}
+          <ul className="ruled flex min-h-56 flex-wrap gap-x-5.5">
+            {empty && (
+              <li className="flex h-28 items-end pb-3">
+                <button
+                  type="button"
+                  onClick={props.onAddSticker}
+                  className="text-label text-ink-muted underline-offset-4 hover:text-ink hover:underline"
                 >
-                  <StickerMark sticker={sticker} size="lg" />
-                  <span aria-hidden="true" className="w-full truncate text-center text-label text-ink">
-                    {sticker.name}
-                  </span>
-                  {/* Always shown on touch; hover/focus on desktop. */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      props.onCommit({ kind: "remove", day, activityId: sticker.activityId })
-                    }
-                    aria-label={`take ${sticker.name} off today`}
-                    className="absolute -top-1 right-1 grid size-6 place-items-center rounded-full bg-paper text-ink-muted ring-1 ring-rule transition-opacity hover:text-ink focus-visible:opacity-100 group-hover/sticker:opacity-100 pointer-fine:opacity-0"
-                  >
-                    <X className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
-                  </button>
-                </li>
-              ))}
-              <li className="flex w-20 justify-center">{addButton}</li>
-            </ul>
-          )}
+                  nothing yet. tap a sticker below to add it.
+                </button>
+              </li>
+            )}
+            {stickers.activities.map((sticker) => (
+              <li
+                key={sticker.activityId}
+                className={cn(
+                  "group/sticker relative flex h-28 w-20 flex-col items-center justify-end gap-1.5 pb-1.5",
+                  props.landed?.day === day &&
+                    props.landed.activityId === sticker.activityId &&
+                    "animate-land",
+                  faded(highlight?.activityIds.has(sticker.activityId) ?? false),
+                )}
+              >
+                <StickerMark sticker={sticker} size="lg" />
+                <span aria-hidden="true" className="w-full truncate text-center text-label text-ink">
+                  {sticker.name}
+                </span>
+                {/* Always shown on touch; hover/focus on desktop. */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    props.onCommit({ kind: "remove", day, activityId: sticker.activityId })
+                  }
+                  aria-label={`take ${sticker.name} off today`}
+                  className="absolute top-3 right-1 grid size-6 place-items-center rounded-full bg-paper text-ink-muted ring-1 ring-rule transition-opacity hover:text-ink focus-visible:opacity-100 group-hover/sticker:opacity-100 pointer-fine:opacity-0"
+                >
+                  <X className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* `key`: a new day resets the draft. */}
@@ -155,7 +146,7 @@ export function TodayView(props: Props) {
 
       <figure className="flex flex-col items-center gap-2 lg:pt-6">
         <Flower categories={categories} levels={levels} className="w-full max-w-80" />
-        <figcaption className="text-caption text-ink-muted">last three weeks</figcaption>
+        <figcaption className="text-caption text-ink-muted">the last few weeks</figcaption>
       </figure>
     </section>
   );

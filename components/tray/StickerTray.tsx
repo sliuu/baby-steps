@@ -66,23 +66,19 @@ export function StickerTray(props: Props) {
       {!compact && (
         <header>
           <h2 className="font-sans text-label text-ink">your stickers</h2>
-          {/* Doubles as the way out of a highlight. */}
-          <p className="mt-1 text-caption text-ink-muted">
-            {props.label ? (
-              <>
-                showing <span className="text-ink">{props.label}</span> ·{" "}
-                <button
-                  type="button"
-                  onClick={props.onClear}
-                  className="underline underline-offset-2 hover:text-ink"
-                >
-                  clear
-                </button>
-              </>
-            ) : (
-              `tap one to add it to ${props.addTo}, or drag it onto a day`
-            )}
-          </p>
+          {/* The way out of a highlight. */}
+          {props.label && (
+            <p className="mt-1 text-caption text-ink-muted">
+              showing <span className="text-ink">{props.label}</span> ·{" "}
+              <button
+                type="button"
+                onClick={props.onClear}
+                className="underline underline-offset-2 hover:text-ink"
+              >
+                clear
+              </button>
+            </p>
+          )}
         </header>
       )}
 

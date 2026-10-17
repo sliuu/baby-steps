@@ -533,6 +533,15 @@
   line-height: 1;
 }
 
+/* Notebook lines, one per 7rem row (Today's stickers sit on them). */
+@utility ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 calc(7rem - 1px),
+    var(--rule) calc(7rem - 1px) 7rem
+  );
+}
+
 /* Weekday header over the calendar. */
 @utility daylabel {
   font-family: var(--font-sans);

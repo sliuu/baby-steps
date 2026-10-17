@@ -21,6 +21,8 @@ type Props = {
    * Omitted in the sheet, which has no tray behind it to select from.
    */
   highlight?: Highlight | null;
+  /** Word under each face; Today hides them. */
+  labels?: boolean;
 };
 
 /** Sets a day's mood: five coloured faces, always five columns. Pressing the set one clears it (hence `aria-pressed`, not radios). */
@@ -57,12 +59,14 @@ export function MoodRow(props: Props) {
             >
               <MoodFace mood={mood} className="size-3/5" />
             </span>
-            <span
-              aria-hidden="true"
-              className={`text-caption ${chosen ? "text-ink" : "text-ink-muted"}`}
-            >
-              {label}
-            </span>
+            {props.labels !== false && (
+              <span
+                aria-hidden="true"
+                className={`text-caption ${chosen ? "text-ink" : "text-ink-muted"}`}
+              >
+                {label}
+              </span>
+            )}
           </button>
         );
       })}

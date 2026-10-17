@@ -31,13 +31,9 @@ export function TrayGroup(props: Props) {
           props.selected && categoryColor(props.colorKey).wash,
         )}
       >
-        <h3
-          className={cn(
-            "min-w-0 flex-1 truncate font-sans text-label lowercase",
-            categoryColor(props.colorKey).text,
-          )}
-        >
-          {props.label}
+        <h3 className="flex min-w-0 flex-1 items-center gap-2 font-display text-ui text-ink lowercase">
+          <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", categoryColor(props.colorKey).dot)} />
+          <span className="truncate">{props.label}</span>
         </h3>
         {props.onSelect && (
           <HighlightToggle

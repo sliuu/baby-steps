@@ -1,8 +1,10 @@
 "use client";
 
 import { SheetHeader } from "@/components/ui/SheetHeader";
+import { formatDateNumeric, fromDayString } from "@/lib/dates";
 import { LOGO } from "@/lib/layout";
 import { NAV_ITEMS, isPlainClick, navItemFor, type Page } from "@/lib/nav";
+import { useToday } from "@/lib/useToday";
 
 type Props = {
   /** Null until a section is pressed; reads as the landing. */
@@ -22,21 +24,30 @@ export function navLinkClass(active: boolean) {
 /** The sheet's header: logo, nav (sm and up), account. */
 export function TopNav(props: Props) {
   const current = navItemFor(props.page);
+  // Null until hydrated, so server and client agree. Phones get it in TodayView.
+  const today = useToday(null);
 
   return (
     <SheetHeader
       start={
-        <a
-          href="#today"
-          onClick={(event) => {
-            if (!isPlainClick(event)) return;
-            event.preventDefault();
-            props.onPageChange("today");
-          }}
-          className={`${LOGO} text-heading sm:text-display-sm`}
-        >
-          baby steps
-        </a>
+        <>
+          <a
+            href="#today"
+            onClick={(event) => {
+              if (!isPlainClick(event)) return;
+              event.preventDefault();
+              props.onPageChange("today");
+            }}
+            className={`${LOGO} text-heading sm:text-display-sm`}
+          >
+            baby steps
+          </a>
+          {today && current === "today" && (
+            <time dateTime={today} className="hidden font-display text-heading font-light text-accent-ink sm:inline">
+              {formatDateNumeric(fromDayString(today))}
+            </time>
+          )}
+        </>
       }
       end={
         <>
