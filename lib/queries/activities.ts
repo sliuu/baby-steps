@@ -55,8 +55,7 @@ export type LibraryGroup = {
  *   days it was the retired sticker that you placed.
  * - `StickerTray` doesn't want them among the draggable rows, and does want
  *   them in the "Archived" section at the bottom.
- * - `DayModal` wants them only on days they're already on, so you can take one
- *   off without being able to put a new one on.
+ * - The day panel shows them only on days they're already on.
  *
  * Four questions, one row, so the row carries the fact and each caller answers
  * for itself. The rule this is an instance of: a query filters on what is

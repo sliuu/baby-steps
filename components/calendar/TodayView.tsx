@@ -25,7 +25,7 @@ type Props = PeriodProps & {
   day: DayString;
   /** For the flower: categories and which category each sticker is in. */
   groups: LibraryGroup[];
-  /** Opens the add sheet (phones have no tray). */
+  /** Scrolls to the tray. */
   onAddSticker: () => void;
   className?: string;
 };
@@ -66,7 +66,6 @@ export function TodayView(props: Props) {
     <button
       type="button"
       onClick={props.onAddSticker}
-      aria-haspopup="dialog"
       aria-label="add a sticker"
       className="grid size-sticker-lg shrink-0 place-items-center rounded-full border border-dashed border-rule-input text-ink-muted transition-colors hover:border-ink hover:text-ink"
     >

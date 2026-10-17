@@ -44,7 +44,7 @@ export function DropSlot(props: Props) {
       aria-hidden="true"
       className={
         axis === "inline"
-          ? "relative inline-block h-[26px] w-0 align-top"
+          ? "relative inline-block h-5 w-0 align-top"
           : "relative block h-0 w-full"
       }
     >

@@ -180,9 +180,6 @@
   --color-ramp-red: var(--ramp-red);
   --color-ramp-red-soft: var(--ramp-red-soft);
 
-  /* Legacy rim and lift, still on `StickerBar` (plan 09). */
-  --color-sticker-edge: var(--sticker-edge);
-  --shadow-sticker: var(--sticker-shadow);
 
   /* Sticker diameters: `size-sticker-lg` etc. */
   --size-sticker-lg: 4rem;
@@ -392,12 +389,6 @@
   --ramp-green-tint: var(--cat-sage-tint);
   --ramp-purple-tint: var(--cat-plum-tint);
 
-  /* Die-cut rim is the paper. Shadow is a literal so it can't flip with theme. */
-  --sticker-edge: var(--paper);
-  --sticker-shadow:
-    0 1px 1.5px rgb(35 64 47 / 0.16),
-    0 2px 5px rgb(35 64 47 / 0.09);
-
   /* shadcn's names, pointed at ours. */
   --background: var(--paper);
   --foreground: var(--ink);
@@ -551,24 +542,6 @@
      at 7.60. The 5-point gap is invisible side by side; the failure it avoids
      is not. */
   --sticker-fill: 40%;
-
-  /* See the light theme for what the rim is and why it isn't `--surface`. Here
-     it is pulled 70% of the way back to the surface: enough to still read as a
-     cut edge against a 40% tint, not enough to ring every mark in white.
-     Unlike the ramps, this one does get a `color-mix` fallback worth thinking
-     about — without `color-mix` it lands on plain `#fff`, which is the light
-     theme's rim on a dark cell. Bright, but still a rim, so it degrades to
-     "too strong" rather than to "wrong thing".
-
-     The shadow is overridden rather than inherited, and the light theme's note
-     says why: shadows do not flip with the theme, so it cannot be derived from
-     ink. Pure black here rather than the warm ink, at roughly triple the
-     alpha — a shadow on a #201f1d surface has almost no contrast to work with
-     and a light-theme alpha simply vanishes. */
-  --sticker-edge: color-mix(in srgb, #ffffff 70%, var(--surface));
-  --sticker-shadow:
-    0 1px 1.5px rgb(0 0 0 / 0.5),
-    0 2px 5px rgb(0 0 0 / 0.3);
 
   --background: var(--bg);
   --foreground: var(--ink);

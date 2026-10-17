@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   label: string;
   colorKey: string;
-  /** Lights the whole category. Omitted in compact mode. */
+  /** Lights the whole category. */
   onSelect?: () => void;
   selected: boolean;
   /** One <li> per sticker. */
@@ -53,18 +53,6 @@ export function TrayGroup(props: Props) {
   );
 }
 
-/** A circle and its name, side by side. The day modal's list rows. */
-export function TrayRowFace(props: { visual: ReactNode; name: string }) {
-  return (
-    <>
-      <span className="shrink-0" aria-hidden="true">
-        {props.visual}
-      </span>
-      <span className="min-w-0 truncate text-[0.83rem]">{props.name}</span>
-    </>
-  );
-}
-
 const TILE = "relative flex w-16 flex-col items-center gap-1.5";
 const CAPTION = "w-full truncate text-center text-caption";
 
@@ -98,9 +86,9 @@ type TileProps = {
   addLabel: string;
   /** Lit by its eye. */
   selected: boolean;
-  /** Lighting its days; omitted in compact mode. */
+  /** Lights its days. */
   onSelect?: () => void;
-  /** Opens the editor; omitted in the demo and compact mode. */
+  /** Opens the editor; omitted in the demo and compact trays. */
   onEdit?: () => void;
 };
 

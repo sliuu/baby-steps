@@ -7,9 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function CalendarSkeleton() {
   return (
     <div
-      // One announcement for the whole panel. `role="status"` is a polite live
-      // region, so a screen reader says this once and is not interrupted; the
-      // shapes inside it are empty divs and contribute nothing.
+      // One polite announcement; the shapes are silent.
       role="status"
       className="flex flex-col"
     >

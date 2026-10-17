@@ -4,7 +4,6 @@ import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import { EditStickerForm } from "@/components/tray/EditStickerForm";
-import { MoodPicker } from "@/components/tray/MoodPicker";
 import { NewStickerForm, formCategories } from "@/components/tray/NewStickerForm";
 import { RestoreStickerButton } from "@/components/tray/RestoreStickerButton";
 import { ArchivedTile, NewTile, TrayGroup, TrayTile } from "@/components/tray/TrayGroup";
@@ -30,10 +29,12 @@ type Props = {
   onAdd: (sticker: LibrarySticker) => void;
   /** Where a tap lands, for labels: "today", "16/10". */
   addTo: string;
-  /** "rail": one column beside the calendar, with the moods. "page": wide grid under Today. */
-  layout: "rail" | "page";
-  /** Just the bank: no heading, moods, highlight, editing or archive. For plan 09's panel. */
+  /** "column": the day panel. "page": wide grid under Today. */
+  layout: "column" | "page";
+  /** Just the bank: no heading, editing or archive. The day panel and sheet. */
   compact?: boolean;
+  /** Prefixes drag ids, so two mounted trays don't collide. */
+  dragScope?: string;
 };
 
 /** The sticker bank, grouped by category. Presentational: the board owns selection and commits. */
@@ -54,7 +55,6 @@ export function StickerTray(props: Props) {
   )[0];
 
   const manage = !props.local && !compact;
-  const rail = props.layout === "rail";
 
   function toggle(next: Selection) {
     if (sameSelection(selection, next)) props.onClear();
@@ -62,10 +62,9 @@ export function StickerTray(props: Props) {
   }
 
   return (
-    // Rail: the header stays put and the list below scrolls (see the board's aside).
-    <div className="flex flex-col gap-6 lg:min-h-0">
+    <div className="flex flex-col gap-6">
       {!compact && (
-        <header className="lg:shrink-0">
+        <header>
           <h2 className="font-sans text-label text-ink">your stickers</h2>
           {/* Doubles as the way out of a highlight. */}
           <p className="mt-1 text-caption text-ink-muted">
@@ -87,23 +86,12 @@ export function StickerTray(props: Props) {
         </header>
       )}
 
-      {/* Vertical scroll only in the rail; long names truncate. */}
       <div
         className={cn(
           "grid items-start gap-x-10 gap-y-7",
-          rail
-            ? "scrollbar-app lg:min-h-0 lg:overflow-y-auto lg:pr-2"
-            : "sm:grid-cols-2 lg:grid-cols-3",
+          props.layout === "page" && "sm:grid-cols-2 lg:grid-cols-3",
         )}
       >
-        {/* Rail only: Today already has its own mood row. */}
-        {rail && !compact && (
-          <MoodPicker
-            className="hidden lg:block"
-            selected={selection?.kind === "mood" ? selection.mood : null}
-            onToggle={(mood) => toggle({ kind: "mood", mood })}
-          />
-        )}
 
         {props.groups.map((group) => {
           const categorySelection: Selection = {
@@ -117,10 +105,10 @@ export function StickerTray(props: Props) {
               key={group.categoryId}
               label={group.categoryName}
               colorKey={group.colorKey}
-              onSelect={compact ? undefined : () => toggle(categorySelection)}
+              onSelect={() => toggle(categorySelection)}
               selected={sameSelection(selection, categorySelection)}
             >
-              {stickers.length === 0 && !manage && (
+              {stickers.length === 0 && props.local && (
                 <li className="py-2 text-caption text-ink-muted">nothing here yet</li>
               )}
 
@@ -133,18 +121,18 @@ export function StickerTray(props: Props) {
                   <TrayTile
                     key={sticker.id}
                     face={sticker}
-                    dragId={sticker.id}
+                    dragId={props.dragScope ? `${props.dragScope}:${sticker.id}` : sticker.id}
                     payload={{ kind: "activity", activityId: sticker.id, face: faceOf(sticker) }}
                     onAdd={() => props.onAdd(sticker)}
                     addLabel={`add ${sticker.name} to ${props.addTo}`}
                     selected={sameSelection(selection, stickerSelection)}
-                    onSelect={compact ? undefined : () => toggle(stickerSelection)}
+                    onSelect={() => toggle(stickerSelection)}
                     onEdit={manage ? () => setEditing(sticker.id) : undefined}
                   />
                 );
               })}
 
-              {manage && (
+              {!props.local && (
                 <NewTile
                   category={group.categoryName}
                   trigger={(button) => (

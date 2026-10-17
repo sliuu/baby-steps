@@ -33,18 +33,16 @@ import {
 } from "@/app/actions/stickers";
 import { CalendarPanel } from "@/components/calendar/CalendarPanel";
 import { useCalendarData } from "@/components/calendar/calendarData";
-import { DayModal } from "@/components/calendar/DayModal";
 import { MoodMark } from "@/components/calendar/MoodMark";
-import { StickerBar } from "@/components/calendar/StickerBar";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { LANDING_VIEW, type Landed } from "@/components/calendar/period";
 import { useCalendarView } from "@/components/calendar/viewMode";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { applyChange, type CalendarChange } from "@/lib/changes";
-import { formatDayLong, toDayString, type DayString } from "@/lib/dates";
+import { formatDateNumeric, formatDayLong, fromDayString, toDayString, type DayString } from "@/lib/dates";
 import { buildHighlight, type Selection } from "@/lib/highlight";
 import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
-import { NO_STICKERS, faceOf, type StickersByDay } from "@/lib/stickers";
+import { faceOf, type StickersByDay } from "@/lib/stickers";
 import { readDropTarget, type DropTarget } from "./dropTarget";
 import { snapToCursor } from "./snapToCursor";
 import { payloadName, readDragPayload, type DragPayload } from "./payload";
@@ -262,17 +260,8 @@ export function CalendarBoard(props: Props) {
   const [stickersByDay, apply] = useOptimistic(saved, applyChange);
   const [dragging, setDragging] = useState<DragPayload | null>(null);
 
-  /**
-   * Month or week — read here, owned by the top nav.
-   *
-   * It is read at this level and not lower down because the drag overlay below
-   * is the panel's sibling and has to know: the thing under the cursor must be
-   * the same shape as the hole it is going into — a circle over the month grid,
-   * a named bar over the week strip. The panel owns *which period*; this reads
-   * *which shape*.
-   */
+  // Which view; owned by the top nav. Decides where the tray goes.
   const view = useCalendarView();
-  const [openDay, setOpenDay] = useState<DayString | null>(null);
   const [error, setError] = useState<string | null>(null);
   /**
    * Where a release would land right now, or null when it would land nowhere.
@@ -365,23 +354,16 @@ export function CalendarBoard(props: Props) {
     return counts;
   }, [stickersByDay]);
 
-  /**
-   * Escape clears it, which is the third way out after pressing the lit row's
-   * eye again and the "clear" link in the tray header.
-   *
-   * Bound only while something is lit *and* the modal is shut. Escape is
-   * heavily subscribed here — Radix closes the dialog with it, dnd-kit cancels
-   * a drag with it — and a listener that isn't attached can't race with either.
-   */
+  // Escape clears the highlight; bound only while something is lit.
   useEffect(() => {
-    if (!selection || openDay) return;
+    if (!selection) return;
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setSelection(null);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selection, openDay]);
+  }, [selection]);
 
   const sensors = useSensors(
     // Four pixels of travel before a press counts as a drag. Without it every
@@ -568,24 +550,10 @@ export function CalendarBoard(props: Props) {
    */
   const leaving = !target && dragging?.kind === "activity" && !!dragging.from;
 
-  /**
-   * Whether the thing in the air is a named bar rather than a circle.
-   *
-   * The week columns are wide enough to spell the activity out, so that is what
-   * they draw — and the overlay has to agree, or you'd be carrying a circle
-   * towards a row of bars. The day view draws bars too, at full width, so the
-   * test is "not the month" rather than "the week". Moods stay a circle in all
-   * three: a mood belongs to the day rather than to the stack inside it, and it
-   * sits in the day's header either way.
-   */
-  const bar = view !== "month" && dragging?.kind === "activity";
-
-
   const onToday = (view ?? LANDING_VIEW) === "today";
 
-  /** Tap-to-add: the same "place" a drop makes, at the end of today. Plan 09 adds a chosen day. */
-  function addToToday(sticker: LibrarySticker) {
-    const day = toDayString(new Date());
+  /** Tap-to-add: the same "place" a drop makes, at the end of the day. */
+  function addTo(day: DayString, sticker: LibrarySticker) {
     const placed = stickersByDay.get(day)?.activities ?? [];
     // Already there: replay the land as feedback, write nothing.
     if (placed.some((p) => p.activityId === sticker.id)) {
@@ -601,7 +569,7 @@ export function CalendarBoard(props: Props) {
     });
   }
 
-  const tray = (layout: "rail" | "page") => (
+  const tray = (layout: "column" | "page", day: DayString, scope?: string) => (
     <StickerTray
       groups={props.groups}
       selection={selection}
@@ -611,9 +579,11 @@ export function CalendarBoard(props: Props) {
       markCounts={markCounts}
       onError={setError}
       local={props.local}
-      onAdd={addToToday}
-      addTo="today"
+      onAdd={(sticker) => addTo(day, sticker)}
+      addTo={layout === "page" ? "today" : formatDateNumeric(fromDayString(day))}
       layout={layout}
+      compact={layout === "column"}
+      dragScope={scope}
     />
   );
 
@@ -643,150 +613,61 @@ export function CalendarBoard(props: Props) {
         setTarget(null);
       }}
     >
-      <div
-        className={
-          onToday ? "flex flex-col" : "flex flex-col gap-10 lg:flex-row lg:items-start"
-        }
-      >
-        {/* min-w-0: lets a wide grid shrink instead of pushing the rail off. */}
-        <div className="min-w-0 flex-1">
-          {/* Server's day for first paint; CalendarPanel corrects it on mount. */}
-          <CalendarPanel
-            initialDay={toDayString(new Date())}
-            view={view}
-            // The day sheet's "New sticker" chip writes to the database, and
-            // the demo has none. Same omission the tray makes with its `+`.
-            local={props.local}
-            // For the day view's picker only. The tray gets the same list
-            // below — one query, two surfaces onto it, which is the point of
-            // the library living up here rather than in either of them.
-            groups={props.groups}
-            stickersByDay={stickersByDay}
-            onOpenDay={setOpenDay}
-            onCommit={commit}
-            error={error}
-            highlight={highlight}
-            target={target}
-            // A mood lands on the day, not in it. The square lights up either
-            // way; the caret only appears when there is really an order about
-            // to change.
-            caret={dragging?.kind === "activity"}
-            landed={landed}
-          />
-        </div>
+      <CalendarPanel
+        initialDay={toDayString(new Date())}
+        view={view}
+        groups={props.groups}
+        stickersByDay={stickersByDay}
+        onCommit={commit}
+        error={error}
+        highlight={highlight}
+        target={target}
+        // Moods land on the day; only stickers get a caret.
+        caret={dragging?.kind === "activity"}
+        landed={landed}
+        tray={(day, scope) => tray("column", day, scope)}
+      />
 
-        {onToday ? (
-          // Under Today at every width, past a rule. Taps work on touch too.
-          <section aria-label="your stickers" className="mt-14 border-t border-rule pt-10">
-            {tray("page")}
-            <div role="status" aria-live="polite" className="hidden lg:block">
-              {errorLine}
-            </div>
-          </section>
-        ) : (
-          // Beside Week and Month on desktop until plan 09's day panel.
-          // Sticky under the nav; 145px = nav 64 + hairline 1 + main's 40 + 40.
-          // overflow-hidden keeps the list's hidden overflow out of the page height.
-          <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-145px)] lg:w-64 lg:shrink-0 lg:flex-col lg:overflow-hidden lg:border-l lg:border-hairline lg:pl-8">
-            {tray("rail")}
-            {/* Always in the tree so it announces. One live region per width: this or the phone banner. */}
-            <div role="status" aria-live="polite" className="lg:shrink-0">
-              {errorLine}
-            </div>
-          </aside>
-        )}
+      {onToday && (
+        // Under Today at every width, past a rule.
+        <section
+          id="your-stickers"
+          aria-label="your stickers"
+          className="mt-14 scroll-mt-6 border-t border-rule pt-10"
+        >
+          {tray("page", toDayString(new Date()))}
+        </section>
+      )}
+
+      {/* Desktop's error line, under the content. One live region per width. */}
+      <div role="status" aria-live="polite" className="hidden lg:block">
+        {errorLine}
       </div>
 
-      {/* **The phone's copy of the same line, and it is not a duplicate for
-          long.** The rail above is `hidden` below 64rem, and a live region
-          inside `display: none` is invisible *and* silent — screen readers
-          skip it too. Without this, a failed write on a phone is a sticker
-          that appears and then vanishes when the optimistic value expires,
-          with nothing anywhere saying why.
-
-          Two nodes rather than one moved node, because the two placements are
-          genuinely different objects: the rail's line is a block at the foot
-          of a column that is already there, and this is a banner over a page
-          that has no spare room. Exactly one of them is ever displayed — this
-          is `lg:hidden` and the rail is `hidden lg:flex` — so there is exactly
-          one live region in play at any width, which is the thing that would
-          actually break if both showed at once.
-
-          Pinned to the top, and not above the bottom bar where the tap
-          happened. The likeliest way to see this at all is tapping a chip in
-          `DaySheet`, and the sheet occupies the bottom 85% of the screen — a
-          bar down there lands underneath it or on top of the thing you were
-          reading. `z-60` clears the sheet's own 50 for the same reason: a
-          failure notice that the sheet covers is the bug this is fixing.
-
-          **Seen here, but only heard here when no sheet is open.** An open
-          Radix dialog hides everything outside it from assistive technology,
-          this included, so `DaySheet` carries its own `sr-only` copy of the
-          same line. Mounted always, for the reason the rail's is: no
-          `empty:hidden`, which is `display: none`. `pointer-events-none`
-          instead, so the empty strip across the top never eats a tap. */}
+      {/* Phone copy: pinned top, above the sheet (z-60). The sheet has its own sr-only copy. */}
       <div
         role="status"
         aria-live="polite"
         className="pointer-events-none fixed inset-x-0 top-0 z-60 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] lg:hidden"
       >
         {error && (
-          <p className="mx-auto max-w-[34rem] rounded-md bg-ramp-red-soft px-3 py-2 text-[0.83rem] shadow-[0_4px_16px_rgb(70_50_20/0.18)]">
+          <p className="mx-auto max-w-[34rem] rounded-md bg-ramp-red-soft px-3 py-2 text-label shadow-[0_4px_16px_rgb(70_50_20/0.18)]">
             {error}
           </p>
         )}
       </div>
 
-      {/* The floating copy. It exists so the original can stay exactly where it
-          is: nothing is removed from the tray mid-drag, so nothing below it
-          jumps up to fill the gap while your hand is still moving.
-
-          It also escapes `overflow: hidden` and every transform on the way up,
-          because it renders at the top of the arena rather than inside the
-          rail. A sticker dragged out of a scrolling container would otherwise
-          be clipped at its edge. */}
+      {/* The floating copy; the original stays put so nothing reflows mid-drag. */}
       <DragOverlay
         dropAnimation={null}
-        // The overlay's box is dnd-kit's copy of the box you picked *from*, and
-        // a tray row is ten times the width of the circle inside it. Left at
-        // that size the wrapper is a 288px invisible slab with a 26px mark
-        // pinned to its left edge. `max-content` shrinks it to the mark, which
-        // is what makes the modifier below able to centre it: you can't put the
-        // middle of a box under the cursor while the box is mostly empty.
+        // Shrink to the mark so snapToCursor can centre it.
         style={{ width: "max-content", height: "max-content" }}
         modifiers={[snapToCursor]}
       >
         {dragging && (
+          // Over a day: full + shadow. Outside: pale. Outside and lifted off a day (a delete): red ring.
           <div
-            // Just the mark. No card, no border, no name — whatever you picked
-            // up, what's under the cursor is the thing itself.
-            //
-            // It used to be a copy of the tray row, name and all, and that was
-            // right while the tray was the only place a drag could start. Once
-            // a mark could be lifted off the calendar the same overlay was
-            // drawing two different gestures: a labelled card for one, and for
-            // the other a labelled card standing in for a 26px circle four
-            // times smaller than it. The card was also the reason the collision
-            // rule had to move to `pointerWithin` in the first place — a wide
-            // box under a cursor is a lie about where the cursor is. Dropping
-            // it makes the two drags identical, which they always were, and
-            // makes the thing in the air the size of the hole it's going into.
-            //
-            // The three states survive the loss of the border, because they
-            // were never really about the border. Over a day: full strength,
-            // with a shadow — a thing about to be put down. Outside: pale, no
-            // shadow, nothing will land. Outside *and* lifted off a day, which
-            // is the gesture that deletes: pale, plus a red ring. Same circle,
-            // same size, in all three; only weight and hue move, because
-            // anything that changed size mid-drag would shift under the cursor
-            // at the exact moment you're aiming it.
-            //
-            // The corner radius is the one thing that does follow the view,
-            // for the same reason the child below does: the ring and the
-            // shadow have to trace the shape actually being carried.
-            className={`transition-opacity ${
-              bar ? "rounded-md" : "rounded-full"
-            } ${
+            className={`rounded-full transition-opacity ${
               target
                 ? "opacity-100 drop-shadow-md"
                 : `opacity-50 ${leaving ? "ring-2 ring-ramp-red" : ""}`
@@ -794,33 +675,12 @@ export function CalendarBoard(props: Props) {
           >
             {dragging.kind === "mood" ? (
               <MoodMark mood={dragging.mood} />
-            ) : bar ? (
-              // `w-max` because the overlay's box is `max-content` and a bar is
-              // `w-full`: inside a shrink-wrapped parent that resolves to the
-              // width of the name, which is the right size for something in the
-              // air. In a column it will stretch; here it shouldn't.
-              <StickerBar sticker={dragging.face} className="w-max" />
             ) : (
               <StickerMark sticker={dragging.face} />
             )}
           </div>
         )}
       </DragOverlay>
-
-      {/* The second door. It reads the same optimistic Map the grid draws from
-          and reports back through the same `commit`, so a sticker ticked here
-          and a sticker dropped over there are indistinguishable by the time
-          anything acts on them. */}
-      <DayModal
-        day={openDay}
-        stickers={
-          openDay ? (stickersByDay.get(openDay) ?? NO_STICKERS) : NO_STICKERS
-        }
-        groups={props.groups}
-        onClose={() => setOpenDay(null)}
-        onCommit={commit}
-        error={error}
-      />
     </DndContext>
   );
 }

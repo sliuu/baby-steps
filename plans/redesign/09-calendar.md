@@ -52,6 +52,16 @@ Contents, top to bottom:
 Split `DayCell.tsx` if it helps: `DayCellFrame` (grid cell, states) and
 `DayCellStickers` (the wrap). Keep the dnd-kit drop target behaviour.
 
+> **Amended (as built):**
+> - The panel shows today until you pick a day. Phones keep `MonthDots` / `WeekList` and open the sheet; `DayModal` is gone.
+> - Week uses the same `DayCell`, taller. Week's bars and in-cell notes are gone; the note lives in the panel.
+> - The cell's mood is a static dot; the panel sets mood.
+> - Future days: contents fade (not the cell, so grid lines don't show through); no select, no drops.
+> - No `+n` cap: the cell grows.
+> - `DayCell` stayed one file (~140 lines), so no split.
+> - The tray rail is gone, and with it highlighting by mood (`MoodPicker` deleted). Category and sticker highlight remain via the eye.
+> - Phone title drops to `text-heading` and the toggle sits under it, so "october 2026" fits.
+
 ## Verify
 
 - Month at 1440: grid lines inside only; today circle; selected ring; future
