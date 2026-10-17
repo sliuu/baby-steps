@@ -1,7 +1,7 @@
 # 07 · Balance level and the flower
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** e3a68fa
 - **Severity:** medium (new feature)
 - **Category:** logic + component
 - **Estimated scope:** new `lib/balance.ts` + test, new `components/balance/Flower.tsx`, `LifePie.tsx`

@@ -111,7 +111,7 @@ is a reference, not a dependency.
 | [04](04-page-frame.md) | Frame, sheet, header, account menu, footer | 02, 03 | DONE (6ac928c) |
 | [05](05-sticker.md) | The sticker: solid ink, paper edge, icon colour | 02 | DONE (db3f287) |
 | [06](06-mood.md) | Mood picker and mood dot | 02 | DONE (3afbdb1) |
-| [07](07-balance-flower.md) | Balance level + the flower | 05 | TODO |
+| [07](07-balance-flower.md) | Balance level + the flower | 05 | DONE (e3a68fa) |
 | [08](08-today.md) | Today view | 04, 05, 06, 07 | TODO |
 | [09](09-calendar.md) | Month and week views, day sheet | 04, 05, 06 | TODO |
 | [10](10-tray-and-suggestions.md) | Sticker tray, tap-to-add, suggestions | 05 | TODO |
