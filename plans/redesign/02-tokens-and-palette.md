@@ -1,7 +1,7 @@
 # 02 · New tokens: frame, paper, ink, category inks, moods
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** ada3e99
 - **Severity:** foundation
 - **Category:** design system
 - **Estimated scope:** `app/globals.css`, `lib/palette.ts`, `lib/rampValues.ts`, `lib/moods.ts` (no migration; see below)

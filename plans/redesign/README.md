@@ -106,7 +106,7 @@ is a reference, not a dependency.
 | # | Title | Depends on | Status |
 | --- | --- | --- | --- |
 | [01](01-rename-life-areas-to-categories.md) | Rename life areas to categories | none | DONE (d386604) |
-| [02](02-tokens-and-palette.md) | New tokens: frame, paper, ink, category inks, moods | 01 | TODO |
+| [02](02-tokens-and-palette.md) | New tokens: frame, paper, ink, category inks, moods | 01 | DONE |
 | [03](03-type.md) | Fonts and the type scale | 02 | TODO |
 | [04](04-page-frame.md) | Frame, sheet, header, account menu, footer | 02, 03 | TODO |
 | [05](05-sticker.md) | The sticker: solid ink, paper edge, icon colour | 02 | TODO |
