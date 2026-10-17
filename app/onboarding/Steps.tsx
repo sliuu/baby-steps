@@ -60,13 +60,21 @@ function Footer(props: { back?: string; children: React.ReactNode }) {
   );
 }
 
-/** Step 1: rate each category 0–3; the verdict updates live. */
+/** Step 1: rate each category 0–3; "done" reveals the verdict. */
 export function PieStep(props: { categories: StepCategory[]; initial: Record<string, number> }) {
   const [levels, setLevels] = useState<Balance>(() =>
     Object.fromEntries(props.categories.map((c) => [c.id, (props.initial[c.id] ?? 0) as Level])),
   );
   const [result, setResult] = useState<StepResult>();
   const [pending, start] = useTransition();
+  // Verdict waits for "done", then rises in; live after that.
+  const [revealed, setRevealed] = useState(false);
+
+  const outcome = revealed && (
+    <p className="animate-rise border-t border-rule pt-6 font-display text-subhead font-light text-accent-ink">
+      {verdict(levels, props.categories)}
+    </p>
+  );
 
   return (
     <>
@@ -87,14 +95,8 @@ export function PieStep(props: { categories: StepCategory[]; initial: Record<str
             </p>
             <p>to try it yourself now, rank how fulfilled you feel in each category around the circle.</p>
           </div>
-          <p className="mt-4 text-caption text-ink-muted">tap a ring to fill it in. tap it again to empty it.</p>
 
-          <p
-            aria-live="polite"
-            className="mt-8 hidden border-t border-rule pt-6 font-display text-subhead font-light text-accent-ink lg:block"
-          >
-            {verdict(levels, props.categories)}
-          </p>
+          <div aria-live="polite" className="mt-8 hidden lg:block">{outcome}</div>
         </div>
 
         <div>
@@ -104,10 +106,15 @@ export function PieStep(props: { categories: StepCategory[]; initial: Record<str
             onChange={(id, level) => setLevels((was) => ({ ...was, [id]: level }))}
             className="mx-auto w-full max-w-120"
           />
+          {!revealed && (
+            <div className="mt-6 flex justify-center">
+              <Button variant="outline" size="sm" onClick={() => setRevealed(true)}>
+                done
+              </Button>
+            </div>
+          )}
           {/* Phones: the verdict follows the pie. */}
-          <p className="mt-6 border-t border-rule pt-6 font-display text-subhead font-light text-accent-ink lg:hidden">
-            {verdict(levels, props.categories)}
-          </p>
+          <div aria-live="polite" className="mt-6 lg:hidden">{outcome}</div>
         </div>
       </div>
 
@@ -116,7 +123,8 @@ export function PieStep(props: { categories: StepCategory[]; initial: Record<str
         <Button
           variant="outline"
           size="md"
-          disabled={pending}
+          // Greyed until "done".
+          disabled={!revealed || pending}
           onClick={() => start(async () => setResult(await saveRatings(levels)))}
         >
           next
