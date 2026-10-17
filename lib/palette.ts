@@ -4,12 +4,12 @@ export type CategoryColor = "oxblood" | "bottle" | "mustard" | "rose" | "sage" |
 // Written out in full: Tailwind only generates classes it finds as literal text.
 // `wash` is the highlight tint behind marked days.
 export const CATEGORY_COLORS = {
-  oxblood: { ink: "bg-cat-oxblood", text: "text-cat-oxblood-text", textFill: "fill-cat-oxblood-text", on: "text-cat-oxblood-on", fill: "fill-cat-oxblood", stroke: "stroke-cat-oxblood", dot: "bg-cat-oxblood", wash: "bg-cat-oxblood/15" },
-  bottle: { ink: "bg-cat-bottle", text: "text-cat-bottle-text", textFill: "fill-cat-bottle-text", on: "text-cat-bottle-on", fill: "fill-cat-bottle", stroke: "stroke-cat-bottle", dot: "bg-cat-bottle", wash: "bg-cat-bottle/15" },
-  mustard: { ink: "bg-cat-mustard", text: "text-cat-mustard-text", textFill: "fill-cat-mustard-text", on: "text-cat-mustard-on", fill: "fill-cat-mustard", stroke: "stroke-cat-mustard", dot: "bg-cat-mustard", wash: "bg-cat-mustard/15" },
-  rose: { ink: "bg-cat-rose", text: "text-cat-rose-text", textFill: "fill-cat-rose-text", on: "text-cat-rose-on", fill: "fill-cat-rose", stroke: "stroke-cat-rose", dot: "bg-cat-rose", wash: "bg-cat-rose/15" },
-  sage: { ink: "bg-cat-sage", text: "text-cat-sage-text", textFill: "fill-cat-sage-text", on: "text-cat-sage-on", fill: "fill-cat-sage", stroke: "stroke-cat-sage", dot: "bg-cat-sage", wash: "bg-cat-sage/15" },
-  plum: { ink: "bg-cat-plum", text: "text-cat-plum-text", textFill: "fill-cat-plum-text", on: "text-cat-plum-on", fill: "fill-cat-plum", stroke: "stroke-cat-plum", dot: "bg-cat-plum", wash: "bg-cat-plum/15" },
+  oxblood: { ink: "bg-cat-oxblood", text: "text-cat-oxblood-text", textFill: "fill-cat-oxblood-text", on: "text-cat-oxblood-on", fill: "fill-cat-oxblood", stroke: "stroke-cat-oxblood", dot: "bg-cat-oxblood", border: "border-cat-oxblood", wash: "bg-cat-oxblood/15" },
+  bottle: { ink: "bg-cat-bottle", text: "text-cat-bottle-text", textFill: "fill-cat-bottle-text", on: "text-cat-bottle-on", fill: "fill-cat-bottle", stroke: "stroke-cat-bottle", dot: "bg-cat-bottle", border: "border-cat-bottle", wash: "bg-cat-bottle/15" },
+  mustard: { ink: "bg-cat-mustard", text: "text-cat-mustard-text", textFill: "fill-cat-mustard-text", on: "text-cat-mustard-on", fill: "fill-cat-mustard", stroke: "stroke-cat-mustard", dot: "bg-cat-mustard", border: "border-cat-mustard", wash: "bg-cat-mustard/15" },
+  rose: { ink: "bg-cat-rose", text: "text-cat-rose-text", textFill: "fill-cat-rose-text", on: "text-cat-rose-on", fill: "fill-cat-rose", stroke: "stroke-cat-rose", dot: "bg-cat-rose", border: "border-cat-rose", wash: "bg-cat-rose/15" },
+  sage: { ink: "bg-cat-sage", text: "text-cat-sage-text", textFill: "fill-cat-sage-text", on: "text-cat-sage-on", fill: "fill-cat-sage", stroke: "stroke-cat-sage", dot: "bg-cat-sage", border: "border-cat-sage", wash: "bg-cat-sage/15" },
+  plum: { ink: "bg-cat-plum", text: "text-cat-plum-text", textFill: "fill-cat-plum-text", on: "text-cat-plum-on", fill: "fill-cat-plum", stroke: "stroke-cat-plum", dot: "bg-cat-plum", border: "border-cat-plum", wash: "bg-cat-plum/15" },
 } as const satisfies Record<CategoryColor, Record<string, string>>;
 
 const FALLBACK: CategoryColor = "bottle";

@@ -404,7 +404,7 @@ function OnboardingSamples() {
       ].map((step, i) => (
         <figure key={i} className="flex flex-col gap-3">
           <figcaption className="text-caption text-ink-muted">step {i + 1} of 3</figcaption>
-          <div className="max-w-180 border border-rule px-5 pt-8 pb-10">{step}</div>
+          <div className="flex flex-col border border-rule px-5 pt-8 pb-6 sm:px-8">{step}</div>
         </figure>
       ))}
     </div>

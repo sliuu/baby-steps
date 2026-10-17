@@ -6,7 +6,7 @@ import { toE164 } from "@/lib/phone";
 import { validateDraft } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
 
-export type StepResult = { ok: false; message: string } | undefined;
+export type StepResult = { ok: boolean; message: string } | undefined;
 
 async function signedInClient() {
   const supabase = await createClient();
@@ -70,27 +70,30 @@ export async function addActivities(picks: Pick[]): Promise<StepResult> {
   redirect("/onboarding?step=3");
 }
 
-/** Step 3: store consent (no texts are sent) and finish. */
+/** Step 3: "texts" stores the number and consent (nothing is sent); "done" finishes. */
 export async function finishOnboarding(_: StepResult, form: FormData): Promise<StepResult> {
   const { supabase, userId } = await signedInClient();
   if (!userId) return { ok: false, message: "you're signed out." };
 
-  const texts = form.get("intent") === "texts";
-  let phone: string | null = null;
-  if (texts) {
-    phone = toE164(String(form.get("phone") ?? ""));
+  if (form.get("intent") === "texts") {
+    const phone = toE164(String(form.get("phone") ?? ""));
     if (!phone) return { ok: false, message: "that doesn't look like a us phone number." };
     if (form.get("optIn") !== "on") {
       return { ok: false, message: "tick “text me reminders” to save a number." };
     }
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ user_id: userId, phone, texts_opt_in: true });
+    if (error) {
+      console.error("Phone save failed", { message: error.message, code: error.code });
+      return { ok: false, message: "that didn't save. try again." };
+    }
+    return { ok: true, message: "saved. we'll text you once texting is live." };
   }
 
-  const { error } = await supabase.from("profiles").upsert({
-    user_id: userId,
-    onboarded_at: new Date().toISOString(),
-    // Skip leaves an earlier number alone.
-    ...(texts && { phone, texts_opt_in: true }),
-  });
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ user_id: userId, onboarded_at: new Date().toISOString() });
   if (error) {
     console.error("Profile update failed", { message: error.message, code: error.code });
     return { ok: false, message: "that didn't save. try again." };

@@ -45,11 +45,21 @@ export default async function OnboardingPage(props: Props) {
       header={
         <SheetHeader
           start={<span className={`${LOGO} text-subhead sm:text-heading`}>baby steps</span>}
-          end={<span className="text-caption text-ink-muted">{step} of 3</span>}
+          end={
+            <div className="flex items-center gap-3">
+              <span className="text-caption text-ink-muted">{step} of 3</span>
+              {/* Progress: done and current in accent. */}
+              <span aria-hidden="true" className="flex gap-1">
+                {[1, 2, 3].map((n) => (
+                  <span key={n} className={`h-0.5 w-5 ${n <= step ? "bg-accent-ink" : "bg-rule"}`} />
+                ))}
+              </span>
+            </div>
+          }
         />
       }
     >
-      <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-16`}>
+      <main className={`${PAGE_WIDTH} flex flex-1 flex-col pt-12 pb-10 sm:pt-16 sm:pb-14`}>
         {step === 1 && <PieStep categories={categories} initial={levels} />}
         {step === 2 && <ActivitiesStep categories={categories} />}
         {step === 3 && <TouchStep phone={profile.data?.phone ?? null} />}

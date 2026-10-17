@@ -1,4 +1,3 @@
-import { Plus } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { categoryColor } from "@/lib/palette";
@@ -6,34 +5,29 @@ import { cn } from "@/lib/utils";
 
 type Props = Omit<ComponentProps<"button">, "type"> & {
   variant: "suggestion" | "chosen";
-  /** The dot on a chosen chip. */
+  /** Colours the circle and, once chosen, the outline. */
   colorKey?: string;
 };
 
-/** A toggle pill: a dashed "+ idea", or an ink pill once chosen. */
+/** A toggle pill: dashed with an open circle, or outlined in the category with a filled one. */
 export function Chip({ variant, colorKey, className, children, ...props }: Props) {
   const chosen = variant === "chosen";
+  const color = categoryColor(colorKey ?? "");
   return (
     <button
       type="button"
       aria-pressed={chosen}
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-label transition-colors",
-        chosen
-          ? "border-ink text-ink"
-          : "border-dashed border-rule-input text-ink-muted hover:border-ink hover:text-ink",
+        "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-label text-ink transition-colors",
+        chosen ? color.border : "border-dashed border-rule hover:border-ink",
         className,
       )}
       {...props}
     >
-      {chosen ? (
-        <span
-          aria-hidden="true"
-          className={cn("size-2 rounded-full", categoryColor(colorKey ?? "").dot)}
-        />
-      ) : (
-        <Plus className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
-      )}
+      <span
+        aria-hidden="true"
+        className={cn("size-2.5 rounded-full border", color.border, chosen && color.dot)}
+      />
       {children}
     </button>
   );

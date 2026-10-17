@@ -1,15 +1,18 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import type { Balance, Level } from "@/lib/balance";
-import { BALANCE_VIEW, LEVEL_RADII, itemAngle, ringSector } from "@/lib/balance-geometry";
+import { BALANCE_VIEW, itemAngle, ringSector } from "@/lib/balance-geometry";
+import { polar } from "@/lib/charts";
 import { categoryColor } from "@/lib/palette";
-import { ArcLabels, balanceLabel, type BalanceCategory } from "./shared";
+import { balanceLabel, type BalanceCategory } from "./shared";
 
-const { size } = BALANCE_VIEW;
-const HOLE = 16;
-/** Ring k spans EDGES[k-1]..EDGES[k]. */
-const EDGES = [HOLE, ...LEVEL_RADII];
+const { cx, cy } = BALANCE_VIEW;
+/** Ring k spans EDGES[k-1]..EDGES[k]; evenly spaced, no hole. */
+const EDGES = [0, 35, 70, 104];
+const LABEL_R = 112;
+/** Room for flat, wrapped labels. Phones scale it down, so labels are bigger there. */
+const VIEW_BOX = "-45 0 370 296";
 
 type Props = {
   categories: BalanceCategory[];
@@ -21,9 +24,8 @@ type Props = {
 
 const clamp = (n: number) => Math.max(0, Math.min(3, n)) as Level;
 
-/** Six slices × three rings; ring k is filled when level ≥ k. */
+/** Six slices × three rings; a filled slice reaches out to its level. */
 export function LifePie(props: Props) {
-  const idPrefix = useId();
   const [focused, setFocused] = useState<number | null>(null);
   const n = props.categories.length;
   const half = Math.PI / n;
@@ -31,11 +33,19 @@ export function LifePie(props: Props) {
 
   return (
     <svg
-      viewBox={`0 0 ${size} ${size}`}
+      viewBox={VIEW_BOX}
       role={editable ? "group" : "img"}
       aria-label={editable ? "life pie" : balanceLabel(props.categories, props.levels)}
       className={props.className}
     >
+      {/* Spokes under the fills. */}
+      <g aria-hidden className="pointer-events-none stroke-rule">
+        {props.categories.map((category, i) => {
+          const end = polar(cx, cy, EDGES[3], itemAngle(i, n) - half);
+          return <line key={category.id} x1={cx} y1={cy} x2={end.x} y2={end.y} />;
+        })}
+      </g>
+
       {props.categories.map((category, i) => {
         const level = props.levels[category.id] ?? 0;
         const angle = itemAngle(i, n);
@@ -79,9 +89,7 @@ export function LifePie(props: Props) {
                   d={ringSector(EDGES[ring - 1], EDGES[ring], angle - half, angle + half)}
                   onClick={editable ? () => set(clamp(level === ring ? ring - 1 : ring)) : undefined}
                   className={`transition-colors duration-(--dur-menu-in) ${
-                    filled
-                      ? `${categoryColor(category.colorKey).fill} stroke-paper stroke-2`
-                      : "fill-paper stroke-rule-grid"
+                    filled ? categoryColor(category.colorKey).fill : "fill-transparent"
                   } ${editable ? "cursor-pointer" : ""}`}
                 />
               );
@@ -90,14 +98,47 @@ export function LifePie(props: Props) {
         );
       })}
 
+      {/* Rings over the fills, faint on colour. */}
+      <g aria-hidden className="pointer-events-none fill-none">
+        <circle cx={cx} cy={cy} r={EDGES[1]} className="stroke-rule-grid" />
+        <circle cx={cx} cy={cy} r={EDGES[2]} className="stroke-rule-grid" />
+        <circle cx={cx} cy={cy} r={EDGES[3]} className="stroke-rule" />
+      </g>
+
       {focused !== null && (
         <path
-          d={ringSector(HOLE, LEVEL_RADII[2], itemAngle(focused, n) - half, itemAngle(focused, n) + half)}
+          d={ringSector(0, EDGES[3], itemAngle(focused, n) - half, itemAngle(focused, n) + half)}
           className="pointer-events-none fill-none stroke-accent-ink stroke-2"
         />
       )}
 
-      <ArcLabels categories={props.categories} idPrefix={idPrefix} />
+      <g aria-hidden>
+        {props.categories.map((category, i) => {
+          const angle = itemAngle(i, n);
+          const at = polar(cx, cy, LABEL_R, angle);
+          const side = Math.cos(angle);
+          const down = Math.sin(angle);
+          // "romance & adventure" → two lines.
+          const lines = category.name.split(/(?<=&) /);
+          const lead = down < -0.5 ? -(lines.length - 1) * 1.2 : down > 0.5 ? 0 : -(lines.length - 1) * 0.6;
+          return (
+            <text
+              key={category.id}
+              x={at.x}
+              y={at.y}
+              textAnchor={side > 0.2 ? "start" : side < -0.2 ? "end" : "middle"}
+              dominantBaseline={down < -0.5 ? "auto" : down > 0.5 ? "hanging" : "middle"}
+              className="fill-ink text-ui sm:text-caption"
+            >
+              {lines.map((line, k) => (
+                <tspan key={k} x={at.x} dy={`${k === 0 ? lead : 1.2}em`}>
+                  {line}
+                </tspan>
+              ))}
+            </text>
+          );
+        })}
+      </g>
     </svg>
   );
 }
