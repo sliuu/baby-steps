@@ -1,7 +1,7 @@
 # 03 · Fonts and the type scale
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 9ed8439
 - **Severity:** foundation
 - **Category:** design system
 - **Estimated scope:** `app/layout.tsx`, new `app/fonts.ts`, `app/globals.css`
