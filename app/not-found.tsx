@@ -163,7 +163,7 @@ function DayFace(props: {
 
       <div className="mt-2 flex flex-wrap gap-1">
         {props.stickers.map((sticker) => (
-          <StickerMark key={sticker.name} sticker={sticker} />
+          <StickerMark key={sticker.name} sticker={sticker} size="xs" />
         ))}
       </div>
     </div>

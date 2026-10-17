@@ -180,9 +180,15 @@
   --color-ramp-red: var(--ramp-red);
   --color-ramp-red-soft: var(--ramp-red-soft);
 
-  /* Sticker rim and lift: `border-sticker-edge`, `shadow-sticker`. */
+  /* Legacy rim and lift, still on `StickerBar` (plan 09). */
   --color-sticker-edge: var(--sticker-edge);
   --shadow-sticker: var(--sticker-shadow);
+
+  /* Sticker diameters: `size-sticker-lg` etc. */
+  --size-sticker-lg: 4rem;
+  --size-sticker-md: 2.75rem;
+  --size-sticker-sm: 2.25rem;
+  --size-sticker-xs: 1.25rem;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -616,6 +622,12 @@
   line-height: 1.35;
   font-weight: 400;
   color: var(--ink-muted);
+}
+
+/* Emoji/letter mark: scales with the sticker (an `@container`). */
+@utility sticker-glyph {
+  font-size: 40cqi;
+  line-height: 1;
 }
 
 /* Weekday header over the calendar. */

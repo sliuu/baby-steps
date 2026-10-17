@@ -58,6 +58,13 @@ lightness ≤ 48%, else ink) was applied once by hand when choosing the six
 colours. If a seventh colour is ever added, decide its `on` the same way and
 write it in the token table.
 
+> **Amended (as built):**
+> - The API keeps `sticker: StickerFace` (name, mark, colour) and adds `size`. Callers already pass that object, and the mark string already says icon or emoji.
+> - Sizes are `--size-sticker-*` in the `@theme` bridge (Tailwind's `size-*` namespace), not `:root` vars. The default is `sm`.
+> - The icon is `size-1/2`; the emoji is 40% of the sticker via container units (`sticker-glyph`), so off-scale login stickers scale too.
+> - `MARK_ICON_SIZE` stays for `StickerBar`, `StickerFields` and `MarkPicker` (plan 09/15). `StickerFace` stays (used across drag and changes).
+> - Where each size is used: xs = month and week-column cells and the 404 page; md = day sheet; sm = tray, drag overlay, phone week list, "most marked" and Trends habits. lg waits for plan 08's Today.
+
 ## Verify
 
 - Add a `StickerMark` section to `/dev/system` (plan 14) showing all six × four

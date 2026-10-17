@@ -121,7 +121,7 @@ export function DraggableMark(props: Props) {
       {bar ? (
         <StickerBar sticker={props.sticker} />
       ) : (
-        <StickerMark sticker={props.sticker} />
+        <StickerMark sticker={props.sticker} size="xs" />
       )}
     </button>
   );

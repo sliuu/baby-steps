@@ -140,7 +140,13 @@ function RowBody(props: { face: StickerFace; shape: RowShape }) {
     <StickerBar sticker={props.face} />
   ) : (
     <TrayRowFace
-      visual={<StickerMark sticker={props.face} />}
+      visual={
+        // Lifts 1px on hover; archived rows have no `group/row`, so they don't.
+        <StickerMark
+          sticker={props.face}
+          className="transition-transform duration-(--dur-menu-in) ease-(--ease-enter) group-hover/row:-translate-y-px"
+        />
+      }
       name={props.face.name}
     />
   );

@@ -115,7 +115,7 @@ function Rows(props: { rows: HabitRow[]; today: DayString; ruled?: boolean }) {
             {/* The name is printed beside it, so the sticker's own sr-only
                 name would be said twice. */}
             <span aria-hidden="true" className="flex">
-              <StickerMark sticker={row} className="size-[30px]" />
+              <StickerMark sticker={row} />
             </span>
 
             {/* Shrinks and wraps: "Shopping / Clothes" at 320px is two lines

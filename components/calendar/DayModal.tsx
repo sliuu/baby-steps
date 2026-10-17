@@ -187,7 +187,7 @@ export function DayModal(props: Props) {
                             className="flex min-w-0 flex-1 items-center gap-2.5"
                           >
                             <TrayRowFace
-                              visual={<StickerMark sticker={sticker} />}
+                              visual={<StickerMark sticker={sticker} size="md" />}
                               name={sticker.name}
                             />
                           </label>
