@@ -130,7 +130,7 @@ export function MonthDots(props: Props) {
             where a letter is reassembled into one. Three characters of Space
             Mono at 0.65rem is about 19px in a 45px column, so the width that
             would have forced the cut isn't actually short. */}
-        <div className={`grid grid-cols-7 gap-[3px] ${RULE} pt-2`}>
+        <div className={`grid grid-cols-7 gap-0.75 ${RULE} pt-2`}>
           {labels.map((label) => (
             <div key={label} className="daylabel pb-1 text-center">
               {label}
@@ -168,7 +168,7 @@ export function MonthDots(props: Props) {
                 <time
                   aria-hidden="true"
                   dateTime={cell.day}
-                  className={`oldstyle text-[0.95rem] leading-none ${
+                  className={`oldstyle text-ui leading-none ${
                     cell.isToday ? "font-medium" : ""
                   }`}
                 >
@@ -181,12 +181,12 @@ export function MonthDots(props: Props) {
                     marked ones is a grid you read cell by cell. */}
                 <span
                   aria-hidden="true"
-                  className="flex h-[5px] max-w-[2.125rem] flex-wrap items-center justify-center gap-[2px]"
+                  className="flex h-1.25 max-w-8.5 flex-wrap items-center justify-center gap-0.5"
                 >
                   {stickers.activities.slice(0, DOT_CAP).map((sticker) => (
                     <span
                       key={sticker.id}
-                      className={`size-[5px] rounded-full ${categoryColor(sticker.colorKey).bg} ${faded(
+                      className={`size-1.25 rounded-full ${categoryColor(sticker.colorKey).dot} ${faded(
                         highlight?.activityIds.has(sticker.activityId) ?? false,
                       )}`}
                     />
@@ -218,7 +218,7 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
   return (
     <div className={`${RULE} flex flex-col gap-4 pt-4`}>
       <div className="flex flex-col gap-2">
-        <h2 className="eyebrow text-ink-label">This month so far</h2>
+        <h2 className="eyebrow text-ink-muted">This month so far</h2>
 
         <div className="flex items-end gap-6">
           <Figure value={summary.daysMarked} label="days marked" />
@@ -229,19 +229,19 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
 
       {summary.leaders.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2 className="eyebrow text-ink-label">Most marked</h2>
+          <h2 className="eyebrow text-ink-muted">Most marked</h2>
 
           <ul className="flex flex-col">
             {summary.leaders.map((leader, index) => (
               <li
                 key={leader.activityId}
                 className={`flex items-center gap-3 py-2 ${
-                  index > 0 ? "border-t border-hairline" : ""
+                  index > 0 ? "border-t border-rule-grid" : ""
                 }`}
               >
                 <StickerMark sticker={leader} />
 
-                <span className="min-w-0 flex-1 truncate text-[0.95rem]">
+                <span className="min-w-0 flex-1 truncate text-ui">
                   {leader.name}
                 </span>
 
@@ -249,10 +249,10 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
                     so they are not the same size or the same colour. The
                     cadence is the softer of the two on purpose: it is an
                     approximation and it should look like one. */}
-                <span className="tabular shrink-0 text-[0.83rem] text-ink-muted">
+                <span className="tabular shrink-0 text-label text-ink-muted">
                   {leader.count}×
                 </span>
-                <span className="shrink-0 text-[0.83rem] text-ink-muted">
+                <span className="shrink-0 text-label text-ink-muted">
                   {leader.cadence}
                 </span>
               </li>
@@ -261,7 +261,7 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
         </div>
       )}
 
-      <p className="text-[0.83rem] text-ink-muted">
+      <p className="text-label text-ink-muted">
         {summary.daysMarked === 0
           ? "Nothing on the month yet. Tap a day to put something on it."
           : `${summary.daysMarked} of ${summary.elapsed} days so far. Tap a day to add to it.`}
@@ -274,10 +274,10 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
 function Figure(props: { value: number; label: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="oldstyle font-heading text-[1.75rem] leading-none">
+      <span className="oldstyle font-heading text-subhead leading-none">
         {props.value}
       </span>
-      <span className="text-[0.78rem] text-ink-muted">{props.label}</span>
+      <span className="text-caption text-ink-muted">{props.label}</span>
     </div>
   );
 }

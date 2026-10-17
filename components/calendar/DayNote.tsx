@@ -31,7 +31,7 @@ const COUNTER_FROM = NOTE_MAX - 40;
  * three views draw it (the week column, the day sheet and Today), and the
  * thing they share is this file.
  */
-const NOTE_TYPE = "note w-full text-[0.78rem] leading-[1.15rem]";
+const NOTE_TYPE = "note w-full text-caption leading-4.5";
 const PAGE_TYPE = "w-full font-display text-body-lg font-light";
 
 /**
@@ -112,14 +112,14 @@ export function DayNote(props: Props) {
     // `shrink-0` so the note is never the thing that gives. The column it sits
     // in is stretched to the tallest day of the week, and without this a short
     // day's note would be the part that absorbed the difference.
-    <div className={page ? "" : "mt-2 shrink-0 border-t border-hairline pt-1.5"}>
+    <div className={page ? "" : "mt-2 shrink-0 border-t border-rule-grid pt-1.5"}>
       <label className="sr-only" htmlFor={`note-${props.day}`}>
         Notes for {formatDayLong(props.day)}
       </label>
 
       {/* `min-h` is the old `rows={2}`: two lines of floor, so an empty day
           still looks like somewhere to write rather than a single slot. */}
-      <div className={page ? "grid border-b border-dashed border-rule-input pb-1" : "grid min-h-[2.3rem]"}>
+      <div className={page ? "grid border-b border-dashed border-rule-input pb-1" : "grid min-h-9"}>
         {/* The twin. `aria-hidden` and not focusable — it is a measurement, and
             a screen reader hitting the same sentence twice is a bug. */}
         <span
@@ -162,7 +162,7 @@ export function DayNote(props: Props) {
           {draft.length}/{NOTE_MAX}
         </p>
       ) : draft.length >= COUNTER_FROM && (
-        <p className="tabular text-right text-[0.69rem] leading-none text-ink-muted">
+        <p className="tabular text-right text-caption leading-none text-ink-muted">
           {left}
         </p>
       )}

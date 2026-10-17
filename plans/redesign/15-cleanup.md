@@ -40,6 +40,15 @@ grep -rnE "\[(#|[0-9]+px)" components app --include=*.tsx
 Each hit is either moved to a token or left with a one-line comment saying why
 it must be literal (for example, SVG exports).
 
+> **Amended (as built):**
+> - **Kept `MoodMark`**: the calendar drag overlay and the trends mood bars use it, it's on tokens, and `MoodDot` doesn't cover those shapes.
+> - **Kept `StickerFace`**: still widely used.
+> - **`MonthDots` / `WeekList` are live** (the phone month/week view), so they were migrated to the new tokens, not deleted.
+> - **`wash()` kept** as an ink-based highlight (`bg-cat-<key>/15`) in place of the old pastel `soft/35`; it looks about the same.
+> - **New `components/ui/NoticePage.tsx`**: the 404, error and sign-in error pages share it.
+> - Token audit: arbitrary sizes moved onto the scale or the spacing grid. Left literal, on purpose: `app/apple-icon.tsx` and `app/icon.svg` (images can't read CSS vars), `lib/categoryValues.ts` (SVG export, mirrors globals), two commented optical nudges, and stock shadcn files under `components/ui/`.
+> - The sticker form's mark preview had been left on the old pastel `tint`; it now shows the solid ink with the `on` icon colour, like the real sticker.
+
 ## Verify
 
 - Build, lint, test. Every screen at 1440 and 390 once more, including

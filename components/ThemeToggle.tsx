@@ -41,9 +41,9 @@ export function ThemeToggle() {
           than flash the wrong icon. */}
       {ready ? (
         theme === "dark" ? (
-          <Sun className="size-[18px]" strokeWidth={1.5} />
+          <Sun className="size-4.5" strokeWidth={1.5} />
         ) : (
-          <Moon className="size-[18px]" strokeWidth={1.5} />
+          <Moon className="size-4.5" strokeWidth={1.5} />
         )
       ) : null}
     </button>

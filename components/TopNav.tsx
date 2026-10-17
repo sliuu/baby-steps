@@ -12,7 +12,7 @@ type Props = {
 
 /** Active: ink with a 1px underline. Inactive: muted. */
 export function navLinkClass(active: boolean) {
-  return `text-ui underline-offset-[6px] decoration-1 transition-colors ${
+  return `text-ui underline-offset-6 decoration-1 transition-colors ${
     active ? "text-ink underline" : "text-ink-muted hover:text-ink"
   }`;
 }

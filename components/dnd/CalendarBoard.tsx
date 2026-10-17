@@ -588,7 +588,7 @@ export function CalendarBoard(props: Props) {
   );
 
   const errorLine = error && (
-    <p className="mt-6 rounded-md bg-ramp-red-soft px-3 py-2 text-label">{error}</p>
+    <p className="mt-6 rounded-md bg-accent-ink/10 text-accent-ink px-3 py-2 text-label">{error}</p>
   );
 
   return (
@@ -651,7 +651,7 @@ export function CalendarBoard(props: Props) {
         className="pointer-events-none fixed inset-x-0 top-0 z-60 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] lg:hidden"
       >
         {error && (
-          <p className="mx-auto max-w-[34rem] rounded-md bg-ramp-red-soft px-3 py-2 text-label shadow-[0_4px_16px_rgb(70_50_20/0.18)]">
+          <p className="mx-auto max-w-136 rounded-md bg-accent-ink/10 text-accent-ink px-3 py-2 text-label shadow-menu">
             {error}
           </p>
         )}
@@ -670,7 +670,7 @@ export function CalendarBoard(props: Props) {
             className={`rounded-full transition-opacity ${
               target
                 ? "opacity-100 drop-shadow-md"
-                : `opacity-50 ${leaving ? "ring-2 ring-ramp-red" : ""}`
+                : `opacity-50 ${leaving ? "ring-2 ring-accent-ink" : ""}`
             }`}
           >
             {dragging.kind === "mood" ? (

@@ -41,8 +41,8 @@ export function DaySheet(props: Props) {
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-[34rem] flex-col gap-3",
-            "rounded-t-2xl border-t border-rule bg-paper px-[1.125rem] pt-2.5 pb-[calc(1.375rem+env(safe-area-inset-bottom))]",
+            "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-136 flex-col gap-3",
+            "rounded-t-2xl border-t border-rule bg-paper px-4.5 pt-2.5 pb-[calc(1.375rem+env(safe-area-inset-bottom))]",
             "shadow-[0_-10px_30px_rgb(70_50_20/0.14)] outline-none",
             "data-open:animate-sheet-in data-closed:animate-sheet-out",
           )}
@@ -62,7 +62,7 @@ export function DaySheet(props: Props) {
             {props.error}
           </div>
 
-          <div className="-mx-[1.125rem] min-h-0 flex-1 overflow-y-auto px-[1.125rem] pt-1 pb-1">
+          <div className="-mx-4.5 min-h-0 flex-1 overflow-y-auto px-4.5 pt-1 pb-1">
             {day !== null && (
               <DayPanel
                 day={day}

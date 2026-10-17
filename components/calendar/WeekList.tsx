@@ -109,7 +109,7 @@ export function WeekList(props: Props) {
                 // stickers wraps to a second line of circles and the row grows
                 // to hold them.
                 className={`flex min-h-14 w-full items-center gap-3 px-1 py-2.5 text-left transition-colors ${
-                  index > 0 ? "border-t border-hairline" : ""
+                  index > 0 ? "border-t border-rule-grid" : ""
                 } ${
                   day.isToday
                     ? "bg-secondary"
@@ -137,8 +137,8 @@ export function WeekList(props: Props) {
                       app uses. */}
                   <time
                     dateTime={day.day}
-                    className={`oldstyle grid size-7 place-items-center border-b-2 text-[0.95rem] ${
-                      day.isToday ? "border-today-mark font-medium" : "border-transparent"
+                    className={`oldstyle grid size-7 place-items-center border-b-2 text-ui ${
+                      day.isToday ? "border-accent-ink font-medium" : "border-transparent"
                     }`}
                   >
                     {day.dayOfMonth}
@@ -171,7 +171,7 @@ export function WeekList(props: Props) {
         })}
       </ul>
 
-      <p className="mt-3 text-[0.83rem] text-ink-muted">
+      <p className="mt-3 text-label text-ink-muted">
         {total === 0
           ? "A quiet week so far. Tap a day to put something on it."
           : `${total} sticker${total === 1 ? "" : "s"} this week. Tap a day to add one.`}

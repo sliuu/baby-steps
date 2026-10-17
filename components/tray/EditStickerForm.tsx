@@ -87,7 +87,7 @@ export function EditStickerForm(props: Props) {
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-dialog-title">edit sticker</DialogTitle>
+          <DialogTitle className="text-body-lg">edit sticker</DialogTitle>
           <DialogDescription>
             change its mark, its name, or where it belongs.
           </DialogDescription>
@@ -106,7 +106,7 @@ export function EditStickerForm(props: Props) {
         {problem && (
           <p
             role="status"
-            className="rounded-md bg-ramp-red-soft px-2.5 py-2 text-label"
+            className="rounded-md bg-accent-ink/10 text-accent-ink px-2.5 py-2 text-label"
           >
             {problem}
           </p>

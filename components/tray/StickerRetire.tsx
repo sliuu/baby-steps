@@ -136,7 +136,7 @@ export function DeleteWarning(props: { name: string; markCount: number }) {
   const { markCount: count } = props;
 
   return (
-    <p className="rounded-md bg-ramp-red-soft px-2.5 py-2 text-[0.83rem]">
+    <p className="rounded-md bg-accent-ink/10 text-accent-ink px-2.5 py-2 text-label">
       Deleting <span className="font-medium">{props.name}</span>
       {count === 0 ? (
         <> can’t be undone.</>

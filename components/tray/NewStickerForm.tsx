@@ -49,7 +49,7 @@ export function NewStickerForm(props: Props) {
       {/* No description on purpose; the category is the first field. */}
       <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle className="text-dialog-title">new sticker</DialogTitle>
+          <DialogTitle className="text-body-lg">new sticker</DialogTitle>
         </DialogHeader>
 
         <StickerFields

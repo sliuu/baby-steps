@@ -27,6 +27,6 @@ describe("categoryColor", () => {
 describe("wash", () => {
   it("is neutral with no colour", () => {
     assert.equal(wash(null), "bg-secondary");
-    assert.equal(wash("rose"), "bg-cat-rose-soft/35");
+    assert.equal(wash("rose"), "bg-cat-rose/15");
   });
 });

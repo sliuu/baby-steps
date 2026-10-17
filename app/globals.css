@@ -29,8 +29,6 @@
   --font-display: var(--font-display-face), Georgia, serif;
   --font-sans: var(--font-text-face), system-ui, sans-serif;
   --font-heading: var(--font-display-face), Georgia, serif;
-  /* Spectral retired; notes use the display face. Plan 15 removes this. */
-  --font-note: var(--font-display-face), Georgia, serif;
 
   /* Type scale. Text 400, display 300, unless set here. */
   --text-display-xl: 4rem;
@@ -59,22 +57,6 @@
   --text-caption--line-height: 1.3;
   --text-caption--letter-spacing: 0.02em;
   --text-caption--font-weight: 400;
-
-  /* Old role names, mapped onto the scale. */
-  --text-display-lg: 4rem;
-  --text-display-lg--line-height: 1.05;
-  --text-display-lg--letter-spacing: -0.01em;
-  --text-page-title: 2.875rem;
-  --text-page-title--line-height: 1.1;
-  --text-page-title--letter-spacing: -0.01em;
-  --text-section-title: 2.25rem;
-  --text-section-title--line-height: 1.15;
-  --text-section-title--letter-spacing: -0.01em;
-  --text-panel-title: 1.625rem;
-  --text-panel-title--line-height: 1.2;
-  --text-panel-title--font-weight: 400;
-  --text-dialog-title: 1.25rem;
-  --text-dialog-title--line-height: 1.4;
 
   /* Tailwind's small rungs → caption / label / ui; lg+ unchanged. */
   --text-xs: 0.75rem;
@@ -131,37 +113,25 @@
   --shadow-sheet: var(--sheet-shadow);
   --shadow-menu: var(--menu-shadow);
 
-  /* Category inks. `-soft` / `-tint` are legacy pastels until plan 05. */
+  /* Category inks. */
   --color-cat-oxblood: var(--cat-oxblood);
   --color-cat-oxblood-text: var(--cat-oxblood-text);
   --color-cat-oxblood-on: var(--cat-oxblood-on);
-  --color-cat-oxblood-soft: var(--cat-oxblood-soft);
-  --color-cat-oxblood-tint: var(--cat-oxblood-tint);
   --color-cat-bottle: var(--cat-bottle);
   --color-cat-bottle-text: var(--cat-bottle-text);
   --color-cat-bottle-on: var(--cat-bottle-on);
-  --color-cat-bottle-soft: var(--cat-bottle-soft);
-  --color-cat-bottle-tint: var(--cat-bottle-tint);
   --color-cat-mustard: var(--cat-mustard);
   --color-cat-mustard-text: var(--cat-mustard-text);
   --color-cat-mustard-on: var(--cat-mustard-on);
-  --color-cat-mustard-soft: var(--cat-mustard-soft);
-  --color-cat-mustard-tint: var(--cat-mustard-tint);
   --color-cat-rose: var(--cat-rose);
   --color-cat-rose-text: var(--cat-rose-text);
   --color-cat-rose-on: var(--cat-rose-on);
-  --color-cat-rose-soft: var(--cat-rose-soft);
-  --color-cat-rose-tint: var(--cat-rose-tint);
   --color-cat-sage: var(--cat-sage);
   --color-cat-sage-text: var(--cat-sage-text);
   --color-cat-sage-on: var(--cat-sage-on);
-  --color-cat-sage-soft: var(--cat-sage-soft);
-  --color-cat-sage-tint: var(--cat-sage-tint);
   --color-cat-plum: var(--cat-plum);
   --color-cat-plum-text: var(--cat-plum-text);
   --color-cat-plum-on: var(--cat-plum-on);
-  --color-cat-plum-soft: var(--cat-plum-soft);
-  --color-cat-plum-tint: var(--cat-plum-tint);
 
   /* Moods, sad → happy. */
   --color-mood-rough: var(--mood-rough);
@@ -169,17 +139,6 @@
   --color-mood-okay: var(--mood-okay);
   --color-mood-good: var(--mood-good);
   --color-mood-great: var(--mood-great);
-
-  /* Legacy names (plan 15 removes). */
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-sunken: var(--surface-sunken);
-  --color-ink-label: var(--ink-label);
-  --color-hairline: var(--hairline);
-  --color-today-mark: var(--today-mark);
-  --color-ramp-red: var(--ramp-red);
-  --color-ramp-red-soft: var(--ramp-red-soft);
-
 
   /* Sticker diameters: `size-sticker-lg` etc. */
   --size-sticker-lg: 4rem;
@@ -350,50 +309,9 @@
   --sheet-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
   --menu-shadow: 0 6px 24px color-mix(in srgb, var(--ink) 12%, transparent);
 
-  /* ── legacy aliases: old names on new values; removed by plans 05–15 ── */
-  --bg: var(--paper);
-  --surface: var(--paper);
-  --surface-sunken: var(--raised);
-  --ink-label: var(--ink-muted);
-  --hairline: var(--rule-grid);
-  --today-mark: var(--accent-ink);
+  /* ── scrollbar ── */
   --scroll-thumb: color-mix(in srgb, var(--ink) 22%, transparent);
   --scroll-thumb-hover: color-mix(in srgb, var(--ink) 38%, transparent);
-
-  /* Pastel rungs of the new inks, for the old sticker shape until plan 05. */
-  --sticker-fill: 45%;
-  --cat-oxblood-soft: color-mix(in srgb, var(--cat-oxblood) 48%, var(--paper));
-  --cat-bottle-soft: color-mix(in srgb, var(--cat-bottle) 48%, var(--paper));
-  --cat-mustard-soft: color-mix(in srgb, var(--cat-mustard) 48%, var(--paper));
-  --cat-rose-soft: color-mix(in srgb, var(--cat-rose) 48%, var(--paper));
-  --cat-sage-soft: color-mix(in srgb, var(--cat-sage) 48%, var(--paper));
-  --cat-plum-soft: color-mix(in srgb, var(--cat-plum) 48%, var(--paper));
-  --cat-oxblood-tint: color-mix(in srgb, var(--cat-oxblood) var(--sticker-fill), var(--paper));
-  --cat-bottle-tint: color-mix(in srgb, var(--cat-bottle) var(--sticker-fill), var(--paper));
-  --cat-mustard-tint: color-mix(in srgb, var(--cat-mustard) var(--sticker-fill), var(--paper));
-  --cat-rose-tint: color-mix(in srgb, var(--cat-rose) var(--sticker-fill), var(--paper));
-  --cat-sage-tint: color-mix(in srgb, var(--cat-sage) var(--sticker-fill), var(--paper));
-  --cat-plum-tint: color-mix(in srgb, var(--cat-plum) var(--sticker-fill), var(--paper));
-
-  /* Old hue names, for the error banners and `.dark`. */
-  --ramp-red: var(--cat-oxblood);
-  --ramp-blue: var(--cat-bottle);
-  --ramp-orange: var(--cat-mustard);
-  --ramp-yellow: var(--cat-rose);
-  --ramp-green: var(--cat-sage);
-  --ramp-purple: var(--cat-plum);
-  --ramp-red-soft: var(--cat-oxblood-soft);
-  --ramp-blue-soft: var(--cat-bottle-soft);
-  --ramp-orange-soft: var(--cat-mustard-soft);
-  --ramp-yellow-soft: var(--cat-rose-soft);
-  --ramp-green-soft: var(--cat-sage-soft);
-  --ramp-purple-soft: var(--cat-plum-soft);
-  --ramp-red-tint: var(--cat-oxblood-tint);
-  --ramp-blue-tint: var(--cat-bottle-tint);
-  --ramp-orange-tint: var(--cat-mustard-tint);
-  --ramp-yellow-tint: var(--cat-rose-tint);
-  --ramp-green-tint: var(--cat-sage-tint);
-  --ramp-purple-tint: var(--cat-plum-tint);
 
   /* shadcn's names, pointed at ours. */
   --background: var(--paper);
@@ -458,6 +376,7 @@
    ~12% so they hold their contrast against a dark ground. **Proposed values:
    see the note at the top of the block.**
 --------------------------------------------------------------------------- */
+/* Old newsprint dark theme; not applied. Replace when a dark stationery theme is designed. */
 .dark {
   color-scheme: dark;
 
@@ -595,7 +514,7 @@
 
 /* Somebody writing (notes, mood words, cadence). Size and colour stay per call site. */
 @utility note {
-  font-family: var(--font-note);
+  font-family: var(--font-display);
   font-weight: 300;
 }
 

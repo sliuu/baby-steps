@@ -177,7 +177,7 @@ export function MarkPicker(props: Props) {
           with the popover's own padding either side. The width is derived from
           the grid rather than chosen and then filled, so the panel has no slack
           in it to explain. */}
-      <PopoverContent align="start" className="w-[19rem]">
+      <PopoverContent align="start" className="w-76">
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -265,7 +265,7 @@ function Pager(props: {
 
   if (props.entries.length === 0) {
     return (
-      <p className="grid h-[11.125rem] place-items-center px-4 text-center text-[0.83rem] text-ink-muted">
+      <p className="grid h-44.5 place-items-center px-4 text-center text-label text-ink-muted">
         {props.empty}
       </p>
     );
@@ -281,7 +281,7 @@ function Pager(props: {
       <div
         role="group"
         aria-label={props.label}
-        className="grid h-[11.125rem] grid-cols-9 grid-rows-6 gap-0.5"
+        className="grid h-44.5 grid-cols-9 grid-rows-6 gap-0.5"
       >
         {slice.map(([mark, name]) => {
           // The one cell that turns a stored string into a picture, and it asks
@@ -330,7 +330,7 @@ function Pager(props: {
         {/* The count first, then the position. This line is the whole reason
             the scrolling version failed: "36 · 1 / 1" says how much there is
             and where you are, which is what a hidden scrollbar never did. */}
-        <span className="tabular text-[0.735rem] text-ink-muted">
+        <span className="tabular text-caption text-ink-muted">
           {props.entries.length.toLocaleString()} · {current + 1} / {pages}
         </span>
 

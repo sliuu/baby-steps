@@ -96,7 +96,7 @@ export function StickerFields(props: Props) {
   const markIcon = iconFor(mark);
 
   const category = categories.find((candidate) => candidate.id === categoryId);
-  const { tint } = categoryColor(category?.colorKey ?? "");
+  const color = categoryColor(category?.colorKey ?? "");
   const suggestions = props.suggest ? (category?.suggestions ?? []) : [];
 
   const moving =
@@ -130,7 +130,7 @@ export function StickerFields(props: Props) {
               <SelectItem key={option.id} value={option.id}>
                 <span
                   aria-hidden="true"
-                  className={`size-2.5 rounded-full ${categoryColor(option.colorKey).soft}`}
+                  className={`size-2.5 rounded-full ${categoryColor(option.colorKey).dot}`}
                 />
                 {option.name}
               </SelectItem>
@@ -174,14 +174,14 @@ export function StickerFields(props: Props) {
       <div className="flex items-end gap-4">
         {/* The mark field is the preview: the sticker's own fill around the input. */}
         <div
-          className={`relative size-11 shrink-0 rounded-full border border-transparent ${tint}`}
+          className={`relative size-11 shrink-0 rounded-full border border-transparent ${color.ink} ${color.on}`}
         >
           {markIcon && (
             <>
               {/* 1.35rem keeps the icon at StickerMark's proportion of its circle. */}
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 grid place-items-center text-[1.35rem] text-ink"
+                className="pointer-events-none absolute inset-0 grid place-items-center text-[1.35rem]"
               >
                 <markIcon.Icon className={MARK_ICON_SIZE} strokeWidth={MARK_STROKE} />
               </span>
@@ -196,7 +196,7 @@ export function StickerFields(props: Props) {
             autoComplete="off"
             aria-label={markIcon ? `mark: ${markIcon.label}` : "mark"}
             placeholder={markIcon ? "" : "G"}
-            className="font-emoji size-full rounded-full border-0 bg-transparent px-0 text-center text-base dark:bg-transparent"
+            className="font-emoji size-full rounded-full border-0 bg-transparent px-0 text-center text-base text-inherit dark:bg-transparent"
             {...fieldProps("mark")}
           />
           <MarkPicker onPick={setMark} className="absolute -right-1 -bottom-1 rounded-full" />
@@ -223,7 +223,7 @@ export function StickerFields(props: Props) {
       {/* Always rendered so the live region announces. */}
       <div role="status" aria-live="polite" className="empty:hidden">
         {problem && (
-          <p id={errorId} className="rounded-md bg-ramp-red-soft px-2 py-1.5 text-label">
+          <p id={errorId} className="rounded-md bg-accent-ink/10 text-accent-ink px-2 py-1.5 text-label">
             {problem.message}
           </p>
         )}

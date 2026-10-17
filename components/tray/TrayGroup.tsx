@@ -28,7 +28,7 @@ export function TrayGroup(props: Props) {
       <div
         className={cn(
           "group/row -mx-2 flex h-7 items-center gap-2 rounded-md px-2",
-          props.selected && categoryColor(props.colorKey).lit,
+          props.selected && categoryColor(props.colorKey).wash,
         )}
       >
         <h3
@@ -99,7 +99,7 @@ export function TrayTile(props: TileProps) {
       className={cn(
         TILE,
         "group/tile rounded-md pb-1",
-        props.selected && categoryColor(props.face.colorKey).lit,
+        props.selected && categoryColor(props.face.colorKey).wash,
       )}
     >
       <DraggableSticker
