@@ -1,12 +1,10 @@
 // Relative imports with extensions, for `node --test` (see lib/analytics.ts).
 import type { DayString } from "@/lib/dates";
 import { addDays, daysBetween, weekday } from "./daymath.ts";
+import { DEFAULT_SETTINGS, type PetalRule, type WeekStart } from "./settings.ts";
 
 export type Level = 0 | 1 | 2 | 3;
 export type Balance = Record<string /* category id */, Level>;
-
-/** Weeks counted, the current one included. */
-export const BALANCE_WEEKS = 3;
 
 /** Local yyyy-mm-dd. */
 function localDay(date: Date): DayString {
@@ -15,32 +13,36 @@ function localDay(date: Date): DayString {
   return `${date.getFullYear()}-${m}-${d}`;
 }
 
-function weekStart(day: DayString, weekStartsOn: 0 | 1): DayString {
+function weekStart(day: DayString, weekStartsOn: WeekStart): DayString {
   return addDays(day, -((weekday(day) - weekStartsOn + 7) % 7));
 }
 
-/** Level = how many of the last 3 calendar weeks have a sticker in that category. */
+/** Level from sticker counts over the last `rule.weeks` calendar weeks (current included). */
 export function balanceLevels(input: {
   categories: { id: string }[];
   days: { day: string; categoryIds: string[] }[];
   today: Date;
-  /** 0 = Sunday, like the calendar. */
-  weekStartsOn?: 0 | 1;
+  weekStartsOn?: WeekStart;
+  rule?: PetalRule;
 }): Balance {
   const startsOn = input.weekStartsOn ?? 0;
+  const rule = input.rule ?? DEFAULT_SETTINGS.petals;
   const thisWeek = weekStart(localDay(input.today), startsOn);
-  const weeks = new Map<string, Set<number>>(
-    input.categories.map((category) => [category.id, new Set()]),
-  );
+  const counts = new Map<string, number>(input.categories.map((category) => [category.id, 0]));
 
   for (const { day, categoryIds } of input.days) {
     const back = daysBetween(weekStart(day, startsOn), thisWeek) / 7;
-    if (back < 0 || back >= BALANCE_WEEKS) continue;
-    for (const id of categoryIds) weeks.get(id)?.add(back);
+    if (back < 0 || back >= rule.weeks) continue;
+    for (const id of categoryIds) {
+      const n = counts.get(id);
+      if (n !== undefined) counts.set(id, n + 1);
+    }
   }
 
   const balance: Balance = {};
-  for (const [id, seen] of weeks) balance[id] = seen.size as Level;
+  for (const [id, n] of counts) {
+    balance[id] = n >= rule.large ? 3 : n >= rule.medium ? 2 : n >= rule.small ? 1 : 0;
+  }
   return balance;
 }
 
@@ -51,7 +53,7 @@ export function balanceSpread(b: Balance): number {
   return Math.max(...levels) - Math.min(...levels);
 }
 
-/** Onboarding line under the pie. Ties go to the first category; names lowercase. Copy is Stephanie's. */
+/** Onboarding line under the pie; ties go to the first category. Copy is Stephanie's. */
 export function verdict(levels: Balance, categories: { id: string; name: string }[]): string {
   const level = (c: { id: string }) => levels[c.id] ?? 0;
   const all = Object.fromEntries(categories.map((c) => [c.id, level(c)]));

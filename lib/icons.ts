@@ -436,168 +436,38 @@ import {
   Tennis,
 } from "./icons-custom.ts";
 
-/**
- * The one place a sticker's picture is decided.
- *
- * A mark used to be exactly one grapheme — a letter or an emoji — and the
- * picture came from whichever font the reader happened to have. That is a lot
- * of drawing to hand to a font vendor: an emoji arrives with its own palette,
- * its own stroke weight and its own idea of how much of the em to fill, and it
- * looks different on macOS, Android and Windows. Thirty of them on the signed
- * out page read as thirty unrelated pictures rather than one set.
- *
- * So a mark now names an icon, and this file is the map from that name to the
- * component that draws it. One weight, one size rule, one colour, and the same
- * four hundred and thirty-two everywhere: the calendar, the tray, the day
- * modal, the picker and the login background all resolve through `iconFor`
- * rather than carrying a glyph of their own.
- *
- * **The emoji tabs are gone.** The picker offered all 1,914 of Unicode's emoji
- * behind this set for one release, as the escape hatch for a habit the set had
- * no picture for. The set is now large enough that the hatch was costing more
- * than it opened: an emoji chosen from it looked like nothing else in the app,
- * and a picker whose second tab is a wall of faces teaches that the first tab
- * is the short list rather than the whole vocabulary. Growing this file from
- * fifty-four to two hundred and sixteen is what made that trade payable, and
- * four hundred and thirty-two is what makes it comfortable.
- *
- * A mark can still be a single grapheme — see `validateDraft` in
- * `lib/stickers.ts` — and `StickerMark` still draws one. That path is now for
- * two things only: a typed letter, which is a legitimate mark and always was,
- * and the emoji already sitting in somebody's database, which keep working
- * exactly as they did. Nothing was migrated and nothing was lost; there is
- * simply no longer a way to pick a *new* emoji.
- *
- * Lucide rather than a second family, because `lucide-react` was already a
- * dependency and already draws every icon in the app's chrome. Two icon
- * families in one interface is the thing this file exists to prevent.
- *
- * Eight of the four hundred and thirty-two are not Lucide's. Lucide ships no
- * tennis racket, no basketball, no golf, ski, surf, rowing, climbing or yoga
- * pose, and those are habits people actually keep — so they are drawn by hand
- * in `lib/icons-custom.ts`, on Lucide's grid, with Lucide's own factory. They
- * are not an exception to the rule above; they are what keeps it true, because
- * the alternative was installing a second family for eight glyphs.
- */
+/** Mark id → Lucide component; one set everywhere. Eight custom glyphs live in `lib/icons-custom.ts`. */
 
-/**
- * What a stored mark looks like when it names an icon: `icon:dumbbell`.
- *
- * The prefix is doing real work, not namespacing for its own sake. Without it,
- * "run" typed into the mark field would silently become a picture of footprints
- * — the field takes free text and always has. With it, an icon mark is
- * unmistakable in a psql dump, in a CSV export and in the one line of
- * `StickerMark` that has to decide which of the two things it is holding.
- */
+/** Prefix keeps typed text like "run" from becoming an icon. */
 export const ICON_PREFIX = "icon:";
 
-/**
- * The stroke weight, and it is not a taste knob.
- *
- * Lucide draws into a 24-unit box and scales the stroke with it, so a weight of
- * 1.5 at a 16px icon is exactly 1 CSS pixel — one device pixel at 1x, two at
- * 2x, crisp on both. 1.75 was tried first, on the theory that a small icon
- * wants a heavier line; it lands at 1.17px, which no display can draw and both
- * resolve by blurring. It is also the weight the rest of the chrome already
- * uses, which is the other half of "one set".
- */
+/** 1.5 at 16px = exactly 1 CSS px; 1.75 blurred. */
 export const MARK_STROKE = 1.5;
 
-/**
- * The size rule, as a class, and it is an `em` on purpose.
- *
- * A sticker circle already carries a `text-*` class that scales the mark inside
- * it — `text-[0.8rem]` on the calendar, up to `text-2xl` on the login page — so
- * an icon sized in `em` inherits every one of those without `StickerMark`
- * learning about any of them. One knob, already turned.
- *
- * 1.25 rather than 1, because the two things are measured differently: an emoji
- * glyph fills roughly its whole em, while a Lucide icon's ink fills about 83%
- * of its box. 1.25em of box is 1.04em of ink, which is the same picture the
- * emoji was drawing.
- */
+/** In `em` to inherit the circle's text size; 1.25 since Lucide ink fills ~83% of its box. */
 export const MARK_ICON_SIZE = "size-[1.25em]";
 
-/** One icon: what it is called, what finds it, and what draws it. */
 export type MarkIcon = {
-  /** The part after `icon:` — Lucide's own kebab-case name for the glyph. */
+  /** After `icon:`; Lucide's kebab-case name. */
   id: string;
-  /**
-   * The word under the picture, and what a tooltip says.
-   *
-   * Usually Lucide's name, but not always: the glyph Lucide calls
-   * `waves-ladder` is labelled "pool" here, and `check-check` is "done". The
-   * name of a drawing and the name of a habit are different jobs, and this
-   * field has the second one. Whatever the label is, the Lucide name is still
-   * the id, so the two never drift.
-   */
+  /** Tooltip/label; may differ from Lucide's name (e.g. `waves-ladder` → "pool"). */
   label: string;
-  /**
-   * The rest of what someone might type looking for it, space separated.
-   *
-   * This is the whole reason the set is curated rather than "all 1,759 icons
-   * Lucide ships". The package carries no keyword metadata — the tags live in
-   * `lucide-static`, which is not installed — so a full-set picker could only
-   * be searched by Lucide's own terse names, where "gym" finds nothing and
-   * "run" finds nothing. Every icon below is hand-keyworded instead, and the
-   * habits the app seeds are in here almost verbatim.
-   */
+  /** Search terms, space separated. Hand-written: lucide-react has no keywords. */
   keywords: string;
   Icon: LucideIcon;
 };
 
-/**
- * One tab of the picker: fifty-four icons that belong to one another.
- *
- * `MarkPicker` draws nine columns by six rows and pages at fifty-four, so a
- * group is exactly one page — every tab fills its grid, no tab has a second
- * page, and the panel is the same height wherever you are. A fifty-fifth icon
- * in any group would put one icon alone on a page two. Add and remove in whole
- * rows of nine, and keep the groups equal.
- */
+/** One picker tab: exactly 54 (9×6), one page. Add/remove in rows of nine. */
 export type IconGroup = {
-  /** Used as the Radix tab value, and derived from the label. */
+  /** Radix tab value, derived from the label. */
   id: string;
   label: string;
-  /**
-   * The picture on the tab, because six words don't fit across a popover.
-   *
-   * It lives here rather than in `MarkPicker` because it is the same kind of
-   * decision as everything else in this file — which glyph stands for a
-   * category — and a tab whose icon is chosen a file away from the icons it
-   * introduces is a tab that drifts. It is drawn from the same set at the same
-   * weight, so the tab row and the grid under it match.
-   */
+  /** Tab icon, chosen here alongside the group's icons. */
   Tab: LucideIcon;
   icons: readonly MarkIcon[];
 };
 
-/**
- * Four hundred and thirty-two icons in eight groups of fifty-four.
- *
- * The groups are the categories the app seeds, loosely — move, mind, reading,
- * work, make, home, health, people — but only loosely, because a set this size
- * is browsed rather than navigated and a tab is a place to start looking, not a
- * taxonomy. What a group actually guarantees is that the thing beside what you
- * found is plausibly the thing you meant.
- *
- * It was fifty-four in six groups of nine, on the theory that a set small
- * enough to see at once was friendlier than a wall. It was, right up until the
- * habit you wanted wasn't in it — and then the field silently became
- * letters-only, because the emoji tab was the only other answer and an emoji
- * doesn't look like the rest of the app. Growing it is what let the emoji tab
- * go, and the two groups added on the way out — health and care, read and learn
- * — are the two the first pass had nowhere to put. A doctor's appointment and a
- * chapter before bed are as much a tracked day as a gym session is.
- *
- * Every Lucide id here is Lucide's own kebab-case name, checked against the
- * installed package rather than guessed: a few names exist only as deprecated
- * aliases and will not resolve. If you add one, confirm it appears in
- * `node_modules/lucide-react/dist/esm/dynamicIconImports.mjs` first. The eight
- * ids that are not Lucide's — tennis, basketball, golf, ski, surf, rowing,
- * carabiner, lotus — are named by the same rule in `lib/icons-custom.ts`, and
- * are the only ids in this file that manifest will not know.
- */
+/** 432 icons, eight groups of 54. Check new ids in lucide-react's dynamicIconImports.mjs. */
 export const ICON_GROUPS: readonly IconGroup[] = [
   {
     id: "move",
@@ -3249,51 +3119,28 @@ export const ICON_GROUPS: readonly IconGroup[] = [
   },
 ];
 
-/**
- * Every icon by id, flattened once at module load.
- *
- * A `Map` rather than a plain object because the keys come from the database:
- * `mark` is free text a user can set, and `{}["constructor"]` is a function
- * while `new Map().get("constructor")` is `undefined`. The lookup below is the
- * one place stored data becomes a component, so it is the one place that has to
- * be uninteresting.
- */
+/** A `Map`, not an object: keys come from user text (`"constructor"`). */
 const BY_ID: ReadonlyMap<string, MarkIcon> = new Map(
   ICON_GROUPS.flatMap((group) => group.icons).map((icon) => [icon.id, icon]),
 );
 
-/** Every icon in grid order — eight pages of fifty-four, one per tab. */
+/** Grid order: eight pages of 54. */
 export const ALL_ICONS: readonly MarkIcon[] = ICON_GROUPS.flatMap(
   (group) => group.icons,
 );
 
-/** The stored form of an icon mark. The inverse of `iconFor`. */
+/** The inverse of `iconFor`. */
 export function iconMark(id: string) {
   return `${ICON_PREFIX}${id}`;
 }
 
-/**
- * The icon a mark names, or `null` if it names none.
- *
- * `null` is the ordinary answer for a letter or for one of the emoji already in
- * the database, and every caller has to draw those anyway. It is also the
- * answer for a mark that starts with `icon:` and doesn't match — an id that was
- * removed from the set above, say — which is why callers fall through to the
- * grapheme rather than rendering a placeholder. The worst case is a sticker
- * that shows the words it was stored as; the alternative was a blank circle.
- */
+/** Null for letters, emoji, or unknown `icon:` ids; callers fall back to the text. */
 export function iconFor(mark: string): MarkIcon | null {
   if (!mark.startsWith(ICON_PREFIX)) return null;
   return BY_ID.get(mark.slice(ICON_PREFIX.length)) ?? null;
 }
 
-/**
- * Is this mark a valid icon name?
- *
- * Split out from `iconFor` for `validateDraft`, which needs the question
- * answered without touching a React component — `lib/stickers.ts` is unit
- * tested under `node --test`, where there is no bundler and no renderer.
- */
+/** Split from `iconFor` so `validateDraft` runs under `node --test`. */
 export function isIconMark(mark: string) {
   return iconFor(mark) !== null;
 }

@@ -11,62 +11,29 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { LibrarySticker } from "@/lib/queries/activities";
 
 type Props = {
-  /**
-   * The sticker as the *library* holds it, not as a day holds it.
-   *
-   * `LibrarySticker` and `ActivitySticker` both have an `id` and both describe
-   * the same circle, and they are not interchangeable: an `ActivitySticker` is
-   * a *placement*, whose `id` identifies the row on a particular day and whose
-   * `activityId` identifies the sticker. Editing writes to `activities`, so it
-   * needs the library's id — the same confusion `lib/highlight.ts` documents
-   * and the fixtures in `analytics.test.ts` are built to catch.
-   */
+  /** Library sticker, not a placement: `id` must be the activities row id. */
   sticker: LibrarySticker;
-  /** Which category it currently sits in, so the dropdown opens on it. */
   categoryId: string;
   categories: FormCategory[];
   /** Days this sticker is on, for the delete confirmation. See `StickerRetire`. */
   markCount: number;
-  /** Always true where this is rendered — the tray mounts it only while editing. */
+  /** Always true; the tray mounts it only while editing. */
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-/**
- * The sticker editor. One of them for the whole tray, opened by clicking a row.
- *
- * It started as a pencil per row, each owning its own `Dialog`, because the row
- * was spoken for: it was a drag handle *and* a highlight toggle, and a third
- * meaning would have made all three ambiguous. Moving the highlight onto its own
- * eye freed the click, so the pencil had nothing left to do and went away — one
- * control per row instead of two, and a click on a thing with a name now opens
- * the thing with that name.
- *
- * With no trigger of its own it stopped needing to exist fifteen times. The tray
- * holds which sticker is being edited and mounts exactly one of these, which is
- * also what keeps `initial` honest: the dialog is mounted at the moment you open
- * it, from the sticker as the server currently has it. Nothing to reset, and
- * nothing to keep in sync.
- */
+/** The one sticker editor for the tray; mounted on open, so nothing to reset. */
 export function EditStickerForm(props: Props) {
   const { onOpenChange } = props;
-  /**
-   * Mid-delete, and deliberately not inside `StickerRetire`.
-   *
-   * The confirmation shows up in two places — the red paragraph over the fields
-   * and the pair of buttons in the footer — so the flag belongs to the
-   * component that contains both. Same lifting-up as the highlight in
-   * `CalendarBoard`, for the same reason: two siblings needed one value.
-   */
+  /** Mid-delete. Lifted here: the warning and footer buttons both need it. */
   const [confirming, setConfirming] = useState(false);
-  /** A failure from archive or delete. The form has its own for saving. */
+  /** Archive/delete failure; the form has its own for saving. */
   const [problem, setProblem] = useState<string | null>(null);
 
   return (
@@ -74,28 +41,20 @@ export function EditStickerForm(props: Props) {
       open={props.open}
       onOpenChange={(next) => {
         onOpenChange(next);
-        // Closing resets both. Radix unmounts the fields, so the form clears
-        // itself; these two live above that boundary and would otherwise be
-        // waiting on the next open — a dialog that reopens already asking you
-        // to confirm a delete you walked away from is worse than one that
-        // forgets.
+        // Reset on close; these live above the unmounting fields.
         if (!next) {
           setConfirming(false);
           setProblem(null);
         }
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      {/* No description; tell Radix so it doesn't warn. */}
+      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="text-body-lg">edit sticker</DialogTitle>
-          <DialogDescription>
-            change its mark, its name, or where it belongs.
-          </DialogDescription>
         </DialogHeader>
 
-        {/* Above the fields rather than beside the buttons, so the thing that
-            should stop you is the width of the dialog and not the width of a
-            gap in a footer. */}
+        {/* Full width above the fields, not tucked in the footer. */}
         {confirming && (
           <DeleteWarning
             name={props.sticker.name}
@@ -112,10 +71,7 @@ export function EditStickerForm(props: Props) {
           </p>
         )}
 
-        {/* Mounted only while the dialog is open, which is what makes `initial`
-            a starting value rather than something to keep in sync. Open it,
-            type, cancel, open it again: the second mount reads the props fresh
-            and the typing is gone, with no reset code anywhere. */}
+        {/* Mounted only while open, so `initial` needs no syncing. */}
         <StickerFields
           categories={props.categories}
           action={(formData) => updateActivity(props.sticker.id, formData)}
@@ -124,10 +80,7 @@ export function EditStickerForm(props: Props) {
             mark: props.sticker.mark,
             categoryId: props.categoryId,
           }}
-          // The same category, said twice on purpose: once as where the dropdown
-          // opens, once as where this sticker's existing marks live. They start
-          // equal and the first one moves — which is the entire question the
-          // warning under the dropdown asks.
+          // Same as `initial.categoryId` on purpose; the warning compares them.
           historyCategory={props.categoryId}
           submitLabel="save"
           pendingLabel="saving…"

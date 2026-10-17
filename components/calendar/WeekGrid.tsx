@@ -8,6 +8,7 @@ import { weekGrid } from "@/lib/dates";
 import { dayMatches } from "@/lib/highlight";
 import { NO_STICKERS } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/components/SettingsProvider";
 
 type Props = PeriodProps & {
   /** Any day in the week. */
@@ -17,9 +18,10 @@ type Props = PeriodProps & {
 
 /** One week: the month's cell, taller. */
 export function WeekGrid(props: Props) {
+  const { weekStartsOn } = useSettings();
   const days = useMemo(
-    () => weekGrid(props.anchor, props.todayString),
-    [props.anchor, props.todayString],
+    () => weekGrid(props.anchor, props.todayString, weekStartsOn),
+    [props.anchor, props.todayString, weekStartsOn],
   );
 
   return (

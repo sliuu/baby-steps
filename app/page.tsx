@@ -7,6 +7,7 @@ import { CalendarSkeleton } from "@/components/views/CalendarSkeleton";
 import { CalendarView } from "@/components/views/CalendarView";
 import { TrendsSkeleton } from "@/components/views/TrendsSkeleton";
 import { TrendsView } from "@/components/views/TrendsView";
+import { settingsFromRow } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 import { toSessionUser } from "@/lib/user";
 
@@ -15,36 +16,23 @@ export default async function Home() {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
 
-  // proxy.ts already bounced signed-out visitors, so this should never fire.
-  // It stays anyway: the proxy is an optimistic pre-filter, and the real check
-  // belongs next to the data. Next.js docs are explicit that proxy alone is
-  // not an authorization boundary.
-  //
-  // It also has to stay *above* the Suspense boundaries below, and that's a
-  // rule rather than a preference. Once a fallback renders, the response has
-  // already committed to `200 OK` and the headers are gone — a `redirect()`
-  // after that point degrades from an HTTP redirect into a client-side one.
-  // The auth check is a single fast call, so paying for it before the shell
-  // paints is cheap; the two page queries are the slow pair, and those are
-  // what the boundaries are for.
+  // Real auth check (proxy is only a pre-filter). Must stay above Suspense:
+  // after a fallback streams, redirect() is client-side, not an HTTP redirect.
   if (!claims) {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase.from("profiles").select("*").maybeSingle();
+
   return (
     <AppShell
-      navEnd={<UserMenu user={toSessionUser(claims)} />}
-      // Each view gets its own boundary, so the nav and the page frame paint
-      // as soon as the auth check returns rather than waiting on Postgres.
-      // Sibling boundaries resolve independently — neither tab blocks the
-      // other, which matters because both are rendered on the server even
-      // though only one is on screen.
-      //
-      // These are props rather than children, and that's what makes the
-      // arrangement work at all: `AppShell` is a Client Component, so anything
-      // it imported would be pulled into the browser bundle. Passed in from
-      // here, both views — and both fallbacks — are rendered on the server and
-      // arrive as finished output. The switcher ships; the pages don't.
+      settings={settingsFromRow(profile)}
+      navEnd={<UserMenu
+          user={toSessionUser(claims)}
+          phone={profile?.texts_opt_in ? (profile.phone ?? null) : null}
+        />}
+      // Props, not imports, so both views render on the server; one boundary
+      // each so neither blocks the shell or the other.
       calendar={
         <Suspense fallback={<CalendarSkeleton />}>
           <CalendarView />

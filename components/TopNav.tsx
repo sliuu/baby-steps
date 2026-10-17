@@ -1,13 +1,13 @@
 "use client";
 
 import { SheetHeader } from "@/components/ui/SheetHeader";
-import { formatDateNumeric, fromDayString } from "@/lib/dates";
+import { formatDateShort, fromDayString } from "@/lib/dates";
 import { LOGO } from "@/lib/layout";
 import { NAV_ITEMS, isPlainClick, navItemFor, type Page } from "@/lib/nav";
 import { useToday } from "@/lib/useToday";
 
 type Props = {
-  /** Null until a section is pressed; reads as the landing. */
+  /** Null = landing. */
   page: Page | null;
   onPageChange: (page: Page) => void;
   /** Right end: `UserMenu`, or "sign in" on `/demo`. */
@@ -38,13 +38,16 @@ export function TopNav(props: Props) {
               event.preventDefault();
               props.onPageChange("today");
             }}
-            className={`${LOGO} text-heading sm:text-display-sm`}
+            className={`${LOGO} flex items-end gap-2`}
           >
+            {/* Trial: the favicon flower beside the wordmark. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icon.svg" alt="" className="size-7" />
             baby steps
           </a>
           {today && current === "today" && (
-            <time dateTime={today} className="hidden font-display text-heading font-light text-accent-ink sm:inline">
-              {formatDateNumeric(fromDayString(today))}
+            <time dateTime={today} className="hidden translate-y-0.5 font-display text-date font-normal text-accent-ink sm:inline">
+              {formatDateShort(fromDayString(today))}
             </time>
           )}
         </>

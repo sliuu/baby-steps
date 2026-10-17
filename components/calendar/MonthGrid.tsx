@@ -8,6 +8,7 @@ import { monthGrid, weekdayLabels } from "@/lib/dates";
 import { dayMatches } from "@/lib/highlight";
 import { NO_STICKERS } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/components/SettingsProvider";
 
 type Props = PeriodProps & {
   /** The first of the month. */
@@ -17,11 +18,12 @@ type Props = PeriodProps & {
 
 /** Six weeks, inside lines only: the 1px gaps show `rule-grid` through. */
 export function MonthGrid(props: Props) {
+  const { weekStartsOn } = useSettings();
   const cells = useMemo(
-    () => monthGrid(props.month, props.todayString),
-    [props.month, props.todayString],
+    () => monthGrid(props.month, props.todayString, weekStartsOn),
+    [props.month, props.todayString, weekStartsOn],
   );
-  const labels = useMemo(() => weekdayLabels(), []);
+  const labels = useMemo(() => weekdayLabels(weekStartsOn), [weekStartsOn]);
 
   return (
     <div className={cn("grid grid-cols-7 gap-px bg-rule-grid", props.className)}>

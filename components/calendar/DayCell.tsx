@@ -113,7 +113,7 @@ export function DayCell(props: Props) {
         )}
       </div>
 
-      {/* All of them, wrapping; a busy day makes its row taller. Margins, not gap: slots are items too. */}
+      {/* Wraps; margins not gap, since slots are items too. */}
       <div
         className={cn("mt-1.5 flex flex-wrap content-start gap-y-1 [&>button]:mr-1", props.className)}
       >

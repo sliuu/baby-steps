@@ -39,13 +39,7 @@ type Props = {
 export function RangePicker(props: Props) {
   const { value, onChange } = props;
 
-  /**
-   * Switching *to* custom keeps whatever dates were already picked.
-   *
-   * So flipping to This Month to check something and back doesn't wipe a range
-   * you spent two clicks drawing. The dates live in the `custom` variant, and
-   * this is the one place that has to decide what an empty one starts as.
-   */
+  /** Back to custom keeps the dates already picked. */
   function pick(kind: RangeKind) {
     if (kind !== "custom") return onChange({ kind });
     if (value.kind === "custom") return onChange(value);

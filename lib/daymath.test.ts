@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-// Relative, with the extension. Same rule as every other test in here: Node
-// strips the types and resolves the path itself, so `@/lib/daymath` — a
-// bundler alias, in a process with no bundler — would resolve to nothing.
+// Relative with extension: no `@/` alias under Node.
 import {
   MS_PER_DAY,
   addDays,
@@ -35,8 +33,7 @@ describe("addDays", () => {
   });
 
   it("knows February's length in a leap year and out of one", () => {
-    // 2024 is a leap year; 2026 is not. This is the whole reason the math goes
-    // through `Date.UTC` instead of arithmetic on the parts.
+    // 2024 leap, 2026 not: why the math goes through `Date.UTC`.
     assert.equal(addDays("2024-02-28", 1), "2024-02-29");
     assert.equal(addDays("2024-02-29", 1), "2024-03-01");
     assert.equal(addDays("2026-02-28", 1), "2026-03-01");
@@ -48,12 +45,10 @@ describe("addDays", () => {
   });
 
   it("steps across the spring DST boundary without losing a day", () => {
-    // 8 March 2026 is a US spring-forward Sunday. In local time that day is 23
-    // hours long, and day arithmetic done on local dates lands at 23:00 the
-    // previous evening and rounds back a day. In UTC there is no such day.
+    // US spring-forward: a 23-hour local day; UTC has none.
     assert.equal(addDays("2026-03-07", 1), "2026-03-08");
     assert.equal(addDays("2026-03-08", 1), "2026-03-09");
-    // …and the autumn one, where the 25-hour day skips forward instead.
+    // …and the 25-hour autumn day.
     assert.equal(addDays("2026-11-01", 1), "2026-11-02");
   });
 });
@@ -65,8 +60,7 @@ describe("daysBetween", () => {
   });
 
   it("is negative when the pair is the other way round", () => {
-    // Nothing in the app relies on this yet, but silently clamping to zero
-    // would turn a mis-sorted series into a flat one rather than an error.
+    // Clamping to zero would hide a mis-sorted series.
     assert.equal(daysBetween("2026-09-18", "2026-09-11"), -7);
   });
 
@@ -106,18 +100,14 @@ describe("dayToUTC and utcToDay", () => {
 
 describe("weekday", () => {
   it("numbers the week from Sunday", () => {
-    // 2026-09-06 is a Sunday. Seven consecutive days, so every slot is checked
-    // and an off-by-one anywhere in the week shows up rather than only at the
-    // boundary.
+    // 2026-09-06 is a Sunday; all seven slots checked.
     const week = ["2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09",
       "2026-09-10", "2026-09-11", "2026-09-12"];
     assert.deepEqual(week.map(weekday), [0, 1, 2, 3, 4, 5, 6]);
   });
 
   it("is the same number wherever the machine is", () => {
-    // The bug this guards is `getDay` instead of `getUTCDay`: on a UTC
-    // midnight, a local read is the day before everywhere west of Greenwich,
-    // so Sunday would come back as 6 and every week would start on Saturday.
+    // Guards `getDay` vs `getUTCDay`: west of UTC weeks would start Saturday.
     assert.equal(weekday("1970-01-01"), 4); // A Thursday, famously.
   });
 });

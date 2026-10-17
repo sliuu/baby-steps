@@ -10,8 +10,7 @@ export type CategorySlug =
   | "romance"
   | "friends";
 
-/** Starting ideas per category slug. Picking one creates a normal activity
- *  row owned by the user; nothing here is stored or referenced later. */
+/** Starting ideas per slug; picking one creates a normal activity row. */
 // copy: TODO — placeholders until Stephanie writes the list.
 export const SUGGESTIONS: Record<CategorySlug, Suggestion[]> = {
   spirituality: [
@@ -57,14 +56,11 @@ export const SUGGESTIONS: Record<CategorySlug, Suggestion[]> = {
 
 const key = (name: string) => name.trim().toLowerCase();
 
-/** True for one of the six seeded slugs. */
 export function isCategorySlug(slug: string): slug is CategorySlug {
   return Object.hasOwn(SUGGESTIONS, slug);
 }
 
-/** Suggestions for a category, minus names the user already has
- *  (case-insensitive, trimmed; stricter than the exact-match unique index).
- *  Unknown slugs (a renamed or custom category) get none. */
+/** Minus names already owned (case-insensitive, trimmed); unknown slugs get none. */
 export function suggestionsFor(slug: string, existing: string[]): Suggestion[] {
   if (!isCategorySlug(slug)) return [];
   const owned = new Set(existing.map(key));

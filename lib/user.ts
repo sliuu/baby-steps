@@ -2,13 +2,7 @@ import type { User } from "@supabase/supabase-js";
 
 import { firstGrapheme } from "@/lib/graphemes";
 
-/**
- * The slice of the Supabase user we actually render.
- *
- * Deliberately small. The full `User` object carries tokens, provider
- * metadata, and identity records — none of which the nav needs, and all of
- * which would cross into the client bundle if we passed the whole thing down.
- */
+/** What we render of the user; kept small so tokens never reach the client. */
 export type SessionUser = {
   email: string;
   name: string;
@@ -23,7 +17,7 @@ type UserProfile = {
 };
 
 export function toSessionUser(user: UserProfile): SessionUser {
-  // Google and GitHub don't agree on what to call things, so check both.
+  // Google and GitHub name these differently.
   const metadata = user.user_metadata ?? {};
   const name: string =
     metadata.full_name ?? metadata.name ?? metadata.user_name ?? "";
@@ -37,11 +31,7 @@ export function toSessionUser(user: UserProfile): SessionUser {
     email,
     name: name || email,
     avatarUrl,
-    // Intl.Segmenter, not [0] — an emoji or accented character in a display
-    // name is several code units, and slicing one would render a broken glyph.
-    // The helper lived here privately until Step 10 needed the same thing for
-    // sticker marks; it's `lib/graphemes.ts` now, and this is its second caller
-    // rather than a second copy.
+    // Grapheme, not [0]: emoji/accents span several code units.
     initial: firstGrapheme(label).toUpperCase() || "?",
   };
 }

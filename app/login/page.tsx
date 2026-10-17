@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { LandingAnimationJig } from "@/components/auth/LandingAnimationJig";
 import { SignInButton } from "@/components/auth/SignInButtons";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { PageFrame } from "@/components/ui/PageFrame";
@@ -22,12 +23,77 @@ const CLUSTER = [
 
 /** Signed out: the welcome, three crossed-out labels, and sign in. */
 export default function LoginPage() {
+  const content = (
+    <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-20`}>
+      <div className="flex items-center justify-between gap-12">
+        <div>
+          <h1 className="animate-rise font-display text-display font-light text-ink sm:text-display-xl">
+            welcome to <span className="text-accent-ink">baby steps!</span>
+          </h1>
+
+          <p className="mt-8 animate-rise font-display text-heading font-light text-ink [animation-delay:var(--hero-copy-delay)]">
+            <span className="block">your guilt-free,</span>
+            <span className="block">come as you please,</span>
+            <span className="block">just for kicks,</span>
+            {STRUCK.map((label, step) => (
+              <span key={label} className="block">
+                <s className="relative no-underline">
+                  {label}
+                  {/* Draws once; reduced motion lands on the end state. */}
+                  <span
+                    aria-hidden="true"
+                    style={{ "--step": step } as CSSProperties}
+                    className="absolute inset-x-0 top-1/2 h-0.5 origin-left animate-strike bg-accent-ink"
+                  />
+                </s>
+              </span>
+            ))}
+            <span className="block animate-after-strikes text-accent-ink">place to hang out</span>
+          </p>
+        </div>
+
+        {/* Decoration: hidden from screen readers and phones. */}
+        <div aria-hidden="true" className="hidden shrink-0 grid-cols-3 gap-6 pr-6 lg:grid">
+          {CLUSTER.map(({ place, ...sticker }, step) => (
+            <span
+              key={sticker.name}
+              className="animate-fall"
+              style={{
+                animationDelay: `calc(var(--sticker-start) + ${step} * var(--sticker-gap))`,
+              }}
+            >
+              <StickerMark sticker={sticker} size="lg" className={`size-24 ${place}`} />
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-14 animate-rise border-t border-rule pt-10 [animation-delay:var(--hero-actions-delay)]">
+        <p className="font-display text-heading font-light text-ink sm:text-display-sm">
+          what have you been up to?
+        </p>
+
+        <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <SignInButton provider="google" look="md" />
+          <Link href="/demo" className="text-ui text-ink underline underline-offset-4 hover:text-accent-ink">
+            demo
+          </Link>
+        </div>
+
+        {/* Not on the board; existing GitHub accounts still need a way in. */}
+        <p className="mt-6 text-caption">
+          <SignInButton provider="github" look="text" />
+        </p>
+      </div>
+    </main>
+  );
+
   return (
     <PageFrame
       header={
         <SheetHeader
           start={
-            <Link href="/" className={`${LOGO} text-subhead sm:text-heading`}>
+            <Link href="/" className={LOGO}>
               baby steps
             </Link>
           }
@@ -35,60 +101,11 @@ export default function LoginPage() {
         />
       }
     >
-      <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-20`}>
-        <div className="flex items-center justify-between gap-12">
-          <div>
-            <h1 className="font-display text-display font-light text-ink sm:text-display-xl">
-              welcome to <span className="text-accent-ink">baby steps!</span>
-            </h1>
-
-            <p className="mt-8 font-display text-heading font-light text-ink">
-              <span className="block">your guilt-free,</span>
-              <span className="block">come as you please,</span>
-              <span className="block">just for kicks,</span>
-              {STRUCK.map((label, step) => (
-                <span key={label} className="block">
-                  <s className="relative no-underline">
-                    {label}
-                    {/* Draws once; reduced motion lands on the end state. */}
-                    <span
-                      aria-hidden="true"
-                      style={{ "--step": step } as CSSProperties}
-                      className="absolute inset-x-0 top-1/2 h-0.5 origin-left animate-strike bg-accent-ink"
-                    />
-                  </s>
-                </span>
-              ))}
-              <span className="block animate-after-strikes text-accent-ink">place to hang out</span>
-            </p>
-          </div>
-
-          {/* Decoration: hidden from screen readers and phones. */}
-          <div aria-hidden="true" className="hidden shrink-0 grid-cols-3 gap-6 pr-6 lg:grid">
-            {CLUSTER.map(({ place, ...sticker }) => (
-              <StickerMark key={sticker.name} sticker={sticker} size="lg" className={`size-24 ${place}`} />
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-14 border-t border-rule pt-10">
-          <p className="font-display text-heading font-light text-ink sm:text-display-sm">
-            what have you been up to?
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">
-            <SignInButton provider="google" look="md" />
-            <Link href="/demo" className="text-ui text-ink underline underline-offset-4 hover:text-accent-ink">
-              demo
-            </Link>
-          </div>
-
-          {/* Not on the board; existing GitHub accounts still need a way in. */}
-          <p className="mt-6 text-caption">
-            <SignInButton provider="github" look="text" />
-          </p>
-        </div>
-      </main>
+      {process.env.NODE_ENV === "development" ? (
+        <LandingAnimationJig>{content}</LandingAnimationJig>
+      ) : (
+        content
+      )}
     </PageFrame>
   );
 }

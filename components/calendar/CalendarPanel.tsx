@@ -34,6 +34,7 @@ import {
 } from "@/lib/dates";
 import { NO_STICKERS } from "@/lib/stickers";
 import { useToday } from "@/lib/useToday";
+import { useSettings } from "@/components/SettingsProvider";
 
 type Props = Omit<PeriodProps, "todayString" | "onOpenDay" | "selectedDay"> & {
   /** The server's day; the anchor until the browser knows better. */
@@ -48,11 +49,9 @@ type Props = Omit<PeriodProps, "todayString" | "onOpenDay" | "selectedDay"> & {
   tray: (day: DayString, scope: string) => ReactNode;
 };
 
-/**
- * Owns which period you're looking at (one anchor day for both views),
- * the selected day (desktop panel) and the open sheet (phones).
- */
+/** Owns the period anchor, the selected day (desktop) and the open sheet (phones). */
 export function CalendarPanel(props: Props) {
+  const { weekStartsOn } = useSettings();
   // Null on the server and during hydration, so no cell is wrongly today.
   const todayString = useToday(null);
   const today = todayString ?? props.initialDay;
@@ -97,16 +96,16 @@ export function CalendarPanel(props: Props) {
     }
 
     const week = view === "week";
-    const title = week ? formatWeekTitle(anchor) : formatMonthTitle(month, fromDayString(today));
-    const shortTitle = week ? formatWeekTitleShort(anchor) : undefined;
+    const title = week ? formatWeekTitle(anchor, weekStartsOn) : formatMonthTitle(month);
+    const shortTitle = week ? formatWeekTitleShort(anchor, weekStartsOn) : undefined;
     // View in the key: month → week is a swap, not a morph.
-    const periodKey = week ? `week:${toWeekString(anchor)}` : `month:${toMonthString(month)}`;
+    const periodKey = week ? `week:${toWeekString(anchor, weekStartsOn)}` : `month:${toMonthString(month)}`;
 
     // Needs startTransition + a direction type + a changed key for the deck slide.
     const step = (by: number) => {
       startTransition(() => {
         addTransitionType(by > 0 ? "step-next" : "step-previous");
-        setChosenDay(week ? stepWeek(anchor, by) : stepMonth(month, by));
+        setChosenDay(week ? stepWeek(anchor, by, weekStartsOn) : stepMonth(month, by));
       });
     };
 
@@ -115,14 +114,14 @@ export function CalendarPanel(props: Props) {
         <PeriodHeader title={title.toLowerCase()} shortTitle={shortTitle?.toLowerCase()} view={view} onStep={step} />
 
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-10">
-          {/* default="none": every commit is a transition; without it a drop would slide the month. */}
+          {/* default="none", or every drop (a transition) would slide the month. */}
           <ViewTransition
             key={periodKey}
             enter={{ "step-next": "deck-next", "step-previous": "deck-previous", default: "none" }}
             exit={{ "step-next": "deck-next", "step-previous": "deck-previous", default: "none" }}
             default="none"
           >
-            {/* Both drawings ship; CSS picks, so there's no width flash. One wrapper for the transition. */}
+            {/* Both drawings ship and CSS picks: no width flash. */}
             <div className="min-w-0">
               {week ? (
                 <>
@@ -147,7 +146,7 @@ export function CalendarPanel(props: Props) {
           {/* The side panel. Sticky; scrolls on its own when the bank is long. */}
           <aside
             aria-label="selected day"
-            className="scrollbar-app hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:border-l lg:border-rule lg:pr-2 lg:pl-8"
+            className="scrollbar-app hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:border-l lg:border-rule lg:pr-4 lg:pl-4"
           >
             <DayPanel
               day={selectedDay}

@@ -44,7 +44,7 @@ export default async function OnboardingPage(props: Props) {
     <PageFrame
       header={
         <SheetHeader
-          start={<span className={`${LOGO} text-subhead sm:text-heading`}>baby steps</span>}
+          start={<span className={LOGO}>baby steps</span>}
           end={
             <div className="flex items-center gap-3">
               <span className="text-caption text-ink-muted">{step} of 3</span>

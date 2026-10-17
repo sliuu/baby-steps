@@ -8,7 +8,6 @@ type Props = {
   eyebrow: string;
   title: string;
   children: React.ReactNode;
-  /** The one way on. */
   action: React.ReactNode;
   /** Above the eyebrow. */
   picture?: React.ReactNode;
@@ -21,7 +20,7 @@ export function NoticePage(props: Props) {
       header={
         <SheetHeader
           start={
-            <Link href="/" className={`${LOGO} text-subhead sm:text-heading`}>
+            <Link href="/" className={LOGO}>
               baby steps
             </Link>
           }

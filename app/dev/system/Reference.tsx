@@ -70,7 +70,7 @@ export function Reference() {
     <PageFrame
       header={
         <SheetHeader
-          start={<span className={`${LOGO} text-subhead sm:text-heading`}>baby steps · system</span>}
+          start={<span className={LOGO}>baby steps · system</span>}
           end={<FrameToggle />}
         />
       }

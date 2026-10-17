@@ -10,47 +10,41 @@ const today = new Date(2026, 9, 14);
 const categories = [{ id: "a" }, { id: "b" }];
 
 describe("balanceLevels", () => {
+  // Defaults: 3 weeks; small ≥1, medium ≥3, large ≥6.
+  const on = (day: string, n = 1) => ({ day, categoryIds: Array(n).fill("a") });
+
   it("is all 0 with no history", () => {
     assert.deepEqual(balanceLevels({ categories, days: [], today }), { a: 0, b: 0 });
   });
 
-  it("counts one sticker this week as 1", () => {
-    const days = [{ day: "2026-10-11", categoryIds: ["a"] }];
-    assert.deepEqual(balanceLevels({ categories, days, today }), { a: 1, b: 0 });
+  it("sizes by sticker count", () => {
+    const level = (n: number) => balanceLevels({ categories, days: [on("2026-10-14", n)], today }).a;
+    assert.deepEqual([0, 1, 2, 3, 5, 6, 9].map(level), [0, 1, 1, 2, 2, 3, 3]);
   });
 
-  it("counts a sticker in each of 3 weeks as 3", () => {
-    const days = ["2026-10-14", "2026-10-10", "2026-09-27"].map((day) => ({
-      day,
-      categoryIds: ["a"],
-    }));
+  it("adds across the window's weeks", () => {
+    const days = [on("2026-10-14", 2), on("2026-10-10", 2), on("2026-09-27", 2)];
     assert.equal(balanceLevels({ categories, days, today }).a, 3);
   });
 
-  it("ignores stickers 4 weeks ago", () => {
-    const days = [
-      { day: "2026-09-26", categoryIds: ["a"] },
-      { day: "2026-09-20", categoryIds: ["a"] },
-    ];
+  it("ignores stickers before the window", () => {
+    const days = [on("2026-09-26", 9), on("2026-09-20", 9)];
     assert.equal(balanceLevels({ categories, days, today }).a, 0);
   });
 
-  it("counts several stickers in one week once", () => {
-    const days = ["2026-10-04", "2026-10-06", "2026-10-10"].map((day) => ({
-      day,
-      categoryIds: ["a", "a"],
-    }));
-    assert.equal(balanceLevels({ categories, days, today }).a, 1);
+  it("follows the rule", () => {
+    const days = [on("2026-09-26", 2), on("2026-10-14", 1)];
+    const rule = { weeks: 4, small: 2, medium: 3, large: 10 };
+    assert.equal(balanceLevels({ categories, days, today, rule }).a, 2);
+    assert.equal(balanceLevels({ categories, days, today, rule: { ...rule, weeks: 1 } }).a, 0);
   });
 
   it("follows weekStartsOn", () => {
-    // Monday weeks: 12–18 Oct, so Sun 11 Oct is last week.
-    const days = [
-      { day: "2026-10-11", categoryIds: ["a"] },
-      { day: "2026-10-12", categoryIds: ["a"] },
-    ];
-    assert.equal(balanceLevels({ categories, days, today }).a, 1);
-    assert.equal(balanceLevels({ categories, days, today, weekStartsOn: 1 }).a, 2);
+    // Monday weeks: 12–18 Oct; 1-week window.
+    const days = [on("2026-10-11"), on("2026-10-12")];
+    const rule = { weeks: 1, small: 1, medium: 2, large: 3 };
+    assert.equal(balanceLevels({ categories, days, today, rule }).a, 2);
+    assert.equal(balanceLevels({ categories, days, today, rule, weekStartsOn: 1 }).a, 1);
   });
 
   it("ignores unknown categories", () => {

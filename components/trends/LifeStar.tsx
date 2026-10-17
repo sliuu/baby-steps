@@ -24,15 +24,9 @@ export function LifeStar(props: Props) {
   const { categories } = props.tally;
   const { cx, cy, radius } = VIEW;
 
-  // No categories: nothing to draw.
   if (categories.length === 0) return null;
 
-  /**
-   * Distance from the centre is a share of the *busiest* category, not of the
-   * total — so the fullest spoke always reaches the outer ring and the shape
-   * reads as balance rather than volume. See `normalize`, which also explains
-   * what that costs.
-   */
+  // Share of the busiest category, not the total: reads as balance, not volume.
   const shares = normalize(categories.map((category) => category.count));
   const vertices = starPoints(shares, radius, cx, cy);
 

@@ -223,23 +223,38 @@ export type Database = {
         Row: {
           created_at: string
           onboarded_at: string | null
+          petal_large: number
+          petal_medium: number
+          petal_small: number
+          petal_weeks: number
           phone: string | null
           texts_opt_in: boolean
           user_id: string
+          week_starts_on: number
         }
         Insert: {
           created_at?: string
           onboarded_at?: string | null
+          petal_large?: number
+          petal_medium?: number
+          petal_small?: number
+          petal_weeks?: number
           phone?: string | null
           texts_opt_in?: boolean
           user_id: string
+          week_starts_on?: number
         }
         Update: {
           created_at?: string
           onboarded_at?: string | null
+          petal_large?: number
+          petal_medium?: number
+          petal_small?: number
+          petal_weeks?: number
           phone?: string | null
           texts_opt_in?: boolean
           user_id?: string
+          week_starts_on?: number
         }
         Relationships: []
       }
@@ -248,6 +263,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_my_account: { Args: never; Returns: undefined }
       seed_life_areas: { Args: { for_user: string }; Returns: undefined }
     }
     Enums: {

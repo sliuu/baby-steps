@@ -4,6 +4,7 @@ import { Tabs as TabsPrimitive } from "radix-ui";
 import { useMemo, useState } from "react";
 
 import { useCalendarData } from "@/components/calendar/calendarData";
+import { useSettings } from "@/components/SettingsProvider";
 import { navLinkClass } from "@/components/TopNav";
 import { HabitList } from "./HabitList";
 import { HabitTable } from "./HabitTable";
@@ -56,7 +57,8 @@ export function TrendsBoard(props: Props) {
   const [range, setRange] = useState<Range>({ kind: "month" });
   const [tab, setTab] = useState<TrendsTab>("categories");
 
-  const bounds = useMemo(() => resolveBounds(range, todayString), [range, todayString]);
+  const { weekStartsOn } = useSettings();
+  const bounds = useMemo(() => resolveBounds(range, todayString, weekStartsOn), [range, todayString, weekStartsOn]);
   const totals = useMemo(
     () => tally(stickersByDay, props.groups, bounds),
     [stickersByDay, props.groups, bounds],

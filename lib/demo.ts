@@ -1,9 +1,4 @@
-// Three value imports, all relative and all with the extension, into modules
-// that themselves import nothing — the rule `lib/analytics.ts` states: what
-// bites is depth, not count. This module is loaded by `lib/demo.test.ts` under
-// `node --test`, where `@/` resolves to nothing because that alias belongs to
-// the bundler. The type imports below are erased before Node ever looks at a
-// path, so they keep the alias.
+// Value imports relative with extension: `node --test` can't resolve `@/`.
 import { addDays, daysBetween } from "./daymath.ts";
 import { MOODS } from "./moods.ts";
 import type { DayString } from "@/lib/dates";
@@ -15,65 +10,22 @@ import type {
 } from "@/lib/stickers";
 
 /**
- * A year of somebody's habits, invented on the spot, so a stranger can see
- * what the app looks like full.
- *
- * The signed-out landing page can say what Baby Steps is for, and it does. It
- * cannot show the thing the app is actually about, which is the picture a year
- * of stickers makes — the star, the strip, the mood line. Those need a year of
- * data, and a visitor who has not signed in does not have one. So this file
- * makes one.
- *
- * **Why it is generated and not seeded.** A row in the database is written on
- * a date and stays written. Six months later the demo's "last eight weeks" is
- * eight weeks of nothing and its mood line stops halfway across the chart —
- * the demo would rot, silently, and the only person who would notice is a
- * visitor. Generating from today means there is no such thing as stale: the
- * window ends on whatever day you happen to arrive.
- *
- * **It is the same library the seed script installs**, mark for mark. That is
- * the point of a demo — the six categories and the thirteen starter habits are
- * what you get when you sign in, so the demo is a picture of the app you would
- * actually have, not a showreel with invented content in it.
- *
- * Nothing here touches Supabase, `next/headers`, or a clock. `today` arrives as
- * an argument, everything else is arithmetic, and that is what lets the whole
- * of it be tested under `node --test`.
+ * A generated year of habits for the signed-out demo. Generated from today,
+ * not seeded, so it never goes stale. Same library as the seed. Pure: no clock.
  */
 
-/**
- * How much history the demo has: the last 365 days, ending today.
- *
- * "Year to date" was the brief, and read literally — 1 January to today — it
- * gives a demo that is three days long every 3rd of January and empties itself
- * every New Year's Eve. Rolling is the reading that survives the calendar: it
- * is always a full year, it always ends today, and on any given day the
- * difference between the two is invisible to a visitor who has never seen the
- * other one.
- */
+/** Rolling 365 days ending today (not Jan 1 → today, which empties yearly). */
 export const DEMO_DAYS = 365;
 
-/** Roughly how many stickers land on an average day. See `scale` below. */
+/** Target average per day. See `scale`. */
 export const DEMO_PER_DAY = 4;
 
-/** Share of days carrying a mood. Not all of them — the gaps are real too. */
+/** Share of days with a mood. */
 const MOOD_SHARE = 0.85;
 
 /**
- * A habit, plus the three numbers that decide when it happens.
- *
- * `base` is roughly the share of days it lands on, before the other two bend
- * it. `days` is a weekday bias — the weekdays it belongs to, Sunday being 0 —
- * and it is the single most load-bearing field here: the habit strip draws
- * whole weeks, one column per weekday, so a habit that only happens at
- * weekends reads as a vertical stripe and a habit that happens whenever reads
- * as static. Without the bias every row of the strip is the same grey noise.
- *
- * `fade` is the year-long drift, negative for a habit that tailed off and
- * positive for one that took hold. It is what gives the demo a *story* — Yoga
- * stopping in the spring, Drawing arriving in the autumn — and it is the only
- * reason the Trends page has anything to say. A year in which every habit
- * happened at a constant rate is a year with no trends in it.
+ * `base`: rough daily share. `days`: weekday bias (shows as stripes in the
+ * strip). `fade`: year-long drift, which gives Trends something to say.
  */
 type DemoHabit = {
   slug: string;
@@ -81,17 +33,13 @@ type DemoHabit = {
   name: string;
   mark: string;
   base: number;
-  /** Weekdays it leans towards, Sunday 0. Omitted means no lean. */
+  /** Sunday 0. Omitted means no lean. */
   days?: number[];
-  /** -1 faded out across the year, +1 grew into it, 0 steady. */
+  /** -1 faded out, +1 grew, 0 steady. */
   fade: number;
 };
 
-/**
- * The six categories, in the order `seed_life_areas` creates them, with the
- * same names, slugs and hues. If those two ever disagree the migration wins —
- * it is the one that makes real accounts.
- */
+/** Mirrors `seed_life_areas`; the migration wins if they disagree. */
 const CATEGORIES: { slug: string; name: string; colorKey: string }[] = [
   { slug: "spirituality", name: "Spirituality", colorKey: "oxblood" },
   { slug: "exercise", name: "Exercise", colorKey: "bottle" },
@@ -102,22 +50,8 @@ const CATEGORIES: { slug: string; name: string; colorKey: string }[] = [
 ];
 
 /**
- * The thirteen starter habits, matching `scripts/seed.sql` name for name and
- * icon for icon, with the demo's own three numbers hung off each.
- *
- * The `base` figures are not tuned to add up to anything. `scale` normalises
- * the lot to `DEMO_PER_DAY` at generation time, so these say only how habits
- * compare to *each other* — Deep work happens far more than Adventure — and
- * the density of the calendar is set in one place by one constant. Edit a
- * weight here and the average holds.
- *
- * They *are* tuned so the six categories come out within about three to one of each
- * other, which is the one place the demo is flattering rather than realistic.
- * A plausible year is mostly work: two work habits at their honest rate put
- * eight times as many marks on the board as Romance & Adventure, and the Life
- * Star that draws is one spike and five stumps — a picture of the chart being
- * broken rather than of a life. The demo's job is to show what the star looks
- * like when it has something to say.
+ * Mirrors `scripts/seed.sql`. `base` is relative; `scale` normalises to
+ * `DEMO_PER_DAY`. Tuned so categories stay within ~3:1, or the star is a spike.
  */
 const HABITS: DemoHabit[] = [
   {
@@ -234,24 +168,17 @@ const HABITS: DemoHabit[] = [
   },
 ];
 
-/** How much a habit's own weekdays are favoured, and how much the rest lose. */
+/** Weekday multipliers: on vs off a habit's days. */
 const ON_DAY = 1.6;
 const OFF_DAY = 0.35;
 
-/** No habit is ever certain, however heavily the weights land on it. */
+/** No habit is ever certain. */
 const P_MAX = 0.95;
 
 export const DEMO_CATEGORY_COUNT = CATEGORIES.length;
 export const DEMO_HABIT_COUNT = HABITS.length;
 
-/**
- * The library, in the shape `getStickerLibrary` returns.
- *
- * Ids are strings the database would never mint — `demo-…` rather than a uuid
- * — which is deliberate and is the cheapest possible guard: if one of these
- * ever reached a Server Action it would be rejected by the foreign key rather
- * than matching somebody's row.
- */
+/** Library in `getStickerLibrary` shape. `demo-` ids fail any FK if leaked. */
 export function demoLibrary(): LibraryGroup[] {
   return CATEGORIES.map((category) => ({
     categoryId: `demo-category-${category.slug}`,
@@ -271,22 +198,8 @@ export function demoLibrary(): LibraryGroup[] {
 }
 
 /**
- * A year of placements and moods ending on `end`, in the shape
- * `getStickersByDay` returns.
- *
- * **A pure function of one date.** Nothing in here reads a clock, and that is
- * not tidiness — the demo page renders on the server and then again in the
- * browser to hydrate, and a `Math.random()` or a `new Date()` anywhere below
- * would put two different years on the two sides of that seam. The date comes
- * in as an argument, the server generates the year once, and the browser is
- * handed the finished Map.
- *
- * The *shape* of the year is anchored to `end` rather than to the calendar:
- * "Yoga tailed off" means it tailed off by the time you arrived, whenever that
- * is. So a visitor who comes back next week gets the same story shifted along
- * by a week, not literally the same placements — which is the right trade,
- * because a story told relative to the visit is the only kind a rolling window
- * can tell. What is fixed to the calendar is the mood wave; see `moodOf`.
+ * A year ending on `end`, in `getStickersByDay` shape. Pure, so server and
+ * hydration agree. Habits are relative to `end`; moods to the calendar.
  */
 export function demoStickers(end: DayString): StickersByDay {
   const start = addDays(end, -(DEMO_DAYS - 1));
@@ -300,9 +213,7 @@ export function demoStickers(end: DayString): StickersByDay {
 
     const activities: ActivitySticker[] = [];
     for (const habit of HABITS) {
-      // One draw per habit per day, each from its own stream — `habit.slug` is
-      // in the seed — so adding a habit to the list above does not reshuffle
-      // the year for the twelve that were already there.
+      // Per-habit stream, so adding a habit doesn't reshuffle the others.
       if (random(day, habit.slug) >= chance(habit, day, t, factor)) continue;
 
       const category = CATEGORIES.find((candidate) => candidate.slug === habit.category)!;
@@ -321,24 +232,14 @@ export function demoStickers(end: DayString): StickersByDay {
       note: null,
     };
 
-    // Days with nothing at all are left out of the Map entirely, which is what
-    // the real query does — `NO_STICKERS` is the answer for a day it has never
-    // heard of, and a demo that filled in empty entries would be the one place
-    // in the app where the Map's own rule didn't hold.
+    // Empty days stay out of the Map, like the real query.
     if (activities.length > 0 || day_.mood) byDay.set(day, day_);
   }
 
   return byDay;
 }
 
-/**
- * The probability this habit lands on this day.
- *
- * Three multipliers on a base rate rather than a rule with branches in it,
- * because the three are independent questions — how often, which weekdays,
- * which end of the year — and multiplying is what lets each be edited without
- * reasoning about the other two.
- */
+/** Base rate × weekday × drift, each independently editable. */
 function chance(
   habit: DemoHabit,
   day: DayString,
@@ -356,40 +257,15 @@ function weekday(habit: DemoHabit, day: DayString): number {
   return habit.days.includes(dayOfWeek(day)) ? ON_DAY : OFF_DAY;
 }
 
-/**
- * How much a habit swings across the year, end to end. 1.5 means a full `fade`
- * of 1 runs from a quarter of its base rate to one and three quarters — enough
- * that a habit which stopped reads as *stopped* in the strip, rather than as a
- * slightly thinner scatter that you would have to count to notice.
- */
+/** Full `fade` runs 0.25× → 1.75×, so a stopped habit reads as stopped. */
 const DRIFT_SWING = 1.5;
 
-/**
- * The year-long ramp, centred so a habit's *average* rate over the window is
- * its base rate whichever way it drifts. `fade` of 1 runs from 0.25× at the
- * start to 1.75× at the end; -1 runs the other way; 0 is flat.
- *
- * Floored at zero, because a `fade` outside [-1, 1] would otherwise ask for a
- * negative probability and the draw below would quietly read it as "never".
- * Saying so here is cheaper than a range check on the table.
- */
+/** Ramp centred on the base rate. Floored at 0 for `fade` outside [-1, 1]. */
 function drift(habit: DemoHabit, t: number): number {
   return Math.max(0, 1 + habit.fade * (t - 0.5) * DRIFT_SWING);
 }
 
-/**
- * The one number that turns thirteen relative weights into "about four a day".
- *
- * Computed by walking the window once and summing every probability, which is
- * the expected number of placements — then dividing the target by it. A closed
- * form would be shorter and would have to be rederived every time a weight,
- * a weekday bias or the drift curve changed; this cannot fall out of date
- * because it is measuring the same function that draws the stickers.
- *
- * The clamp in `chance` is applied after this, so the true average lands a
- * shade under the target once a heavy habit starts hitting the ceiling. Under,
- * not over, which is the harmless direction.
- */
+/** Normalises to `DEMO_PER_DAY` via expected placements (pre-clamp: lands a hair under). */
 function scale(start: DayString): number {
   let expected = 0;
   for (let i = 0; i < DEMO_DAYS; i++) {
@@ -403,18 +279,8 @@ function scale(start: DayString): number {
 }
 
 /**
- * The day's mood, as a wave rather than a coin toss.
- *
- * Two slow sinusoids and a little jitter. The Moods tab draws a line, and a
- * line through independent random draws is a hairball that says nothing — what
- * makes it worth looking at is that a mood in March has something to do with
- * the mood in February. The periods are 97 and 23 days, deliberately coprime
- * and neither of them a month, so the shape never lines up with the calendar
- * and never repeats inside one window.
- *
- * The phase comes from the day's absolute distance from a fixed epoch, not
- * from its position in the window, so the wave is nailed to the calendar and
- * yesterday's mood is the same tomorrow.
+ * Mood as two slow sinusoids (97, 23 days: coprime, not monthly) plus jitter.
+ * Phase from a fixed epoch, so the wave is pinned to the calendar.
  */
 const EPOCH = "2000-01-01" as DayString;
 const SLOW = 97;
@@ -434,21 +300,13 @@ function moodOf(day: DayString) {
   return MOODS[score - 1];
 }
 
-/** Sunday 0, matching `Date.prototype.getUTCDay` and the strip's columns. */
+/** Sunday 0. */
 function dayOfWeek(day: DayString): number {
   // 1970-01-01 was a Thursday, which is 4.
   return (((daysBetween("1970-01-01" as DayString, day) + 4) % 7) + 7) % 7;
 }
 
-/**
- * A number in [0, 1) from a day and a label, and the same one every time.
- *
- * `Math.random()` is not an option: the page renders on the server and again in
- * the browser to hydrate, and two different years is a hydration mismatch and a
- * calendar that visibly changes under you. So the seed is the text — the date
- * plus what the draw is *for* — hashed with FNV-1a and run through mulberry32.
- * Cheap, no dependency, and well enough distributed for stickers.
- */
+/** Deterministic [0, 1) from day + label (FNV-1a, mulberry32): hydration-safe. */
 function random(day: DayString, label: string): number {
   let h = 0x811c9dc5;
   const text = `${day}:${label}`;

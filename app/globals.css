@@ -2,30 +2,17 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* The two markdown files are documentation, and Tailwind cannot tell
-   documentation from markup — every class name a changelog entry mentions
-   comes out of the build as a live CSS rule for a class nothing wears. That is
-   the same trap the footnote in `lib/layout.ts` describes, arriving from the
-   one direction a comment convention can't fix: PROGRESS.md's whole job is to
-   say which class changed, and it is a hundred entries long.
-
-   So they are excluded from the scan rather than written around. Nothing in
-   either file is ever rendered. */
+/* Docs, not markup: keep their class names out of the build. */
 @source not "../PROGRESS.md";
 @source not "../README.md";
 
 @custom-variant dark (&:is(.dark *));
 
 /* ---------------------------------------------------------------------------
-   Bridge: turn CSS variables into Tailwind utilities.
-
-   Everything named here becomes a class. `--color-cat-rose` gives you
-   `bg-cat-rose`, `text-cat-rose`, `border-cat-rose`. The values live in
-   :root / .dark below, so a utility resolves differently per theme without a
-   single class name changing.
+   Bridge: CSS variables → Tailwind utilities; values per theme below.
 --------------------------------------------------------------------------- */
 @theme inline {
-  /* Display: slab (Zilla Slab, stand-in for Winden). Text: geometric (Outfit, stand-in for Axiforma). */
+  /* Zilla Slab / Outfit stand in for Winden / Axiforma. */
   --font-display: var(--font-display-face), Georgia, serif;
   --font-sans: var(--font-text-face), system-ui, sans-serif;
   --font-heading: var(--font-display-face), Georgia, serif;
@@ -40,12 +27,20 @@
   --text-display-sm: 2.875rem;
   --text-display-sm--line-height: 1.1;
   --text-display-sm--letter-spacing: -0.01em;
+  --text-title: 2.5rem;
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.01em;
+  --text-date: 2rem;
+  --text-date--line-height: 1.1;
   --text-heading: 2.25rem;
   --text-heading--line-height: 1.15;
   --text-heading--letter-spacing: -0.01em;
   --text-subhead: 1.625rem;
   --text-subhead--line-height: 1.2;
   --text-subhead--font-weight: 400;
+  --text-logo: 1.5rem;
+  --text-logo--line-height: 1;
+  --text-logo--font-weight: 400;
   --text-body-lg: 1.25rem;
   --text-body-lg--line-height: 1.4;
   --text-ui: 1rem;
@@ -153,110 +148,38 @@
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
 
-  /* Two curves, and the difference between them is the whole idea.
-
-     Something arriving should decelerate: fast at the start, easing to a stop,
-     the way a thing set down settles. Something leaving should accelerate:
-     it is on its way out, and lingering over the exit makes the interface feel
-     like it's holding you up. Symmetric easing — the `ease` default — gives
-     both halves the same soft start, which is why a dismissed dialog reads as
-     sluggish even at 100ms.
-
-     `--ease-enter` is a strong ease-out (it covers 60% of the distance in the
-     first quarter of its time). `--ease-exit` is its opposite. `--ease-deck`
-     is a single in-and-out curve for the month deck, where two pages move
-     together and any difference between them would open a gap. */
+  /* Enter decelerates, exit accelerates. Deck is one in-out curve so two pages don't gap. */
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-deck: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* A mark arriving in a day cell — see `DraggableMark`. Scales up past its
-     final size and settles back, which is what reads as "placed" rather than
-     "appeared". The overshoot is small (8%) because a mark is 26px; the same
-     proportion on a large element would look like a bounce. */
+  /* Overshoots 8% and settles, so it reads as "placed". */
   --animate-land: land var(--dur-land) var(--ease-enter) both;
 
-  /* The day sheet rising from the bottom edge — see `DaySheet`.
-
-     `--ease-deck` and not `--ease-enter`, which is the one choice here worth
-     stating. The deck curve is `cubic-bezier(0.32, 0.72, 0, 1)`, the same curve
-     vaul uses for its drawer, and a sheet is the one surface in this app that
-     is asking the same question the deck asks: a large object travelling a long
-     way, where the eye follows the whole journey rather than just noticing the
-     arrival. `--ease-enter` is tuned for the opposite — a small thing that
-     should be *there* almost immediately — and at 100% of a 560px sheet it
-     covers most of the screen in the first 60ms and then creeps.
-
-     Leaving is `--ease-exit` at the shorter duration, like every other panel:
-     an exit you watch is an interface holding you up.
-  */
+  /* Deck curve (vaul's), not ease-enter: a long travel the eye follows. */
   --animate-sheet-in: sheet-up var(--dur-panel-in) var(--ease-deck) both;
   --animate-sheet-out: sheet-down var(--dur-panel-out) var(--ease-exit) both;
 
-  /* The signed-out page's three text elements, which now rise as one block —
-     see `app/login/page.tsx`.
-
-     `both` is kept even though nothing on that page carries a delay any more.
-     It is what holds an element on its first keyframe through a delay instead
-     of leaving it fully visible until the animation starts, so it's the
-     difference between things arriving in order and things twitching in order.
-     Reintroduce a stagger without it and every element sits there at full
-     opacity and then jumps. Costs nothing to leave in. */
+  /* `both` holds the first keyframe through the stagger. */
   --animate-rise: rise var(--dur-hero) var(--ease-enter) both;
 
-  /* Sign-in: the nth strike (`--step` on the element) draws, then the last line fades in after all three. */
+  /* Nth strike (`--step`) draws; the last line fades in after all three. */
   --animate-strike: strike var(--dur-strike) var(--ease-enter)
     calc(var(--strike-wait) + var(--step, 0) * (var(--dur-strike) + var(--strike-gap))) both;
   --animate-after-strikes: appear var(--dur-hero) var(--ease-enter)
     calc(var(--strike-wait) + 3 * (var(--dur-strike) + var(--strike-gap))) both;
 
-  /* The stickers arriving on the signed-out page. Two animations rather than
-     one, because the fall and the reveal are different lengths: the fade is
-     over in the first third so that what you watch descend is a solid object
-     rather than one developing in mid-air. Comma-separated the same way the
-     `::view-transition-*` rules further down this file stack a slide on a fade.
-
-     `both` on each, for the reason `--animate-rise` documents just above: the
-     stagger only works if an element holds its first keyframe through its
-     delay.
-
-     No timing function in the shorthand — `fall` sets one per keyframe, because
-     a single curve cannot both accelerate into the impact and oscillate out of
-     it. */
+  /* Fade done in the first third so it falls solid; `fall` sets per-keyframe easing. */
   --animate-fall:
     fall var(--dur-fall) both,
     sticker-fade calc(var(--dur-fall) * 0.3) linear both;
 
-  /* The stickers loitering behind the signed-out page. This is the vertical
-     half of the drift; `--animate-drift-x` below is the horizontal one, and a
-     sticker wears both — on two nested spans, because an element has one
-     `translate` and two simultaneous translations need two elements. Neither
-     axis alone is the movement: the periods are non-harmonic, so what you
-     watch is a slow open figure rather than a line.
-
-     Duration and delay are read from custom properties rather than baked in,
-     the same trick `deck-slide` uses for its offset: two dozen stickers all
-     drifting on the same six-second clock would pulse in unison, which reads
-     as one animated background rather than two dozen separate objects. Each
-     one sets its own `--drift-dur` and `--drift-delay` so they never line up.
-
-     `--drift-delay` is always *negative*, and that is not a typo. A positive
-     delay makes the element wait at its own natural position and then jump to
-     the animation's first keyframe when the clock runs out — here, 7px up and
-     3.5 degrees over — so every sticker landed, sat still for a second or two,
-     and then twitched into place a second time. A negative delay starts the
-     animation already in progress: at first paint each one is somewhere
-     different in its cycle, nothing waits, and nothing snaps.
-
-     `both` is belt and braces for the same failure. It only matters if someone
-     writes a positive delay here later, and then it holds the first keyframe
-     through the wait instead of jumping to it. */
+  /* Vertical drift (x rides a nested span: one `translate` per element).
+     Per-sticker dur/delay; delays must be negative or stickers snap after waiting. */
   --animate-drift: drift var(--drift-dur, 6s) ease-in-out var(--drift-delay, 0s)
     infinite alternate both;
 
-  /* The horizontal half. Same shape, its own two properties, and the same rule
-     about negative delays — every `--drift-x-delay` in `FloatingStickers` is
-     negative for exactly the reason above. */
+  /* Horizontal half; `--drift-x-delay` is negative too. */
   --animate-drift-x: drift-x var(--drift-x-dur, 8s) ease-in-out
     var(--drift-x-delay, -1s) infinite alternate both;
 }
@@ -354,10 +277,17 @@
   --dur-hero: 420ms;
   /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
+  --fall-drop: 28px;
+  --sticker-start: 160ms;
+  --sticker-gap: 55ms;
   /* Sign-in strikes: each line, the gap between, the wait before the first. */
   --dur-strike: 400ms;
   --strike-gap: 250ms;
   --strike-wait: 600ms;
+  /* Sign-in text follows the title without delaying the actions for long. */
+  --hero-rise: 14px;
+  --hero-copy-delay: 80ms;
+  --hero-actions-delay: 160ms;
 }
 
 @media (min-width: 40rem) {
@@ -372,63 +302,34 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Dark — neutral charcoal, not blue-black and no longer warm. Category hues lift
-   ~12% so they hold their contrast against a dark ground. **Proposed values:
-   see the note at the top of the block.**
+   Dark — proposed values, not designed.
 --------------------------------------------------------------------------- */
 /* Old newsprint dark theme; not applied. Replace when a dark stationery theme is designed. */
 .dark {
   color-scheme: dark;
 
-  /* **This half of the palette is proposed, not designed.** The light theme
-     came from a frame; these are the values that keep the same relationships
-     on a dark ground — the ladder, the steps between rungs, the neutral cast —
-     derived rather than drawn, and every one of them measured for contrast but
-     none of them looked at beside a design. They are all above the app's 4.5
-     floor with room to spare, so this is a question of feel rather than of
-     legibility: whether the ground is the right darkness, whether the surface
-     lifts far enough off it, whether the mark is the right red. Treat them as
-     a starting point and expect the frame to move them.
-
-     The move itself is the light theme's, upside down: the card lifts off the
-     ground instead of sinking toward it. What changed with the retheme is the
-     cast — this was a warm charcoal to match a cream page, and the page is a
-     neutral grey stock now, so the dark ground lost its warmth alongside it. */
+  /* Proposed: contrast-checked, never seen beside a design. */
   --bg: #161615;
   --surface: #201f1d;
   --surface-sunken: #111110;
   --ink: #ecebe5;
-  /* 6.03:1 on the page. Dark themes have the easier job here — the same
-     perceptual step away from the ink buys more contrast going down from a
-     light ink than going up from a dark one — which is why this rung was never
-     the problem its light-theme counterpart was. */
+  /* 6.03:1 on the page. */
   --ink-muted: #97958c;
-  /* "Darker" inverts here, as the pastels did: more presence against a dark
-     ground means lighter, not darker. Same step away from --ink-muted, toward
-     --ink rather than away from it. 10.14:1. */
+  /* Lighter here = more presence on dark. 10.14:1. */
   --ink-label: #c4c2b8;
   --hairline: #34332f;
 
-  /* Light-on-dark, and *not* the light theme's alphas inverted. A translucent
-     white on #161615 loses contrast faster than a translucent black on grey,
-     so the resting rung comes up rather than down. The channels follow --ink,
-     which moved with the retheme. */
+  /* Not inverted: translucent white loses contrast faster on dark. */
   --scroll-thumb: rgb(236 235 229 / 0.2);
   --scroll-thumb-hover: rgb(236 235 229 / 0.34);
 
-  /* Up rather than mirrored, same as the thumb above it: light ink on a
-     #161615 page loses more contrast at the same alpha than dark ink on
-     grey. */
+  /* Higher alpha, same reason as the thumb. */
   --rule: rgb(236 235 229 / 0.24);
 
-  /* Brighter and a shade toward orange, because #d4271c on a near-black ground
-     is a dark red on a dark page — 2.2:1, a mark you have to look for. #ff5a47
-     is 5.87:1 and still reads as the same accent rather than as a second hue.
-     See the light theme's token for why this colour has exactly one job. */
+  /* Brighter: #d4271c on near-black is 2.2:1; this is 5.87:1. */
   --today-mark: #ff5a47;
 
-  /* Lifted ~12% in lightness. Only the ramps are redefined — the category aliases
-     and the mood aliases follow automatically. */
+  /* Lifted ~12%; category and mood aliases follow. */
   --ramp-red: #d75f52;
   --ramp-blue: #4a93ce;
   --ramp-orange: #e88c42;
@@ -436,17 +337,7 @@
   --ramp-green: #63a55f;
   --ramp-purple: #a971d2;
 
-  /* "Pastel" inverts in the dark theme: a tint toward the surface is a *darker*
-     muted hue, not a lighter one. Same mix, opposite direction, so --ink still
-     reads on top.
-
-     42%, not the 48% the light theme uses, and the gap is the one place these
-     two ramps can't move together. Mixing further from the surface means
-     *toward the full hue*, which is brighter here and darker there — so the
-     same step that adds contrast under --ink in the light theme takes it away
-     in this one. --ramp-yellow is the binding constraint: at 48% the mark on a
-     Creativity & Play sticker falls to 4.03:1, under the 4.5 it has always
-     held. 42% is the furthest this side can travel and still clear it. */
+  /* Mixes toward the surface (darker here). 42%, not 48%: yellow stays ≥ 4.5:1. */
   --ramp-red-soft: #6f3a33;
   --ramp-blue-soft: #32516a;
   --ramp-orange-soft: #784e2d;
@@ -454,22 +345,7 @@
   --ramp-green-soft: #3d5939;
   --ramp-purple-soft: #5b416b;
 
-  /* The six fills follow from the mix in :root — only the percentage is
-     restated here, and it has to be, for the same reason the soft rung is 42%
-     on this side and 48% on the other.
-
-     Mixing further from the surface means *toward the full hue*, which is
-     brighter in the light theme and darker in this one. So the step that adds
-     contrast under --ink there takes it away here, and the two sides stopped
-     being able to share a number the moment this rung went from 20% (faint,
-     miles of headroom either way) to 45% (carrying the hue on its own).
-
-     --ramp-yellow is the binding constraint again: at 45% a mark on a
-     Creativity & Play sticker falls to 4.29:1 on the card, under the 4.5 this
-     app has always held. 40% puts it at 4.83 and costs the other five nothing
-     — the floor across the six is that same yellow, and red, the darkest, sits
-     at 7.60. The 5-point gap is invisible side by side; the failure it avoids
-     is not. */
+  /* 40%, not :root's: at 45% yellow marks fall under 4.5:1. */
   --sticker-fill: 40%;
 
   --background: var(--bg);
@@ -480,11 +356,7 @@
   --popover-foreground: var(--ink);
   --primary: #ecebe5;
   --primary-foreground: #161615;
-  /* Up rather than down, which is the one place this half of the palette does
-     not mirror the light theme. There a selected cell sinks below the page;
-     here it lifts, because below #161615 there is nowhere left to go. #292826
-     is nine points over the page and nine under the surface — a step you can
-     see without it becoming a card. */
+  /* Lifts rather than sinks: nothing below #161615. */
   --secondary: #292826;
   --secondary-foreground: var(--ink);
   --muted: #292826;
@@ -552,36 +424,10 @@
 }
 
 /* ---------------------------------------------------------------------------
-   The scrollbar inside the sticker rail.
-
-   A browser scrollbar is the one piece of furniture on the page we don't draw,
-   and in the rail that shows: a 15px slab of system grey against a 14rem
-   column of warm paper. This draws it instead — 8px wide, a 4px pill of
-   translucent ink inset inside its own track, no groove behind it.
-
-   **Why the WebKit pseudo-elements and not just `scrollbar-color`.** The
-   standard properties are the better mechanism and `html` uses them for the
-   page. They can set a thumb colour and nothing else: no radius, no inset, no
-   hover. They also can't do the thing this is for — on macOS both engines
-   overlay the scrollbar and fade it out when idle unless the visitor has set
-   "Show scroll bars: Always", so a rail that scrolls has *no* visible
-   indication that it does. Styling `::-webkit-scrollbar` opts the element out
-   of overlay scrollbars altogether: the bar is always there, and it takes real
-   layout width, which is why the rail got 1rem wider in the same pass.
-
-   **Why the standard properties are handed back.** Blink and WebKit ignore
-   `::-webkit-scrollbar` on any element whose `scrollbar-width` or
-   `scrollbar-color` is not `auto`, and both of those *inherit* — `html` sets
-   them, so without this they would arrive here and silently switch the rules
-   below off. Returning them to `auto` is scoped by `@supports selector()`, so
-   it happens only in the engines that have the pseudo-elements to replace
-   them: Firefox never matches, keeps the inherited thin ink scrollbar, and
-   gets the closest thing it can draw.
-
-   The inset is a transparent border plus `background-clip: padding-box` rather
-   than a narrower bar, so the thumb has air on both sides and the track stays
-   the full 8px of hit area. A 4px-wide scrollbar is accurate and very hard to
-   grab.
+   Sticker rail scrollbar. WebKit pseudo-elements opt out of macOS overlay
+   (always visible). They're ignored unless scrollbar-width/color are `auto`,
+   so those are reset where supported; Firefox keeps the inherited thin bar.
+   Transparent border + padding-box inset keeps an 8px hit area.
 --------------------------------------------------------------------------- */
 @utility scrollbar-app {
   @supports selector(::-webkit-scrollbar) {
@@ -594,9 +440,7 @@
     height: 0.5rem;
   }
 
-  /* No groove. A visible track draws a line down the side of the tray that
-     isn't part of the design, and it would be there whether or not the list
-     is long enough to scroll. */
+  /* No groove. */
   &::-webkit-scrollbar-track,
   &::-webkit-scrollbar-corner {
     background: transparent;
@@ -615,21 +459,10 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Motion.
-
-   Keyframes live at the top level rather than inside `@theme` so they are
-   emitted whether or not a utility happens to reference them — the view
-   transition rules below are hand-written CSS, not Tailwind classes, and
-   Tailwind has no way to see that they need `deck-slide`.
+   Motion. Keyframes top level so they emit even when only hand-written CSS uses them.
 --------------------------------------------------------------------------- */
 
-/* The day sheet, in and out. `translate` rather than `transform`, so nothing
-   here fights the `-translate-x-1/2` that the centred dialog content uses —
-   these are different surfaces, but they share a stylesheet and the property
-   form is the house one (see `rise` and `fall`).
-
-   100% of the element's own height, which is what makes the distance correct
-   for a short sheet and a tall one without either of them knowing the number. */
+/* `translate`, not `transform`, to not fight dialog centring. 100% = own height. */
 @keyframes sheet-up {
   from {
     translate: 0 100%;
@@ -664,14 +497,6 @@
   }
 }
 
-/* The signed-out page arriving, one element at a time.
-
-   Up rather than down, and only 14px of it. A thing that rises into place
-   reads as settling; the same distance downward reads as dropping, which
-   wants a bounce to finish it and this doesn't have one. The translate is
-   small because the fade is doing most of the work — far enough to give the
-   opacity somewhere to happen, not so far that the text is legibly in the
-   wrong place first. */
 /* Sign-in strike line; pair with `origin-left`. */
 @keyframes strike {
   from {
@@ -688,10 +513,11 @@
   }
 }
 
+/* Up, not down: rising reads as settling. */
 @keyframes rise {
   from {
     opacity: 0;
-    translate: 0 14px;
+    translate: 0 var(--hero-rise, 14px);
   }
   to {
     opacity: 1;
@@ -699,29 +525,8 @@
   }
 }
 
-/* A sticker dropping onto the signed-out page and settling like something
-   landing on water: it falls, plunges past where it belongs, and rocks back
-   twice before it stops. The heading and the paragraph still `rise` — the
-   content asserts itself upward, the decoration drops in around it.
-
-   The distance is `--fall-drop` rather than a literal, the same way
-   `deck-slide` reads `--deck-offset`, so the big stickers can fall further than
-   the small ones without four near-identical keyframe blocks drifting apart.
-   Every other stop is a fraction of it, so re-tuning the drop re-tunes the
-   whole bounce in proportion.
-
-   The per-keyframe `animation-timing-function` is the load-bearing part, and it
-   is worth knowing that a keyframe's timing function governs the segment that
-   *starts* at it, not the one that ends there. The first segment is the fall
-   and accelerates — ease-in-quad is the displacement curve of a falling body,
-   and it is the one place in this app where an ease-in is correct rather than a
-   mistake. Do not "fix" it to an ease-out. The three after it are half-swings
-   of an oscillation, so they take a symmetric sine-like curve instead, and they
-   get equal slices of time because a damped oscillator has a constant period.
-
-   Reduced motion needs no rule of its own: the blanket block at the bottom of
-   this file flattens the duration to 1ms, and `both` holds the final keyframe,
-   which is the resting position. */
+/* Falls, overshoots, rocks back twice. A keyframe's easing governs the segment
+   that starts at it: ease-in for the fall (gravity, keep it), sine for swings. */
 @keyframes fall {
   0% {
     translate: 0 calc(var(--fall-drop, 28px) * -1);
@@ -744,10 +549,7 @@
   }
 }
 
-/* The sticker becoming visible, on its own clock so it can finish long before
-   the fall does. Separate from `fall` rather than an extra pair of stops inside
-   it, because an opacity keyframe in the middle of the descent would split the
-   gravity curve into two shallower ones. */
+/* Separate from `fall` so an opacity stop doesn't split the gravity curve. */
 @keyframes sticker-fade {
   from {
     opacity: 0;
@@ -757,21 +559,7 @@
   }
 }
 
-/* The decorative stickers, breathing. `alternate` rather than a loop back to
-   the start, so there is no seam — the animation reverses instead of jumping
-   home. Small numbers on purpose: this runs forever behind a page someone is
-   trying to read a sentence on, and anything you can *watch* is too much.
-
-   This is half the drift. `drift-x` below is the other half, and the two are
-   on two different elements for the reason that keyframe's comment gives.
-
-   Reduced motion *does* need a rule of its own, and this is the one animation
-   in the file that does — see `.animate-drift` inside the
-   `prefers-reduced-motion` block at the bottom. The blanket rule there caps the
-   iteration count at one, which for an `alternate` animation with `both` means
-   a single forward pass that ends on the last keyframe and stays there. For
-   every other animation here that is the right answer, because they all end
-   where the element belongs. This one ends 7px down and 3.5° over. */
+/* `alternate`, so no seam. Ends off-position, hence its reduced-motion rule. */
 @keyframes drift {
   from {
     translate: 0 -7px;
@@ -783,17 +571,7 @@
   }
 }
 
-/* The other half of the drift. Splitting the two axes across two elements is
-   not tidiness — `translate` is one property, so a second animation on the same
-   span would simply win and the vertical drift would vanish with no error
-   anywhere to say why.
-
-   The periods are deliberately not multiples of each other (each is 1.37× its
-   sticker's vertical one), which is what turns two bobs into a slow open figure
-   that never repeats visibly. It also removes the hang at the ends of the
-   cycle: `ease-in-out` with `alternate` brings each axis to a stop at its
-   extremes, and two axes stopping at different moments means the object itself
-   never does. */
+/* Separate element: one `translate` per element. Period 1.37× the vertical's. */
 @keyframes drift-x {
   from {
     translate: -5px 0;
@@ -803,10 +581,7 @@
   }
 }
 
-/* The month deck. One keyframe pair drives all four cases — old and new,
-   forward and back — by reading `--deck-offset`, which each rule sets to a
-   different sign. Written once and steered by a variable, because four
-   near-identical keyframe blocks drift apart the first time one is tuned. */
+/* One pair for all four cases, steered by `--deck-offset`. */
 @keyframes deck-slide {
   from {
     translate: var(--deck-offset);
@@ -826,37 +601,9 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Period deck — see `CalendarPanel`.
-
-   These pseudo-elements are the browser's screenshots of the outgoing and
-   incoming period, painted over the page for the length of the transition.
-   They are attached to the document root no matter where in the tree the
-   element lives, which is why these selectors are unnested and why they are
-   matched by class: `<ViewTransition enter={{ "step-next": "deck-next" }}>`
-   puts `deck-next` on the pseudo-element, and
-   `::view-transition-new(.deck-next)` is how CSS gets at it.
-
-   The transition types are `step-next` and `step-previous` rather than
-   anything with "month" in the name, because the same two arrows now step a
-   month or a week and the animation is the same either way. The class names
-   below stayed — they describe the picture, not the unit.
-
-   `reverse` on the outgoing side is doing real work: it means one keyframe
-   describes arriving, and leaving is that same motion played backwards. The
-   offsets are percentages of the grid's own width, so the movement stays
-   proportional from a phone to a wide monitor.
-
-   The offset is deliberately small — 8%, not a full page width. A calendar
-   grid isn't a page you're flipping away from; it's the same grid holding
-   different days. Enough sideways motion to say which direction you went, and
-   the fade does the rest. Small also keeps the snapshots from sweeping visibly
-   across the rest of the layout, since a view-transition pseudo-element is not
-   clipped by whatever box its source element lived in.
-
-   A fade-free version was built and rejected: a full-width slide with a
-   `clip-path` cutting each page off at the frame's edge, so it read like
-   turning a page in a book. It worked, and it was too much event for stepping
-   between two views of the same grid.
+   Period deck — see `CalendarPanel`. Pseudo-elements live on the root, so
+   unnested and matched by class. Old side plays `reverse`. 8% offset: same
+   grid, new days; also unclipped, so keep it small.
 --------------------------------------------------------------------------- */
 ::view-transition-old(.deck-next) {
   --deck-offset: -8%;
@@ -886,13 +633,7 @@
     var(--dur-deck) var(--ease-deck) both deck-slide;
 }
 
-/* The month name, which sits above the grid and swaps at the same moment.
-
-   It gets a fade and no slide. Two elements sliding the same distance side by
-   side looks like one plane moving, which is right for a deck of days but wrong
-   for a title — the title is a label *on* the deck, not part of it. The arrows
-   beside it are outside the transition entirely and never move, so there is
-   always one fixed thing to aim at while the rest changes. */
+/* Label fades, no slide: it's on the deck, not part of it. */
 ::view-transition-old(.deck-label) {
   animation: 120ms var(--ease-exit) both deck-fade reverse;
 }
@@ -906,28 +647,7 @@
     @apply border-border outline-ring/50;
   }
 
-  /* The hand cursor, which Tailwind v3 used to add for you and v4 does not.
-     Preflight now leaves `button` at the browser default, which is an arrow —
-     defensible, since that *is* the spec's default, and disorienting on a page
-     where every other affordance says "click me".
-
-     One rule rather than a `cursor-pointer` on each control. Twelve call sites
-     across nine components had already grown that class one at a time, which is
-     what a missing base rule looks like from the inside: the fix keeps working,
-     so the cause never gets found, and the next control starts the count at
-     thirteen. All twelve came out with this rule going in.
-
-     The list is what Radix actually renders, not a guess. A radio item and a
-     dropdown trigger are real `<button>`s, so they come free; a Select option
-     is a `<div role="option">` and a menu item is `<div role="menuitem">`, so
-     those are named. `label[for]` is here because a label bound to a control is
-     a click target too — the mood picker's rows are the case — and a bare
-     `<label>` wrapping nothing is not.
-
-     Disabled controls are excluded three ways because the three libraries
-     spell it three ways: a native `disabled`, Radix's `data-disabled`, and
-     `aria-disabled` on things that can't take the attribute. A hand cursor
-     over a control that will not respond is a promise the page can't keep. */
+  /* Pointer cursor (v4 dropped it). Lists what Radix renders; disabled three ways. */
   button,
   summary,
   label[for],
@@ -948,21 +668,7 @@
   html {
     @apply font-sans;
 
-    /* Two values: the thumb (the part you drag), then the track behind it. Both
-       inherit, so every scrolling box on the page gets them — the sticker rail
-       included — without a class anywhere.
-
-       The thumb is `--scroll-thumb`, the same token the rail's own scrollbar
-       uses, so the page and the tray are drawn in one colour from one place;
-       it is defined per theme, so this lands correctly in both from a single
-       declaration. A fixed grey would be too dark on the grey page or
-       invisible on charcoal. The track is transparent: a visible groove would draw a line
-       down the page that isn't part of the design.
-
-       On a Mac these only show if scroll bars are set to "Always" in System
-       Settings; otherwise macOS overlays its own and hides them when idle —
-       which is the whole reason the rail does not stop here. See
-       `scrollbar-app`. */
+    /* Thumb, track; inherited by every scroller. macOS: see `scrollbar-app`. */
     scrollbar-width: thin;
     scrollbar-color: var(--scroll-thumb) transparent;
   }
@@ -984,39 +690,10 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Reduced motion.
-
-   "Reduce" is an accessibility setting, not a preference for a plainer look.
-   For some people motion on screen causes actual nausea and dizziness —
-   vestibular disorders respond to large sliding and scaling movement much the
-   way motion sickness responds to a car — and for others it's an attention
-   cost they've chosen not to pay. Either way the request is specific: cut the
-   movement, keep the interface.
-
-   So this doesn't hide anything or change a layout. Everything still appears
-   and disappears at the same moments; it just stops travelling to get there.
-
-   Three things to know about how it's written:
-
-   1. The durations are rewritten at the source. Every timing in this app comes
-      from one of the `--dur-*` tokens, so setting them here reaches the dialog,
-      the menus, the deck and the landing mark in one place. The blanket `*`
-      rules underneath are a backstop for anything that hardcodes a duration —
-      a third-party component, or a class someone adds later without reading
-      this comment.
-
-   2. 1ms, never 0s. Radix keeps a closing dialog mounted until its animation
-      fires `animationend`, and an animation with no duration is entitled not
-      to fire that event at all. Zero out the durations and the dialog closes
-      visually but its overlay stays in the DOM, holding focus and blocking
-      clicks. 1ms is imperceptible and still emits the event.
-
-   3. `!important` and `*`, which are usually a smell, are correct here: this
-      has to beat every utility class in the app, including ones that don't
-      exist yet.
-
-   The `::view-transition-*` pseudo-elements need their own rules because they
-   are not elements in the document and `*` does not reach them. */
+   Reduced motion: stop travel, keep the interface. Tokens → 1ms at the source;
+   `*` is a backstop. 1ms, never 0: Radix waits for `animationend` to unmount.
+   View-transition pseudos need their own rule.
+--------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-panel-in: 1ms;
@@ -1041,24 +718,7 @@
     scroll-behavior: auto !important;
   }
 
-  /* The drift needs its own rule, and it is the one animation in this app that
-     does. The blanket rule above stops everything by flattening the duration
-     and capping the iteration count at one — which for an `alternate` animation
-     with `both` means a single forward pass that finishes on the *last*
-     keyframe and stays there. Every other animation in this file ends where the
-     element belongs, so that is the right answer for all of them. The drift
-     ends 7px down and 3.5° over, so capping it would park all thirty
-     stickers below their positions and tilted the same way — still, but visibly
-     wrong, and wrong in a way that reads as a bug rather than as a preference
-     being honoured.
-
-     `animation: none` instead: no animation, so the elements sit where layout
-     puts them. The per-sticker `tilt` and `offset` are ordinary utilities
-     rather than animations, so the field keeps its scatter and only loses its
-     movement — which is precisely what the request asks for.
-
-     Class specificity beats `*`, so this wins the `!important` contest against
-     the blanket rule above. */
+  /* Drift ends off-position, so a capped pass would park stickers wrong: none instead. */
   .animate-drift,
   .animate-drift-x {
     animation: none !important;

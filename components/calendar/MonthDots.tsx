@@ -12,93 +12,38 @@ import { monthSummary } from "@/lib/monthSummary";
 import { categoryColor, wash } from "@/lib/palette";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import { NO_STICKERS } from "@/lib/stickers";
+import { useSettings } from "@/components/SettingsProvider";
 
-/**
- * How many dots a cell will draw before it stops counting.
- *
- * Four, and the cap is silent — no "+2", no smaller dots to fit. A 44px cell
- * can hold four 5px dots on one line with air around them; five is a second
- * line and a cell that is taller than its neighbours. What the dots are for is
- * "something happened here, in these colours", and the fifth dot does not
- * change that answer. The exact count is one tap away and it is spelled out in
- * words there.
- */
+/** Silent cap: four 5px dots fit one line in a 44px cell; the sheet has the count. */
 const DOT_CAP = 4;
 
 type Props = PeriodProps & {
-  /** The first of the month being shown. */
   month: Date;
-  /** The library, for the activity-to-category map the summary counts through. */
+  /** For the activity-to-category map. */
   groups: LibraryGroup[];
-  /** Open the day's sheet. `CalendarPanel` owns it — see `DaySheet`. */
+  /** `CalendarPanel` owns the sheet. */
   onShowDay: (day: Date) => void;
-  /**
-   * Which widths this drawing is for. `CalendarPanel` renders both the phone's
-   * and the desktop's and lets CSS choose — see the note on the branch there.
-   */
+  /** `CalendarPanel` renders phone + desktop and lets CSS pick. */
   className?: string;
 };
 
-/**
- * The month as a dot grid, for a phone.
- *
- * `MonthGrid` is forty-two cells that each hold named, draggable marks; at
- * 375px each of those cells is 45px wide, which is narrower than one sticker
- * plus its padding. So the marks come out and what stays is the thing a month
- * is actually read for: the shape of the month. Seven columns, six rows, and up
- * to four coloured dots per day — a picture of which days have something on
- * them and roughly what kind, taken in at a glance and never read one cell at a
- * time.
- *
- * **The dots are not stickers, and the difference is the point.** A sticker is
- * a 26px circle with a mark in it and a name in it, and it is a drag handle.
- * A dot is 5px of hue with no mark, no name and no gesture of its own. Shrinking
- * the sticker would have given a 14px circle whose icon is a smudge and whose
- * drag target is under the touch floor — a control that looks like a control and
- * cannot be operated. Dropping to a dot says plainly that this drawing is
- * evidence rather than a set of handles, and puts every gesture on the cell.
- *
- * So the cell is the tap target, it is the whole cell, and it opens that day's
- * sheet — the same bargain `WeekList` makes, for the same reason. The sheet
- * arrives over the month rather than replacing it, which matters more here than
- * it does in the week: the thing you came to this screen for is the shape of
- * thirty days at once, and filling in a Tuesday should not cost you the shape.
- *
- * **The summary underneath is not decoration, it is the other half of the
- * view.** The desktop month says how the month went by letting you read
- * forty-two cells of named marks. Dots can't do that — they carry a hue and
- * nothing else — so the sentences that a wide screen gets for free have to be
- * written out: how many days were marked, how many stickers, how many categories,
- * and the three habits that came round most. That is `monthSummary`, and it is
- * a pure function in `lib/` so it can be tested without a browser.
- *
- * Chosen by window width rather than by section — `CalendarPanel` renders this
- * and `MonthGrid` together and lets `lg:hidden` pick — so a narrow desktop
- * window gets it too. The cost is the same one the week pays: there is nothing
- * droppable in here, so a narrow window's tray cannot reach the month.
- */
+/** Phone month: dot grid + summary. Dots aren't handles; the cell opens the sheet. */
 export function MonthDots(props: Props) {
+  const { weekStartsOn } = useSettings();
   const cells = useMemo(
-    () => monthGrid(props.month, props.todayString),
-    [props.month, props.todayString],
+    () => monthGrid(props.month, props.todayString, weekStartsOn),
+    [props.month, props.todayString, weekStartsOn],
   );
 
-  const labels = useMemo(() => weekdayLabels(), []);
+  const labels = useMemo(() => weekdayLabels(weekStartsOn), [weekStartsOn]);
 
-  /** The month's own days — the borrowed ones at each end are not counted. */
+  /** Borrowed days at each end aren't counted. */
   const ownDays = useMemo<DayString[]>(
     () => cells.filter((cell) => cell.inMonth).map((cell) => cell.day),
     [cells],
   );
 
-  /**
-   * Activity to category, built from the library.
-   *
-   * Here rather than in `monthSummary` because the summary is a pure function
-   * over data and this is a reshape of a prop — and because the map is stable
-   * across every render where the library hasn't changed, while the summary is
-   * recomputed whenever a sticker moves.
-   */
+  /** Here, not in `monthSummary`: stable while the library is, unlike the summary. */
   const categoryOf = useMemo(() => {
     const map = new Map<string, string>();
     for (const group of props.groups) {
@@ -113,23 +58,13 @@ export function MonthDots(props: Props) {
   );
 
   const { highlight } = props;
-  /** The same fade every other view puts on what a selection didn't match. */
   const faded = (matched: boolean) =>
     highlight && !matched ? "opacity-35" : "";
 
   return (
     <div className={`flex flex-col gap-5 ${props.className ?? ""}`}>
       <div>
-        {/* The header row is inside the same grid as the cells, so the seven
-            labels sit over the seven columns by construction rather than by two
-            `grid-cols-7` that happen to agree.
-
-            "Sun" and not "S". The handoff cuts the labels to one letter, and
-            the reason not to follow it is already written down in `daylabel`:
-            `format(…, "EEE")` hands over a word, and a word is read in one beat
-            where a letter is reassembled into one. Three characters of Space
-            Mono at 0.65rem is about 19px in a 45px column, so the width that
-            would have forced the cut isn't actually short. */}
+        {/* Labels share the cells' grid so columns align. "Sun", not "S". */}
         <div className={`grid grid-cols-7 gap-0.75 ${RULE} pt-2`}>
           {labels.map((label) => (
             <div key={label} className="daylabel pb-1 text-center">
@@ -147,10 +82,7 @@ export function MonthDots(props: Props) {
                 type="button"
                 onClick={() => props.onShowDay(fromDayString(cell.day))}
                 data-day={cell.day}
-                // A borrowed day is dimmed rather than blanked: it is still a
-                // real day you can open, and the two rows at the ends of the
-                // grid are where a habit that runs over a month boundary
-                // actually lives.
+                // Dimmed, not blanked: still a real, openable day.
                 className={`flex h-11 flex-col items-center justify-center gap-1 rounded-lg transition-colors ${
                   cell.inMonth ? "" : "opacity-40"
                 } ${
@@ -161,8 +93,7 @@ export function MonthDots(props: Props) {
                       : "hover:bg-secondary/50"
                 }`}
               >
-                {/* Two visual pieces that read as "13" plus some colour, which
-                    is not a date. The sentence is what a screen reader gets. */}
+                {/* Screen readers get the full date. */}
                 <span className="sr-only">{formatDayLong(cell.day)}</span>
 
                 <time
@@ -175,10 +106,7 @@ export function MonthDots(props: Props) {
                   {cell.dayOfMonth}
                 </time>
 
-                {/* The row keeps its 5px whether or not there is anything in
-                    it, so the numerals sit on one line across all six rows. A
-                    grid where the empty days' numbers float lower than the
-                    marked ones is a grid you read cell by cell. */}
+                {/* Fixed 5px row keeps numerals aligned across rows. */}
                 <span
                   aria-hidden="true"
                   className="flex h-1.25 max-w-8.5 flex-wrap items-center justify-center gap-0.5"
@@ -203,15 +131,7 @@ export function MonthDots(props: Props) {
   );
 }
 
-/**
- * What the dots can't say, said in words.
- *
- * Three figures and up to three habits, drawn in the house grammar — a rule, an
- * eyebrow, and the content against the page's own cream. The handoff puts the
- * figures in three filled rounded cards, and the argument against that is the
- * one already written in `PANEL`: a filled box claims something separate is
- * going on inside it, and these three numbers are one sentence about one month.
- */
+/** What the dots can't say, in words. No filled cards: one sentence about one month. */
 function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
   const { summary } = props;
 
@@ -245,10 +165,7 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
                   {leader.name}
                 </span>
 
-                {/* The count is the fact and the cadence is the reading of it,
-                    so they are not the same size or the same colour. The
-                    cadence is the softer of the two on purpose: it is an
-                    approximation and it should look like one. */}
+                {/* Cadence softer than count: it's an approximation. */}
                 <span className="tabular shrink-0 text-label text-ink-muted">
                   {leader.count}×
                 </span>
@@ -270,7 +187,7 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
   );
 }
 
-/** One of the three figures: a big oldstyle number over a small caption. */
+/** A big oldstyle number over a small caption. */
 function Figure(props: { value: number; label: string }) {
   return (
     <div className="flex flex-col gap-0.5">

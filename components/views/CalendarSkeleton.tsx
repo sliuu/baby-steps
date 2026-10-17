@@ -1,9 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * The calendar before its queries return. Copies `CalendarBoard`'s outer classes so nothing jumps on handover.
- * Every width lands on Today, so this draws Today.
- */
+/** Calendar placeholder (draws Today); copies `CalendarBoard`'s outer classes. */
 export function CalendarSkeleton() {
   return (
     <div

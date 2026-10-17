@@ -22,7 +22,6 @@ import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
 import type { Suggestion } from "@/lib/suggestions";
 import { cn } from "@/lib/utils";
 
-/** The categories, as the form needs them. */
 export type FormCategory = {
   id: string;
   name: string;
@@ -51,7 +50,7 @@ type Props = {
   action: (formData: FormData) => Promise<SaveResult>;
   /** Pre-filled values. Omitted when making a sticker from scratch. */
   initial?: StickerValues;
-  /** The category this sticker's past marks sit under; edit only. Drives the "marks move" warning. */
+  /** Edit only: the past marks' category, for the "marks move" warning. */
   historyCategory?: string;
   /** Show the category's suggestion chips above the name. */
   suggest?: boolean;
@@ -188,7 +187,7 @@ export function StickerFields(props: Props) {
               <input type="hidden" name="mark" value={mark} />
             </>
           )}
-          {/* No maxLength: it counts UTF-16 units and splits emoji. validateDraft counts graphemes. */}
+          {/* No maxLength: it counts UTF-16 units; validateDraft counts graphemes. */}
           <Input
             name={markIcon ? undefined : "mark"}
             value={markIcon ? "" : mark}

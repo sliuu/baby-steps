@@ -68,13 +68,7 @@ function DropdownMenuItem({
   variant?: "default" | "destructive"
 }) {
   return (
-    // shadcn ships `cursor-default` on every item here, and it is gone from all
-    // four. The base layer in globals.css already gives `[role="menuitem"]` a
-    // hand — the list there names the roles Radix actually renders, precisely
-    // because a menu item is a `div` and never inherits the `button` rule — and
-    // a utility class beats a base rule, so the default was quietly cancelling
-    // it. Sign out is the one that showed it: a real `<button>` in a `<form>`,
-    // rendered through `asChild`, wearing an arrow.
+    // No shadcn `cursor-default`: it beat globals.css's `[role="menuitem"]` pointer.
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
       data-inset={inset}

@@ -8,10 +8,8 @@ import { MoodRow } from "./MoodRow";
 import { StickerMark } from "./StickerMark";
 import type { CalendarChange } from "@/lib/changes";
 import {
-  formatDateNumeric,
+  formatDayHeading,
   formatDayLong,
-  formatWeekdayLong,
-  fromDayString,
   type DayString,
 } from "@/lib/dates";
 import type { DayStickers } from "@/lib/stickers";
@@ -31,21 +29,28 @@ const LABEL = "font-sans text-label text-ink-muted";
 /** One day: date, mood, its stickers (tap to remove), the bank to add from, and a note. */
 export function DayPanel(props: Props) {
   const { day, stickers } = props;
-  const date = <time dateTime={day}>{formatDateNumeric(fromDayString(day))}</time>;
+  const date = <time dateTime={day}>{formatDayHeading(day).toLowerCase()}</time>;
 
   return (
     <div className="flex flex-col gap-7">
       <header>
-        <p className="text-label text-ink-muted">{formatWeekdayLong(day).toLowerCase()}</p>
         {props.title ? (
           props.title(date)
         ) : (
-          <h2 className="font-display text-heading font-light text-ink">{date}</h2>
+          <h2 className="text-label text-ink-muted">{date}</h2>
         )}
       </header>
 
       <section aria-label="mood">
-        <MoodRow day={day} mood={stickers.mood} onCommit={props.onCommit} />
+        <MoodRow
+          day={day}
+          mood={stickers.mood}
+          onCommit={props.onCommit}
+          labels={false}
+          stickerBorder
+          greyOthers
+          size="sm"
+        />
       </section>
 
       <section aria-label="on this day">
@@ -83,7 +88,7 @@ export function DayPanel(props: Props) {
 
       <section aria-labelledby={`add-${day}`} className="border-t border-rule pt-5">
         <h3 id={`add-${day}`} className={LABEL}>
-          add to this day
+          stickers
         </h3>
         <div className="mt-4">{props.tray}</div>
       </section>

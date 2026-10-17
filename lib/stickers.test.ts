@@ -1,12 +1,5 @@
-// Run with `npm test`. See `changes.test.ts` for why the import carries its
-// ".ts" and why nothing here may reach a `@/` path.
-//
-// `validateDraft` earns a suite for the Step 9 reason: it is a second copy of
-// rules the database also holds, and a second copy is the thing that drifts
-// silently. It also holds one rule the database *can't* — "the mark is one
-// character" is uncheckable in SQL, because `length()` counts code points and
-// disagrees with a person about every emoji. That rule has no backstop, so the
-// only thing standing behind it is this file.
+// `npm test`; relative `.ts` imports only (see changes.test.ts).
+// "One character" can't be checked in SQL, so this suite is its only backstop.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -31,15 +24,13 @@ describe("validateDraft · the happy path", () => {
   });
 
   it("accepts an emoji as one character", () => {
-    // The whole reason graphemeCount exists. Three code units, one mark.
+    // Three code units, one mark.
     const result = validateDraft(draft({ mark: "🏋️" }));
     assert.equal(result.ok, true);
   });
 
   it("returns the trimmed values, not the ones it was given", () => {
-    // What gets written is `result.draft`, so the trim has to travel with it —
-    // "  Gym  " and "Gym" must not become two rows the unique constraint sees
-    // as different names.
+    // The trim must travel with the draft, or the unique constraint sees two names.
     const result = validateDraft(
       draft({ name: "  Gym  ", mark: " G ", categoryId: ` ${CATEGORY} ` }),
     );
@@ -70,8 +61,7 @@ describe("validateDraft · the name", () => {
   });
 
   it("rejects a name that is only spaces", () => {
-    // Trim first, then decide — otherwise "   " is a perfectly good name and
-    // the row that lands is an invisible sticker.
+    // Trim before checking, or "   " passes.
     const result = validateDraft(draft({ name: "   " }));
     assert.equal(result.ok, false);
     assert.equal(result.ok === false && result.field, "name");
@@ -84,8 +74,7 @@ describe("validateDraft · the name", () => {
   });
 
   it("measures the name in characters, not code units", () => {
-    // NAME_MAX emoji is a long name but a legal one. Counted with `.length`
-    // this would be two or three times over the limit and rejected.
+    // `.length` would reject this.
     const result = validateDraft(draft({ name: "🎯".repeat(NAME_MAX) }));
     assert.equal(result.ok, true);
   });
@@ -105,32 +94,28 @@ describe("validateDraft · the mark", () => {
   });
 
   it("rejects two emoji", () => {
-    // The case a code-unit count would have to guess at: this is four code
-    // units, same as one flag.
+    // Four code units, same as one flag.
     const result = validateDraft(draft({ mark: "🎯🎯" }));
     assert.equal(result.ok, false);
     assert.equal(result.ok === false && result.field, "mark");
   });
 
   it("accepts an icon name, which is not one grapheme", () => {
-    // The whole point of the second rule. Thirteen characters, one picture —
-    // if the grapheme check ran first, or alone, every icon would be rejected.
+    // Icon ids are many characters, one picture.
     const result = validateDraft(draft({ mark: "icon:dumbbell" }));
     assert.equal(result.ok, true);
     assert.equal(result.ok && result.draft.mark, "icon:dumbbell");
   });
 
   it("rejects an icon name that isn't in the set", () => {
-    // Membership, not shape. A retired or mistyped id has to fail here rather
-    // than reach the calendar and render as the words it was stored as.
+    // Membership, not shape.
     const result = validateDraft(draft({ mark: "icon:dumbell" }));
     assert.equal(result.ok, false);
     assert.equal(result.ok === false && result.field, "mark");
   });
 
   it("rejects a bare icon id with no prefix", () => {
-    // "dumbbell" is a word someone could type into the field, and the prefix is
-    // what stops it silently becoming a picture.
+    // The prefix stops a typed word becoming a picture.
     const result = validateDraft(draft({ mark: "dumbbell" }));
     assert.equal(result.ok, false);
   });
@@ -145,10 +130,7 @@ describe("validateDraft · the category", () => {
   });
 
   it("does not check that the category exists", () => {
-    // Deliberate, and the same reasoning as `lib/queries/`: whether an id is
-    // *yours* is the composite foreign key's job, inside Postgres. A check
-    // here would be a second answer to the same question, and the wrong one
-    // would still typecheck.
+    // Ownership is the composite FK's job in Postgres.
     assert.equal(validateDraft(draft({ categoryId: "not-a-uuid" })).ok, true);
   });
 });
@@ -168,8 +150,7 @@ describe("readDraft", () => {
   });
 
   it("treats missing fields as empty strings", () => {
-    // So `validateDraft` only ever sees strings and the complaint is a
-    // sentence rather than a crash on null.
+    // Always strings, so the complaint is a sentence, not a crash.
     assert.deepEqual(readDraft(new FormData()), {
       name: "",
       mark: "",

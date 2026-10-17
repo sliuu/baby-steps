@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 
 import { BottomNav } from "./BottomNav";
+import { SettingsProvider } from "./SettingsProvider";
 import { TopNav } from "./TopNav";
 import { PageFrame } from "@/components/ui/PageFrame";
 import { CalendarDataProvider } from "@/components/calendar/calendarData";
 import { CalendarViewProvider } from "@/components/calendar/viewMode";
 import { PAGE_WIDTH } from "@/lib/layout";
 import { isCalendar, pageFromHash, type Page } from "@/lib/nav";
+import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 
 type Props = {
   calendar: React.ReactNode;
@@ -17,12 +19,11 @@ type Props = {
   navEnd: React.ReactNode;
   /** A band above the frame. Only `/demo` has one. */
   banner?: React.ReactNode;
+  /** Defaults on `/demo`. */
+  settings?: Settings;
 };
 
-/**
- * Section state + frame. Views arrive as props so they render on the server.
- * Shared by `/` and `/demo`; they differ only in `navEnd` and `banner`.
- */
+/** Section state + frame; views come as props so they render on the server. */
 export function AppShell(props: Props) {
   // Null until a section is pressed (or read from the URL); draws the landing.
   const [page, setPage] = useState<Page | null>(null);
@@ -46,24 +47,26 @@ export function AppShell(props: Props) {
   }
 
   return (
-    <CalendarDataProvider>
-      <CalendarViewProvider
-        view={page === null || isCalendar(page) ? page : "month"}
-      >
-        {props.banner}
-        <PageFrame
-          bottomNav
-          header={
-            <TopNav page={page} onPageChange={changePage} end={props.navEnd} />
-          }
+    <SettingsProvider settings={props.settings ?? DEFAULT_SETTINGS}>
+      <CalendarDataProvider>
+        <CalendarViewProvider
+          view={page === null || isCalendar(page) ? page : "month"}
         >
-          <main className={`${PAGE_WIDTH} flex-1 py-5 lg:py-10`}>
-            {page === null || isCalendar(page) ? props.calendar : props.trends}
-          </main>
-        </PageFrame>
+          {props.banner}
+          <PageFrame
+            bottomNav
+            header={
+              <TopNav page={page} onPageChange={changePage} end={props.navEnd} />
+            }
+          >
+            <main className={`${PAGE_WIDTH} flex-1 py-5 lg:py-10`}>
+              {page === null || isCalendar(page) ? props.calendar : props.trends}
+            </main>
+          </PageFrame>
 
-        <BottomNav page={page} onPageChange={changePage} />
-      </CalendarViewProvider>
-    </CalendarDataProvider>
+          <BottomNav page={page} onPageChange={changePage} />
+        </CalendarViewProvider>
+      </CalendarDataProvider>
+    </SettingsProvider>
   );
 }

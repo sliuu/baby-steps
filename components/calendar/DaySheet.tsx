@@ -70,7 +70,7 @@ export function DaySheet(props: Props) {
                 onCommit={props.onCommit}
                 tray={props.tray(day, "sheet")}
                 title={(date) => (
-                  <DialogPrimitive.Title className="font-display text-heading font-light text-ink">
+                  <DialogPrimitive.Title className="text-label text-ink-muted">
                     {date}
                   </DialogPrimitive.Title>
                 )}

@@ -1,12 +1,4 @@
-// Run with `npm test`. See lib/changes.test.ts for why this imports a real
-// ".ts" path and never a "@/" alias.
-//
-// `whileTokenSettles` is worth a test for the reason `applyChange` is: it
-// encodes a rule about *which* failures are allowed to be retried, and the
-// whole value of it is that the rule stays narrow. A retry that quietly widens
-// to cover real errors turns a broken query into a slow broken query — so the
-// test that matters most here is the one asserting an ordinary failure is
-// returned untouched, on the first attempt.
+// Real ".ts" path, no "@/". Key test: ordinary failures are never retried.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -80,10 +72,7 @@ test("skew that outlasts the backoff gives up and reports the real error", async
   assert.equal(q.attempts, BACKOFF_MS.length + 1);
 });
 
-// What the views do after the in-request retries rests on this split: a
-// `TokenSettlingError` is quietly re-requested from the browser, anything else
-// goes straight to the error page. So a real failure must never be classified
-// as settling.
+// Settling errors get re-requested; anything else hits the error page.
 test("a settling failure that outlasts the retries throws TokenSettlingError", () => {
   const error = queryFailure("Could not load moods", {
     message: "JWT issued at future",

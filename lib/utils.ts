@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { extendTailwindMerge } from "tailwind-merge"
 
-// Our `--text-*` sizes, so `text-label` and `text-ink` don't cancel each other; sticker sizes so `size-24` wins.
+// Our text sizes (else `text-label` and `text-ink` clash) and sticker sizes.
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
@@ -9,7 +9,7 @@ const twMerge = extendTailwindMerge({
     },
     theme: {
       text: [
-        "display-xl", "display", "display-sm", "heading", "subhead",
+        "display-xl", "display", "display-sm", "title", "date", "heading", "subhead", "logo",
         "body-lg", "ui", "label", "caption",
       ],
     },

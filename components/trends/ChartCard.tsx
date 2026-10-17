@@ -5,7 +5,7 @@ import { PANEL } from "@/lib/layout";
 
 type Props = { children: ReactNode };
 
-/** The star's frame at the viewBox ratio. Shared with `TrendsSkeleton` so heights match. */
+/** Star frame at the viewBox ratio; shared with `TrendsSkeleton` so heights match. */
 export function ChartCard(props: Props) {
   return (
     <figure className={PANEL} aria-hidden="true">

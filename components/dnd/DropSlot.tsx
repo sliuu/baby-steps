@@ -4,18 +4,7 @@ import { useDroppable } from "@dnd-kit/core";
 
 import type { DayString } from "@/lib/dates";
 
-/**
- * Which way the marks either side of this slot are flowing.
- *
- * `inline` is a month cell: circles run left to right and wrap, so the caret
- * is a vertical bar between two of them. `block` is a week column: bars stack
- * downwards, so the caret is a horizontal rule across the column.
- *
- * The axis travels in the droppable's `data` as well as in the markup, because
- * the collision detection in `CalendarBoard` has to know which coordinate
- * actually separates one slot from the next. Get that wrong and the caret
- * still draws, in the wrong place, on every drag.
- */
+/** `inline`: month cell. `block`: week column. Also in `data` for collision. */
 export type SlotAxis = "inline" | "block";
 
 type Props = {
@@ -35,9 +24,7 @@ export function DropSlot(props: Props) {
     data: { kind: "slot", day: props.day, index: props.index, axis },
   });
 
-  // Zero-sized on the axis it divides, so inserting one between every pair of
-  // marks moves nothing. It still has a rect on the other axis, which is what
-  // dnd-kit measures and what the caret is drawn along.
+  // Zero-size on its axis so it moves nothing; dnd-kit measures the other one.
   return (
     <span
       ref={setNodeRef}

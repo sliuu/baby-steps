@@ -109,13 +109,7 @@ function SelectItem({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Item>) {
   return (
-    // `cursor-default` is gone from here for the same reason it is gone from
-    // every item in `dropdown-menu.tsx`: an option is a `div` with
-    // `role="option"`, the base layer in `globals.css` gives that role a hand,
-    // and a utility class beats a base rule. The two menus in the app — the
-    // range picker on Trends and the sticker form's group — are the ones this
-    // shows up on. The scroll buttons below keep theirs: they scroll on hover
-    // and are not something you press.
+    // No `cursor-default`: it would beat globals.css's hand on role="option".
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(

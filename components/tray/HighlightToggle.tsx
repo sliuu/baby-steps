@@ -17,10 +17,7 @@ type Props = {
   className?: string;
 };
 
-/**
- * Show every day this appears on. A toggle: stable name, `aria-pressed` for state.
- * Revealed on hover (where hover exists), and always shown while lit.
- */
+/** Lights every day this appears on. `aria-pressed` toggle; hover-revealed, shown while lit. */
 export function HighlightToggle(props: Props) {
   const Icon = props.lit ? EyeOff : Eye;
   const reveal = props.lit

@@ -17,10 +17,7 @@ type Props = {
   landing: boolean;
 };
 
-/**
- * A sticker already on a day, at xs. Drag to move, off the grid to remove.
- * Keyed by the placement row so two days holding Gym don't collide.
- */
+/** Placed sticker: drag to move, off grid to remove. Keyed by placement row. */
 export function DraggableMark(props: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: props.sticker.id,

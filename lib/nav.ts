@@ -1,7 +1,6 @@
-/** A section, as named in the URL fragment. Week and month are both "calendar" in the nav. */
+/** URL-fragment section. Week and month are both "calendar" in the nav. */
 export type Page = "today" | "week" | "month" | "trends";
 
-/** Everything that isn't Trends. Three lenses on the same calendar. */
 export type CalendarPage = Exclude<Page, "trends">;
 
 const PAGE_IDS: Page[] = ["today", "week", "month", "trends"];
@@ -23,7 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "trends", label: "trends", href: "#trends", page: "trends", pages: ["trends"] },
 ];
 
-/** Read a section from a URL fragment without trusting an arbitrary string. */
+/** Parse a fragment into a section; rejects unknown strings. */
 export function pageFromHash(hash: string): Page | null {
   const value = hash.startsWith("#") ? hash.slice(1) : hash;
   return PAGE_IDS.includes(value as Page) ? (value as Page) : null;
@@ -42,7 +41,7 @@ export function navItemFor(page: Page | null): NavItem["id"] {
   return NAV_ITEMS.find((item) => item.pages.includes(current))!.id;
 }
 
-/** Plain left clicks are handled in-app; modified clicks keep native link behaviour. */
+/** Plain left clicks go in-app; modified clicks stay native. */
 export function isPlainClick(event: React.MouseEvent): boolean {
   return !(
     event.button !== 0 ||

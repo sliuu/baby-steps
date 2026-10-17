@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-// Relative, with the extension. Node strips the types itself and resolves this
-// path directly; `@/lib/analytics` would be a bundler alias with no bundler.
+// Relative with extension: `node --test` has no bundler for `@/`.
 import {
   MOOD_SCORE,
   RANGE_KINDS,
@@ -30,17 +29,8 @@ import type { StickersByDay } from "@/lib/stickers";
 const TODAY = "2026-08-22";
 
 /**
- * A library of three categories, one of them empty, one sticker retired.
- *
- * The empty one is not padding: a category with no stickers has to survive into the
- * output as a zero row, because the Life Star in Step 13 draws a spoke per category
- * and a missing one would silently change the shape of the chart.
- *
- * Walk is archived, and that's load-bearing too. `tally` is supposed to keep
- * counting a retired sticker's past marks under its category — you stopped doing
- * the habit, you didn't stop having done it — so the fixture is built with one
- * already retired. Every count below includes it, which means the day anyone
- * "helpfully" filters archived stickers out of the library, these break.
+ * Three categories: one empty (must stay a zero row), and Walk archived
+ * (its marks must still count).
  */
 const GROUPS: LibraryGroup[] = [
   {
@@ -63,13 +53,7 @@ const GROUPS: LibraryGroup[] = [
   { categoryId: "category-work", categoryName: "Work", colorKey: "blue", stickers: [] },
 ];
 
-/**
- * Days built so that a placement's `id` can never equal its `activityId`.
- *
- * Same guard as `highlight.test.ts`: these two are both called "id" in
- * neighbouring code and mean different things, and a fixture where they matched
- * would pass whichever one the code reached for.
- */
+/** Placement `id` never equals `activityId`, so mixing them up fails. */
 function days(
   entries: Record<string, string[]>,
 ): StickersByDay {
@@ -115,10 +99,7 @@ describe("resolveBounds", () => {
   });
 
   it("this week runs from Sunday to today", () => {
-    // TODAY is a Saturday, so its week is the full seven and started on the
-    // 16th. A Saturday is also the only weekday where a Sunday-start and a
-    // Monday-start week differ by six days rather than one, which is why it is
-    // the useful day to pin this on.
+    // Saturday: Sunday- vs Monday-start weeks differ most.
     assert.deepEqual(resolveBounds({ kind: "week" }, TODAY), {
       from: "2026-08-16",
       to: "2026-08-22",
@@ -156,8 +137,7 @@ describe("resolveBounds", () => {
   });
 
   it("this year and the trailing year are different ranges", () => {
-    // The distinction the two of them exist for: to-date starts at January and
-    // is eight months long today, trailing is always twelve.
+    // To-date is eight months today; trailing is always twelve.
     const toDate = resolveBounds({ kind: "year" }, TODAY);
     const trailing = resolveBounds({ kind: "days365" }, TODAY);
     assert.notDeepEqual(toDate, trailing);
@@ -225,8 +205,7 @@ describe("inBounds", () => {
   });
 
   it("compares whole dates, not day-of-month digits", () => {
-    // The bug this guards: "2026-08-9" would sort after "2026-08-10". Zero
-    // padding is what makes the string comparison chronological.
+    // Unpadded "2026-08-9" would sort after "2026-08-10".
     assert.equal(inBounds("2026-08-09", bounds), true);
     assert.equal(inBounds("2026-08-10", bounds), true);
     assert.equal(inBounds("2025-12-31", bounds), false);
@@ -348,19 +327,14 @@ describe("tally · shares", () => {
   });
 
   it("gives two categories with the same count the same percent", () => {
-    // The case that decided the rounding, and the reason `percents` is gone.
-    // Apportioning a leftover point has to give it to *one* of two equal rows,
-    // and the table sorts by count — so the two rows it splits end up adjacent,
-    // showing the same number of marks and different shares.
+    // Why apportioning is gone: it gave equal rows different shares.
     const result = tally(days({ "2026-08-10": ["act-gym", "act-med"] }), GROUPS, ALL);
     assert.equal(result.categories[0].count, result.categories[1].count);
     assert.equal(result.categories[0].percent, result.categories[1].percent);
   });
 
   it("percents land within a rounding step of 100", () => {
-    // Not *exactly* 100 — that's the price of rounding each row on its own, and
-    // it's paid deliberately. One tenth per row is the most any row can be off,
-    // so three categories can drift at most 0.15. The table prints the real sum.
+    // Not exactly 100: per-row rounding, at most 0.05 off each.
     const result = tally(
       days({ "2026-08-10": ["act-gym", "act-walk", "act-med"] }),
       GROUPS,
@@ -387,7 +361,7 @@ describe("tally · unattributed", () => {
       ALL,
     );
     assert.equal(result.unattributed, 1);
-    // Still in the total: it happened. It just has nowhere to sit.
+    // Still in the total; just no category.
     assert.equal(result.total, 2);
     assert.equal(
       result.categories.reduce((n, category) => n + category.count, 0),
@@ -403,10 +377,7 @@ describe("percent", () => {
   });
 
   it("depends on nothing but its own two numbers", () => {
-    // The whole point of the rewrite: this is a pure function of one count and
-    // one total, so two rows with the same count cannot come out different.
-    // Apportionment could not promise that — its answer for a row depended on
-    // every other row in the array.
+    // Pure in (count, total), so equal counts can't differ.
     assert.equal(percent(11, 63), percent(11, 63));
     assert.equal(percent(11, 63), 17.5);
   });
@@ -425,31 +396,18 @@ describe("percent", () => {
   });
 
   it("keeps a tiny share visible instead of rounding it away", () => {
-    // 1 in 1000 is 0.1%, and at one decimal place it survives as 0.1% rather
-    // than flattening to 0%. A whole-percent column couldn't show this at all —
-    // a real mark would have read "0%" next to a count of 1.
+    // One decimal keeps 1/1000 visible.
     assert.equal(percent(1, 1000), 0.1);
     assert.equal(percent(999, 1000), 99.9);
   });
 
   it("rounds away only below a twentieth of a percent", () => {
-    // Still a floor somewhere: 1 in 5000 is 0.02%, which has no room at one
-    // decimal. The count column beside it says 1, so the table stays honest —
-    // "0.0%" is a statement about share, not about whether it happened.
+    // 1/5000 still rounds to 0; the count column shows it happened.
     assert.equal(percent(1, 5000), 0);
   });
 });
 
-/**
- * Days carrying a mood and nothing else.
- *
- * A separate helper rather than a parameter on `days`, because the two fixtures
- * are testing opposite things: `days` hard-codes `mood: null` so that every
- * `tally` assertion is about activities alone, and this one carries no
- * activities so that every `moodTally` assertion is about moods alone. A single
- * helper doing both would let a bug in either count hide inside the other's
- * numbers.
- */
+/** Mood-only days, so `moodTally` assertions ignore activities. */
 function moodDays(entries: Record<string, Mood>): StickersByDay {
   const map: StickersByDay = new Map();
   for (const [day, mood] of Object.entries(entries)) {
@@ -458,14 +416,7 @@ function moodDays(entries: Record<string, Mood>): StickersByDay {
   return map;
 }
 
-/**
- * Days built from real faces, because `activityTally` reads them.
- *
- * The other builder names every sticker after its own id, which is fine for
- * counting and useless here: the ranking carries `name`, `mark` and `colorKey`
- * through from the placement and breaks ties on the name, so a fixture where
- * the name *is* the id can't tell a bug in that from a bug in the sort.
- */
+/** Real faces: `activityTally` carries name/mark/colour and ties on name. */
 const FACES: Record<string, { name: string; mark: string; colorKey: string }> = {
   "act-gym": { name: "Gym", mark: "G", colorKey: "green" },
   "act-med": { name: "Meditation", mark: "M", colorKey: "red" },
@@ -510,8 +461,7 @@ describe("activityTally", () => {
   });
 
   it("counts two placements of one sticker on one day as two", () => {
-    // The reason a block's `marks` is a number rather than a flag, and the
-    // reason this counts placements rather than days.
+    // Counts placements, not days.
     const ranking = activityTally(
       faced({ "2026-08-01": ["act-gym", "act-gym"] }),
       ALL,
@@ -531,16 +481,14 @@ describe("activityTally", () => {
   });
 
   it("leaves out habits with nothing in range, rather than listing zeros", () => {
-    // The opposite of `tally`, which keeps every category at zero. See the note on
-    // `activityTally` for why the two disagree on purpose.
+    // Unlike `tally`, no zero rows.
     const ranking = activityTally(faced({ "2026-08-01": ["act-gym"] }), ALL);
 
     assert.deepEqual(ranking.activities.map((a) => a.name), ["Gym"]);
   });
 
   it("breaks a tie by name, not by whatever order the map yielded", () => {
-    // Walk is placed first and Gym second, so an unsorted result would put
-    // Walk on top. Equal counts have to come out the same way every render.
+    // Walk is placed first; ties must sort by name.
     const ranking = activityTally(
       faced({ "2026-08-01": ["act-walk", "act-gym"] }),
       ALL,
@@ -605,8 +553,7 @@ describe("moodTally", () => {
   });
 
   it("returns all five in the scale's order, never sorted", () => {
-    // "rough" is the biggest count and the last mood. A version that ranked
-    // these would put it first and turn a scale into a leaderboard.
+    // Scale order, not ranked.
     const result = moodTally(
       moodDays({
         "2026-08-01": "rough",
@@ -656,14 +603,7 @@ describe("moodTally", () => {
   });
 });
 
-/**
- * A run of moods on consecutive days starting at `from`.
- *
- * Most of what follows cares about direction, and writing twenty dates out by
- * hand to get one is a fixture you have to debug. Gaps are made by building two
- * runs and merging them, which keeps the gap visible as a date rather than
- * buried in a list.
- */
+/** Consecutive-day moods from `from`. Merge two runs to make a gap. */
 function moodRun(from: string, moods: Mood[]): StickersByDay {
   const map: StickersByDay = new Map();
   moods.forEach((mood, i) => {
@@ -703,8 +643,7 @@ describe("moodSeries", () => {
       days({ "2026-08-03": ["act-gym"] }),
     );
 
-    // Three days in the map, two on the line. A day you didn't rate is not a
-    // neutral day, so nothing is invented for the third.
+    // Unrated day: nothing invented.
     assert.deepEqual(moodSeries(map, ALL).points.map((p) => p.day), [
       "2026-08-01",
       "2026-08-02",
@@ -717,9 +656,7 @@ describe("moodSeries", () => {
       map.set(day, { mood: "okay", activities: [], note: null });
     }
 
-    // `StickersByDay` is in the query's insertion order. Every number below —
-    // `at`, `gap`, the rolling mean — reads neighbours, so this is the test
-    // that fails first if the sort is ever dropped as redundant.
+    // Input is query order; fails first if the sort is dropped.
     assert.deepEqual(moodSeries(map, ALL).points.map((p) => p.day), [
       "2026-08-01",
       "2026-08-02",
@@ -753,25 +690,19 @@ describe("moodSeries", () => {
       moodRun("2026-08-11", ["okay"]),
     );
 
-    // Three points over ten days: day two sits a tenth along, not a half. This
-    // is the difference between a time series and a list, and evenly spaced
-    // indices would draw a fortnight of silence as one short step.
+    // Positioned by date: day two is a tenth along.
     assert.deepEqual(moodSeries(map, ALL).points.map((p) => p.at), [0, 0.1, 1]);
   });
 
   it("centres a lone point rather than pinning it to the left edge", () => {
     const [point] = moodSeries(moodRun("2026-08-01", ["okay"]), ALL).points;
 
-    // The span is zero, so the fraction would be 0/0. Pinned at 0 it reads as
-    // the start of a line that failed to draw.
+    // Zero span would be 0/0.
     assert.equal(point.at, 0.5);
   });
 
   it("never smooths — a spike is a spike however long the series is", () => {
-    // Long enough that the deleted rolling mean would have kicked in. The
-    // scores are the moods and nothing sits between them: the line joins the
-    // days you logged, and a mean would move it off the dots it's drawn from,
-    // through heights that aren't moods.
+    // No smoothing: scores stay the moods.
     const moods: Mood[] = Array.from({ length: 20 }, (_, i) =>
       i === 10 ? "rough" : "great",
     );
@@ -787,8 +718,7 @@ describe("moodSeries", () => {
   it("breaks the line when more than a week goes unlogged", () => {
     const map = merge(
       moodRun("2026-08-01", ["great", "good"]),
-      // Seven days later: joined, because a week is the boundary and this is
-      // exactly on it.
+      // Seven days later: exactly on the boundary, joined.
       moodRun("2026-08-09", ["okay"]),
       // Eight days after that: broken.
       moodRun("2026-08-17", ["low"]),
@@ -807,8 +737,7 @@ describe("moodDrift", () => {
   const drift = (moods: Mood[]) => moodDrift(moodSeries(moodRun("2026-08-01", moods), ALL));
 
   it("says nothing under six points", () => {
-    // Five days of collapse is still five days. "Steady" is a claim too, so
-    // neither verdict is available yet.
+    // Too few points for any verdict, "steady" included.
     assert.equal(drift(["great", "great", "good", "low", "rough"]), null);
   });
 
@@ -825,16 +754,12 @@ describe("moodDrift", () => {
   });
 
   it("holds steady when the move is under half a rung", () => {
-    // Halves are (5,4,4) = 4.33 and (4,4,5) = 4.33 — one swapped day, no
-    // direction. The scale's resolution is one rung; less than half of that is
-    // which days you happened to open the app on.
+    // 4.33 vs 4.33: under half a rung is steady.
     assert.equal(drift(["great", "good", "good", "good", "good", "great"]), "steady");
   });
 
   it("is not decided by a single day at either end", () => {
-    // One rough Tuesday at the end of an otherwise level fortnight. Comparing
-    // the first point to the last would read three rungs of collapse off two
-    // days; the halves put it at 4 against 3.57 and call it what it is.
+    // Halves, not endpoints: 4 vs 3.57.
     const moods: Mood[] = Array.from({ length: 15 }, (_, i) =>
       i === 14 ? "rough" : "good",
     );
@@ -843,18 +768,14 @@ describe("moodDrift", () => {
   });
 
   it("is swung by an outlier when the series is barely long enough", () => {
-    // The other side of the same coin, asserted rather than left implied. At
-    // six points each half is three days, so one rough day *is* a third of the
-    // evidence and moving a whole rung is the honest reading of it. `DRIFT_MIN`
-    // buys a direction that is better than noise, not one that is stable.
+    // At six points one rough day is a third of each half.
     assert.equal(drift(["good", "good", "good", "good", "good", "rough"]), "down");
   });
 
   it("drops the middle point of an odd run rather than favouring a side", () => {
     const result = drift(["rough", "rough", "rough", "great", "great", "great", "great"]);
 
-    // Seven points: three each side, the fourth ignored. Both halves are the
-    // same size, so the comparison is symmetric.
+    // Odd count: middle point ignored.
     assert.equal(result, "up");
   });
 });
@@ -887,8 +808,7 @@ describe("moodTakeaway", () => {
   });
 
   it("never prints a score", () => {
-    // `MOOD_SCORE` is an invented scale. "3.4" on the page would give it an
-    // authority it hasn't earned; the direction is the finding.
+    // Invented scale: never print scores.
     for (const line of [
       say(["rough", "low", "low", "good", "great", "great"]),
       say(["great", "great", "good", "low", "low", "rough"]),
@@ -924,9 +844,7 @@ describe("leaders", () => {
       ),
     );
 
-    // Both on 1. Picking one would name Health and quietly not name
-    // Spirituality, which has exactly as good a claim — the same mistake Step
-    // 12's percentage column made with equal counts.
+    // Tied: name both.
     assert.deepEqual(result.map((a) => a.categoryName), ["Health", "Spirituality"]);
   });
 
@@ -936,9 +854,7 @@ describe("leaders", () => {
   });
 
   it("is empty when nothing is in range", () => {
-    // Every category at zero. Without the explicit guard, `Math.max` of an empty
-    // list is -Infinity, which matches no category and returns [] by luck; with
-    // categories present at zero it would return all of them, which is a lie.
+    // All zero: explicit guard, not `Math.max` luck.
     assert.deepEqual(leaders(tally(days({}), GROUPS, ALL)), []);
   });
 
@@ -963,10 +879,7 @@ describe("rangePhrase", () => {
   });
 
   it("has a phrase and a label for every kind the dropdown offers", () => {
-    // The dropdown iterates `RANGE_KINDS` and the sentences read
-    // `rangePhrase`, so a kind added to the union without one of these is a
-    // blank option or an empty clause. This is the test that makes that
-    // impossible rather than unlikely.
+    // A new kind without a label/phrase would be a blank option or clause.
     for (const kind of RANGE_KINDS) {
       const range = { kind, from: null, to: null } as Range;
       assert.ok(RANGE_LABEL[kind], kind);
@@ -1029,7 +942,7 @@ describe("takeaway", () => {
         ],
       },
     ];
-    // Four categories on 1, Work on 0 — so it's a four-way tie, not a flat range.
+    // Four-way tie on 1, Work on 0: not a flat range.
     const result = takeaway(
       tally(
         days({ "2026-08-01": ["act-gym", "act-med", "act-piano", "act-nap"] }),

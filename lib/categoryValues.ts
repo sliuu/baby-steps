@@ -1,4 +1,4 @@
-/** Raw category hexes, for places that need a literal (SVG export). Must match globals.css. */
+/** Category hexes for literals (SVG export). Must match globals.css. */
 export const CATEGORY_VALUE = {
   oxblood: { ink: "#7A1F1F", text: "#7A1F1F" },
   bottle: { ink: "#23402F", text: "#23402F" },

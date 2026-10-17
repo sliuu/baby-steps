@@ -21,10 +21,7 @@ type Props = {
   className?: string;
 };
 
-/**
- * Solid category ink, paper edge, faint die-cut ring; icon in the `on` colour.
- * Used everywhere a sticker appears.
- */
+/** Category ink, paper edge, faint die-cut ring; icon in the `on` colour. */
 export function StickerMark(props: Props) {
   const { sticker } = props;
   const color = categoryColor(sticker.colorKey);

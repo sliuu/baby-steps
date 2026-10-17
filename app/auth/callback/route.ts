@@ -3,25 +3,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { safeInternalPath } from "@/lib/redirects";
 
-/**
- * Where Supabase sends the browser after Google or GitHub has authenticated you.
- *
- * The URL arrives carrying a short-lived `?code=`. That code is not a session —
- * it's a one-time voucher. We swap it for real tokens here, on the server, and
- * the tokens go straight into httpOnly cookies. They never touch JavaScript,
- * so a cross-site scripting bug can't read them.
- */
+/** OAuth return: swap the one-time `?code=` for tokens in httpOnly cookies (no JS access). */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
 
-  // Where to land afterwards. Relative paths only — an absolute URL here would
-  // let someone craft a link that bounces you to their site carrying a fresh
-  // session. Same reasoning as Supabase's redirect allow-list.
+  // Relative only: an absolute URL would be an open redirect with a fresh session.
   const next = safeInternalPath(searchParams.get("next"));
 
-  // The provider reports refusals here too — "cancel" on Google's consent
-  // screen arrives as ?error=access_denied, with no code.
+  // Consent "cancel" arrives as ?error=access_denied, no code.
   const error = searchParams.get("error");
   if (error) {
     const description =

@@ -16,12 +16,9 @@ export const metadata: Metadata = {
     "A year of habit stickers, with nothing signed in. Look around, drag things about; nothing is saved.",
 };
 
-/**
- * The real boards over an invented year. No auth (`/demo` is in `PUBLIC_PATHS`),
- * no Suspense: `demoStickers` is pure and takes ~1ms.
- */
+/** Real boards, invented year. Public; no Suspense (`demoStickers` is ~1ms). */
 export default async function DemoPage() {
-  // Per-request, so the invented year ends today rather than at build time.
+  // Per-request so the year ends today, not at build time.
   await connection();
 
   const end = today();
@@ -33,10 +30,8 @@ export default async function DemoPage() {
       banner={
         // Above the frame; scrolls away.
         <div className="border-b border-rule bg-secondary">
-          <p className={`${PAGE_WIDTH} py-2.5 text-label text-ink-muted`}>
-            <span className="text-ink">This is a demo.</span> A year of
-            invented stickers, ending today. Drag them about, change a mood,
-            write a note — nothing you do here is saved anywhere.
+          <p className={`${PAGE_WIDTH} py-2.5 text-center text-label text-ink-muted`}>
+            demo
           </p>
         </div>
       }

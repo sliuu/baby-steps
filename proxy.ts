@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { supabaseEnv } from "@/lib/supabase/env";
 
-/** Runs before every request (Next 16's `middleware.ts`). Refreshes the session, sends signed-out visitors to /login, and new users to /onboarding. */
+/** Next 16 `middleware.ts`: refresh session; signed-out → /login, new → /onboarding. */
 
 /** Reachable signed out. `/demo` is generated data, nobody's rows. */
 const PUBLIC_PATHS = [
@@ -48,7 +48,7 @@ export async function proxy(request: NextRequest) {
           response.cookies.set(name, value, options);
         }
 
-        // No-cache headers: keeps a CDN from serving one visitor's cookie to another.
+        // Keeps a CDN from serving one visitor's cookie to another.
         for (const [name, value] of Object.entries(headers)) {
           response.headers.set(name, value);
         }
@@ -69,7 +69,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.nextUrl));
   }
 
-  // First sign-in → onboarding. One row by primary key; no row or an error lets them through.
+  // One PK lookup; no row or an error lets them through.
   if (signedIn && !isPublic && path !== "/onboarding") {
     const { data: profile } = await supabase
       .from("profiles")

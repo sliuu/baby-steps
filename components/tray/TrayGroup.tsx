@@ -4,6 +4,7 @@ import { Pencil, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { StickerMark } from "@/components/calendar/StickerMark";
+import type { StickerSize } from "@/components/calendar/StickerMark";
 import { DraggableSticker } from "@/components/dnd/DraggableSticker";
 import type { DragPayload } from "@/components/dnd/payload";
 import { HighlightToggle } from "@/components/tray/HighlightToggle";
@@ -53,12 +54,12 @@ const TILE = "relative flex w-16 flex-col items-center gap-1.5";
 const CAPTION = "w-full truncate text-center text-caption";
 
 /** The mark and its caption, shared by live and archived tiles. */
-function TileFace(props: { face: StickerFace }) {
+function TileFace(props: { face: StickerFace; size?: StickerSize }) {
   return (
     <>
       <StickerMark
         sticker={props.face}
-        size="sm"
+        size={props.size ?? "sm"}
         className="transition-transform duration-(--dur-menu-in) ease-(--ease-enter) group-hover/tile:-translate-y-px"
       />
       <span aria-hidden="true" className={cn(CAPTION, "text-ink")}>
@@ -74,6 +75,7 @@ const BADGE =
 
 type TileProps = {
   face: StickerFace;
+  size?: StickerSize;
   dragId: string;
   payload: DragPayload;
   /** Tap or Enter: add to the day. */
@@ -105,7 +107,7 @@ export function TrayTile(props: TileProps) {
         label={props.addLabel}
         className="flex w-full flex-col items-center gap-1.5 rounded-md pt-1 pointer-coarse:touch-pan-y"
       >
-        <TileFace face={props.face} />
+        <TileFace face={props.face} size={props.size} />
       </DraggableSticker>
 
       {props.onSelect && (
@@ -134,7 +136,11 @@ export function TrayTile(props: TileProps) {
 }
 
 /** The dashed "+ new" tile at the end of a group. Wraps a dialog trigger. */
-export function NewTile(props: { trigger: (button: ReactNode) => ReactNode; category: string }) {
+export function NewTile(props: {
+  trigger: (button: ReactNode) => ReactNode;
+  category: string;
+  size?: Extract<StickerSize, "sm" | "md">;
+}) {
   return (
     <li className={TILE}>
       {props.trigger(
@@ -143,7 +149,12 @@ export function NewTile(props: { trigger: (button: ReactNode) => ReactNode; cate
           aria-label={`new sticker in ${props.category}`}
           className="group/new flex w-full flex-col items-center gap-1.5 pt-1"
         >
-          <span className="grid size-sticker-sm place-items-center rounded-full border border-dashed border-rule-input text-ink-muted transition-colors group-hover/new:border-ink group-hover/new:text-ink">
+          <span
+            className={cn(
+              "grid place-items-center rounded-full border border-dashed border-rule-input text-ink-muted transition-colors group-hover/new:border-ink group-hover/new:text-ink",
+              props.size === "md" ? "size-sticker-md" : "size-sticker-sm",
+            )}
+          >
             <Plus className="size-4" strokeWidth={1.5} aria-hidden="true" />
           </span>
           <span aria-hidden="true" className={cn(CAPTION, "text-ink-muted")}>
@@ -156,11 +167,15 @@ export function NewTile(props: { trigger: (button: ReactNode) => ReactNode; cate
 }
 
 /** A retired sticker: faded tile, restore button in the corner. Not draggable. */
-export function ArchivedTile(props: { face: StickerFace; action: ReactNode }) {
+export function ArchivedTile(props: {
+  face: StickerFace;
+  action: ReactNode;
+  size?: StickerSize;
+}) {
   return (
     <li className={cn(TILE, "pt-1")}>
       <span className="flex w-full flex-col items-center gap-1.5 opacity-55">
-        <TileFace face={props.face} />
+        <TileFace face={props.face} size={props.size} />
       </span>
       <span className="absolute -top-1 right-0">{props.action}</span>
     </li>

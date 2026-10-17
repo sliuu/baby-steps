@@ -1,7 +1,6 @@
 import { Outfit, Zilla_Slab } from "next/font/google";
 
-// Stand-ins for Winden (display) and Axiforma (text). To use the licensed
-// files: put the .woff2s in app/fonts/, swap to next/font/local, keep `variable`.
+// Stand-ins for Winden/Axiforma; licensed: .woff2s in app/fonts/ + next/font/local.
 export const display = Zilla_Slab({
   subsets: ["latin"],
   weight: ["300", "400"],

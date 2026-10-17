@@ -31,11 +31,10 @@ type Props = {
   categories: FormCategory[];
   /** Where the category dropdown starts. Still changeable. */
   defaultCategoryId?: string;
-  /** The button that opens it. */
   trigger: ReactNode;
 };
 
-/** A trigger and the new-sticker dialog. Closing unmounts the fields, which is the reset. */
+/** Trigger + dialog; closing unmounts the fields, which is the reset. */
 export function NewStickerForm(props: Props) {
   const [open, setOpen] = useState(false);
   const category = props.categories.find(

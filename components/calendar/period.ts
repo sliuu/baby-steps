@@ -7,10 +7,10 @@ import type { StickersByDay } from "@/lib/stickers";
 /** Shared by the grids and Today. Same strings as `CalendarPage` in `lib/nav.ts`. */
 export type CalendarViewMode = "month" | "week" | "today";
 
-/** The landing view; mirrors `LANDING` in `lib/nav.ts` (the calendar may not import the nav). */
+/** Mirrors `LANDING` in `lib/nav.ts` (calendar may not import nav). */
 export const LANDING_VIEW: CalendarViewMode = "today";
 
-/** The mark that just arrived. By activity: the row id changes when the insert lands. */
+/** Keyed by activity: the row id changes when the insert lands. */
 export type Landed = { day: DayString; activityId: string };
 
 /** After today. False until the browser knows which day today is. */
@@ -20,7 +20,6 @@ export function isFuture(day: DayString, todayString: DayString | null): boolean
 
 /** What a grid is handed; all of it owned above. */
 export type PeriodProps = {
-  /** Every day, loaded once. */
   stickersByDay: StickersByDay;
   /** Select a day for the side panel. */
   onOpenDay: (day: DayString) => void;
@@ -28,7 +27,6 @@ export type PeriodProps = {
   selectedDay: DayString | null;
   /** Every write. See `CalendarBoard.commit`. */
   onCommit: (change: CalendarChange) => void;
-  /** The resolved tray selection, or null. */
   highlight: Highlight | null;
   /** Where a drop would land now, or null. */
   target: DropTarget | null;

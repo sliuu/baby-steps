@@ -31,15 +31,16 @@ type Props = {
   addTo: string;
   /** "column": the day panel. "page": wide grid under Today. */
   layout: "column" | "page";
-  /** Just the bank: no heading, editing or archive. The day panel and sheet. */
+  /** The day panel and sheet: no heading, badges or archive; tap edits. */
   compact?: boolean;
   /** Prefixes drag ids, so two mounted trays don't collide. */
   dragScope?: string;
 };
 
-/** The sticker bank, grouped by category. Presentational: the board owns selection and commits. */
+/** Sticker bank by category. Presentational; the board owns state. */
 export function StickerTray(props: Props) {
   const { selection, onSelect, compact } = props;
+  const tileSize = props.layout === "page" ? "md" : "sm";
 
   // An id, so a refresh after saving shows the new name and a delete closes it.
   const [editing, setEditing] = useState<string | null>(null);
@@ -55,6 +56,8 @@ export function StickerTray(props: Props) {
   )[0];
 
   const manage = !props.local && !compact;
+  // Calendar trays: tap edits; adding is by drag.
+  const tapEdits = !props.local && compact;
 
   function toggle(next: Selection) {
     if (sameSelection(selection, next)) props.onClear();
@@ -65,7 +68,7 @@ export function StickerTray(props: Props) {
     <div className="flex flex-col gap-6">
       {!compact && (
         <header>
-          <h2 className="font-sans text-label text-ink">your stickers</h2>
+          <h2 className="font-sans text-label text-ink">stickers</h2>
           {/* The way out of a highlight. */}
           {props.label && (
             <p className="mt-1 text-caption text-ink-muted">
@@ -117,10 +120,11 @@ export function StickerTray(props: Props) {
                   <TrayTile
                     key={sticker.id}
                     face={sticker}
+                    size={tileSize}
                     dragId={props.dragScope ? `${props.dragScope}:${sticker.id}` : sticker.id}
                     payload={{ kind: "activity", activityId: sticker.id, face: faceOf(sticker) }}
-                    onAdd={() => props.onAdd(sticker)}
-                    addLabel={`add ${sticker.name} to ${props.addTo}`}
+                    onAdd={tapEdits ? () => setEditing(sticker.id) : () => props.onAdd(sticker)}
+                    addLabel={tapEdits ? `edit ${sticker.name}` : `add ${sticker.name} to ${props.addTo}`}
                     selected={sameSelection(selection, stickerSelection)}
                     onSelect={() => toggle(stickerSelection)}
                     onEdit={manage ? () => setEditing(sticker.id) : undefined}
@@ -131,6 +135,7 @@ export function StickerTray(props: Props) {
               {!props.local && (
                 <NewTile
                   category={group.categoryName}
+                  size={tileSize}
                   trigger={(button) => (
                     <NewStickerForm
                       categories={categories}
@@ -145,12 +150,17 @@ export function StickerTray(props: Props) {
         })}
 
         {manage && archived.length > 0 && (
-          <ArchivedGroup stickers={archived} onError={props.onError} className="col-span-full" />
+          <ArchivedGroup
+            stickers={archived}
+            onError={props.onError}
+            size={tileSize}
+            className="col-span-full"
+          />
         )}
       </div>
 
       {/* Outside the grid: Radix portals the dialog anyway. */}
-      {manage && open && (
+      {!props.local && open && (
         <EditStickerForm
           key={open.sticker.id}
           sticker={open.sticker}
@@ -171,6 +181,7 @@ export function StickerTray(props: Props) {
 function ArchivedGroup(props: {
   stickers: LibrarySticker[];
   onError: (message: string) => void;
+  size: "sm" | "md";
   className?: string;
 }) {
   return (
@@ -189,6 +200,7 @@ function ArchivedGroup(props: {
           <ArchivedTile
             key={sticker.id}
             face={sticker}
+            size={props.size}
             action={
               <RestoreStickerButton
                 activityId={sticker.id}

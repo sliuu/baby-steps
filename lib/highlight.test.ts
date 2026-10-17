@@ -11,11 +11,7 @@ import {
 import type { LibraryGroup } from "./queries/activities.ts";
 import type { ActivitySticker, DayStickers } from "./stickers.ts";
 
-/**
- * Two categories, three stickers. Small enough to hold in your head, and it has the
- * one shape that matters: a category with more than one sticker in it, so
- * "selecting a category" has something to collapse.
- */
+/** Two categories, three stickers; Health has two to collapse. */
 const GROUPS: LibraryGroup[] = [
   {
     categoryId: "category-health",
@@ -23,9 +19,7 @@ const GROUPS: LibraryGroup[] = [
     colorKey: "green",
     stickers: [
       { id: "act-gym", name: "Gym", mark: "G", colorKey: "green", archived: false },
-      // Retired, and still highlightable. Clicking "Health" has to light the
-      // days Sleep is on — those marks are still Health's, which is the same
-      // position `tally` takes about counting them.
+      // Retired but still lights Health's days.
       { id: "act-sleep", name: "Sleep", mark: "Z", colorKey: "green", archived: true },
     ],
   },
@@ -39,12 +33,7 @@ const GROUPS: LibraryGroup[] = [
   },
 ];
 
-/**
- * A placement, which is not the same thing as a sticker. `id` is this square of
- * this day; `activityId` is the sticker in the tray. They differ on purpose
- * here — a fixture where they matched would pass whichever one the code got
- * wrong.
- */
+/** Placement `id` differs from `activityId` on purpose. */
 function placed(activityId: string, day: string): ActivitySticker {
   return {
     id: `placement-${activityId}-${day}`,
@@ -64,7 +53,6 @@ function day(
 
 const EMPTY_DAY = day([]);
 
-/** Every test that needs a resolved highlight goes through the real builder. */
 function highlightFor(selection: Selection): Highlight {
   const highlight = buildHighlight(selection, GROUPS);
   assert.ok(highlight, "fixture selection should resolve");
@@ -83,8 +71,7 @@ describe("sameSelection", () => {
   });
 
   it("separates the kinds even when the ids collide", () => {
-    // The whole reason this isn't an id comparison: a category and an activity
-    // could in principle carry the same uuid, and they'd mean different things.
+    // Not an id compare: a category and activity could share a uuid.
     assert.equal(
       sameSelection(
         { kind: "activity", activityId: "same" },
@@ -126,7 +113,7 @@ describe("sameSelection", () => {
   });
 
   it("treats null as matching nothing, including itself", () => {
-    // "Nothing is selected" is not a selection you can click again to clear.
+    // Nothing selected isn't a selection to toggle off.
     assert.equal(sameSelection(null, null), false);
     assert.equal(sameSelection(null, { kind: "mood", mood: "okay" }), false);
     assert.equal(sameSelection({ kind: "mood", mood: "okay" }, null), false);
@@ -149,8 +136,7 @@ describe("buildHighlight · an activity", () => {
   });
 
   it("is null for a sticker that isn't in the library", () => {
-    // The case this really covers: you had a sticker selected and it was
-    // archived. The selection outlives the row, and null is "nothing is lit".
+    // Selection outlives an archived row; null = nothing lit.
     assert.equal(
       buildHighlight({ kind: "activity", activityId: "act-gone" }, GROUPS),
       null,
@@ -176,8 +162,7 @@ describe("buildHighlight · a category", () => {
   });
 
   it("resolves a category with no stickers to an empty set rather than null", () => {
-    // An empty category exists and is selectable — it just lights no days. That's
-    // different from a category that doesn't exist.
+    // Empty but existing category: selectable, lights nothing.
     const empty: LibraryGroup = {
       categoryId: "category-empty",
       categoryName: "Career",
@@ -205,8 +190,7 @@ describe("buildHighlight · a mood", () => {
 
     assert.equal(highlight.mood, "rough");
     assert.equal(highlight.activityIds.size, 0);
-    // Null rather than a ramp key: a mood is drawn in plain ink everywhere else
-    // in the app, so lighting its days in red would invent a colour for it.
+    // Moods are plain ink; don't invent a colour.
     assert.equal(highlight.colorKey, null);
     assert.equal(highlight.label, "Rough");
   });
@@ -226,8 +210,7 @@ describe("dayMatches · an activity", () => {
   });
 
   it("matches on activityId, not on the placement id", () => {
-    // The same sticker on two days is two placements with two ids. Matching on
-    // `id` would light nothing at all, and this is the test that says so.
+    // Two placements, two ids: matching on `id` lights nothing.
     const monday = day([placed("act-gym", "2026-08-10")]);
     const tuesday = day([placed("act-gym", "2026-08-11")]);
 
@@ -287,8 +270,7 @@ describe("dayMatches · a mood", () => {
   });
 
   it("ignores the day's stickers entirely", () => {
-    // A mood selection asks one question. A day full of stickers and no mood is
-    // not a match, however busy it is.
+    // Mood selection: stickers alone don't match.
     const busy = day([placed("act-gym", "2026-08-11"), placed("act-med", "2026-08-11")]);
     assert.equal(dayMatches(highlight, busy), false);
     assert.equal(dayMatches(highlight, { ...busy, mood: "rough" }), true);

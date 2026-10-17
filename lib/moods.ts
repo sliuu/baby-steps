@@ -29,11 +29,7 @@ export const MOOD_BG: Record<Mood, string> = {
   great: "bg-mood-great",
 };
 
-/**
- * The mouth, drawn on a 24×24 grid inside a ring of radius 9. Deep smile down
- * to deep frown — the shape alone carries the meaning, which is what lets the
- * face drop its colour entirely and still say five different things.
- */
+/** Mouth paths on a 24×24 grid (ring r=9); shape alone carries the mood. */
 export const MOOD_MOUTH: Record<Mood, string> = {
   great: "M7.5 12.5 Q12 17.5 16.5 12.5",
   good: "M7.5 13 Q12 16 16.5 13",
