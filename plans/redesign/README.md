@@ -109,7 +109,7 @@ is a reference, not a dependency.
 | [02](02-tokens-and-palette.md) | New tokens: frame, paper, ink, category inks, moods | 01 | DONE |
 | [03](03-type.md) | Fonts and the type scale | 02 | DONE |
 | [04](04-page-frame.md) | Frame, sheet, header, account menu, footer | 02, 03 | DONE (6ac928c) |
-| [05](05-sticker.md) | The sticker: solid ink, paper edge, icon colour | 02 | TODO |
+| [05](05-sticker.md) | The sticker: solid ink, paper edge, icon colour | 02 | DONE (db3f287) |
 | [06](06-mood.md) | Mood picker and mood dot | 02 | TODO |
 | [07](07-balance-flower.md) | Balance level + the flower | 05 | TODO |
 | [08](08-today.md) | Today view | 04, 05, 06, 07 | TODO |

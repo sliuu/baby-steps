@@ -1,7 +1,7 @@
 # 05 · The sticker: solid ink, paper edge, icon colour
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** db3f287
 - **Severity:** high (the product's main object)
 - **Category:** component
 - **Estimated scope:** `components/calendar/StickerMark.tsx`, `lib/stickers.ts`, `lib/icons.ts`, globals.css size tokens
