@@ -38,6 +38,12 @@ Two exports from one file, `components/ui/Mood.tsx`:
 `MoodMark.tsx` becomes a re-export of `MoodDot` or is deleted with its callers
 moved (plan 15 removes leftovers).
 
+> **Amended (as built):**
+> - The radio group is the tray's `MoodPicker`, as written (Stephanie chose this). Its job is still to **highlight** days with that mood, not to save one. Saving stays in `MoodRow` (Today, day sheet) and the cell popover. Drag still works: Space starts a keyboard drag, and arrows move the selection.
+> - Circles are up to 44px and shrink to fit the 14rem rail.
+> - `MoodMark` is kept as the face on its mood colour (24px, self-labelled), so Today, the day sheet, the popover and Trends show the same colour. Calendar cells (month, week columns, phone week, 404) use `MoodDot`.
+> - The dot size is the `--size-mood-dot` token.
+
 ## Verify
 
 - Today and calendar show the identical colour for the same day.

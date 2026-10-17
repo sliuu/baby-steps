@@ -189,6 +189,7 @@
   --size-sticker-md: 2.75rem;
   --size-sticker-sm: 2.25rem;
   --size-sticker-xs: 1.25rem;
+  --size-mood-dot: 0.6875rem;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);

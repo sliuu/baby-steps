@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { MoodMark } from "./MoodMark";
+import { MoodDot } from "@/components/ui/Mood";
 import {
   Popover,
   PopoverContent,
@@ -62,13 +63,9 @@ export function DayMoodButton(props: Props) {
         // sit on one page and "Great" alone identifies none of them — the same
         // reason a placed sticker's label carries its date.
         aria-label={`Mood for ${formatDayLong(props.day)}: ${MOOD_LABEL[props.mood]}. Change it`}
-        className={`rounded-full transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${props.faded}`}
+        className={`grid size-6 place-items-center rounded-full transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${props.faded}`}
       >
-        {/* `MoodMark` names itself "Mood: Great", which is right on a bare grid
-            cell and wrong inside a button that already has a fuller name. */}
-        <span aria-hidden="true">
-          <MoodMark mood={props.mood} />
-        </span>
+        <MoodDot mood={props.mood} />
       </PopoverTrigger>
 
       {/* `w-auto` overrides the shadcn default of `w-72`. That width is sized

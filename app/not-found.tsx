@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { MoodMark } from "@/components/calendar/MoodMark";
+import { MoodDot } from "@/components/ui/Mood";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { Button } from "@/components/ui/button";
 import type { Mood } from "@/lib/moods";
@@ -158,7 +158,7 @@ function DayFace(props: {
         >
           {props.numeral}
         </span>
-        <MoodMark mood={props.mood} />
+        <MoodDot mood={props.mood} />
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1">

@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 
-import { MoodMark } from "./MoodMark";
+import { MoodDot } from "@/components/ui/Mood";
+import { MOOD_LABEL } from "@/lib/moods";
 import { StickerMark } from "./StickerMark";
 import type { PeriodProps } from "./period";
 import { formatDayLong, fromDayString, weekGrid } from "@/lib/dates";
@@ -159,7 +160,8 @@ export function WeekList(props: Props) {
                 <span className="flex w-6 shrink-0 justify-end">
                   {stickers.mood && (
                     <span className={faded(highlight?.mood === stickers.mood)}>
-                      <MoodMark mood={stickers.mood} />
+                      <MoodDot mood={stickers.mood} />
+                      <span className="sr-only">Mood: {MOOD_LABEL[stickers.mood]}</span>
                     </span>
                   )}
                 </span>
