@@ -39,6 +39,12 @@ with the app.
 
 A new component lands in `/dev/system` in the same commit it is created.
 
+> **Amended (as built):**
+> - No verdict line yet: `verdict()` arrives with plan 12. Add it to the balance section then.
+> - `/dev` is in `proxy.ts`'s public paths; the page gates itself. In development anyone sees it. In production it 404s unless the signed-in email is in `DEV_SYSTEM_EMAILS` (comma-separated env var).
+> - Focus states are shown by tabbing through the button table, not by a frozen "focused" column.
+> - Values (hex, px) are read live from computed styles, so they can't drift from `globals.css`.
+
 ## Verify
 
 - Visible in dev, 404 in a production build for a non-allow-listed user.

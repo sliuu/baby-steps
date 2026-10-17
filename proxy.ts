@@ -29,6 +29,8 @@ import { supabaseEnv } from "@/lib/supabase/env";
 const PUBLIC_PATHS = [
   "/login",
   "/demo",
+  // Gated by the page itself (dev or allow-list; 404 otherwise).
+  "/dev",
   "/auth/callback",
   "/auth/auth-code-error",
 ];
