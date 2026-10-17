@@ -93,12 +93,12 @@ type DemoHabit = {
  * it is the one that makes real accounts.
  */
 const CATEGORIES: { slug: string; name: string; colorKey: string }[] = [
-  { slug: "spirituality", name: "Spirituality", colorKey: "red" },
-  { slug: "exercise", name: "Exercise", colorKey: "blue" },
-  { slug: "work", name: "Work", colorKey: "orange" },
-  { slug: "creativity", name: "Creativity & Play", colorKey: "yellow" },
-  { slug: "romance", name: "Romance & Adventure", colorKey: "green" },
-  { slug: "friends", name: "Friends & Family", colorKey: "purple" },
+  { slug: "spirituality", name: "Spirituality", colorKey: "oxblood" },
+  { slug: "exercise", name: "Exercise", colorKey: "bottle" },
+  { slug: "work", name: "Work", colorKey: "mustard" },
+  { slug: "creativity", name: "Creativity & Play", colorKey: "rose" },
+  { slug: "romance", name: "Romance & Adventure", colorKey: "sage" },
+  { slug: "friends", name: "Friends & Family", colorKey: "plum" },
 ];
 
 /**
@@ -428,9 +428,9 @@ function moodOf(day: DayString) {
     0.7 * Math.sin((2 * Math.PI * n) / FAST + 0.4) +
     (random(day, "mood") - 0.5) * 2 * JITTER;
 
-  // MOODS runs best to worst and the wave runs worst to best, so 5 is index 0.
+  // MOODS runs worst to best, like the wave: score 1 is index 0.
   const score = Math.min(5, Math.max(1, Math.round(wave)));
-  return MOODS[MOODS.length - score];
+  return MOODS[score - 1];
 }
 
 /** Sunday 0, matching `Date.prototype.getUTCDay` and the strip's columns. */

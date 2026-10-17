@@ -4,7 +4,7 @@
 - **Commit:** —
 - **Severity:** foundation
 - **Category:** design system
-- **Estimated scope:** `app/globals.css`, `lib/palette.ts`, `lib/rampValues.ts`, `lib/moods.ts`, one migration
+- **Estimated scope:** `app/globals.css`, `lib/palette.ts`, `lib/rampValues.ts`, `lib/moods.ts` (no migration; see below)
 
 ## Problem
 
@@ -78,6 +78,12 @@ size, motion. Keep the existing motion tokens as they are.
 --shadow-menu:  0 6px 24px color-mix(in srgb, var(--ink) 12%, transparent);
 ```
 
+> **Amended:** the raw tokens are `--sheet-shadow` / `--menu-shadow`, so the
+> bridge's `--shadow-sheet: var(--sheet-shadow)` isn't a cycle. Old tokens
+> (`--bg`, `--surface`, `--ramp-*`, `--cat-*-soft`/`-tint`, …) stay as aliases
+> onto the new ones until their callers move (plans 05–15). `--secondary` is a
+> 7% ink wash on paper.
+
 And the frame trial:
 
 ```css
@@ -103,7 +109,11 @@ without being edited: `--background → --paper`, `--foreground → --ink`,
 
 ### Category colour keys
 
-1. Migration `<timestamp>_category_color_keys.sql`:
+> **Amended:** no migration. Production shares the database, so `color_key`
+> keeps `red`/`blue`/…; `fromDbColorKey()` in `lib/palette.ts` maps them on
+> read (`lib/queries/activities.ts`). Writes don't touch `color_key`.
+
+1. ~~Migration `<timestamp>_category_color_keys.sql`:~~
    ```sql
    update public.categories set color_key = case color_key
      when 'red' then 'oxblood'  when 'blue' then 'bottle'

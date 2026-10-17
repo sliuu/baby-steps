@@ -15,7 +15,7 @@ import {
   starPoints,
   toPoints,
 } from "@/lib/lifestar";
-import { ramp } from "@/lib/palette";
+import { categoryColor } from "@/lib/palette";
 
 type Props = { tally: Tally };
 
@@ -137,7 +137,7 @@ export function LifeStar(props: Props) {
             cx={vertices[i].x}
             cy={vertices[i].y}
             r={4}
-            className={ramp(category.colorKey).softFill}
+            className={categoryColor(category.colorKey).softFill}
           />
         ))}
 

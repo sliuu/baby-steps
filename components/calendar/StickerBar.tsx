@@ -1,5 +1,5 @@
 import { MARK_ICON_SIZE, MARK_STROKE, iconFor } from "@/lib/icons";
-import { ramp } from "@/lib/palette";
+import { categoryColor } from "@/lib/palette";
 import type { StickerFace } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,7 @@ type Props = {
  * object from a sticker you have to recognise.
  *
  * Everything else is deliberately identical, and now that includes the edge.
- * Same `tint` from the same `ramp()`, so a green sticker is the same green in
+ * Same `tint` from the same `categoryColor()`, so a green sticker is the same green in
  * both views; same `MARK_ICON_SIZE` and `MARK_STROKE`, so the picture inside
  * is drawn with the same pen; and the same `border-sticker-edge` rim over the
  * same `shadow-sticker`, so a bar is the same *object* as a circle rather than
@@ -59,7 +59,7 @@ type Props = {
  */
 export function StickerBar(props: Props) {
   const { sticker } = props;
-  const { tint } = ramp(sticker.colorKey);
+  const { tint } = categoryColor(sticker.colorKey);
   const icon = iconFor(sticker.mark);
 
   return (

@@ -19,8 +19,8 @@
 /* ---------------------------------------------------------------------------
    Bridge: turn CSS variables into Tailwind utilities.
 
-   Everything named here becomes a class. `--color-category-work` gives you
-   `bg-category-work`, `text-category-work`, `border-category-work`. The values live in
+   Everything named here becomes a class. `--color-cat-rose` gives you
+   `bg-cat-rose`, `text-cat-rose`, `border-cat-rose`. The values live in
    :root / .dark below, so a utility resolves differently per theme without a
    single class name changing.
 --------------------------------------------------------------------------- */
@@ -177,61 +177,74 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Ours — the vocabulary the rest of Baby Steps speaks. */
+  /* Ours. */
+  --color-frame: var(--frame);
+  --color-on-frame: var(--on-frame);
+  --color-paper: var(--paper);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-accent-ink: var(--accent-ink);
+  --color-rule-strong: var(--rule-strong);
+  --color-rule: var(--rule);
+  --color-rule-grid: var(--rule-grid);
+  --color-rule-input: var(--rule-input);
+  --shadow-sheet: var(--sheet-shadow);
+  --shadow-menu: var(--menu-shadow);
+
+  /* Category inks. `-soft` / `-tint` are legacy pastels until plan 05. */
+  --color-cat-oxblood: var(--cat-oxblood);
+  --color-cat-oxblood-text: var(--cat-oxblood-text);
+  --color-cat-oxblood-on: var(--cat-oxblood-on);
+  --color-cat-oxblood-soft: var(--cat-oxblood-soft);
+  --color-cat-oxblood-tint: var(--cat-oxblood-tint);
+  --color-cat-bottle: var(--cat-bottle);
+  --color-cat-bottle-text: var(--cat-bottle-text);
+  --color-cat-bottle-on: var(--cat-bottle-on);
+  --color-cat-bottle-soft: var(--cat-bottle-soft);
+  --color-cat-bottle-tint: var(--cat-bottle-tint);
+  --color-cat-mustard: var(--cat-mustard);
+  --color-cat-mustard-text: var(--cat-mustard-text);
+  --color-cat-mustard-on: var(--cat-mustard-on);
+  --color-cat-mustard-soft: var(--cat-mustard-soft);
+  --color-cat-mustard-tint: var(--cat-mustard-tint);
+  --color-cat-rose: var(--cat-rose);
+  --color-cat-rose-text: var(--cat-rose-text);
+  --color-cat-rose-on: var(--cat-rose-on);
+  --color-cat-rose-soft: var(--cat-rose-soft);
+  --color-cat-rose-tint: var(--cat-rose-tint);
+  --color-cat-sage: var(--cat-sage);
+  --color-cat-sage-text: var(--cat-sage-text);
+  --color-cat-sage-on: var(--cat-sage-on);
+  --color-cat-sage-soft: var(--cat-sage-soft);
+  --color-cat-sage-tint: var(--cat-sage-tint);
+  --color-cat-plum: var(--cat-plum);
+  --color-cat-plum-text: var(--cat-plum-text);
+  --color-cat-plum-on: var(--cat-plum-on);
+  --color-cat-plum-soft: var(--cat-plum-soft);
+  --color-cat-plum-tint: var(--cat-plum-tint);
+
+  /* Moods, sad → happy. */
+  --color-mood-rough: var(--mood-rough);
+  --color-mood-low: var(--mood-low);
+  --color-mood-okay: var(--mood-okay);
+  --color-mood-good: var(--mood-good);
+  --color-mood-great: var(--mood-great);
+
+  /* Legacy names (plan 15 removes). */
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
-  --color-ink: var(--ink);
-  --color-ink-muted: var(--ink-muted);
   --color-ink-label: var(--ink-label);
   --color-hairline: var(--hairline);
-  /* Bridged for one utility, `border-today-mark`, and that is the whole reason
-     it is here. See the token for why it is not `--accent`. */
   --color-today-mark: var(--today-mark);
-
-  /* Hue ramps — what `color_key` names. `bg-ramp-red`, `text-ramp-blue`, … */
   --color-ramp-red: var(--ramp-red);
-  --color-ramp-blue: var(--ramp-blue);
-  --color-ramp-orange: var(--ramp-orange);
-  --color-ramp-yellow: var(--ramp-yellow);
-  --color-ramp-green: var(--ramp-green);
-  --color-ramp-purple: var(--ramp-purple);
-
-  /* The pastel end of each ramp — the highlight wash, and the fill of every
-     swatch in Trends. The full hue stays for anything that needs to carry at a
-     distance: chart vertices, the dots beside labels, a sticker's outline. */
   --color-ramp-red-soft: var(--ramp-red-soft);
-  --color-ramp-blue-soft: var(--ramp-blue-soft);
-  --color-ramp-orange-soft: var(--ramp-orange-soft);
-  --color-ramp-yellow-soft: var(--ramp-yellow-soft);
-  --color-ramp-green-soft: var(--ramp-green-soft);
-  --color-ramp-purple-soft: var(--ramp-purple-soft);
 
-  /* The palest end — what a sticker is filled with, under an outline in the
-     full hue. A third rung rather than `bg-ramp-red-soft/40`, because a
-     sticker sits on the surface in the tray and on a sunken day cell in the
-     grid, and a translucent fill would be a different colour in each. */
-  --color-ramp-red-tint: var(--ramp-red-tint);
-  --color-ramp-blue-tint: var(--ramp-blue-tint);
-  --color-ramp-orange-tint: var(--ramp-orange-tint);
-  --color-ramp-yellow-tint: var(--ramp-yellow-tint);
-  --color-ramp-green-tint: var(--ramp-green-tint);
-  --color-ramp-purple-tint: var(--ramp-purple-tint);
-
-  --color-category-spirituality: var(--category-spirituality);
-  --color-category-exercise: var(--category-exercise);
-  --color-category-work: var(--category-work);
-  --color-category-creativity: var(--category-creativity);
-  --color-category-romance: var(--category-romance);
-  --color-category-friends: var(--category-friends);
-
-  /* The die-cut rim and the lift, as `border-sticker-edge` and
-     `shadow-sticker`. Both are declared on `:root` / `.dark` like everything
-     else here, so a sticker in the tray and a sticker on a Tuesday cannot
-     drift apart — and neither can the two themes. */
+  /* Sticker rim and lift: `border-sticker-edge`, `shadow-sticker`. */
   --color-sticker-edge: var(--sticker-edge);
   --shadow-sticker: var(--sticker-shadow);
-  --color-rule: var(--rule);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -342,309 +355,146 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Light — newsprint grey, near-black neutral ink, one press-red mark.
+   Light — stationery: ivory paper in a blush frame, bottle-green ink, oxblood accent.
 --------------------------------------------------------------------------- */
 :root {
-  /* Tells the browser which way *its own* furniture should lean — scrollbars,
-     form controls, the ground it paints before our CSS lands. Without it a dark
-     page still gets a light scrollbar, because the browser has no way to know. */
   color-scheme: light;
 
-  /* 8px. Was 0.625rem — 10px — and the whole radius family is derived from
-     this one number, so the corners on a card, a dialog and a button all
-     tightened by the same fifth. Softer than a square corner, far enough from
-     a pill that nothing reads as a badge. */
+  /* ── primitives ─────────────────────── */
+  --blush: #F1D0CA;
+  --espresso: #4E4036;
+  --ivory: #FFFEF5;
+  --cream: #FBF8EF;
+  --bottle: #23402F;
+  --oxblood: #7A1F1F;
+
+  /* ── semantic: use these, not primitives ── */
+  --frame: var(--blush);
+  --on-frame: var(--bottle);
+  --paper: var(--ivory);
+  --raised: var(--cream);
+  --ink: var(--bottle);
+  --ink-muted: color-mix(in srgb, var(--ink) 75%, transparent);
+  --ink-subtle: color-mix(in srgb, var(--ink) 45%, transparent);
+  --accent-ink: var(--oxblood);
+  --rule-strong: var(--ink);
+  --rule: color-mix(in srgb, var(--ink) 25%, transparent);
+  --rule-grid: color-mix(in srgb, var(--ink) 14%, transparent);
+  --rule-input: color-mix(in srgb, var(--ink) 45%, transparent);
+  --focus-ring: 2px solid var(--accent-ink);
+
+  /* ── categories: ink / readable text / icon on sticker ── */
+  --cat-oxblood: #7A1F1F; --cat-oxblood-text: #7A1F1F; --cat-oxblood-on: var(--paper);
+  --cat-bottle: #23402F;  --cat-bottle-text: #23402F;  --cat-bottle-on: var(--paper);
+  --cat-mustard: #C9A23A; --cat-mustard-text: #9C7A1E; --cat-mustard-on: var(--ink);
+  --cat-rose: #D98C7A;    --cat-rose-text: #B0614F;    --cat-rose-on: var(--ink);
+  --cat-sage: #8FA98A;    --cat-sage-text: #5E7A59;    --cat-sage-on: var(--ink);
+  --cat-plum: #765B8C;    --cat-plum-text: #765B8C;    --cat-plum-on: var(--paper);
+
+  /* ── moods, sad → happy ── */
+  --mood-rough: #6F95B8;
+  --mood-low: #A8C2D6;
+  --mood-okay: #D3D6C5;
+  --mood-good: #F5DE8E;
+  --mood-great: #EFC548;
+
+  /* ── shadows ── */
+  --sheet-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+  --menu-shadow: 0 6px 24px color-mix(in srgb, var(--ink) 12%, transparent);
+
+  /* ── legacy aliases: old names on new values; removed by plans 05–15 ── */
+  --bg: var(--paper);
+  --surface: var(--paper);
+  --surface-sunken: var(--raised);
+  --ink-label: var(--ink-muted);
+  --hairline: var(--rule-grid);
+  --today-mark: var(--accent-ink);
+  --scroll-thumb: color-mix(in srgb, var(--ink) 22%, transparent);
+  --scroll-thumb-hover: color-mix(in srgb, var(--ink) 38%, transparent);
+
+  /* Pastel rungs of the new inks, for the old sticker shape until plan 05. */
+  --sticker-fill: 45%;
+  --cat-oxblood-soft: color-mix(in srgb, var(--cat-oxblood) 48%, var(--paper));
+  --cat-bottle-soft: color-mix(in srgb, var(--cat-bottle) 48%, var(--paper));
+  --cat-mustard-soft: color-mix(in srgb, var(--cat-mustard) 48%, var(--paper));
+  --cat-rose-soft: color-mix(in srgb, var(--cat-rose) 48%, var(--paper));
+  --cat-sage-soft: color-mix(in srgb, var(--cat-sage) 48%, var(--paper));
+  --cat-plum-soft: color-mix(in srgb, var(--cat-plum) 48%, var(--paper));
+  --cat-oxblood-tint: color-mix(in srgb, var(--cat-oxblood) var(--sticker-fill), var(--paper));
+  --cat-bottle-tint: color-mix(in srgb, var(--cat-bottle) var(--sticker-fill), var(--paper));
+  --cat-mustard-tint: color-mix(in srgb, var(--cat-mustard) var(--sticker-fill), var(--paper));
+  --cat-rose-tint: color-mix(in srgb, var(--cat-rose) var(--sticker-fill), var(--paper));
+  --cat-sage-tint: color-mix(in srgb, var(--cat-sage) var(--sticker-fill), var(--paper));
+  --cat-plum-tint: color-mix(in srgb, var(--cat-plum) var(--sticker-fill), var(--paper));
+
+  /* Old hue names, for the error banners and `.dark`. */
+  --ramp-red: var(--cat-oxblood);
+  --ramp-blue: var(--cat-bottle);
+  --ramp-orange: var(--cat-mustard);
+  --ramp-yellow: var(--cat-rose);
+  --ramp-green: var(--cat-sage);
+  --ramp-purple: var(--cat-plum);
+  --ramp-red-soft: var(--cat-oxblood-soft);
+  --ramp-blue-soft: var(--cat-bottle-soft);
+  --ramp-orange-soft: var(--cat-mustard-soft);
+  --ramp-yellow-soft: var(--cat-rose-soft);
+  --ramp-green-soft: var(--cat-sage-soft);
+  --ramp-purple-soft: var(--cat-plum-soft);
+  --ramp-red-tint: var(--cat-oxblood-tint);
+  --ramp-blue-tint: var(--cat-bottle-tint);
+  --ramp-orange-tint: var(--cat-mustard-tint);
+  --ramp-yellow-tint: var(--cat-rose-tint);
+  --ramp-green-tint: var(--cat-sage-tint);
+  --ramp-purple-tint: var(--cat-plum-tint);
+
+  /* Die-cut rim is the paper. Shadow is a literal so it can't flip with theme. */
+  --sticker-edge: var(--paper);
+  --sticker-shadow:
+    0 1px 1.5px rgb(35 64 47 / 0.16),
+    0 2px 5px rgb(35 64 47 / 0.09);
+
+  /* shadcn's names, pointed at ours. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  /* Selected / hover surface: a faint ink wash on paper. */
+  --secondary: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  --secondary-foreground: var(--ink);
+  --muted: var(--secondary);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--secondary);
+  --accent-foreground: var(--ink);
+  --destructive: var(--accent-ink);
+  --border: var(--rule);
+  --input: var(--rule-input);
+  --ring: var(--accent-ink);
+
+  /* ── size ── */
   --radius: 0.5rem;
 
-  /* Durations, in pairs: in, then out.
-
-     Two rules generate all of them. First, an exit is faster than the matching
-     entrance — roughly two-thirds — because arriving is information ("here is a
-     dialog, here is what's in it") and leaving is just clearing the way.
-     Second, the bigger the thing, the longer it takes: a dialog covers the page
-     and gets 260ms, a dropdown covers a corner of it and gets 180.
-
-     Everything here used to be 100ms, which is below the threshold where motion
-     reads as motion at all — fast enough that you see the before and the after
-     but not the movement between them, which is indistinguishable from a jump
-     cut with extra frames. 180–260ms is the band where a transition reads as
-     deliberate without making you wait for it.
-
-     These are real custom properties rather than `@theme` entries because the
-     reduced-motion block at the bottom of this file rewrites them. A theme
-     value declared `inline` is substituted into the utility at build time and
-     there is nothing left to override. */
+  /* ── motion ── */
+  /* Real properties, not @theme, so reduced-motion below can override them.
+     Exits ~2/3 of entrances; bigger things take longer. */
   --dur-panel-in: 260ms;
   --dur-panel-out: 160ms;
   --dur-menu-in: 180ms;
   --dur-menu-out: 120ms;
   --dur-deck: 340ms;
   --dur-land: 420ms;
-
-  /* The entrance on the signed-out page — the heading, the tagline, the
-     buttons, and all thirty stickers behind them.
-
-     It was 700ms, on the theory that a page with nothing to do on it can
-     afford to take its time. The theory was half right: the page can afford
-     it, but the *buttons* can't. Combined with their delay, 700ms meant the
-     thing you came here to press wasn't fully on screen until a second in, and
-     the login page is not seen once — it's seen again on every sign-out, every
-     bookmark, and every OAuth round trip that comes back unhappy. A flourish
-     you sit through twice is a flourish that's too long.
-
-     420ms is comfortably slower than anything else in this file (a dropdown is
-     180ms), and that is the point: this is the one place where the arrival is
-     the content rather than an explanation of a change, so the words are
-     allowed to take their time coming up. It went 300ms -> 420ms because at
-     300ms the rise read as a page snapping into place next to stickers that
-     fall for 620ms; the two now belong to the same piece of motion.
-
-     It is still bounded by the same rule as everything else here: the visitor
-     should never be waiting on it. That used to be underwritten by the stagger
-     between the three elements — each one arrived early even if the last
-     finished late — and now that they rise together this token is the only
-     thing standing between the visitor and the buttons. Much past 500ms it
-     starts to feel like something you are waiting for. */
+  /* Sign-in page entrance. Keep under ~500ms; the buttons wait on it. */
   --dur-hero: 420ms;
-
-  /* The stickers dropping onto the signed-out page — see `--animate-fall`.
-
-     Longer than `--dur-hero`, and it has to be: this one is not a fade with a
-     nudge, it is a fall, an overshoot and two rebounds, and each of those needs
-     enough time to be seen as a separate event. Under 500ms the settle stops
-     reading as a settle and starts reading as a wobble.
-
-     The cost is paid entirely by decoration. The buttons start moving at 150ms
-     and the sticker layer is `pointer-events-none` from the first frame, so
-     nothing here is ever between the visitor and the thing they came to press.
-     The last sticker lands at the final `ENTER` delay + 620ms, on purpose —
-     see `ENTER` in `FloatingStickers.tsx` for the arithmetic. */
+  /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
+}
 
-  /* **Newsprint grey, and no white anywhere.** The page was an off-white a
-     hair below pure white, with the cards and sheets sitting on actual #ffffff
-     above it. That is a screen's idea of paper: the ground is the brightest
-     thing in the room and every surface is brighter still. This palette
-     inverts the premise — the page is a grey stock at #ebeae4, and a surface
-     lifts *off* it to #f3f2ed rather than going white. Nothing on screen is
-     #ffffff any more.
-
-     What that buys is the app's own drawings. Six sticker tints, five mood
-     faces and a page of coloured bars were all being read against the
-     brightest possible ground, which is the one ground that makes a pastel
-     look washed. Dropping the page eighteen points of lightness gives every
-     tint an edge it did not have to be redrawn to get — and the tint mixes are
-     made against `--surface` (see `--ramp-*-tint` below), so they followed on
-     their own without a single ramp value changing.
-
-     The three rungs keep their old relationship: sunken, page, surface. What
-     changed is that the whole ladder moved down and lost its warmth. These are
-     near-neutral greys with a trace of yellow left in them — a paper stock,
-     not a cool grey and not the cream this was before. */
-  --bg: #ebeae4;
-  --surface: #f3f2ed;
-  --surface-sunken: #e3e2db;
-  --ink: #141414;
-  /* **4.85:1 on `--bg`, and the old value was 3.62:1.** This rung had been
-     under the app's own 4.5 floor since it was picked against a near-white
-     page, which is the failure that hides best: #8a8378 on #fbfbfa looks
-     merely quiet rather than illegible. On a grey ground it would have got
-     worse, so it came down to #66655f. It clears the floor on all three
-     surfaces, though only just on the sunken one — 4.50:1 exactly — so
-     `--surface-sunken` is the rung to re-check first if any of these move. */
-  --ink-muted: #66655f;
-  /* Between the two. Letterspaced caps are set small and spaced apart, which
-     costs them contrast twice over — --ink-muted is legible in a sentence and
-     faint in a label. This is the weight a label needs to hold its own without
-     competing with the thing it's naming. 8.23:1 on the page. */
-  --ink-label: #434341;
-  --hairline: #cfcdc4;
-
-  /* The scrollbar, which is furniture we draw ourselves now — see
-     `scrollbar-app`. Two rungs, resting and hovered, and both are literal
-     alphas for the reason `--sticker-shadow` is: a `color-mix` that gets
-     dropped renders as full-opacity ink, which here is a solid black bar down
-     the side of the tray. Ink rather than a fixed grey so it sits in the
-     palette, and translucent so it reads as laid over whatever it scrolls. */
-  --scroll-thumb: rgb(20 20 20 / 0.22);
-  --scroll-thumb-hover: rgb(20 20 20 / 0.38);
-
-  /* The one line heavier than a hairline: the rule the week hangs off. A
-     hairline divides things that are already understood to be a set — two
-     cells of one grid — and at 2px on its own above seven columns it reads as
-     a smudge rather than as a rule. It is neutral rather than borrowed from
-     the text ink, so it belongs to the structural palette.
-
-     0.22 rather than 0.2, and the two points are the grey ground's doing: the
-     same alpha that read as a rule over a near-white page reads as a shadow of
-     one over #ebeae4. The scroll thumb took the same correction for the same
-     reason, which is why the two still share their alphas.
-
-     Literal, and for the same reason `--sticker-shadow` is. The obvious
-     spelling was a border utility taking ink through Tailwind's slash-opacity
-     syntax, and Lightning CSS compiles those with a full-opacity `var(--ink)`
-     fallback ahead of the `color-mix`: on a browser without `color-mix` that
-     is a 2px near-black bar across the top of every week. Fine for the drop
-     outline, which is transient; not fine for permanent chrome.
-
-     (And writing that utility's name out in this comment emitted it. The
-     scanner reads comments — see the footnote in `lib/layout.ts`.) */
-  --rule: rgb(20 20 20 / 0.22);
-
-  /* **The one red in the app, and it marks today.** A grey page with one warm
-     accent on it is the whole idea of the palette: press-red on newsprint,
-     spent on exactly one thing. It is a 2px rule under today's numeral in all
-     four calendar views — see `border-today-mark` at those call sites.
-
-     Three things it is deliberately not. It is not `--accent`: shadcn spends
-     that on hover and selected surfaces, so anything put there would tint half
-     the furniture in the app. It is not `--destructive`, which stays the red
-     category ramp — an error and a date are different claims on the same colour,
-     and the loud one should not be the one you see every day. And it is not
-     for links or buttons; the moment a second thing is red, neither is a mark.
-
-     4.24:1 on the page, which clears the 3:1 that a 2px non-text rule is held
-     to and does not clear the 4.5 that text is. Keep it a rule. Today also
-     keeps `font-medium` at every call site, so the mark is never carried by
-     colour alone. */
-  --today-mark: #d4271c;
-
-  /* Ramps are named by hue: a category row stores a hue in `color_key`. */
-  --ramp-red: #c4483c;
-  --ramp-blue: #3178b5;
-  --ramp-orange: #d9762b;
-  --ramp-yellow: #ddb63c;
-  --ramp-green: #4c8b4a;
-  --ramp-purple: #9457c0;
-
-  /* Each hue at 48% over the surface. A sticker is a tint, not a block
-     of colour — six saturated circles on one day shout over the dates they're
-     meant to annotate. The mark on top is --ink, so legibility never depends on
-     the tint being light enough for white.
-
-     Was 28%, raised in Step 14 when Trends started wearing these too. A tint
-     that carries a 26px sticker was too faint to carry a 10px swatch: at 28%
-     the palest sat at 1.19:1 against this surface. 48% is one number rather
-     than six hand-picked values, which is the point of writing them as a mix —
-     the whole ramp moves together, and a seventh hue is derived rather than
-     guessed. Ink still clears 7:1 on all six here. */
-  --ramp-red-soft: #e2a69e;
-  --ramp-blue-soft: #9bbdd8;
-  --ramp-orange-soft: #ecbc96;
-  --ramp-yellow-soft: #eeda9e;
-  --ramp-green-soft: #a8c6a4;
-  --ramp-purple-soft: #cbaddd;
-
-  /* The fill a sticker wears, and the only rung that is written as live
-     arithmetic rather than as six hex values.
-
-     It was 20% over the surface, because the sticker also wore a 1px ring in
-     the full hue and the ring was what named the category — a fill that faint is
-     there to stay out of the way. The ring is gone now and the fill has to
-     carry the hue on its own, so it moved up to 45%: enough colour that six
-     circles on a Tuesday read as six categories at a glance, short of the mid-tone
-     that made an emoji fight its own background at the old 48% soft rung.
-
-     Written as a `color-mix` because 45% is a design decision someone will
-     want to turn, and a percentage you can edit in one place is a knob where
-     twelve hand-picked hex values are a chore. It also means the dark theme
-     needs no copy of this block at all: `--ramp-*` and `--surface` are both
-     redefined on `.dark`, which is the same element this is declared on, so
-     each mix re-resolves against the dark hue over the dark card.
-
-     The second argument is `--surface` and not `--surface-sunken`, and that is
-     an approximation on purpose. A mark sits on the card in the tray and on a
-     sunken cell in the grid; picking one keeps this six values instead of
-     twelve, and the two grounds are four points apart. */
-  --sticker-fill: 45%;
-  --ramp-red-tint: color-mix(in srgb, var(--ramp-red) var(--sticker-fill), var(--surface));
-  --ramp-blue-tint: color-mix(in srgb, var(--ramp-blue) var(--sticker-fill), var(--surface));
-  --ramp-orange-tint: color-mix(in srgb, var(--ramp-orange) var(--sticker-fill), var(--surface));
-  --ramp-yellow-tint: color-mix(in srgb, var(--ramp-yellow) var(--sticker-fill), var(--surface));
-  --ramp-green-tint: color-mix(in srgb, var(--ramp-green) var(--sticker-fill), var(--surface));
-  --ramp-purple-tint: color-mix(in srgb, var(--ramp-purple) var(--sticker-fill), var(--surface));
-
-  /* The die-cut edge, and the shadow that lifts it off the page.
-
-     A real sticker is a shape cut out of a sheet, and the cut leaves a margin
-     of the backing paper around the art. That white rim is the single most
-     recognisable thing about the object — more than the gloss, more than the
-     shape — so it is what the tint circles borrow to stop reading as flat
-     coloured dots and start reading as things placed on the day.
-
-     Pure white in light, and deliberately *not* `--surface`. The two are the
-     same colour on the tray's card, which would make the rim invisible there;
-     they differ on a sunken grid cell, which is where a sticker actually sits.
-     Hard-coding white is what makes the rim the paper's colour rather than
-     whatever it happens to be lying on.
-
-     In dark it is mixed back 70% toward the surface. A full white rim on a
-     #201f1d cell is a bright ring around every mark, and a month of them is a
-     page of holes punched in the dark — the rim has to stay the lightest thing
-     in the sticker without becoming the lightest thing on the screen.
-
-     The shadow is one soft step, not a stack. It says "this is on top of the
-     page" and nothing else; anything deeper starts to say "this is draggable",
-     which is the drag overlay's line and not a resting sticker's. Two stops: a
-     hairline contact shadow holding the bottom edge down, and a wider, much
-     fainter one for the lift.
-
-     **Written as a literal alpha, and not mixed from `--ink`.** Mixing from
-     ink is the move the rest of this file makes and it is wrong for exactly
-     this property. Every other token here wants to flip with the theme; a
-     shadow does not. Ink is `#141414` in light and `#ecebe5` in dark, so an
-     ink-derived shadow becomes a pale *glow* in dark mode — which, under a rim
-     that is already the lightest thing in the sticker, reads as a halo rather
-     than as a lift.
-
-     So the colour is the light theme's ink as a literal — which with the
-     retheme is a neutral near-black rather than the warm one it used to be,
-     and still sits in the palette — and `.dark` overrides it with a
-     true black at a higher alpha: a dark shadow on a dark surface has to work
-     harder to register at all. The literal also avoids a `color-mix` fallback
-     that Lightning CSS renders as full-opacity ink on browsers without
-     `color-mix` — invisible in the ramps that already use it, and a heavy
-     black ring under every sticker here. */
-  --sticker-edge: #ffffff;
-  --sticker-shadow:
-    0 1px 1.5px rgb(20 20 20 / 0.16),
-    0 2px 5px rgb(20 20 20 / 0.09);
-
-  /* The default six, by name. Aliases — the ramp above is the real value. */
-  --category-spirituality: var(--ramp-red);
-  --category-exercise: var(--ramp-blue);
-  --category-work: var(--ramp-orange);
-  --category-creativity: var(--ramp-yellow);
-  --category-romance: var(--ramp-green);
-  --category-friends: var(--ramp-purple);
-
-  /* shadcn's names, pointed at ours. */
-  --background: var(--bg);
-  --foreground: var(--ink);
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-  --primary: #141414;
-  --primary-foreground: #f3f2ed;
-  /* Selected and muted controls sit *below* the page rather than above it now,
-     which is the one structural change the grey ground forced. On a near-white
-     page a selected state could only be a step down, and #f0f0ee was that step.
-     On #ebeae4 it would be a step up — a lit cell, which reads as a highlight
-     rather than as a selection. #e0dfd8 is eleven points under the page, the
-     same distance the old value sat under the old one, so navigation, today
-     rows and hover furniture all keep the weight they had. */
-  --secondary: #e0dfd8;
-  --secondary-foreground: var(--ink);
-  --muted: #e0dfd8;
-  --muted-foreground: var(--ink-muted);
-  --accent: #e0dfd8;
-  --accent-foreground: var(--ink);
-  /* Still the red category ramp, and still not `--today-mark`. See that token. */
-  --destructive: var(--category-spirituality);
-  --border: var(--hairline);
-  --input: var(--hairline);
-  --ring: #a6a49b;
+[data-frame="espresso"] {
+  --frame: var(--espresso);
+  --on-frame: var(--ivory);
 }
 
 /* ---------------------------------------------------------------------------
@@ -785,7 +635,7 @@
   --accent: #292826;
   --accent-foreground: var(--ink);
   /* Still the red category ramp, and still not `--today-mark`. See that token. */
-  --destructive: var(--category-spirituality);
+  --destructive: var(--ramp-red);
   --border: var(--hairline);
   --input: var(--hairline);
   --ring: #5a5852;

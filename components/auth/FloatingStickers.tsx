@@ -106,7 +106,7 @@ const X = {
  *
  * Every Tailwind class here is written out in full, and it has to be. Tailwind
  * finds classes by scanning source *text*, so `top-[${top}%]` would compile to
- * nothing — the same trap `lib/palette.ts` documents and the reason `RAMP` is a
+ * nothing — the same trap `lib/palette.ts` documents and the reason `CATEGORY_COLORS` is a
  * literal map rather than a template string. The constants above are fine
  * because the class name still appears literally in this file; it's assembling
  * one out of pieces at runtime that fails.
@@ -802,7 +802,7 @@ function drop(size: string) {
  *
  * The circle itself is `StickerMark` — the component the calendar, the tray and
  * the day modal all render. That's deliberate and it's the second attempt: this
- * file used to reimplement the circle from `ramp()`, which looked identical
+ * file used to reimplement the circle from `categoryColor()`, which looked identical
  * right up until the day `StickerMark` changed from a filled circle to a ring
  * and this page kept the fill. Passing a size through a documented prop is the
  * price of only having one definition of what a sticker looks like.

@@ -9,7 +9,7 @@ import type { DayString } from "@/lib/dates";
 import { dayMatches } from "@/lib/highlight";
 import { RULE } from "@/lib/layout";
 import { monthSummary } from "@/lib/monthSummary";
-import { ramp, wash } from "@/lib/palette";
+import { categoryColor, wash } from "@/lib/palette";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import { NO_STICKERS } from "@/lib/stickers";
 
@@ -186,7 +186,7 @@ export function MonthDots(props: Props) {
                   {stickers.activities.slice(0, DOT_CAP).map((sticker) => (
                     <span
                       key={sticker.id}
-                      className={`size-[5px] rounded-full ${ramp(sticker.colorKey).bg} ${faded(
+                      className={`size-[5px] rounded-full ${categoryColor(sticker.colorKey).bg} ${faded(
                         highlight?.activityIds.has(sticker.activityId) ?? false,
                       )}`}
                     />

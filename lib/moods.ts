@@ -1,8 +1,5 @@
-import { RAMP_TINT_VALUE } from "./rampValues.ts";
-
-/** The five moods, in the order the picker shows them. Matches the CHECK
- *  constraint on day_moods.mood — if these ever disagree, the database wins. */
-export const MOODS = ["great", "good", "okay", "low", "rough"] as const;
+/** The five moods, sad → happy (display order). Matches the day_moods.mood CHECK. */
+export const MOODS = ["rough", "low", "okay", "good", "great"] as const;
 
 export type Mood = (typeof MOODS)[number];
 
@@ -14,20 +11,22 @@ export const MOOD_LABEL: Record<Mood, string> = {
   rough: "Rough",
 };
 
-/**
- * The CSS colour behind each rung of the mood scale.
- *
- * This is a yellow → green → blue slice through the exact pastel tint that
- * fills stickers, not a second set of mood colours. Adjacent positive and
- * negative moods share a hue; the face and fixed row order carry the finer
- * distinction without inventing two colours between the sticker ramps.
- */
+/** CSS colour per mood, from the `--mood-*` tokens. */
 export const MOOD_COLOR: Record<Mood, string> = {
-  great: RAMP_TINT_VALUE.yellow,
-  good: RAMP_TINT_VALUE.yellow,
-  okay: RAMP_TINT_VALUE.green,
-  low: RAMP_TINT_VALUE.blue,
-  rough: RAMP_TINT_VALUE.blue,
+  rough: "var(--mood-rough)",
+  low: "var(--mood-low)",
+  okay: "var(--mood-okay)",
+  good: "var(--mood-good)",
+  great: "var(--mood-great)",
+};
+
+/** `bg-mood-*` classes, written out so Tailwind sees them. */
+export const MOOD_BG: Record<Mood, string> = {
+  rough: "bg-mood-rough",
+  low: "bg-mood-low",
+  okay: "bg-mood-okay",
+  good: "bg-mood-good",
+  great: "bg-mood-great",
 };
 
 /**

@@ -1,12 +1,4 @@
-// Every value import here is relative with its extension. `lib/analytics.test.ts`
-// runs this module under `node --test`, where nothing resolves `@/` — that alias
-// belongs to the bundler. The type imports below are erased and cross freely,
-// which is why they can keep the alias.
-//
-// `./moods.ts` and `./daymath.ts` are the only value imports. Mood data reaches
-// one dependency deeper into `rampValues.ts`, a dependency-free object of CSS
-// strings; that leaf is safe under Node too. The rule that bites is UI depth,
-// not import count.
+// Value imports are relative with extensions so `node --test` can run this; type imports may use `@/`.
 import { addDays, daysBetween, startOfWeek } from "./daymath.ts";
 import { MOODS, MOOD_LABEL, type Mood } from "./moods.ts";
 import type { DayString } from "@/lib/dates";

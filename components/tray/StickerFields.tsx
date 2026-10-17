@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MARK_ICON_SIZE, MARK_STROKE, iconFor } from "@/lib/icons";
-import { ramp } from "@/lib/palette";
+import { categoryColor } from "@/lib/palette";
 import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
 
 /** The categories, as the form needs them: an id, a name, and a colour. */
@@ -181,7 +181,7 @@ export function StickerFields(props: Props) {
 
   const category = categories.find((candidate) => candidate.id === categoryId);
   /** The chosen category's colour, worn by the mark field. `ramp` has a fallback. */
-  const { tint } = ramp(category?.colorKey ?? "");
+  const { tint } = categoryColor(category?.colorKey ?? "");
 
   /**
    * Are we about to move an existing sticker's history to a different category?
@@ -245,7 +245,7 @@ export function StickerFields(props: Props) {
                     places, one dot, one meaning. */}
                 <span
                   aria-hidden="true"
-                  className={`size-2.5 rounded-full ${ramp(option.colorKey).soft}`}
+                  className={`size-2.5 rounded-full ${categoryColor(option.colorKey).soft}`}
                 />
                 {option.name}
               </SelectItem>
@@ -280,7 +280,7 @@ export function StickerFields(props: Props) {
       <div className="flex items-end gap-3">
         {/* The mark field *is* the preview: the same fill `StickerMark` draws
             in the tray, wrapped around the input you type into. Before a category
-            is chosen it wears `ramp()`'s fallback, which is what the grid shows
+            is chosen it wears `categoryColor()`'s fallback, which is what the grid shows
             for an unrecognised colour too — one fallback, one appearance.
 
             It lost its ring when the sticker did, and it has to stay in step or

@@ -595,11 +595,11 @@ describe("moodTally", () => {
     assert.deepEqual(
       result.moods.map((m) => [m.mood, m.count]),
       [
-        ["great", 1],
-        ["good", 2],
-        ["okay", 0],
-        ["low", 0],
         ["rough", 0],
+        ["low", 0],
+        ["okay", 0],
+        ["good", 2],
+        ["great", 1],
       ],
     );
   });
@@ -679,13 +679,11 @@ function merge(...maps: StickersByDay[]): StickersByDay {
 }
 
 describe("MOOD_SCORE", () => {
-  it("runs 5 down to 1 in the scale's order", () => {
-    // Written out in the source rather than derived, so this is the assertion
-    // that keeps the two from drifting: add a sixth mood to `MOODS` and the
-    // scores have to be re-thought rather than silently renumbered.
+  it("runs 1 up to 5 in the scale's order", () => {
+    // Keeps the written-out scores in step with `MOODS`.
     assert.deepEqual(
       MOODS.map((mood) => MOOD_SCORE[mood]),
-      [5, 4, 3, 2, 1],
+      [1, 2, 3, 4, 5],
     );
   });
 });

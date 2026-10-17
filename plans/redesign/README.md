@@ -32,7 +32,8 @@ is a reference, not a dependency.
 - **"Category", not "life area".** Plan 01 renames it in types, variables,
   CSS and copy. **The database keeps `life_areas` / `life_area_id` /
   `seed_life_areas`** (production shares the database; see plan 01). Translate
-  any SQL in later plans accordingly.
+  any SQL in later plans accordingly. Likewise `color_key` keeps the old
+  values (`red`, `blue`, …); `fromDbColorKey()` maps them (plan 02).
 - **Every activity is the user's own.** There is no `is_custom` flag and no
   shared catalogue table. "Suggestions" are a static list in code
   (`lib/suggestions.ts`) that onboarding and the new-sticker form offer;

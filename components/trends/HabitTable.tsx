@@ -29,7 +29,7 @@ import {
   type SortDirection,
 } from "@/lib/habits";
 import { PANEL } from "@/lib/layout";
-import { ramp } from "@/lib/palette";
+import { categoryColor } from "@/lib/palette";
 
 type Props = {
   /**
@@ -301,7 +301,7 @@ export function HabitTable(props: Props) {
                         a category has to look like itself in both. */}
                     <span
                       aria-hidden="true"
-                      className={`size-[9px] shrink-0 rounded-full ${ramp(row.colorKey).soft}`}
+                      className={`size-[9px] shrink-0 rounded-full ${categoryColor(row.colorKey).soft}`}
                     />
                     {row.categoryName}
                   </span>
@@ -478,7 +478,7 @@ function BlockPlot(props: { row: HabitRow; window: HabitWindow }) {
   const { row, window: span } = props;
 
   const blocks = useMemo(() => plotBlocks(span, row.hits), [span, row.hits]);
-  const tint = ramp(row.colorKey);
+  const tint = categoryColor(row.colorKey);
 
   return (
     <span
@@ -573,7 +573,7 @@ function CategoryFilter(props: {
           >
             <span
               aria-hidden="true"
-              className={`size-2.5 shrink-0 rounded-full ${ramp(category.colorKey).soft}`}
+              className={`size-2.5 shrink-0 rounded-full ${categoryColor(category.colorKey).soft}`}
             />
             {category.name}
           </DropdownMenuCheckboxItem>

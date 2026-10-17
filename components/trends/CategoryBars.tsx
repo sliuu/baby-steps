@@ -1,5 +1,5 @@
 import type { Tally } from "@/lib/analytics";
-import { ramp } from "@/lib/palette";
+import { categoryColor } from "@/lib/palette";
 
 type Props = {
   tally: Tally;
@@ -44,7 +44,7 @@ export function CategoryBars(props: Props) {
     <section aria-label={props.caption} className="flex flex-col gap-[18px]">
       <ul className="flex flex-col gap-3.5">
         {ranked.map((category) => {
-          const tone = ramp(category.colorKey);
+          const tone = categoryColor(category.colorKey);
           const width = most === 0 ? 0 : (category.count / most) * 100;
 
           return (

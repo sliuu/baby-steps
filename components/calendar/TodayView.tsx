@@ -18,7 +18,7 @@ import {
 } from "@/lib/dates";
 import { dayMatches } from "@/lib/highlight";
 import { PAGE_TITLE } from "@/lib/layout";
-import { ramp, wash } from "@/lib/palette";
+import { categoryColor, wash } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 import { NO_STICKERS } from "@/lib/stickers";
 
@@ -179,7 +179,7 @@ export function TodayView(props: Props) {
                   {cellStickers.activities.slice(0, MAX_DOTS).map((sticker) => (
                     <span
                       key={sticker.activityId}
-                      className={`size-1 rounded-full ${ramp(sticker.colorKey).bg}`}
+                      className={`size-1 rounded-full ${categoryColor(sticker.colorKey).bg}`}
                     />
                   ))}
                 </span>

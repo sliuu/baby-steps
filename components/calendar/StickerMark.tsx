@@ -1,5 +1,5 @@
 import { MARK_ICON_SIZE, MARK_STROKE, iconFor } from "@/lib/icons";
-import { ramp } from "@/lib/palette";
+import { categoryColor } from "@/lib/palette";
 import type { StickerFace } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +83,7 @@ type Props = {
  */
 export function StickerMark(props: Props) {
   const { sticker } = props;
-  const { tint } = ramp(sticker.colorKey);
+  const { tint } = categoryColor(sticker.colorKey);
   const icon = iconFor(sticker.mark);
 
   return (

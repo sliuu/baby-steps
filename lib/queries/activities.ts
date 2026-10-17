@@ -1,5 +1,6 @@
 import { cache } from "react";
 
+import { fromDbColorKey } from "@/lib/palette";
 import type { StickerFace } from "@/lib/stickers";
 import { createClient } from "@/lib/supabase/server";
 import { queryFailure, whileTokenSettles } from "./settling";
@@ -98,18 +99,20 @@ export const getStickerLibrary = cache(async function getStickerLibrary(): Promi
     throw queryFailure("Could not load your stickers", error);
   }
 
-  return data.map((category) => ({
-    categoryId: category.id,
-    categoryName: category.name,
-    colorKey: category.color_key,
-    stickers: category.activities.map((activity) => ({
-      id: activity.id,
-      name: activity.name,
-      mark: activity.mark,
-      archived: activity.archived,
-      // A sticker takes its colour from its category — the tray is the only place
-      // that's obvious, because the group label is right above it.
-      colorKey: category.color_key,
-    })),
-  }));
+  return data.map((category) => {
+    const colorKey = fromDbColorKey(category.color_key);
+    return {
+      categoryId: category.id,
+      categoryName: category.name,
+      colorKey,
+      stickers: category.activities.map((activity) => ({
+        id: activity.id,
+        name: activity.name,
+        mark: activity.mark,
+        archived: activity.archived,
+        // A sticker takes its category's colour.
+        colorKey,
+      })),
+    };
+  });
 });
