@@ -67,50 +67,11 @@
 export const PAGE_WIDTH =
   "mx-auto w-full max-w-(--breakpoint-2xl) px-5 lg:px-10";
 
-/**
- * The line that says a new thing starts here.
- *
- * Two pixels of `--rule`, along the top and nowhere else. It is separate from
- * `PANEL` because two kinds of thing wear it and only one of them wants the
- * padding: a panel is a heading with air under the rule, while the two grids
- * start their cells immediately against it and the two empty states set their
- * own generous padding around a centred sentence. Sharing the width and the
- * colour is the point — those are the numbers that would drift, and five files
- * spelling them out is five chances to drift.
- *
- * It composes with `border-dashed`, which is how both empty states are drawn:
- * different properties, so no Tailwind conflict and no order to get wrong.
- */
-export const RULE = "border-t-2 border-rule";
+/** A section starts here: 1px rule along the top. Composes with `border-dashed`. */
+export const RULE = "border-t border-rule";
 
-/**
- * A panel, in the week strip's language: one rule above it and nothing else.
- *
- * The week gave up being a card first — the month is forty-two cells that have
- * to hold together as one object, a week is seven columns that are each a page
- * of their own, and an outline around those read as a card with seven panels.
- * What replaced it was a single thick rule above and hairlines between, and the
- * page got quieter in a way that turned out to be worth spreading: Trends was
- * five rounded white boxes on an off-white page, which is five objects announcing
- * themselves where there are only three answers.
- *
- * So a panel here is a heading with a rule over it. No fill, because the page's
- * own off-white is a perfectly good ground and a white box on it is a claim that
- * something separate is going on inside. No radius, because there is no box to
- * round. No side or bottom edges, so a panel ends where its content ends rather
- * than at a line drawn under it, and two panels side by side in a grid read as
- * one rule broken by the gap between them — which is how the week reads across
- * its seven columns.
- *
- * The padding is the rule's air and nothing else. Horizontal padding would
- * indent every panel's text from the page's own gutter, which is the alignment
- * `PAGE_WIDTH` exists to keep.
- *
- * Thin lines inside a panel are still right: the habit table's rows are divided
- * by hairlines, and that is the same grammar one level down — thick says "a new
- * thing starts here", thin says "and it has parts".
- */
-export const PANEL = `${RULE} pt-4`;
+/** A section: the rule and its air. No box. */
+export const PANEL = `${RULE} pt-5`;
 
 /**
  * The corner every control in the app turns.
