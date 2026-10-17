@@ -87,9 +87,9 @@ export function EditStickerForm(props: Props) {
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-dialog-title">Edit sticker</DialogTitle>
+          <DialogTitle className="text-dialog-title">edit sticker</DialogTitle>
           <DialogDescription>
-            Change its mark, its name, or where it belongs.
+            change its mark, its name, or where it belongs.
           </DialogDescription>
         </DialogHeader>
 
@@ -106,7 +106,7 @@ export function EditStickerForm(props: Props) {
         {problem && (
           <p
             role="status"
-            className="rounded-md bg-ramp-red-soft px-2.5 py-2 text-[0.83rem]"
+            className="rounded-md bg-ramp-red-soft px-2.5 py-2 text-label"
           >
             {problem}
           </p>
@@ -129,8 +129,8 @@ export function EditStickerForm(props: Props) {
           // equal and the first one moves — which is the entire question the
           // warning under the dropdown asks.
           historyCategory={props.categoryId}
-          submitLabel="Save changes"
-          pendingLabel="Saving…"
+          submitLabel="save"
+          pendingLabel="saving…"
           onDone={() => onOpenChange(false)}
           footerStart={
             <StickerRetire

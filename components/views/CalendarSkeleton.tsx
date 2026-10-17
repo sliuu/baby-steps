@@ -1,5 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { TRAY_INSET } from "@/lib/layout";
 
 /**
  * The calendar before its queries return. Copies `CalendarBoard`'s outer classes so nothing jumps on handover.
@@ -12,53 +11,33 @@ export function CalendarSkeleton() {
       // region, so a screen reader says this once and is not interrupted; the
       // shapes inside it are empty divs and contribute nothing.
       role="status"
-      className="flex flex-col gap-10 lg:flex-row lg:items-start"
+      className="flex flex-col"
     >
       <span className="sr-only">Loading your calendar</span>
 
       <div className="min-w-0 flex-1">
         <NarrowDaySkeleton />
-
       </div>
 
-      {/* `lg:w-56` — the rail's real width. It sat at the old 18rem through
-          two narrowings, which is a 64px jump sideways at the moment the data
-          lands: the skeleton is only worth drawing if the page it hands over
-          to is the same shape. (Spelling the stale class name here would emit
-          it — the scanner reads comments. See the footnote in
-          `lib/layout.ts`.) */}
-      <aside className="lg:w-56 lg:shrink-0">
-        <div className="flex flex-col gap-7">
-          <div className={TRAY_INSET}>
-            <Skeleton className="h-6 w-40" />
-          </div>
-
-          {/* Three groups of three, which is the shape of a starting tray
-              rather than a count of anything. The rail is the shorter column on
-              a wide screen, so being a row out here costs nothing — unlike the
-              grid, whose height sets the page's. */}
-          <div className="flex flex-col gap-7">
-            {Array.from({ length: 3 }, (_, group) => (
-              <div key={group} className="flex flex-col gap-2">
-                <div className={TRAY_INSET}>
-                  <Skeleton className="h-3 w-24" />
-                </div>
-                <ul className="flex flex-col gap-0.5">
-                  {Array.from({ length: 3 }, (_, row) => (
-                    <li
-                      key={row}
-                      className={`${TRAY_INSET} flex items-center gap-3 py-1`}
-                    >
-                      <Skeleton className="size-6 shrink-0 rounded-full" />
-                      <Skeleton className="h-3 w-full max-w-28" />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+      {/* The tray under Today: three groups of tiles. */}
+      <div className="mt-14 border-t border-rule pt-10">
+        <Skeleton className="h-4 w-28" />
+        <div className="mt-6 grid gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }, (_, group) => (
+            <div key={group}>
+              <Skeleton className="h-3 w-24" />
+              <ul className="mt-3.5 flex gap-2">
+                {Array.from({ length: 3 }, (_, tile) => (
+                  <li key={tile} className="flex w-16 flex-col items-center gap-1.5">
+                    <Skeleton className="size-sticker-sm rounded-full" />
+                    <Skeleton className="h-2.5 w-10" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

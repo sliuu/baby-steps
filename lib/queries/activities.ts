@@ -22,6 +22,8 @@ export type LibrarySticker = StickerFace & {
 export type LibraryGroup = {
   categoryId: string;
   categoryName: string;
+  /** Seeded slug ("exercise", …); keys the suggestions. Optional for fixtures. */
+  slug?: string;
   /**
    * The category's own ramp. Every sticker below already carries a copy of it —
    * that's how a sticker gets its colour — but the group needs it in its own
@@ -78,7 +80,7 @@ export const getStickerLibrary = cache(async function getStickerLibrary(): Promi
       // The DB table keeps its old name; the app calls these categories.
       .from("life_areas")
       .select(
-        "id, name, color_key, sort_order, activities(id, name, mark, archived)",
+        "id, name, slug, color_key, sort_order, activities(id, name, mark, archived)",
       )
       .order("sort_order")
       // Ordering inside the embed needs saying so explicitly — without
@@ -104,6 +106,7 @@ export const getStickerLibrary = cache(async function getStickerLibrary(): Promi
     return {
       categoryId: category.id,
       categoryName: category.name,
+      slug: category.slug,
       colorKey,
       stickers: category.activities.map((activity) => ({
         id: activity.id,

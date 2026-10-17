@@ -37,15 +37,14 @@ import { DayModal } from "@/components/calendar/DayModal";
 import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerBar } from "@/components/calendar/StickerBar";
 import { StickerMark } from "@/components/calendar/StickerMark";
-import type { Landed } from "@/components/calendar/period";
+import { LANDING_VIEW, type Landed } from "@/components/calendar/period";
 import { useCalendarView } from "@/components/calendar/viewMode";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { applyChange, type CalendarChange } from "@/lib/changes";
 import { formatDayLong, toDayString, type DayString } from "@/lib/dates";
 import { buildHighlight, type Selection } from "@/lib/highlight";
-import { TRAY_INSET } from "@/lib/layout";
-import type { LibraryGroup } from "@/lib/queries/activities";
-import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
+import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
+import { NO_STICKERS, faceOf, type StickersByDay } from "@/lib/stickers";
 import { readDropTarget, type DropTarget } from "./dropTarget";
 import { snapToCursor } from "./snapToCursor";
 import { payloadName, readDragPayload, type DragPayload } from "./payload";
@@ -581,6 +580,47 @@ export function CalendarBoard(props: Props) {
    */
   const bar = view !== "month" && dragging?.kind === "activity";
 
+
+  const onToday = (view ?? LANDING_VIEW) === "today";
+
+  /** Tap-to-add: the same "place" a drop makes, at the end of today. Plan 09 adds a chosen day. */
+  function addToToday(sticker: LibrarySticker) {
+    const day = toDayString(new Date());
+    const placed = stickersByDay.get(day)?.activities ?? [];
+    // Already there: replay the land as feedback, write nothing.
+    if (placed.some((p) => p.activityId === sticker.id)) {
+      setLanded({ day, activityId: sticker.id });
+      return;
+    }
+    commit({
+      kind: "place",
+      day,
+      activityId: sticker.id,
+      face: faceOf(sticker),
+      index: placed.length,
+    });
+  }
+
+  const tray = (layout: "rail" | "page") => (
+    <StickerTray
+      groups={props.groups}
+      selection={selection}
+      onSelect={setSelection}
+      onClear={() => setSelection(null)}
+      label={highlight?.label ?? null}
+      markCounts={markCounts}
+      onError={setError}
+      local={props.local}
+      onAdd={addToToday}
+      addTo="today"
+      layout={layout}
+    />
+  );
+
+  const errorLine = error && (
+    <p className="mt-6 rounded-md bg-ramp-red-soft px-3 py-2 text-label">{error}</p>
+  );
+
   return (
     <DndContext
       // Not decoration, and not optional. dnd-kit stamps every draggable with
@@ -603,14 +643,14 @@ export function CalendarBoard(props: Props) {
         setTarget(null);
       }}
     >
-      <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
-        {/* min-w-0 is doing real work: a flex child defaults to refusing to
-            shrink below its content's width, so without it a wide grid would
-            push the rail off the side instead of narrowing. */}
+      <div
+        className={
+          onToday ? "flex flex-col" : "flex flex-col gap-10 lg:flex-row lg:items-start"
+        }
+      >
+        {/* min-w-0: lets a wide grid shrink instead of pushing the rail off. */}
         <div className="min-w-0 flex-1">
-          {/* The server's day, so first paint isn't blank and isn't the 1st
-              of the month. CalendarPanel corrects it on mount if the visitor's
-              timezone disagrees — see `initialDay` there. */}
+          {/* Server's day for first paint; CalendarPanel corrects it on mount. */}
           <CalendarPanel
             initialDay={toDayString(new Date())}
             view={view}
@@ -635,144 +675,26 @@ export function CalendarBoard(props: Props) {
           />
         </div>
 
-        {/* Beside the calendar once there's room, stacked underneath when there
-            isn't. Sticky below the 4rem nav so it stays put while a tall month
-            scrolls — which is what makes it usable as a drag source — and
-            scrolling on its own once the list outgrows the window, rather than
-            pushing the page taller than the calendar it sits beside.
-
-            What scrolls is no longer this element. It is a flex column that
-            *caps* the height, and `StickerTray` divides that height between a
-            header that stays put and a list that scrolls under it — the
-            heading, the `+` and the line that offers the way out of a
-            highlight used to scroll away with the stickers. The error line
-            below is the other flex child, so it sits under the scrolling list
-            rather than at the end of it, and a failure can't be scrolled out
-            of sight.
-
-            `145px` is that promise written down, and it has to be kept in step
-            with the page's own padding. The tray's top edge is the nav — 64px
-            of `h-16` **and the hairline under it** — plus `main`'s 40px of top
-            padding, and there are another 40px of bottom padding beneath it:
-            64 + 1 + 40 + 40. A cap any larger and the tray alone makes a page
-            scroll that would otherwise have fit — it was `8rem`, and 48 stray
-            pixels of scrollbar on a week that ended well above the fold is
-            exactly what that bought. Then it was `9rem`, which is the same
-            mistake one pixel wide: 144 forgets the hairline, so a full-screen
-            laptop showing the week or today got a scrollbar for a single
-            pixel, which is worse than a long scroll — it looks like a bug
-            rather than like content. Written in px rather than rem because one
-            of the four numbers it adds up is a border, and a border is not
-            going to be re-expressed in rem. If `py-10` in `AppShell` or the
-            nav's height ever changes, this changes with it.
-
-            That scroll is vertical only wherever it lives, and keeping it that
-            way is a rule, not a preference: nothing in here may be wider than
-            the rail. Note that `overflow-y-auto` does not leave the other axis
-            alone — CSS promotes `overflow-x` from `visible` to `auto`
-            alongside it — so a single child bleeding past the edge is a
-            horizontal scrollbar, and hiding it would only move the problem.
-            Long names truncate; hit categories fill the width rather than reaching
-            past it. */}
-        {/* `lg:w-64` — 16rem. It was 18rem, then 13, then 13 plus the
-            scrollbar, and now that plus the hairline's 2rem of clearance; the
-            note on the tag below has the arithmetic. What follows is where
-            the 13 came from, and it is still the floor everything else is
-            measured against.
-
-            13rem was measured as close to the floor: `TRAY_INSET` costs 16px,
-            the mark is 26, the gap to the name is 10, and the eye on the right
-            is about 24 with its own gap — 76px of furniture, leaving ~130px of
-            name, around 19 characters of DM Sans at `--text-base` against a
-            `NAME_MAX` of 24. Every one of those numbers still holds; what
-            changed is that the list now draws its own 8px scrollbar and that
-            bar takes real width rather than floating over the content the way
-            macOS's does. Handing back a whole rem instead of exactly 8px is
-            deliberate: the thumb is inset inside its track, so at 8px the
-            names would end flush against the bar with no air between them.
-
-            The five moods were the binding constraint before the sticker row
-            was — five labelled columns wanted ~54px each — which is what
-            losing their words bought. */}
-        {/* **Desktop only, and that is the mobile design rather than a
-            responsive afterthought.** This rail is a drag source: you pick a
-            sticker up here and drop it on a day. A touch screen cannot take
-            that gesture, so on a phone the whole interaction runs the other
-            way round — tap the day, then tap the sticker, in `DaySheet`. A tray
-            you can see and cannot use is worse than no tray, and at 375px it
-            is also a second full-height column below the calendar that the
-            page has to scroll past to get to nothing.
-
-            What a phone loses with it: editing a sticker, retiring one, and
-            the highlight that dims everything a selection didn't match. Making
-            one is the exception — the sheet carries its own "New sticker"
-            chip. The other three are still desktop-only and are the honest
-            next piece of work.
-
-            `hidden` first and then `lg:flex`, not `lg:block`: the rail is a
-            flex column and `twMerge` resolves the two display classes in
-            argument order, so the class that turns it back on has to be the
-            display it actually wants.
-
-            **`lg:overflow-hidden` is what stops the page scrolling past its
-            own content.** The list inside already scrolls on its own, and it
-            is capped at the viewport by `max-h` — but the overflow it hides
-            was still counted in the document's scroll height, so a tray with
-            more stickers than fit bought the *page* a few hundred pixels of
-            blank space below the fold. Nothing is clipped that wasn't already:
-            this only says that what the rail hides is hidden from the page
-            too. The drag preview is unaffected — `DragOverlay` renders at the
-            board, not in here. */}
-        {/* **The hairline, and the 2rem the rail grew to pay for it.** The
-            line is a left border on this element rather than a divider of its
-            own, so it inherits the rail's own height and stickiness for free:
-            it starts under the nav because the rail does, it ends where the
-            rail's cap ends, and there is no second thing to keep in sync. It
-            is `lg:`-prefixed like everything else here, so it disappears with
-            the rail below 64rem — where the tray stacks and a vertical rule
-            would be drawing a line down the middle of nothing.
-
-            `lg:w-64` and not `lg:w-56` is the part that isn't in the brief.
-            The border and its `pl-8` take 33px out of the *inside* of a
-            fixed-width rail, and the width above was measured rather than
-            picked: 13rem of content plus a rem for the list's own scrollbar.
-            Left at 14rem, a sticker name's slot went from 136px to 103px —
-            18 characters down to 13, against a `NAME_MAX` of 24 — so a third
-            of the names people can actually type would have started
-            truncating. 16rem hands back exactly what the line costs and the
-            slot lands at 135px. What pays for it is the calendar, which is
-            `flex-1`: seven columns share the loss, about 4.5px each. */}
-        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-145px)] lg:w-64 lg:shrink-0 lg:flex-col lg:overflow-hidden lg:border-l lg:border-hairline lg:pl-8">
-          <StickerTray
-            groups={props.groups}
-            selection={selection}
-            onSelect={setSelection}
-            onClear={() => setSelection(null)}
-            label={highlight?.label ?? null}
-            markCounts={markCounts}
-            onError={setError}
-            local={props.local}
-          />
-
-          {/* Rendered always, filled sometimes. A live region the browser only
-              discovers at the moment it gains text is a live region that often
-              doesn't announce — it has to be in the tree beforehand for the
-              change to be a change. So no `empty:hidden`: that is
-              `display: none`, which takes it out of the tree. The margin is on
-              the line instead, so an empty region is zero high. */}
-          <div role="status" aria-live="polite" className="lg:shrink-0">
-            {/* Edge to edge like a row's highlight, with its text on the same
-                inset as the sticker names above it. Filled things span the
-                rail; words start at TRAY_INSET. */}
-            {error && (
-              <p
-                className={`${TRAY_INSET} mt-6 rounded-md bg-ramp-red-soft py-2 text-[0.83rem]`}
-              >
-                {error}
-              </p>
-            )}
-          </div>
-        </aside>
+        {onToday ? (
+          // Under Today at every width, past a rule. Taps work on touch too.
+          <section aria-label="your stickers" className="mt-14 border-t border-rule pt-10">
+            {tray("page")}
+            <div role="status" aria-live="polite" className="hidden lg:block">
+              {errorLine}
+            </div>
+          </section>
+        ) : (
+          // Beside Week and Month on desktop until plan 09's day panel.
+          // Sticky under the nav; 145px = nav 64 + hairline 1 + main's 40 + 40.
+          // overflow-hidden keeps the list's hidden overflow out of the page height.
+          <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-145px)] lg:w-64 lg:shrink-0 lg:flex-col lg:overflow-hidden lg:border-l lg:border-hairline lg:pl-8">
+            {tray("rail")}
+            {/* Always in the tree so it announces. One live region per width: this or the phone banner. */}
+            <div role="status" aria-live="polite" className="lg:shrink-0">
+              {errorLine}
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* **The phone's copy of the same line, and it is not a duplicate for

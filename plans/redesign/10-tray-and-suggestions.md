@@ -71,6 +71,16 @@ New `components/ui/Chip.tsx`, used here and in onboarding:
 In `NewStickerForm`, show the category's `suggestionsFor` chips above the name
 field. Tapping one fills name + mark; the user can still edit before saving.
 
+> **Amended (as built):**
+> - Tap or Enter adds to today. Space still lifts a keyboard drag (dnd-kit's start key), so Enter is the add.
+> - Edit is a pencil badge on the tile's corner (hover/focus on desktop, always on touch). The eye stays too: on headings, and as a tile badge on desktop.
+> - The header "+" and per-heading "+" became a dashed "+ new" tile at the end of each group.
+> - The tray sits under Today at every width, phones included. Week and Month keep the desktop rail until plan 09.
+> - Tapping a sticker already on today replays the land animation and writes nothing.
+> - `LibraryGroup.slug` is optional; an unknown slug gets no suggestions. Matching is case-insensitive, stricter than the DB's exact-match index.
+> - `cn` now knows the custom text sizes, so `text-label` no longer cancels `text-ink`/`text-paper` (an app-wide fix).
+> - `StickerTray compact` exists for plan 09's panel.
+
 ## Verify
 
 - Tap and drag both add stickers; both animate.

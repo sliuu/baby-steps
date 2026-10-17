@@ -68,24 +68,6 @@ export const PAGE_WIDTH =
   "mx-auto w-full max-w-(--breakpoint-2xl) px-5 lg:px-10";
 
 /**
- * The tray's own gutter, and the same problem one level down.
- *
- * A tray row is a hover-and-drag band, so it needs padding inside its edges —
- * without it the highlight starts exactly where the circle does and looks
- * clamped to it. But padding a row and nothing else pushes every sticker to the
- * right of the label naming it, and cancelling that with a negative margin puts
- * the row outside the rail, which is a horizontal scrollbar (`overflow-y: auto`
- * promotes `overflow-x` to `auto` alongside it). So the padding can't be the
- * row's alone.
- *
- * Everything in the rail carries it instead: the header, each group label, each
- * row. They all start at the same x, the highlight extends past them on both
- * sides, and nothing reaches the rail's edge. Three files have to agree, which
- * is exactly why it's a constant.
- */
-export const TRAY_INSET = "px-2";
-
-/**
  * The line that says a new thing starts here.
  *
  * Two pixels of `--rule`, along the top and nowhere else. It is separate from

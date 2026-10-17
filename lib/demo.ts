@@ -256,6 +256,7 @@ export function demoLibrary(): LibraryGroup[] {
   return CATEGORIES.map((category) => ({
     categoryId: `demo-category-${category.slug}`,
     categoryName: category.name,
+    slug: category.slug,
     colorKey: category.colorKey,
     stickers: HABITS.filter((habit) => habit.category === category.slug).map(
       (habit) => ({

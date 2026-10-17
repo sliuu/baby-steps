@@ -5,7 +5,6 @@ import { useRef } from "react";
 
 import { MoodFace } from "@/components/ui/Mood";
 import type { DragPayload } from "@/components/dnd/payload";
-import { TRAY_INSET } from "@/lib/layout";
 import { MOOD_BG, MOOD_LABEL, MOODS, type Mood } from "@/lib/moods";
 
 type Props = {
@@ -34,7 +33,7 @@ export function MoodPicker(props: Props) {
 
   return (
     <section className={props.className}>
-      <p className={`${TRAY_INSET} text-label text-ink-muted`}>
+      <p className="text-label text-ink-muted">
         how are you feeling?
       </p>
 
@@ -42,7 +41,7 @@ export function MoodPicker(props: Props) {
         role="radiogroup"
         aria-label="mood"
         // Up to 44px each; shrinks to fit the rail.
-        className={`${TRAY_INSET} mt-2 grid grid-cols-5 gap-1`}
+        className="mt-2 grid grid-cols-5 gap-1"
       >
         {MOODS.map((mood, index) => (
           <MoodChoice

@@ -6,7 +6,7 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { DayNote } from "./DayNote";
 import { MoodRow } from "./MoodRow";
 import { StickerBar } from "./StickerBar";
-import { NewStickerForm } from "@/components/tray/NewStickerForm";
+import { NewStickerForm, formCategories } from "@/components/tray/NewStickerForm";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import type { CalendarChange } from "@/lib/changes";
 import {
@@ -112,12 +112,7 @@ export function DaySheet(props: Props) {
     }))
     .filter((group) => group.stickers.length > 0);
 
-  /** The six categories in the shape `NewStickerForm` wants. Same map as the tray's. */
-  const categories = props.groups.map((group) => ({
-    id: group.categoryId,
-    name: group.categoryName,
-    colorKey: group.colorKey,
-  }));
+  const categories = formCategories(props.groups);
 
   const dayVariant = props.variant === "day";
 

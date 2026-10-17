@@ -66,12 +66,12 @@ export function StickerRetire(props: Props) {
       <div className="flex items-center gap-2">
         <Button
           type="button"
-          variant="ghost"
+          variant="text"
           size="sm"
           disabled={pending}
           onClick={() => props.onConfirmingChange(false)}
         >
-          Keep it
+          keep it
         </Button>
         {/* The only button in the app that ends data. It says what it does
             rather than "confirm" — by the time your eyes reach it, the question
@@ -80,10 +80,11 @@ export function StickerRetire(props: Props) {
           type="button"
           variant="destructive"
           size="sm"
+          className="rounded-full"
           disabled={pending}
           onClick={() => run(() => deleteActivity(props.activityId))}
         >
-          {pending ? "Deleting…" : "Delete forever"}
+          {pending ? "deleting…" : "delete forever"}
         </Button>
       </div>
     );
@@ -93,13 +94,13 @@ export function StickerRetire(props: Props) {
     <div className="flex items-center gap-1">
       <Button
         type="button"
-        variant="ghost"
+        variant="text"
         size="sm"
         disabled={pending}
         onClick={() => run(() => setArchived(props.activityId, true))}
       >
         <Archive strokeWidth={1.5} />
-        {pending ? "Archiving…" : "Archive"}
+        {pending ? "archiving…" : "archive"}
       </Button>
 
       <Button
@@ -108,10 +109,10 @@ export function StickerRetire(props: Props) {
         size="icon-sm"
         // The label carries the sticker and the consequence, because this is
         // the one control where "which one was I on?" has no second chance.
-        aria-label={`Delete ${props.name} and its ${props.markCount} mark${
+        aria-label={`delete ${props.name} and its ${props.markCount} mark${
           props.markCount === 1 ? "" : "s"
         }`}
-        title="Delete forever"
+        title="delete forever"
         disabled={pending}
         onClick={() => props.onConfirmingChange(true)}
         className="text-ink-muted hover:text-destructive"
