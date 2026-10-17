@@ -1,7 +1,7 @@
 # 12 · Onboarding: life pie, activities, stay in touch
 
-- **Status:** TODO
-- **Commit:** —
+- **Status:** DONE
+- **Commit:** 4da4b7f
 - **Severity:** high (new flow, new tables)
 - **Category:** feature
 - **Estimated scope:** one migration, `app/onboarding/*`, `app/actions/onboarding.ts`, `proxy.ts`

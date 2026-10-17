@@ -116,7 +116,7 @@ is a reference, not a dependency.
 | [09](09-calendar.md) | Month and week views, day sheet | 04, 05, 06 | DONE (e159be6) |
 | [10](10-tray-and-suggestions.md) | Sticker tray, tap-to-add, suggestions | 05 | DONE (9b5b55b) |
 | [11](11-sign-in.md) | Sign-in page | 04, 05 | DONE (45edfc5) |
-| [12](12-onboarding.md) | Onboarding: life pie, activities, stay in touch | 04–07, 10 | TODO |
+| [12](12-onboarding.md) | Onboarding: life pie, activities, stay in touch | 04–07, 10 | DONE (4da4b7f) |
 | [13](13-trends.md) | Trends restyle | 02–06 | DONE (9795ada) |
 | [14](14-design-system-page.md) | `/dev/system` living reference | 02–07 | DONE (9dc0c04) |
 | [15](15-cleanup.md) | Remove what the redesign replaced | all | TODO |
