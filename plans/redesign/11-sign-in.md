@@ -39,6 +39,12 @@ visible) with no animation. No replay button.
 `FloatingStickers` / `PointerNudge`: remove from this page. If nothing else
 imports them, delete in plan 15.
 
+> **Amended (as built):**
+> - GitHub sign-in stays, as a quiet "sign in with github" text button under the Google row, so existing GitHub accounts can still get in.
+> - Headline is `text-display` on phones, `text-display-xl` from `sm`.
+> - Strike timing lives in `globals.css` (`--dur-strike`, `--strike-gap`, `--strike-wait`); the delay is inside `--animate-strike` because the `animation` shorthand would reset a separate delay.
+> - `FloatingStickers` / `PointerNudge` are still used by `app/not-found.tsx`; plan 15 decides.
+
 ## Verify
 
 - 1440 and 390; the strike animation runs once; reduced motion shows the end

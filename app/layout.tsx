@@ -4,7 +4,6 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Baby Steps",
-  // Same sentence as the signed-out page.
   description:
     "Build habits slowly over time, watch and track your progress, and keep life balanced through the things that matter.",
 };

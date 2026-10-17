@@ -245,6 +245,12 @@
      opacity and then jumps. Costs nothing to leave in. */
   --animate-rise: rise var(--dur-hero) var(--ease-enter) both;
 
+  /* Sign-in: the nth strike (`--step` on the element) draws, then the last line fades in after all three. */
+  --animate-strike: strike var(--dur-strike) var(--ease-enter)
+    calc(var(--strike-wait) + var(--step, 0) * (var(--dur-strike) + var(--strike-gap))) both;
+  --animate-after-strikes: appear var(--dur-hero) var(--ease-enter)
+    calc(var(--strike-wait) + 3 * (var(--dur-strike) + var(--strike-gap))) both;
+
   /* The stickers arriving on the signed-out page. Two animations rather than
      one, because the fall and the reveal are different lengths: the fade is
      over in the first third so that what you watch descend is a solid object
@@ -430,6 +436,10 @@
   --dur-hero: 420ms;
   /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
+  /* Sign-in strikes: each line, the gap between, the wait before the first. */
+  --dur-strike: 400ms;
+  --strike-gap: 250ms;
+  --strike-wait: 600ms;
 }
 
 @media (min-width: 40rem) {
@@ -734,6 +744,22 @@
    small because the fade is doing most of the work — far enough to give the
    opacity somewhere to happen, not so far that the text is legibly in the
    wrong place first. */
+/* Sign-in strike line; pair with `origin-left`. */
+@keyframes strike {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -1073,6 +1099,7 @@
     --dur-land: 1ms;
     --dur-hero: 1ms;
     --dur-fall: 1ms;
+    --dur-strike: 1ms;
   }
 
   *,
