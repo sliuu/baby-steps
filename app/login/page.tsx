@@ -6,6 +6,7 @@ import { SignInButton } from "@/components/auth/SignInButtons";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { PageFrame } from "@/components/ui/PageFrame";
 import { SheetHeader } from "@/components/ui/SheetHeader";
+import { Logo } from "@/components/ui/Logo";
 import { LOGO, PAGE_WIDTH } from "@/lib/layout";
 
 // Copy is Stephanie's; keep it verbatim.
@@ -79,11 +80,6 @@ export default function LoginPage() {
             demo
           </Link>
         </div>
-
-        {/* Not on the board; existing GitHub accounts still need a way in. */}
-        <p className="mt-6 text-caption">
-          <SignInButton provider="github" look="text" />
-        </p>
       </div>
     </main>
   );
@@ -94,7 +90,7 @@ export default function LoginPage() {
         <SheetHeader
           start={
             <Link href="/" className={LOGO}>
-              baby steps
+              <Logo />
             </Link>
           }
           end={<SignInButton provider="google" look="sm" />}

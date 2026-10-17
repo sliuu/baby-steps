@@ -17,7 +17,7 @@ type UserProfile = {
 };
 
 export function toSessionUser(user: UserProfile): SessionUser {
-  // Google and GitHub name these differently.
+  // Providers name these differently.
   const metadata = user.user_metadata ?? {};
   const name: string =
     metadata.full_name ?? metadata.name ?? metadata.user_name ?? "";

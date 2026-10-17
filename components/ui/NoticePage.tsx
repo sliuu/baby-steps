@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Logo } from "@/components/ui/Logo";
 import { LOGO, PAGE_WIDTH } from "@/lib/layout";
 import { PageFrame } from "./PageFrame";
 import { SheetHeader } from "./SheetHeader";
@@ -21,7 +22,7 @@ export function NoticePage(props: Props) {
         <SheetHeader
           start={
             <Link href="/" className={LOGO}>
-              baby steps
+              <Logo />
             </Link>
           }
         />

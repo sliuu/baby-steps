@@ -15,6 +15,7 @@ import { SheetHeader } from "@/components/ui/SheetHeader";
 import { ActivitiesStep, PieStep, TouchStep, type StepCategory } from "@/app/onboarding/Steps";
 import { verdict, type Balance, type Level } from "@/lib/balance";
 import { today } from "@/lib/dates";
+import { Logo } from "@/components/ui/Logo";
 import { LOGO, PAGE_WIDTH, PANEL } from "@/lib/layout";
 import { MOODS, type Mood } from "@/lib/moods";
 import { CATEGORY_COLORS, categoryColor, type CategoryColor } from "@/lib/palette";
@@ -70,7 +71,7 @@ export function Reference() {
     <PageFrame
       header={
         <SheetHeader
-          start={<span className={LOGO}>baby steps · system</span>}
+          start={<span className={LOGO}><Logo label="baby steps · system" /></span>}
           end={<FrameToggle />}
         />
       }

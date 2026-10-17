@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageFrame } from "@/components/ui/PageFrame";
 import { SheetHeader } from "@/components/ui/SheetHeader";
+import { Logo } from "@/components/ui/Logo";
 import { LOGO, PAGE_WIDTH } from "@/lib/layout";
 import { getStickerLibrary } from "@/lib/queries/activities";
 import { createClient } from "@/lib/supabase/server";
@@ -44,7 +45,7 @@ export default async function OnboardingPage(props: Props) {
     <PageFrame
       header={
         <SheetHeader
-          start={<span className={LOGO}>baby steps</span>}
+          start={<span className={LOGO}><Logo /></span>}
           end={
             <div className="flex items-center gap-3">
               <span className="text-caption text-ink-muted">{step} of 3</span>

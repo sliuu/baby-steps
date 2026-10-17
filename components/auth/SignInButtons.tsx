@@ -4,16 +4,15 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 
-type Provider = "google" | "github";
+type Provider = "google";
 
-const NAME: Record<Provider, string> = { google: "Google", github: "GitHub" };
+const NAME: Record<Provider, string> = { google: "Google" };
 
 type Props = {
   provider: Provider;
-  /** "sm" in the header, "md" in the body. "text": a quiet link-style button. */
-  look: "sm" | "md" | "text";
+  /** "sm" in the header, "md" in the body. */
+  look: "sm" | "md";
   className?: string;
 };
 
@@ -49,29 +48,15 @@ export function SignInButton(props: Props) {
 
   return (
     <>
-      {props.look === "text" ? (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={signIn}
-          className={cn(
-            "text-label text-ink-muted underline-offset-4 hover:text-ink hover:underline disabled:opacity-60",
-            props.className,
-          )}
-        >
-          {label.toLowerCase()}
-        </button>
-      ) : (
-        <Button
-          variant="outline"
-          size={props.look}
-          disabled={pending}
-          onClick={signIn}
-          className={props.className}
-        >
-          {label}
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        size={props.look}
+        disabled={pending}
+        onClick={signIn}
+        className={props.className}
+      >
+        {label}
+      </Button>
       {error && (
         <p role="alert" className="basis-full text-label text-destructive">
           {error}

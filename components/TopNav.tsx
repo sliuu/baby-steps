@@ -2,6 +2,7 @@
 
 import { SheetHeader } from "@/components/ui/SheetHeader";
 import { formatDateShort, fromDayString } from "@/lib/dates";
+import { Logo } from "@/components/ui/Logo";
 import { LOGO } from "@/lib/layout";
 import { NAV_ITEMS, isPlainClick, navItemFor, type Page } from "@/lib/nav";
 import { useToday } from "@/lib/useToday";
@@ -38,12 +39,9 @@ export function TopNav(props: Props) {
               event.preventDefault();
               props.onPageChange("today");
             }}
-            className={`${LOGO} flex items-end gap-2`}
+            className={LOGO}
           >
-            {/* Trial: the favicon flower beside the wordmark. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon.svg" alt="" className="size-7" />
-            baby steps
+            <Logo />
           </a>
           {today && current === "today" && (
             <time dateTime={today} className="hidden translate-y-0.5 font-display text-date font-normal text-accent-ink sm:inline">
