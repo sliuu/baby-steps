@@ -97,7 +97,7 @@ export function CalendarPanel(props: Props) {
     }
 
     const week = view === "week";
-    const title = week ? formatWeekTitle(anchor) : formatMonthTitle(month);
+    const title = week ? formatWeekTitle(anchor) : formatMonthTitle(month, fromDayString(today));
     const shortTitle = week ? formatWeekTitleShort(anchor) : undefined;
     // View in the key: month → week is a swap, not a morph.
     const periodKey = week ? `week:${toWeekString(anchor)}` : `month:${toMonthString(month)}`;

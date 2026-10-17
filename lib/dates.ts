@@ -45,9 +45,9 @@ export function today(): DayString {
   return toDayString(new Date());
 }
 
-/** "August 2026" — the grid's title. */
-export function formatMonthTitle(month: Date): string {
-  return format(month, "MMMM yyyy");
+/** "August", or "August 2025" outside the current year — the grid's title. */
+export function formatMonthTitle(month: Date, current: Date): string {
+  return format(month, month.getFullYear() === current.getFullYear() ? "MMMM" : "MMMM yyyy");
 }
 
 /**

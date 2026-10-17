@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 type SteppablePeriod = Exclude<CalendarViewMode, "today">;
 
 type Props = {
-  /** "october 2026", or "11 – 17 october 2026". */
+  /** "october" (year only outside this one), or "11 – 17 october 2026". */
   title: string;
   /** Shorter title below lg. */
   shortTitle?: string;
