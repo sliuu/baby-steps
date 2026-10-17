@@ -1,10 +1,10 @@
 "use client";
 
-import { MoodMark } from "./MoodMark";
+import { MoodFace } from "@/components/ui/Mood";
 import type { CalendarChange } from "@/lib/changes";
 import type { DayString } from "@/lib/dates";
 import type { Highlight } from "@/lib/highlight";
-import { MOOD_LABEL, MOODS } from "@/lib/moods";
+import { MOOD_BG, MOOD_LABEL, MOODS } from "@/lib/moods";
 import type { Mood } from "@/lib/moods";
 
 type Props = {
@@ -23,27 +23,7 @@ type Props = {
   highlight?: Highlight | null;
 };
 
-/**
- * Five faces across, and the only place in the app that draws them this way.
- *
- * It was inline in `TodayView` until the sheet needed the same row. Two copies
- * of five buttons would have been five buttons that drift: the toggle rule
- * below is the subtle half of this component, and a second hand-written copy is
- * how one surface ends up with a mood you can set and not unset.
- *
- * **Five columns, always.** Wrapping four and one puts a lone face on its own
- * line, which reads as a different kind of thing rather than as the fifth of
- * five. The grid is fixed at five even where the container is narrow; the
- * faces shrink, the shape doesn't.
- *
- * **Pressing the mood already on the day clears it.** A phone has no hover and
- * no second control to spare, and "none" has to stay reachable or one mis-tap
- * is permanent — the day modal solves that with a sixth option and the popover
- * with a separate line, and neither shape fits five faces across a phone.
- * `aria-pressed` is what says this is a toggle rather than a radio: a radio
- * group promises exactly one selection and no way back to zero, which is the
- * opposite of what this does.
- */
+/** Sets a day's mood: five coloured faces, always five columns. Pressing the set one clears it (hence `aria-pressed`, not radios). */
 export function MoodRow(props: Props) {
   return (
     <div className="grid grid-cols-5 gap-1">
@@ -51,12 +31,14 @@ export function MoodRow(props: Props) {
         const chosen = mood === props.mood;
         const faded =
           props.highlight && props.highlight.mood !== mood ? "opacity-35" : "";
+        const label = MOOD_LABEL[mood].toLowerCase();
 
         return (
           <button
             key={mood}
             type="button"
             aria-pressed={chosen}
+            aria-label={label}
             onClick={() =>
               props.onCommit(
                 chosen
@@ -64,25 +46,22 @@ export function MoodRow(props: Props) {
                   : { kind: "mood", day: props.day, mood },
               )
             }
-            className={`flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-lg transition-colors ${
-              chosen ? "bg-secondary" : "hover:bg-secondary/70"
-            } ${faded}`}
+            className={`group/mood flex flex-col items-center gap-1.5 ${faded}`}
           >
-            {/* `MoodMark` carries its own "Mood: Great" for screen readers, so
-                the visible word underneath is hidden from them to stop the
-                button reading the label twice. */}
-            <MoodMark mood={mood} />
-            {/* `note`. A mood is the one thing on this screen that isn't a
-                fact about what was done — "Rough" is how a day felt, and the
-                italic is the app saying it in the visitor's voice rather than
-                labelling a button with it. */}
             <span
-              aria-hidden="true"
-              className={`note text-[0.69rem] leading-none ${
-                chosen ? "text-ink" : "text-ink-muted"
+              className={`grid aspect-square w-full max-w-11 place-items-center rounded-full transition-shadow ${MOOD_BG[mood]} ${
+                chosen
+                  ? "inset-ring-2 inset-ring-accent-ink"
+                  : "inset-ring-1 inset-ring-rule group-hover/mood:inset-ring-ink"
               }`}
             >
-              {MOOD_LABEL[mood]}
+              <MoodFace mood={mood} className="size-3/5" />
+            </span>
+            <span
+              aria-hidden="true"
+              className={`text-caption ${chosen ? "text-ink" : "text-ink-muted"}`}
+            >
+              {label}
             </span>
           </button>
         );

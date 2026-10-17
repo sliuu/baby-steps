@@ -11,6 +11,8 @@ type Props = {
   /** What's saved, or null for a day with no note. */
   note: string | null;
   onCommit: (change: CalendarChange) => void;
+  /** "page": Today's large field with a dashed rule and a counter. */
+  variant?: "page";
 };
 
 /** Show the counter only once it's about to matter. */
@@ -30,6 +32,7 @@ const COUNTER_FROM = NOTE_MAX - 40;
  * thing they share is this file.
  */
 const NOTE_TYPE = "note w-full text-[0.78rem] leading-[1.15rem]";
+const PAGE_TYPE = "w-full font-display text-body-lg font-light";
 
 /**
  * A line or two about the day, at the bottom of its column.
@@ -99,6 +102,8 @@ export function DayNote(props: Props) {
   }
 
   const left = NOTE_MAX - draft.length;
+  const page = props.variant === "page";
+  const type = page ? PAGE_TYPE : NOTE_TYPE;
 
   return (
     // A hairline above, and only above. The column already has edges; this rule
@@ -107,19 +112,19 @@ export function DayNote(props: Props) {
     // `shrink-0` so the note is never the thing that gives. The column it sits
     // in is stretched to the tallest day of the week, and without this a short
     // day's note would be the part that absorbed the difference.
-    <div className="mt-2 shrink-0 border-t border-hairline pt-1.5">
+    <div className={page ? "" : "mt-2 shrink-0 border-t border-hairline pt-1.5"}>
       <label className="sr-only" htmlFor={`note-${props.day}`}>
         Notes for {formatDayLong(props.day)}
       </label>
 
       {/* `min-h` is the old `rows={2}`: two lines of floor, so an empty day
           still looks like somewhere to write rather than a single slot. */}
-      <div className="grid min-h-[2.3rem]">
+      <div className={page ? "grid border-b border-dashed border-rule-input pb-1" : "grid min-h-[2.3rem]"}>
         {/* The twin. `aria-hidden` and not focusable — it is a measurement, and
             a screen reader hitting the same sentence twice is a bug. */}
         <span
           aria-hidden="true"
-          className={`${NOTE_TYPE} pointer-events-none invisible [grid-area:1/1] whitespace-pre-wrap break-words`}
+          className={`${type} pointer-events-none invisible [grid-area:1/1] whitespace-pre-wrap break-words`}
         >
           {draft + " "}
         </span>
@@ -133,7 +138,7 @@ export function DayNote(props: Props) {
           // failed save with the sentence already typed.
           maxLength={NOTE_MAX}
           value={draft}
-          placeholder="Note…"
+          placeholder={page ? "a line about today…" : "Note…"}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
           onKeyDown={(event) => {
@@ -145,14 +150,18 @@ export function DayNote(props: Props) {
           // `overflow-hidden` matters: the box is now always exactly tall
           // enough, so a scrollbar could only ever appear for a frame and only
           // ever be wrong.
-          className={`${NOTE_TYPE} [grid-area:1/1] resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-ink-muted/70 focus-visible:placeholder:text-ink-muted`}
+          className={`${type} [grid-area:1/1] resize-none overflow-hidden bg-transparent text-ink outline-none placeholder:text-ink-muted/70 focus-visible:placeholder:text-ink-muted`}
         />
       </div>
 
       {/* Only once you're near the wall, and `aria-live` off — a number that
           announces itself on every keystroke is worse than one you can ask
           for. The `maxLength` above is what actually enforces it. */}
-      {draft.length >= COUNTER_FROM && (
+      {page ? (
+        <p className="tabular mt-1 text-right text-caption text-ink-muted">
+          {draft.length}/{NOTE_MAX}
+        </p>
+      ) : draft.length >= COUNTER_FROM && (
         <p className="tabular text-right text-[0.69rem] leading-none text-ink-muted">
           {left}
         </p>

@@ -48,6 +48,12 @@ rather than adding a new round trip.
 All existing behaviour: adding/removing/reordering stickers, drag and drop,
 highlight toggle, notes saving, optimistic updates, the plan-002 animations.
 
+> **Amended (as built):**
+> - Balance is computed client-side from the already-loaded `stickersByDay` (optimistic), not by a new server query.
+> - The tray stays a side rail until plan 10. The seven-day strip was removed, and Today always shows today.
+> - Stickers are removed with an × badge (hover on desktop, always shown on touch); the dashed circle opens the add sheet.
+> - `MoodRow` was restyled to coloured faces; the day sheet shares it.
+
 ## Verify
 
 - 1440 and 390 match the layout above.

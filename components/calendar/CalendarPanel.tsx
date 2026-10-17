@@ -189,18 +189,15 @@ export function CalendarPanel(props: Props) {
    * drawings agreeing about where you are looking.
    */
   const body = (view: CalendarViewMode, className?: string) => {
-    // The day view draws its own masthead and steps by tapping a date in its
-    // own strip, so it takes neither the period header nor the deck transition
-    // — it shares only the anchor, which is what keeps "where you were
-    // looking" intact when you switch to Week or Month and back.
+    // Today is always today: no period header, no deck transition.
     if (view === "today") {
       return (
         <TodayView
           className={className}
-          anchor={anchor}
-          onPickDay={setChosenDay}
+          day={todayString ?? props.initialDay}
+          groups={props.groups}
           onAddSticker={() =>
-            setSheet({ day: toDayString(anchor), variant: "add" })
+            setSheet({ day: todayString ?? props.initialDay, variant: "add" })
           }
           {...passthrough}
         />
