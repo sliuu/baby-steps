@@ -145,7 +145,7 @@ export function TrendsBoard(props: Props) {
           <div className="grid items-start gap-x-14 gap-y-11 lg:grid-cols-2">
             {/* `min-w-0`: let grid columns shrink below their content. */}
             {/* ChartCard wears the rule, level with the bars'. */}
-            <div className="hidden min-w-0 lg:block">
+            <div className="min-w-0">
               <TrendsPie tally={totals} />
             </div>
 

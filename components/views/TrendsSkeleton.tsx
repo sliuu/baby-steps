@@ -20,7 +20,7 @@ export function TrendsSkeleton() {
       </div>
 
       <div className="grid items-start gap-x-14 gap-y-11 lg:grid-cols-2">
-        <div className="hidden lg:block">
+        <div>
           <ChartCard>
             <Skeleton className="size-full rounded-none" />
           </ChartCard>

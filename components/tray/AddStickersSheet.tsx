@@ -8,7 +8,6 @@ import { StickerMark } from "@/components/calendar/StickerMark";
 import { EditStickerForm } from "@/components/tray/EditStickerForm";
 import { NewStickerForm, formCategories } from "@/components/tray/NewStickerForm";
 import { NewTile, TrayGroup } from "@/components/tray/TrayGroup";
-import { Button } from "@/components/ui/button";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
 import { cn } from "@/lib/utils";
@@ -25,7 +24,7 @@ type Props = {
   local?: boolean;
 };
 
-/** Phones: pick several stickers and add them at once; or edit and create. Mounted only while open. */
+/** Phones: check stickers, close to add them; or edit and create. Mounted only while open. */
 export function AddStickersSheet(props: Props) {
   const [picked, setPicked] = useState<string[]>([]);
   // Edit mode: a tap opens the editor instead of picking.
@@ -41,9 +40,10 @@ export function AddStickersSheet(props: Props) {
   const toggle = (id: string) =>
     setPicked((was) => (was.includes(id) ? was.filter((x) => x !== id) : [...was, id]));
 
-  function add() {
+  /** Closing adds whatever is checked. */
+  function close() {
     const byId = new Map(props.groups.flatMap((g) => g.stickers.map((s) => [s.id, s])));
-    props.onAdd(picked.flatMap((id) => byId.get(id) ?? []));
+    if (picked.length > 0) props.onAdd(picked.flatMap((id) => byId.get(id) ?? []));
     props.onClose();
   }
 
@@ -51,7 +51,7 @@ export function AddStickersSheet(props: Props) {
     <DialogPrimitive.Root
       open
       onOpenChange={(open) => {
-        if (!open) props.onClose();
+        if (!open) close();
       }}
     >
       <DialogPortal>
@@ -146,21 +146,6 @@ export function AddStickersSheet(props: Props) {
               );
             })}
           </div>
-
-          {!editMode && (
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              disabled={picked.length === 0}
-              onClick={add}
-              className="w-full"
-            >
-              {picked.length === 0
-                ? "pick stickers"
-                : `add ${picked.length} sticker${picked.length === 1 ? "" : "s"}`}
-            </Button>
-          )}
 
           {open && (
             <EditStickerForm
