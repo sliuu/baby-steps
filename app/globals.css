@@ -163,11 +163,13 @@
   /* `both` holds the first keyframe through the stagger. */
   --animate-rise: rise var(--dur-hero) var(--ease-enter) both;
 
-  /* Nth strike (`--step`) draws; the last line fades in after all three. */
+  /* Nth strike (`--step`) draws; the last line fades in when the third ends.
+     Three strikes have only two gaps between them, so there is no trailing gap
+     before the final line begins. */
   --animate-strike: strike var(--dur-strike) var(--ease-enter)
     calc(var(--strike-wait) + var(--step, 0) * (var(--dur-strike) + var(--strike-gap))) both;
-  --animate-after-strikes: appear var(--dur-hero) var(--ease-enter)
-    calc(var(--strike-wait) + 3 * (var(--dur-strike) + var(--strike-gap))) both;
+  --animate-after-strikes: appear var(--dur-after-strikes) var(--ease-enter)
+    calc(var(--strike-wait) + 3 * var(--dur-strike) + 2 * var(--strike-gap)) both;
 
   /* Fade done in the first third so it falls solid; `fall` sets per-keyframe easing. */
   --animate-fall:
@@ -279,14 +281,16 @@
   --dur-fall: 620ms;
   --fall-drop: 28px;
   --sticker-start: 160ms;
-  --sticker-gap: 55ms;
+  --sticker-gap: 160ms;
   /* Sign-in strikes: each line, the gap between, the wait before the first. */
-  --dur-strike: 400ms;
-  --strike-gap: 250ms;
-  --strike-wait: 600ms;
+  --dur-strike: 475ms;
+  --strike-gap: 150ms;
+  --strike-wait: 425ms;
+  /* The last line's fade; slower than the hero so it lands softly. */
+  --dur-after-strikes: 900ms;
   /* Sign-in text follows the title without delaying the actions for long. */
-  --hero-rise: 14px;
-  --hero-copy-delay: 80ms;
+  --hero-rise: 12px;
+  --hero-copy-delay: 240ms;
   --hero-actions-delay: 160ms;
 }
 
@@ -705,6 +709,7 @@
     --dur-hero: 1ms;
     --dur-fall: 1ms;
     --dur-strike: 1ms;
+    --dur-after-strikes: 1ms;
   }
 
   *,

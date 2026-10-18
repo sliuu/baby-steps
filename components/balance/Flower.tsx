@@ -14,6 +14,10 @@ type Props = {
   /** Display order; petal 0 at the top, then clockwise. */
   categories: BalanceCategory[];
   levels: Balance;
+  /** Off: no arc labels, and the box crops to the outer ring. */
+  labels?: boolean;
+  /** Stroke for the dotted level rings. */
+  ringClassName?: string;
   className?: string;
 };
 
@@ -21,16 +25,18 @@ type Props = {
 export function Flower(props: Props) {
   const idPrefix = useId();
   const n = props.categories.length;
+  const labels = props.labels ?? true;
+  const inset = labels ? 0 : cx - LEVEL_RADII[LEVEL_RADII.length - 1] - 0.5;
 
   return (
     <svg
-      viewBox={`0 0 ${size} ${size}`}
+      viewBox={`${inset} ${inset} ${size - 2 * inset} ${size - 2 * inset}`}
       role="img"
       aria-label={balanceLabel(props.categories, props.levels)}
       className={props.className}
     >
       {LEVEL_RADII.map((r) => (
-        <circle key={r} cx={cx} cy={cy} r={r} strokeDasharray="1 4" className="fill-none stroke-rule-grid" />
+        <circle key={r} cx={cx} cy={cy} r={r} strokeDasharray="1 4" className={`fill-none ${props.ringClassName ?? "stroke-rule-grid"}`} />
       ))}
 
       {props.categories.map((category, i) => {
@@ -51,7 +57,7 @@ export function Flower(props: Props) {
       })}
 
       <circle cx={cx} cy={cy} r={4.5} className="fill-ink" />
-      <ArcLabels categories={props.categories} idPrefix={idPrefix} />
+      {labels && <ArcLabels categories={props.categories} idPrefix={idPrefix} />}
     </svg>
   );
 }
