@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
-import { LandingAnimationJig } from "@/components/auth/LandingAnimationJig";
 import { SignInButton } from "@/components/auth/SignInButtons";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { PageFrame } from "@/components/ui/PageFrame";
@@ -97,11 +96,7 @@ export default function LoginPage() {
         />
       }
     >
-      {process.env.NODE_ENV === "development" ? (
-        <LandingAnimationJig>{content}</LandingAnimationJig>
-      ) : (
-        content
-      )}
+      {content}
     </PageFrame>
   );
 }
