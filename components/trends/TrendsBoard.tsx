@@ -8,12 +8,12 @@ import { useSettings } from "@/components/SettingsProvider";
 import { navLinkClass } from "@/components/TopNav";
 import { HabitList } from "./HabitList";
 import { HabitTable } from "./HabitTable";
-import { LifeStar } from "./LifeStar";
 import { MoodBars } from "./MoodBars";
 import { MoodLine } from "./MoodLine";
 import { RangePicker } from "./RangePicker";
 import { captionFor, spanLabel } from "./rangeText";
 import { Readout } from "./Readout";
+import { TrendsPie } from "./TrendsPie";
 import {
   moodSeries,
   moodTakeaway,
@@ -146,7 +146,7 @@ export function TrendsBoard(props: Props) {
             {/* `min-w-0`: let grid columns shrink below their content. */}
             {/* ChartCard wears the rule, level with the bars'. */}
             <div className="hidden min-w-0 lg:block">
-              <LifeStar tally={totals} />
+              <TrendsPie tally={totals} />
             </div>
 
             <section aria-labelledby="trends-by-category" className={`min-w-0 ${PANEL}`}>

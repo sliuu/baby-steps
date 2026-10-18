@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
 
-import { VIEW } from "@/lib/charts";
+import { PIE_BOX } from "@/lib/balance-geometry";
 import { PANEL } from "@/lib/layout";
 
 type Props = { children: ReactNode };
 
-/** Star frame at the viewBox ratio; shared with `TrendsSkeleton` so heights match. */
+/** Pie frame at the viewBox ratio; shared with `TrendsSkeleton` so heights match. */
 export function ChartCard(props: Props) {
   return (
-    <figure className={PANEL} aria-hidden="true">
+    <figure className={PANEL}>
       <div
         className="min-h-fit w-full"
-        style={{ aspectRatio: `${VIEW.width} / ${VIEW.height}` }}
+        style={{ aspectRatio: `${PIE_BOX.width} / ${PIE_BOX.height}` }}
       >
         {props.children}
       </div>

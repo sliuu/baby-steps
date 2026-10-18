@@ -1,7 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useMemo } from "react";
 
 import { Flower } from "@/components/balance/Flower";
@@ -20,8 +20,10 @@ type Props = PeriodProps & {
   day: DayString;
   /** For the flower: categories and which category each sticker is in. */
   groups: LibraryGroup[];
-  /** Scrolls to the tray. */
+  /** Desktop: scrolls to the tray. */
   onAddSticker: () => void;
+  /** Phones: opens the add-stickers sheet. */
+  onPickStickers: () => void;
   className?: string;
 };
 
@@ -91,7 +93,7 @@ export function TodayView(props: Props) {
 
             <ul className="flex min-h-28 flex-wrap gap-x-5.5">
               {empty && (
-                <li className="flex h-28 items-end pb-3">
+                <li className="hidden h-28 items-end pb-3 lg:flex">
                   <button
                     type="button"
                     onClick={props.onAddSticker}
@@ -129,6 +131,20 @@ export function TodayView(props: Props) {
                   </button>
                 </li>
               ))}
+              {/* Phones add here; no dragging. */}
+              <li className="flex h-28 w-20 flex-col items-center justify-end gap-1.5 pb-1.5 lg:hidden">
+                <button
+                  type="button"
+                  onClick={props.onPickStickers}
+                  aria-label="add stickers"
+                  className="grid size-sticker-lg place-items-center rounded-full border border-dashed border-rule-input text-ink-muted transition-colors hover:border-ink hover:text-ink"
+                >
+                  <Plus className="size-5" strokeWidth={1.5} aria-hidden="true" />
+                </button>
+                <span aria-hidden="true" className="text-label text-ink-muted">
+                  add
+                </span>
+              </li>
             </ul>
           </section>
         </div>

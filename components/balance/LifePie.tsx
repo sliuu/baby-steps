@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Balance, Level } from "@/lib/balance";
-import { BALANCE_VIEW, itemAngle, ringSector } from "@/lib/balance-geometry";
+import { BALANCE_VIEW, PIE_BOX, itemAngle, ringSector } from "@/lib/balance-geometry";
 import { polar } from "@/lib/charts";
 import { categoryColor } from "@/lib/palette";
 import { balanceLabel, type BalanceCategory } from "./shared";
@@ -11,8 +11,7 @@ const { cx, cy } = BALANCE_VIEW;
 /** Ring k spans EDGES[k-1]..EDGES[k]; evenly spaced, no hole. */
 const EDGES = [0, 35, 70, 104];
 const LABEL_R = 112;
-/** Room for flat, wrapped labels. Phones scale it down, so labels are bigger there. */
-const VIEW_BOX = "-45 0 370 296";
+const VIEW_BOX = `${PIE_BOX.x} ${PIE_BOX.y} ${PIE_BOX.width} ${PIE_BOX.height}`;
 
 type Props = {
   categories: BalanceCategory[];

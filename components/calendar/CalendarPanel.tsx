@@ -3,7 +3,9 @@
 import {
   addTransitionType,
   startTransition,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   ViewTransition,
   type ReactNode,
@@ -47,6 +49,8 @@ type Props = Omit<PeriodProps, "todayString" | "onOpenDay" | "selectedDay"> & {
   error: string | null;
   /** The compact tray, adding to a day. `scope` keeps drag ids unique. */
   tray: (day: DayString, scope: string) => ReactNode;
+  /** Phones: opens the add-stickers sheet. */
+  onPickStickers: () => void;
 };
 
 /** Owns the period anchor, the selected day (desktop) and the open sheet (phones). */
@@ -81,6 +85,12 @@ export function CalendarPanel(props: Props) {
 
   const showDay = (day: Date) => setSheetDay(toDayString(day));
 
+  // New day: the side panel starts at the top.
+  const asideRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    asideRef.current?.scrollTo({ top: 0 });
+  }, [selectedDay]);
+
   const body = (view: CalendarViewMode) => {
     if (view === "today") {
       return (
@@ -90,6 +100,7 @@ export function CalendarPanel(props: Props) {
           onAddSticker={() =>
             document.getElementById("your-stickers")?.scrollIntoView({ behavior: "smooth" })
           }
+          onPickStickers={props.onPickStickers}
           {...passthrough}
         />
       );
@@ -145,6 +156,7 @@ export function CalendarPanel(props: Props) {
 
           {/* The side panel. Sticky; scrolls on its own when the bank is long. */}
           <aside
+            ref={asideRef}
             aria-label="selected day"
             className="scrollbar-app hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:border-l lg:border-rule lg:pr-4 lg:pl-4"
           >

@@ -4,6 +4,9 @@ import { TOP, polar, round2 } from "./charts.ts";
 /** Flower and pie share one box. */
 export const BALANCE_VIEW = { size: 280, cx: 140, cy: 140 } as const;
 
+/** LifePie's viewBox: room for flat, wrapped labels. */
+export const PIE_BOX = { x: -45, y: 0, width: 370, height: 296 } as const;
+
 /** Reach by level; also the guide rings and pie ring edges. */
 export const LEVEL_RADII = [56, 80, 104] as const;
 

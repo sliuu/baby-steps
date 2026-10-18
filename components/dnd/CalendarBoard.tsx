@@ -37,6 +37,7 @@ import { MoodMark } from "@/components/calendar/MoodMark";
 import { StickerMark } from "@/components/calendar/StickerMark";
 import { LANDING_VIEW, type Landed } from "@/components/calendar/period";
 import { useCalendarView } from "@/components/calendar/viewMode";
+import { AddStickersSheet } from "@/components/tray/AddStickersSheet";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { applyChange, type CalendarChange } from "@/lib/changes";
 import { formatDateNumeric, formatDayLong, fromDayString, toDayString, type DayString } from "@/lib/dates";
@@ -169,6 +170,8 @@ export function CalendarBoard(props: Props) {
 
   // Ephemeral view state: no DB, URL or storage; dies on reload.
   const [selection, setSelection] = useState<Selection | null>(null);
+  // Phones: the add-stickers sheet.
+  const [picking, setPicking] = useState(false);
 
   // Derived, so server renames/recolours flow through; null if the target is gone.
   const highlight = useMemo(
@@ -341,6 +344,14 @@ export function CalendarBoard(props: Props) {
     });
   }
 
+  /** The sheet's batch: each a "place" at the end, in pick order. */
+  function addMany(day: DayString, stickers: LibrarySticker[]) {
+    const placed = stickersByDay.get(day)?.activities ?? [];
+    stickers.forEach((sticker, i) =>
+      commit({ kind: "place", day, activityId: sticker.id, face: faceOf(sticker), index: placed.length + i }),
+    );
+  }
+
   const tray = (layout: "column" | "page", day: DayString, scope?: string) => (
     <StickerTray
       groups={props.groups}
@@ -391,14 +402,30 @@ export function CalendarBoard(props: Props) {
         caret={dragging?.kind === "activity"}
         landed={landed}
         tray={(day, scope) => tray("column", day, scope)}
+        onPickStickers={() => setPicking(true)}
       />
 
+      {picking && (
+        <AddStickersSheet
+          groups={props.groups}
+          placed={
+            new Set(
+              (stickersByDay.get(toDayString(new Date()))?.activities ?? []).map((a) => a.activityId),
+            )
+          }
+          onAdd={(stickers) => addMany(toDayString(new Date()), stickers)}
+          onClose={() => setPicking(false)}
+          markCounts={markCounts}
+          local={props.local}
+        />
+      )}
+
       {onToday && (
-        // Under Today at every width, past a rule.
+        // Under Today, past a rule. Phones use the + sheet instead.
         <section
           id="your-stickers"
           aria-label="stickers"
-          className="mt-14 scroll-mt-6 border-t border-rule pt-10"
+          className="mt-14 hidden scroll-mt-6 border-t border-rule pt-10 lg:block"
         >
           {tray("page", toDayString(new Date()))}
         </section>
