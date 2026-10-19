@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/Menu";
 import { SheetHeader } from "@/components/ui/SheetHeader";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatDateShort, fromDayString } from "@/lib/dates";
 import { Logo } from "@/components/ui/Logo";
 import { LOGO } from "@/lib/layout";
@@ -33,6 +34,7 @@ export function TopNav(props: Props) {
 
   return (
     <SheetHeader
+      themeToggle={false}
       start={
         <>
           <a
@@ -102,7 +104,10 @@ export function TopNav(props: Props) {
             </ul>
           </nav>
 
-          <div className="flex items-center">{props.end}</div>
+          <div className="flex items-center gap-s3">
+            <ThemeToggle />
+            {props.end}
+          </div>
         </>
       }
     />

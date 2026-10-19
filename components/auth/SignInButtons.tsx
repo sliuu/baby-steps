@@ -44,7 +44,14 @@ export function SignInButton(props: Props) {
   }, []);
 
   const name = NAME[props.provider];
-  const label = pending ? `Taking you to ${name}…` : `Sign in with ${name}`;
+  // Phones: the header's button drops "with Google" to leave room for the logo.
+  const label = pending ? (
+    `Taking you to ${name}…`
+  ) : (
+    <>
+      Sign in<span className={props.look === "sm" ? "max-sm:hidden" : undefined}> with {name}</span>
+    </>
+  );
 
   return (
     <>

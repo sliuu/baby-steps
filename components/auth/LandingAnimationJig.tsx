@@ -45,22 +45,22 @@ type MotionStyle = CSSProperties & {
   "--dur-strike": string;
   "--strike-wait": string;
   "--strike-gap": string;
-  "--paper": string;
-  "--frame": string;
+  "--paper"?: string;
+  "--frame"?: string;
 };
 
 const DEFAULTS: Timings = {
-  heroDuration: 420,
+  heroDuration: 300,
   heroRise: 12,
-  copyDelay: 240,
-  actionsDelay: -450,
+  copyDelay: 160,
+  actionsDelay: -310,
   fallDuration: 620,
   fallDrop: 28,
   stickerStart: 160,
   stickerGap: 160,
-  strikeWait: 425,
-  strikeDuration: 475,
-  strikeGap: 150,
+  strikeWait: 280,
+  strikeDuration: 320,
+  strikeGap: 100,
 };
 
 const ALL_ON: Groups = { text: true, stickers: true, strikes: true };
@@ -128,8 +128,11 @@ export function LandingAnimationJig(props: { children: ReactNode }) {
     "--dur-strike": `${groups.strikes ? timings.strikeDuration : 1}ms`,
     "--strike-wait": `${groups.strikes ? timings.strikeWait : 0}ms`,
     "--strike-gap": `${groups.strikes ? timings.strikeGap : 0}ms`,
-    "--paper": hsvToHex(palette.background),
-    "--frame": hsvToHex(palette.border),
+    // Untouched, the theme's own colours show (light or dark).
+    ...(palette !== DEFAULT_PALETTE && {
+      "--paper": hsvToHex(palette.background),
+      "--frame": hsvToHex(palette.border),
+    }),
   };
 
   function range(

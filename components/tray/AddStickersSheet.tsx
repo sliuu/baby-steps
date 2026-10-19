@@ -66,7 +66,7 @@ export function AddStickersSheet(props: Props) {
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-136 flex-col gap-s2",
             "rounded-t-2xl border-t border-rule bg-paper px-s3 pt-s1 pb-[calc(var(--spacing-s3)+env(safe-area-inset-bottom))]",
-            "shadow-[0_-10px_30px_rgb(70_50_20/0.14)] outline-none",
+            "shadow-[0_-10px_30px_rgb(70_50_20/0.14)] outline-none dark:shadow-[0_-10px_30px_rgb(0_0_0/0.5)]",
             "data-open:animate-sheet-in data-closed:animate-sheet-out",
           )}
         >
