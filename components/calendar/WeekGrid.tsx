@@ -27,7 +27,7 @@ export function WeekGrid(props: Props) {
   return (
     <div className={cn("grid grid-cols-7 gap-px bg-rule-grid", props.className)}>
       {days.map((day) => (
-        <div key={day.day} className="bg-paper pb-2 text-center text-caption text-ink-muted lowercase">
+        <div key={day.day} className="bg-paper pb-s1 text-center text-caption text-ink-muted lowercase">
           {day.weekday}
         </div>
       ))}

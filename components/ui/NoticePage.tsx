@@ -28,16 +28,16 @@ export function NoticePage(props: Props) {
         />
       }
     >
-      <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-20`}>
+      <main className={`${PAGE_WIDTH} pt-s6 pb-s7 sm:pt-s7`}>
         {props.picture}
         <p className="eyebrow animate-rise">{props.eyebrow}</p>
-        <h1 className="mt-3 animate-rise font-display text-heading font-light text-ink text-balance sm:text-display-sm">
+        <h1 className="mt-s2 animate-rise font-display text-heading font-light text-ink text-balance sm:text-display-sm">
           {props.title}
         </h1>
-        <p className="mt-6 max-w-120 animate-rise text-body-lg text-ink-muted text-balance">
+        <p className="mt-s4 max-w-120 animate-rise text-body-lg text-ink-muted text-balance">
           {props.children}
         </p>
-        <div className="mt-10 animate-rise">{props.action}</div>
+        <div className="mt-s6 animate-rise">{props.action}</div>
       </main>
     </PageFrame>
   );

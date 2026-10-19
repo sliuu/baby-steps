@@ -14,15 +14,15 @@ export function CategoryBars(props: Props) {
   const most = ranked[0]?.count ?? 0;
 
   return (
-    <section aria-label={props.caption} className="flex flex-col gap-4">
-      <ul className="flex flex-col gap-3.5">
+    <section aria-label={props.caption} className="flex flex-col gap-s3">
+      <ul className="flex flex-col gap-s2">
         {ranked.map((category) => {
           const tone = categoryColor(category.colorKey);
           const width = most === 0 ? 0 : (category.count / most) * 100;
 
           return (
             <li key={category.categoryId} className="flex flex-col gap-1.5">
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-s1">
                 {/* Wraps rather than truncates on narrow phones. */}
                 <span className={`min-w-0 flex-1 text-label lowercase ${tone.text}`}>
                   {category.categoryName}
@@ -59,7 +59,7 @@ export function CategoryBars(props: Props) {
         })}
       </ul>
 
-      <div className="flex justify-between border-t border-rule pt-3 text-caption text-ink-muted">
+      <div className="flex justify-between border-t border-rule pt-s2 text-caption text-ink-muted">
         <span>total</span>
         <span className="tabular">
           {tally.total} mark{tally.total === 1 ? "" : "s"}

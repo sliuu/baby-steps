@@ -52,7 +52,7 @@ export function DayCell(props: Props) {
       // Whole cell selects for pointers; the date button is the keyboard way in.
       onClick={props.future ? undefined : () => props.onSelect(day)}
       className={cn(
-        "relative isolate flex min-h-24 w-full flex-col bg-paper p-2",
+        "relative isolate flex min-h-24 w-full flex-col bg-paper p-s1",
         // Fade the contents, not the paper: the grid lines sit behind it.
         props.future ? "[&>*]:opacity-45" : "cursor-pointer",
       )}

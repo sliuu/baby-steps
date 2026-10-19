@@ -1,11 +1,12 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
 import { useMemo } from "react";
 
 import { Flower } from "@/components/balance/Flower";
 import { useSettings } from "@/components/SettingsProvider";
+import { DayNote } from "./DayNote";
 import { MoodRow } from "./MoodRow";
 import { StickerMark } from "./StickerMark";
 import type { PeriodProps } from "./period";
@@ -27,7 +28,7 @@ type Props = PeriodProps & {
   className?: string;
 };
 
-/** Today: the question, mood, stickers on ruled lines; the flower beside (lg) or below. */
+/** Today: the question, stickers, mood and a note; the flower beside (lg) or below. */
 export function TodayView(props: Props) {
   const { weekStartsOn, petals } = useSettings();
   const { day, highlight } = props;
@@ -63,15 +64,15 @@ export function TodayView(props: Props) {
   return (
     <section
       className={cn(
-        "grid gap-11 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-16",
+        "grid gap-s6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-s7",
         props.className,
       )}
     >
-      <div className="flex min-w-0 flex-col justify-between gap-7.5">
-        <div className="flex flex-1 flex-col gap-5">
+      <div className="flex min-w-0 flex-col justify-between gap-s5">
+        <div className="flex flex-1 flex-col gap-s4">
           <header>
-            {/* Phones only; the header shows it from sm. */}
-            <time dateTime={day} className="font-display text-body-lg font-normal text-accent-ink sm:hidden">
+            {/* Until the header has room for it (56rem, as in TopNav). */}
+            <time dateTime={day} className="font-display text-body-lg font-normal text-accent-ink min-[56rem]:hidden">
               {formatDateShort(fromDayString(day))}
             </time>
             <h1 className="font-display text-heading font-light text-ink sm:text-title">
@@ -91,15 +92,16 @@ export function TodayView(props: Props) {
               today&rsquo;s stickers
             </h2>
 
-            <ul className="flex min-h-28 flex-wrap gap-x-5.5">
+            <ul className="flex min-h-28 flex-wrap gap-x-s4">
               {empty && (
-                <li className="hidden h-28 items-end pb-3 lg:flex">
+                <li className="hidden h-28 items-start lg:flex">
                   <button
                     type="button"
                     onClick={props.onAddSticker}
-                    className="text-label text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+                    className="inline-flex items-center gap-1 text-label text-ink-muted underline-offset-4 hover:text-ink hover:underline"
                   >
-                    add stickers below
+                    add stickers
+                    <ChevronDown className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
                   </button>
                 </li>
               )}
@@ -149,25 +151,32 @@ export function TodayView(props: Props) {
           </section>
         </div>
 
-        <section aria-labelledby="today-mood">
-          <h2 id="today-mood" className="sr-only">
-            mood
-          </h2>
-          <div className="w-full max-w-xs">
-            <MoodRow
-              day={day}
-              mood={stickers.mood}
-              onCommit={props.onCommit}
-              highlight={highlight}
-              labels={false}
-              stickerBorder
-              greyOthers
-            />
+        {/* Mood, then the day's note under it. */}
+        <div className="flex flex-col gap-s4">
+          <section aria-labelledby="today-mood">
+            <h2 id="today-mood" className="sr-only">
+              mood
+            </h2>
+            <div className="w-full max-w-xs">
+              <MoodRow
+                day={day}
+                mood={stickers.mood}
+                onCommit={props.onCommit}
+                highlight={highlight}
+                labels={false}
+                stickerBorder
+                greyOthers
+              />
+            </div>
+          </section>
+
+          <div className="w-full max-w-md pt-s3 pl-s1">
+            <DayNote key={day} day={day} note={stickers.note} onCommit={props.onCommit} variant="page" />
           </div>
-        </section>
+        </div>
       </div>
 
-      <figure className="flex flex-col items-center gap-2">
+      <figure className="flex flex-col items-center gap-s1">
         <Flower categories={categories} levels={levels} className="w-full max-w-80" />
         <figcaption className="text-caption text-ink-muted">the last few weeks</figcaption>
       </figure>

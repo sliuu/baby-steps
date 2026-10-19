@@ -59,7 +59,7 @@ export function WeekList(props: Props) {
                 onClick={() => props.onShowDay(fromDayString(day.day))}
                 data-day={day.day}
                 // A minimum, not a height: many stickers wrap and the row grows.
-                className={`flex min-h-14 w-full items-center gap-3 px-1 py-2.5 text-left transition-colors ${
+                className={`flex min-h-14 w-full items-center gap-s2 px-1 py-s1 text-left transition-colors ${
                   index > 0 ? "border-t border-rule-grid" : ""
                 } ${
                   day.isToday
@@ -114,7 +114,7 @@ export function WeekList(props: Props) {
         })}
       </ul>
 
-      <p className="mt-3 text-label text-ink-muted">
+      <p className="mt-s2 text-label text-ink-muted">
         {total === 0
           ? "A quiet week so far. Tap a day to put something on it."
           : `${total} sticker${total === 1 ? "" : "s"} this week. Tap a day to add one.`}

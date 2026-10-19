@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/Menu";
 import { SheetHeader } from "@/components/ui/SheetHeader";
 import { formatDateShort, fromDayString } from "@/lib/dates";
 import { Logo } from "@/components/ui/Logo";
@@ -22,10 +25,10 @@ export function navLinkClass(active: boolean) {
   }`;
 }
 
-/** The sheet's header: logo, nav (sm and up), account. */
+/** The sheet's header: logo, nav (a dropdown until it fits, then links), account. */
 export function TopNav(props: Props) {
   const current = navItemFor(props.page);
-  // Null until hydrated, so server and client agree. Phones get it in TodayView.
+  // Null until hydrated, so server and client agree. Narrower screens get it in TodayView.
   const today = useToday(null);
 
   return (
@@ -44,7 +47,7 @@ export function TopNav(props: Props) {
             <Logo />
           </a>
           {today && current === "today" && (
-            <time dateTime={today} className="hidden translate-y-0.5 font-display text-date font-normal text-accent-ink sm:inline">
+            <time dateTime={today} className="hidden translate-y-0.5 font-display text-date font-normal text-accent-ink min-[56rem]:inline">
               {formatDateShort(fromDayString(today))}
             </time>
           )}
@@ -52,8 +55,31 @@ export function TopNav(props: Props) {
       }
       end={
         <>
-          <nav aria-label="Sections" className="hidden sm:block">
-            <ul className="flex items-center gap-8">
+          {/* Mid widths: the three links don't fit beside the date. */}
+          <Menu>
+            <MenuTrigger
+              className={`hidden items-center gap-1 outline-none sm:inline-flex min-[56rem]:hidden ${navLinkClass(true)}`}
+              aria-label={`Sections, on ${current}`}
+            >
+              {current}
+              <ChevronDown className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
+            </MenuTrigger>
+            <MenuContent align="end" className="w-40">
+              {NAV_ITEMS.map((item) => (
+                <MenuItem
+                  key={item.id}
+                  onSelect={() => props.onPageChange(item.page)}
+                  aria-current={item.id === current ? "page" : undefined}
+                  className={item.id === current ? "text-ink" : "text-ink-muted"}
+                >
+                  {item.label}
+                </MenuItem>
+              ))}
+            </MenuContent>
+          </Menu>
+
+          <nav aria-label="Sections" className="hidden min-[56rem]:block">
+            <ul className="flex items-center gap-s5">
               {NAV_ITEMS.map((item) => {
                 const active = item.id === current;
                 return (

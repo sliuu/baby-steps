@@ -53,7 +53,7 @@ const DEFAULTS: Timings = {
   heroDuration: 420,
   heroRise: 12,
   copyDelay: 240,
-  actionsDelay: 160,
+  actionsDelay: -450,
   fallDuration: 620,
   fallDrop: 28,
   stickerStart: 160,
@@ -103,16 +103,15 @@ export function LandingAnimationJig(props: { children: ReactNode }) {
   const [palette, setPalette] = useState(DEFAULT_PALETTE);
   const [playback, setPlayback] = useState(0);
   const [copied, setCopied] = useState(false);
-  const mounted = useRef(false);
+  // Last values played; Strict Mode re-runs effects, so compare instead of counting runs.
+  const played = useRef({ timings, groups });
 
   const replay = () => setPlayback((current) => current + 1);
 
   // Debounced so dragging a range doesn't remount the page per pixel.
   useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      return;
-    }
+    if (played.current.timings === timings && played.current.groups === groups) return;
+    played.current = { timings, groups };
     const timer = window.setTimeout(replay, 140);
     return () => window.clearTimeout(timer);
   }, [timings, groups]);
@@ -301,7 +300,7 @@ export function LandingAnimationJig(props: { children: ReactNode }) {
               {range("heroDuration", "duration", 100, 1000, 10, "ms")}
               {range("heroRise", "rise", 0, 48, 1, "px")}
               {range("copyDelay", "copy delay", 0, 600, 10, "ms")}
-              {range("actionsDelay", "actions delay", 0, 900, 10, "ms")}
+              {range("actionsDelay", "actions after last line", -900, 900, 10, "ms")}
             </fieldset>
 
             <fieldset disabled={!groups.stickers} className="mt-5 grid gap-3 border-t border-rule pt-4 disabled:opacity-40">

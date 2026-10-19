@@ -28,11 +28,11 @@ export function TrayGroup(props: Props) {
     <section>
       <div
         className={cn(
-          "group/row -mx-2 flex h-7 items-center gap-2 rounded-md px-2",
+          "group/row -mx-s1 flex h-7 items-center gap-s1 rounded-lg px-s1",
           props.selected && categoryColor(props.colorKey).wash,
         )}
       >
-        <h3 className="flex min-w-0 flex-1 items-center gap-2 font-display text-ui text-ink lowercase">
+        <h3 className="flex min-w-0 flex-1 items-center gap-s1 font-display text-ui text-ink lowercase">
           <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", categoryColor(props.colorKey).dot)} />
           <span className="truncate">{props.label}</span>
         </h3>
@@ -45,7 +45,7 @@ export function TrayGroup(props: Props) {
           />
         )}
       </div>
-      <ul className="mt-2.5 flex flex-wrap gap-x-2 gap-y-3">{props.children}</ul>
+      <ul className="mt-s1 flex flex-wrap gap-x-s1 gap-y-s2">{props.children}</ul>
     </section>
   );
 }
@@ -96,7 +96,7 @@ export function TrayTile(props: TileProps) {
     <li
       className={cn(
         TILE,
-        "group/tile rounded-md pb-1",
+        "group/tile rounded-lg pb-1",
         props.selected && categoryColor(props.face.colorKey).wash,
       )}
     >
@@ -105,7 +105,7 @@ export function TrayTile(props: TileProps) {
         payload={props.payload}
         onActivate={props.onAdd}
         label={props.addLabel}
-        className="flex w-full flex-col items-center gap-1.5 rounded-md pt-1 pointer-coarse:touch-pan-y"
+        className="flex w-full flex-col items-center gap-1.5 rounded-lg pt-1 pointer-coarse:touch-pan-y"
       >
         <TileFace face={props.face} size={props.size} />
       </DraggableSticker>

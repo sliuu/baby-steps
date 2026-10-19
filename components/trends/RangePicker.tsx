@@ -47,7 +47,7 @@ export function RangePicker(props: Props) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-s1">
       <Select value={value.kind} onValueChange={(kind) => pick(kind as RangeKind)}>
         {/* Unboxed, like a nav link: the active range, underlined. */}
         <SelectTrigger
@@ -95,7 +95,7 @@ function CustomRange(props: CustomProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-s1">
           <CalendarIcon className="size-4" />
           {label(props.from, props.to)}
         </Button>

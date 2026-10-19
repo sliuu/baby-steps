@@ -14,6 +14,7 @@ import { RangePicker } from "./RangePicker";
 import { captionFor, spanLabel } from "./rangeText";
 import { Readout } from "./Readout";
 import { TrendsPie } from "./TrendsPie";
+import { TrendsSkeleton } from "@/components/views/TrendsSkeleton";
 import {
   moodSeries,
   moodTakeaway,
@@ -35,7 +36,6 @@ import { useToday } from "@/lib/useToday";
 type Props = {
   groups: LibraryGroup[];
   stickersByDay: StickersByDay;
-  initialToday: DayString;
 };
 
 const TABS = [
@@ -46,13 +46,20 @@ const TABS = [
 
 type TrendsTab = (typeof TABS)[number]["id"];
 
-/** Trends: three tabs over one range. Owns the range and every derived number. */
+/** Skeleton until the browser knows the visitor's day; the server can't. */
 export function TrendsBoard(props: Props) {
+  const todayString = useToday(null);
+  if (!todayString) return <TrendsSkeleton />;
+  return <Board {...props} todayString={todayString} />;
+}
+
+/** Trends: three tabs over one range. Owns the range and every derived number. */
+function Board(props: Props & { todayString: DayString }) {
   // Live edits from the calendar, if this snapshot is current.
   const { snapshot } = useCalendarData();
   const stickersByDay =
     snapshot?.source === props.stickersByDay ? snapshot.data : props.stickersByDay;
-  const todayString = useToday(props.initialToday);
+  const { todayString } = props;
 
   const [range, setRange] = useState<Range>({ kind: "month" });
   const [tab, setTab] = useState<TrendsTab>("categories");
@@ -105,15 +112,15 @@ export function TrendsBoard(props: Props) {
     <TabsPrimitive.Root
       value={tab}
       onValueChange={(next) => setTab(next as TrendsTab)}
-      className="flex flex-col gap-8"
+      className="flex flex-col gap-s5"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
+      <div className="flex flex-col gap-s3 lg:flex-row lg:items-end lg:justify-between lg:gap-s4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-s4">
           <h1 className="font-display text-heading font-light text-ink lowercase sm:text-display-sm">
             trends
           </h1>
           {/* Radix primitive: tablist role and arrow keys, no styles to undo. */}
-          <TabsPrimitive.List aria-label="trends" className="flex items-baseline gap-5">
+          <TabsPrimitive.List aria-label="trends" className="flex items-baseline gap-s4">
             {TABS.map((entry) => (
               <TabsPrimitive.Trigger
                 key={entry.id}
@@ -127,7 +134,7 @@ export function TrendsBoard(props: Props) {
         </div>
 
         {/* Outside the tabs: one range governs all three. */}
-        <div className="flex items-center justify-between gap-4 lg:justify-end lg:pb-1">
+        <div className="flex items-center justify-between gap-s3 lg:justify-end lg:pb-1">
           <RangePicker value={range} onChange={setRange} />
           {span && (
             // Announces the resolved dates when the range changes.
@@ -142,7 +149,7 @@ export function TrendsBoard(props: Props) {
         {totals.total === 0 ? (
           <Empty range={range} />
         ) : (
-          <div className="grid items-start gap-x-14 gap-y-11 lg:grid-cols-2">
+          <div className="grid items-start gap-x-s7 gap-y-s6 lg:grid-cols-2">
             {/* `min-w-0`: let grid columns shrink below their content. */}
             {/* ChartCard wears the rule, level with the bars'. */}
             <div className="min-w-0">
@@ -193,8 +200,8 @@ export function TrendsBoard(props: Props) {
       </TabsPrimitive.Content>
 
       <TabsPrimitive.Content value="moods" className={CONTENT}>
-        <div className="flex flex-col gap-11">
-          <div className="grid items-start gap-x-14 gap-y-11 lg:grid-cols-2">
+        <div className="flex flex-col gap-s6">
+          <div className="grid items-start gap-x-s7 gap-y-s6 lg:grid-cols-2">
             <section aria-label={recordCaption} className={`flex min-w-0 flex-col ${PANEL}`}>
               <h2 className={TITLE}>by mood</h2>
               <MoodBars moods={moods} />
@@ -204,7 +211,7 @@ export function TrendsBoard(props: Props) {
           </div>
 
           {moods.total > 0 && recordable !== null && (
-            <div className={`flex justify-between pt-3 text-caption text-ink-muted ${RULE}`}>
+            <div className={`flex justify-between pt-s2 text-caption text-ink-muted ${RULE}`}>
               <span>days recorded</span>
               <span className="tabular">
                 {moods.total} of {Math.max(recordable, moods.total)}
@@ -217,14 +224,14 @@ export function TrendsBoard(props: Props) {
   );
 }
 
-const TITLE = "mb-5 font-display text-subhead text-ink";
+const TITLE = "mb-s4 font-display text-subhead text-ink";
 
 const CONTENT =
   "text-label outline-none animate-in fade-in-0 duration-150 motion-reduce:animate-none";
 
 function Empty(props: { range: Range }) {
   return (
-    <div className={`${RULE} border-dashed px-10 py-16 text-center`}>
+    <div className={`${RULE} border-dashed px-s6 py-s7 text-center`}>
       <p className="text-ink-muted">{emptyMessage(props.range)}</p>
     </div>
   );

@@ -65,7 +65,7 @@ export function EditStickerForm(props: Props) {
         {problem && (
           <p
             role="status"
-            className="rounded-md bg-accent-ink/10 text-accent-ink px-2.5 py-2 text-label"
+            className="rounded-lg bg-accent-ink/10 text-accent-ink px-s1 py-s1 text-label"
           >
             {problem}
           </p>

@@ -59,8 +59,8 @@ export function AddStickersSheet(props: Props) {
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-136 flex-col gap-3",
-            "rounded-t-2xl border-t border-rule bg-paper px-4.5 pt-2.5 pb-[calc(1rem+env(safe-area-inset-bottom))]",
+            "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-136 flex-col gap-s2",
+            "rounded-t-2xl border-t border-rule bg-paper px-s3 pt-s1 pb-[calc(var(--spacing-s3)+env(safe-area-inset-bottom))]",
             "shadow-[0_-10px_30px_rgb(70_50_20/0.14)] outline-none",
             "data-open:animate-sheet-in data-closed:animate-sheet-out",
           )}
@@ -73,7 +73,7 @@ export function AddStickersSheet(props: Props) {
             <X className="size-4" strokeWidth={1.5} aria-hidden="true" />
           </DialogPrimitive.Close>
 
-          <div className="flex items-baseline gap-4 pr-12">
+          <div className="flex items-baseline gap-s3 pr-s6">
             <DialogPrimitive.Title className="font-display text-body-lg text-ink">
               {editMode ? "edit stickers" : "add stickers"}
             </DialogPrimitive.Title>
@@ -88,7 +88,7 @@ export function AddStickersSheet(props: Props) {
             )}
           </div>
 
-          <div className="-mx-4.5 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4.5 py-1">
+          <div className="-mx-s3 flex min-h-0 flex-1 flex-col gap-s4 overflow-y-auto px-s3 py-1">
             {props.groups.map((group) => {
               const stickers = group.stickers.filter((sticker) => !sticker.archived);
               if (stickers.length === 0 && props.local) return null;

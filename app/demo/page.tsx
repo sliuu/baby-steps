@@ -30,7 +30,7 @@ export default async function DemoPage() {
       banner={
         // Above the frame; scrolls away.
         <div className="border-b border-rule bg-secondary">
-          <p className={`${PAGE_WIDTH} py-2.5 text-center text-label text-ink-muted`}>
+          <p className={`${PAGE_WIDTH} py-s1 text-center text-label text-ink-muted`}>
             demo
           </p>
         </div>
@@ -49,11 +49,7 @@ export default async function DemoPage() {
         <CalendarBoard groups={groups} stickersByDay={stickersByDay} local />
       }
       trends={
-        <TrendsBoard
-          groups={groups}
-          stickersByDay={stickersByDay}
-          initialToday={end}
-        />
+        <TrendsBoard groups={groups} stickersByDay={stickersByDay} />
       }
     />
   );

@@ -15,13 +15,13 @@ export function CalendarSkeleton() {
       </div>
 
       {/* The tray under Today: three groups of tiles. */}
-      <div className="mt-14 border-t border-rule pt-10">
+      <div className="mt-s6 border-t border-rule pt-s6">
         <Skeleton className="h-4 w-28" />
-        <div className="mt-6 grid gap-x-10 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-s4 grid gap-x-s6 gap-y-s5 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }, (_, group) => (
             <div key={group}>
               <Skeleton className="h-3 w-24" />
-              <ul className="mt-3.5 flex gap-2">
+              <ul className="mt-s2 flex gap-s1">
                 {Array.from({ length: 3 }, (_, tile) => (
                   <li key={tile} className="flex w-16 flex-col items-center gap-1.5">
                     <Skeleton className="size-sticker-sm rounded-full" />
@@ -40,15 +40,15 @@ export function CalendarSkeleton() {
 /** The landing, before its queries come back: `TodayView`, in grey. */
 function NarrowDaySkeleton() {
   return (
-    <section className="grid gap-11 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-16">
-      <div className="flex flex-col gap-7.5">
+    <section className="grid gap-s6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-s7">
+      <div className="flex flex-col gap-s5">
         <header>
           <Skeleton className="h-4 w-20" />
           <Skeleton className="mt-1 h-14 w-64" />
         </header>
         <section>
           <Skeleton className="h-4 w-32" />
-          <div className="mt-3.5 grid max-w-md grid-cols-5 gap-1">
+          <div className="mt-s2 grid max-w-md grid-cols-5 gap-1">
             {Array.from({ length: 5 }, (_, i) => (
               <Skeleton key={i} className="h-16 rounded-lg" />
             ))}
@@ -56,7 +56,7 @@ function NarrowDaySkeleton() {
         </section>
         <section>
           <Skeleton className="h-4 w-12" />
-          <div className="mt-3.5 flex gap-5.5">
+          <div className="mt-s2 flex gap-s4">
             {Array.from({ length: 3 }, (_, i) => (
               <Skeleton key={i} className="size-sticker-lg rounded-full" />
             ))}

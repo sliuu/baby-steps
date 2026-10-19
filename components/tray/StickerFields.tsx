@@ -110,7 +110,7 @@ export function StickerFields(props: Props) {
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-5">
+    <form action={submit} className="flex flex-col gap-s4">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`${errorId}-category`} className={LABEL}>
           category
@@ -146,9 +146,9 @@ export function StickerFields(props: Props) {
       </div>
 
       {suggestions.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-s1">
           <p className={LABEL}>ideas</p>
-          <ul className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-s1">
             {suggestions.map((idea) => {
               const chosen = name.trim() === idea.name && mark === idea.mark;
               return (
@@ -170,7 +170,7 @@ export function StickerFields(props: Props) {
         </div>
       )}
 
-      <div className="flex items-end gap-4">
+      <div className="flex items-end gap-s3">
         {/* The mark field is the preview: the sticker's own fill around the input. */}
         <div
           className={`relative size-11 shrink-0 rounded-full border border-transparent ${color.ink} ${color.on}`}
@@ -222,7 +222,7 @@ export function StickerFields(props: Props) {
       {/* Always rendered so the live region announces. */}
       <div role="status" aria-live="polite" className="empty:hidden">
         {problem && (
-          <p id={errorId} className="rounded-md bg-accent-ink/10 text-accent-ink px-2 py-1.5 text-label">
+          <p id={errorId} className="rounded-lg bg-accent-ink/10 text-accent-ink px-s1 py-1.5 text-label">
             {problem.message}
           </p>
         )}

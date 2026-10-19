@@ -26,17 +26,16 @@ const FULL: Balance = Object.fromEntries(PETALS.map(({ id }) => [id, 3 as const]
 /** Signed out: the welcome, three crossed-out labels, and sign in. */
 export default async function LoginPage() {
   const content = (
-    <main className={`${PAGE_WIDTH} pt-12 pb-20 sm:pt-20`}>
-      <div className="flex items-center justify-between gap-12">
-        <div className="lg:mx-12">
+    <main className={`${PAGE_WIDTH} pt-s7 pb-s7 sm:pt-s5`}>
+      <div className="flex items-center justify-between">
+        <div>
           <h1 className="animate-rise font-display text-display font-light text-ink sm:text-display-xl">
             welcome to <span className="font-normal text-accent-ink">baby steps!</span>
           </h1>
 
-          <p className="mt-8 animate-rise font-display text-heading font-light text-ink [animation-delay:var(--hero-copy-delay)]">
+          <p className="mt-s5 animate-rise font-display text-heading font-light text-ink [animation-delay:var(--hero-copy-delay)]">
             <span className="block">your guilt-free,</span>
             <span className="block">come as you please,</span>
-            <span className="block">just for kicks,</span>
             {STRUCK.map((label, step) => (
               <span key={label} className="block">
                 <s className="relative no-underline">
@@ -54,24 +53,24 @@ export default async function LoginPage() {
           </p>
         </div>
 
-        {/* Decoration: hidden from screen readers and phones. */}
-        <div aria-hidden="true" className="mr-12 hidden shrink-0 lg:block">
+        {/* Decoration: hidden from screen readers and phones. Petals bloom slower than the text. */}
+        <div aria-hidden="true" className="mr-s6 hidden shrink-0 [--dur-hero:var(--dur-bloom)] lg:block">
           <Flower
             categories={PETALS}
             levels={FULL}
             labels={false}
             ringClassName="stroke-rule-input"
-            className="size-96"
+            className="size-96 mt-s5"
           />
         </div>
       </div>
 
-      <div className="mt-14 animate-rise border-t border-rule pt-10 lg:px-12 [animation-delay:var(--hero-actions-delay)]">
+      <div className="mt-s3 animate-rise-after">
         <p className="font-display text-heading font-light text-ink sm:text-display-sm">
           what have you been up to?
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">
+        <div className="mt-s5 flex flex-wrap items-center gap-x-s5 gap-y-s2">
           <SignInButton provider="google" look="md" />
           <Link href="/demo" className="text-ui text-ink underline underline-offset-4 hover:text-accent-ink">
             demo

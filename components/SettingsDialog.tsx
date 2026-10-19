@@ -48,7 +48,7 @@ function Section(props: {
   return (
     <section
       aria-labelledby={props.id}
-      className="border-t border-rule pt-6 first:border-0 first:pt-0"
+      className="border-t border-rule pt-s4 first:border-0 first:pt-0"
     >
       <h3 id={props.id} className="font-display text-body-lg text-ink">
         {props.title}
@@ -56,7 +56,7 @@ function Section(props: {
       {props.hint && (
         <p className="mt-1 text-label text-ink-muted">{props.hint}</p>
       )}
-      <div className="mt-4">{props.children}</div>
+      <div className="mt-s3">{props.children}</div>
     </section>
   );
 }
@@ -134,25 +134,25 @@ export function SettingsDialog(props: Props) {
         aria-describedby={undefined}
         className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:max-w-lg"
       >
-        <DialogHeader className="px-6 pt-6 pb-4">
+        <DialogHeader className="px-s4 pt-s4 pb-s3">
           <DialogTitle className="font-display text-heading font-light text-ink">
             settings
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-col gap-6 overflow-y-auto px-6 pb-6">
+        <div className="flex min-h-0 flex-col gap-s4 overflow-y-auto px-s4 pb-s4">
           <form
             id="settings-form"
             action={action}
-            className="flex flex-col gap-6"
+            className="flex flex-col gap-s4"
           >
             <Section
               id="petals"
               title="petals"
               hint="how many stickers in a category grow its petal."
             >
-              <div className="flex flex-col gap-4">
-                <label className="flex items-center gap-3 text-label text-ink">
+              <div className="flex flex-col gap-s3">
+                <label className="flex items-center gap-s2 text-label text-ink">
                   counting the last
                   <select
                     name="weeks"
@@ -170,7 +170,7 @@ export function SettingsDialog(props: Props) {
                 {SIZES.map((size) => (
                   <label
                     key={size}
-                    className="flex items-center gap-3 text-label text-ink"
+                    className="flex items-center gap-s2 text-label text-ink"
                   >
                     <span className="w-16">{size}</span>
                     at least
@@ -198,7 +198,7 @@ export function SettingsDialog(props: Props) {
               <div
                 role="radiogroup"
                 aria-labelledby="week"
-                className="flex gap-6"
+                className="flex gap-s4"
               >
                 {[
                   { value: "0", label: "sunday" },
@@ -206,7 +206,7 @@ export function SettingsDialog(props: Props) {
                 ].map((option) => (
                   <label
                     key={option.value}
-                    className="flex items-center gap-2 text-label text-ink"
+                    className="flex items-center gap-s1 text-label text-ink"
                   >
                     <input
                       type="radio"
@@ -227,7 +227,7 @@ export function SettingsDialog(props: Props) {
               title="texts"
               hint="clear the number to stop texts."
             >
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-s3">
                 <label className="flex flex-col gap-1">
                   <span className="text-caption text-ink">phone number</span>
                   <input
@@ -241,7 +241,7 @@ export function SettingsDialog(props: Props) {
                     className={cn(UNDERLINE, "h-10 w-full max-w-80")}
                   />
                 </label>
-                <label className="flex items-center gap-3 text-label text-ink">
+                <label className="flex items-center gap-s2 text-label text-ink">
                   <input
                     name="optIn"
                     type="checkbox"
@@ -258,7 +258,7 @@ export function SettingsDialog(props: Props) {
           <AccountSection email={props.email} />
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-4 border-t border-rule px-6 py-4">
+        <div className="flex flex-wrap items-center justify-end gap-s3 border-t border-rule px-s4 py-s3">
           {warning ? (
             <>
               <p role="alert" className="mr-auto text-label text-accent-ink">
@@ -314,7 +314,7 @@ function AccountSection(props: { email: string | null }) {
       title="account"
       hint={props.email ? `signed in as ${props.email}` : undefined}
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-s4">
         <form action={signOut}>
           <Button type="submit" variant="outline" size="sm">
             sign out
@@ -333,7 +333,7 @@ function AccountSection(props: { email: string | null }) {
             </Button>
           </div>
         ) : (
-          <form action={action} className="flex flex-col gap-4">
+          <form action={action} className="flex flex-col gap-s3">
             <p className="text-label text-ink">
               this permanently deletes your account, stickers, moods, notes and
               settings. it can&rsquo;t be undone.
@@ -349,7 +349,7 @@ function AccountSection(props: { email: string | null }) {
                 className={cn(UNDERLINE, "h-10 max-w-60")}
               />
             </label>
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-s3">
               <Button
                 type="submit"
                 variant="destructive"

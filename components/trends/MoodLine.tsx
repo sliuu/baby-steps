@@ -33,13 +33,13 @@ export function MoodLine(props: Props) {
 
   return (
     <section className={`flex flex-col ${props.className ?? ""}`}>
-      <h2 className="mb-5 font-display text-subhead text-ink">day by day</h2>
+      <h2 className="mb-s4 font-display text-subhead text-ink">day by day</h2>
 
       {/* The chart for screen readers; the drawing is aria-hidden. */}
       {props.takeaway && <p className="sr-only">{props.takeaway}</p>}
 
       {/* Inner box is the plot; left gutter holds the faces. */}
-      <div aria-hidden="true" className="h-59 pt-3 pr-3 pb-6 pl-8">
+      <div aria-hidden="true" className="h-59 pt-s2 pr-s2 pb-s4 pl-s5">
         <div className="relative size-full">
           {/* Gridline per mood, okay dashed. Borders keep dashes unstretched. */}
           {MOODS.map((mood, i) => (

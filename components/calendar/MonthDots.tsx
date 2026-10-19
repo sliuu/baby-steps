@@ -62,10 +62,10 @@ export function MonthDots(props: Props) {
     highlight && !matched ? "opacity-35" : "";
 
   return (
-    <div className={`flex flex-col gap-5 ${props.className ?? ""}`}>
+    <div className={`flex flex-col gap-s4 ${props.className ?? ""}`}>
       <div>
         {/* Labels share the cells' grid so columns align. "Sun", not "S". */}
-        <div className={`grid grid-cols-7 gap-0.75 ${RULE} pt-2`}>
+        <div className={`grid grid-cols-7 gap-0.75 ${RULE} pt-s1`}>
           {labels.map((label) => (
             <div key={label} className="daylabel pb-1 text-center">
               {label}
@@ -136,11 +136,11 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
   const { summary } = props;
 
   return (
-    <div className={`${RULE} flex flex-col gap-4 pt-4`}>
-      <div className="flex flex-col gap-2">
+    <div className={`${RULE} flex flex-col gap-s3 pt-s3`}>
+      <div className="flex flex-col gap-s1">
         <h2 className="eyebrow text-ink-muted">This month so far</h2>
 
-        <div className="flex items-end gap-6">
+        <div className="flex items-end gap-s4">
           <Figure value={summary.daysMarked} label="days marked" />
           <Figure value={summary.stickers} label="stickers" />
           <Figure value={summary.categories} label="categories touched" />
@@ -148,14 +148,14 @@ function MonthReadout(props: { summary: ReturnType<typeof monthSummary> }) {
       </div>
 
       {summary.leaders.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-s1">
           <h2 className="eyebrow text-ink-muted">Most marked</h2>
 
           <ul className="flex flex-col">
             {summary.leaders.map((leader, index) => (
               <li
                 key={leader.activityId}
-                className={`flex items-center gap-3 py-2 ${
+                className={`flex items-center gap-s2 py-s1 ${
                   index > 0 ? "border-t border-rule-grid" : ""
                 }`}
               >

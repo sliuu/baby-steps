@@ -170,7 +170,7 @@ function Pager(props: {
 
   if (props.entries.length === 0) {
     return (
-      <p className="grid h-44.5 place-items-center px-4 text-center text-label text-ink-muted">
+      <p className="grid h-44.5 place-items-center px-s3 text-center text-label text-ink-muted">
         {props.empty}
       </p>
     );
@@ -195,7 +195,7 @@ function Pager(props: {
               aria-label={name}
               title={name}
               onClick={() => props.onPick(mark)}
-              className="grid size-7 place-items-center rounded-md text-base transition-colors hover:bg-secondary/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink/40"
+              className="grid size-7 place-items-center rounded-lg text-base transition-colors hover:bg-secondary/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink/40"
             >
               {icon ? (
                 <icon.Icon

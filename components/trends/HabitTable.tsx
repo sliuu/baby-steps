@@ -63,8 +63,8 @@ const COLUMNS: {
 function cellClass(column: (typeof COLUMNS)[number], first: boolean, last: boolean): string {
   return [
     // align-middle: flex headers would otherwise take an SVG's baseline.
-    "py-2.5 align-middle",
-    first ? "pr-4" : "border-l border-rule-grid px-4",
+    "py-s1 align-middle",
+    first ? "pr-s3" : "border-l border-rule-grid px-s3",
     last ? "pr-0" : "",
     column.align === "right" ? "text-right" : "",
     column.width ?? "",
@@ -137,7 +137,7 @@ export function HabitTable(props: Props) {
 
   if (rows.length === 0) {
     return (
-      <section className={`flex flex-col gap-4 ${PANEL}`}>
+      <section className={`flex flex-col gap-s3 ${PANEL}`}>
         <p className="text-ink-muted">
           no habits in your tray yet. add one and it will get a row here.
         </p>
@@ -146,7 +146,7 @@ export function HabitTable(props: Props) {
   }
 
   return (
-    <section className={`flex min-w-0 flex-col gap-4 ${PANEL}`}>
+    <section className={`flex min-w-0 flex-col gap-s3 ${PANEL}`}>
       {/* Only when there's a choice. */}
       {options.length > 1 && (
         <div className="flex justify-end">
@@ -187,7 +187,7 @@ export function HabitTable(props: Props) {
                   scope="row"
                   className={`${cellClass(COLUMNS[0], true, false)} font-normal`}
                 >
-                  <span className="flex items-center gap-2.5 text-ui text-ink lowercase">
+                  <span className="flex items-center gap-s1 text-ui text-ink lowercase">
                     <span aria-hidden="true" className="flex">
                       <StickerMark sticker={row} size="xs" />
                     </span>
@@ -394,7 +394,7 @@ function Pager(props: {
   if (props.pages <= 1) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+    <div className="flex flex-wrap items-center justify-end gap-x-s3 gap-y-s1">
       {/* Announces the result of previous/next. */}
       <p aria-live="polite" className="tabular text-caption text-ink-muted">
         page {props.page} of {props.pages} · {props.total} habits

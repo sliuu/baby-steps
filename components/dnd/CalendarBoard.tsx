@@ -40,12 +40,14 @@ import { useCalendarView } from "@/components/calendar/viewMode";
 import { AddStickersSheet } from "@/components/tray/AddStickersSheet";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { applyChange, type CalendarChange } from "@/lib/changes";
-import { formatDateNumeric, formatDayLong, fromDayString, toDayString, type DayString } from "@/lib/dates";
+import { formatDateNumeric, formatDayLong, fromDayString, type DayString } from "@/lib/dates";
 import { buildHighlight, type Selection } from "@/lib/highlight";
 import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
 import { faceOf, type StickersByDay } from "@/lib/stickers";
 import { readDropTarget, type DropTarget } from "./dropTarget";
 import { snapToCursor } from "./snapToCursor";
+import { CalendarSkeleton } from "@/components/views/CalendarSkeleton";
+import { useToday } from "@/lib/useToday";
 import { payloadName, readDragPayload, type DragPayload } from "./payload";
 
 type Props = {
@@ -172,6 +174,8 @@ export function CalendarBoard(props: Props) {
   const [selection, setSelection] = useState<Selection | null>(null);
   // Phones: the add-stickers sheet.
   const [picking, setPicking] = useState(false);
+  // Null on the server: it can't know the visitor's day.
+  const todayString = useToday(null);
 
   // Derived, so server renames/recolours flow through; null if the target is gone.
   const highlight = useMemo(
@@ -371,8 +375,10 @@ export function CalendarBoard(props: Props) {
   );
 
   const errorLine = error && (
-    <p className="mt-6 rounded-md bg-accent-ink/10 text-accent-ink px-3 py-2 text-label">{error}</p>
+    <p className="mt-s4 rounded-lg bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label">{error}</p>
   );
+
+  if (!todayString) return <CalendarSkeleton />;
 
   return (
     <DndContext
@@ -390,7 +396,7 @@ export function CalendarBoard(props: Props) {
       }}
     >
       <CalendarPanel
-        initialDay={toDayString(new Date())}
+        initialDay={todayString}
         view={view}
         groups={props.groups}
         stickersByDay={stickersByDay}
@@ -410,10 +416,10 @@ export function CalendarBoard(props: Props) {
           groups={props.groups}
           placed={
             new Set(
-              (stickersByDay.get(toDayString(new Date()))?.activities ?? []).map((a) => a.activityId),
+              (stickersByDay.get(todayString)?.activities ?? []).map((a) => a.activityId),
             )
           }
-          onAdd={(stickers) => addMany(toDayString(new Date()), stickers)}
+          onAdd={(stickers) => addMany(todayString, stickers)}
           onClose={() => setPicking(false)}
           markCounts={markCounts}
           local={props.local}
@@ -425,9 +431,9 @@ export function CalendarBoard(props: Props) {
         <section
           id="your-stickers"
           aria-label="stickers"
-          className="mt-14 hidden scroll-mt-6 border-t border-rule pt-10 lg:block"
+          className="mt-s6 hidden scroll-mt-6 border-t border-rule pt-s6 lg:block"
         >
-          {tray("page", toDayString(new Date()))}
+          {tray("page", todayString)}
         </section>
       )}
 
@@ -440,10 +446,10 @@ export function CalendarBoard(props: Props) {
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 top-0 z-60 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] lg:hidden"
+        className="pointer-events-none fixed inset-x-0 top-0 z-60 px-s2 pt-[calc(var(--spacing-s2)+env(safe-area-inset-top))] lg:hidden"
       >
         {error && (
-          <p className="mx-auto max-w-136 rounded-md bg-accent-ink/10 text-accent-ink px-3 py-2 text-label shadow-menu">
+          <p className="mx-auto max-w-136 rounded-lg bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label shadow-menu">
             {error}
           </p>
         )}

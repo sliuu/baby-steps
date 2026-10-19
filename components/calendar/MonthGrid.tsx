@@ -28,7 +28,7 @@ export function MonthGrid(props: Props) {
   return (
     <div className={cn("grid grid-cols-7 gap-px bg-rule-grid", props.className)}>
       {labels.map((label) => (
-        <div key={label} className="bg-paper pb-2 text-center text-caption text-ink-muted lowercase">
+        <div key={label} className="bg-paper pb-s1 text-center text-caption text-ink-muted lowercase">
           {label}
         </div>
       ))}

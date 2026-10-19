@@ -28,7 +28,7 @@ type Props = {
 /** Five mood faces; pressing the set one clears it (`aria-pressed`, not radios). */
 export function MoodRow(props: Props) {
   return (
-    <div className={props.size === "sm" ? "flex gap-3" : "grid grid-cols-5 gap-1"}>
+    <div className={props.size === "sm" ? "flex gap-s2" : "grid grid-cols-5 gap-1"}>
       {MOODS.map((mood) => {
         const chosen = mood === props.mood;
         const faded =

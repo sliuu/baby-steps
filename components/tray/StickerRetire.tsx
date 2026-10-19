@@ -33,7 +33,7 @@ export function StickerRetire(props: Props) {
 
   if (props.confirming) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-s1">
         <Button
           type="button"
           variant="text"
@@ -95,7 +95,7 @@ export function DeleteWarning(props: { name: string; markCount: number }) {
   const { markCount: count } = props;
 
   return (
-    <p className="rounded-md bg-accent-ink/10 text-accent-ink px-2.5 py-2 text-label">
+    <p className="rounded-lg bg-accent-ink/10 text-accent-ink px-s1 py-s1 text-label">
       Deleting <span className="font-medium">{props.name}</span>
       {count === 0 ? (
         <> can’t be undone.</>

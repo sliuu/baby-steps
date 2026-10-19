@@ -59,7 +59,7 @@ export function AppShell(props: Props) {
               <TopNav page={page} onPageChange={changePage} end={props.navEnd} />
             }
           >
-            <main className={`${PAGE_WIDTH} flex-1 py-5 lg:py-10`}>
+            <main className={`${PAGE_WIDTH} flex-1 py-s4 lg:py-s6`}>
               {page === null || isCalendar(page) ? props.calendar : props.trends}
             </main>
           </PageFrame>

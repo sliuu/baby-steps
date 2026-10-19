@@ -19,9 +19,9 @@ type Props = {
 /** Title, `month · week`, and the arrows. */
 export function PeriodHeader(props: Props) {
   return (
-    <div className="flex items-end justify-between gap-6">
+    <div className="flex items-end justify-between gap-s4">
       {/* Toggle drops under the title on phones, so the title fits. */}
-      <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-5">
+      <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-s4">
         {/* The h1 stays mounted so aria-live announces the new period. */}
         <h1 aria-live="polite" className="min-w-0 font-display text-heading font-light sm:text-display-sm text-ink lowercase">
           {/* Crossfade only; the grid does the travelling. */}
@@ -48,7 +48,7 @@ export function PeriodHeader(props: Props) {
         </nav>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 pb-1">
+      <div className="flex shrink-0 items-center gap-s1 pb-1">
         <Button variant="outline" size="icon-sm" aria-label={`previous ${props.view}`} onClick={() => props.onStep(-1)}>
           <ChevronLeft strokeWidth={1.5} />
         </Button>

@@ -17,6 +17,16 @@
   --font-sans: var(--font-text-face), system-ui, sans-serif;
   --font-heading: var(--font-display-face), Georgia, serif;
 
+  /* Spacing scale: 8 · 14 · 18 · 22 · 30 · 44 · 64 · 96px. Under 8px stays on Tailwind's 4px grid. */
+  --spacing-s1: 0.5rem;
+  --spacing-s2: 0.875rem;
+  --spacing-s3: 1.125rem;
+  --spacing-s4: 1.375rem;
+  --spacing-s5: 1.875rem;
+  --spacing-s6: 2.75rem;
+  --spacing-s7: 4rem;
+  --spacing-s8: 6rem;
+
   /* Type scale. Text 400, display 300, unless set here. */
   --text-display-xl: 4rem;
   --text-display-xl--line-height: 1.05;
@@ -146,7 +156,7 @@
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-2xl: 1rem;
 
   /* Enter decelerates, exit accelerates. Deck is one in-out curve so two pages don't gap. */
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
@@ -163,13 +173,14 @@
   /* `both` holds the first keyframe through the stagger. */
   --animate-rise: rise var(--dur-hero) var(--ease-enter) both;
 
-  /* Nth strike (`--step`) draws; the last line fades in when the third ends.
-     Three strikes have only two gaps between them, so there is no trailing gap
-     before the final line begins. */
+  /* Nth strike (`--step`) draws; the last line fades in as the third ends (no trailing gap). */
   --animate-strike: strike var(--dur-strike) var(--ease-enter)
     calc(var(--strike-wait) + var(--step, 0) * (var(--dur-strike) + var(--strike-gap))) both;
   --animate-after-strikes: appear var(--dur-after-strikes) var(--ease-enter)
     calc(var(--strike-wait) + 3 * var(--dur-strike) + 2 * var(--strike-gap)) both;
+  /* Sign-in actions rise once the last line has faded in. */
+  --animate-rise-after: rise var(--dur-hero) var(--ease-enter)
+    calc(var(--strike-wait) + 3 * var(--dur-strike) + 2 * var(--strike-gap) + var(--dur-after-strikes) + var(--hero-actions-delay)) both;
 
   /* Fade done in the first third so it falls solid; `fall` sets per-keyframe easing. */
   --animate-fall:
@@ -263,7 +274,7 @@
   --radius: 0.5rem;
 
   /* Page frame: padding around the sheet; phone bottom nav height. */
-  --frame-pad: 0.875rem;
+  --frame-pad: var(--spacing-s2);
   --bottom-nav-h: 3.5rem;
 
   /* ── motion ── */
@@ -277,6 +288,8 @@
   --dur-land: 420ms;
   /* Sign-in page entrance. Keep under ~500ms; the buttons wait on it. */
   --dur-hero: 420ms;
+  /* Sign-in flower's bloom; slower than the text so it unfurls. */
+  --dur-bloom: 900ms;
   /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
   --fall-drop: 28px;
@@ -288,15 +301,15 @@
   --strike-wait: 425ms;
   /* The last line's fade; slower than the hero so it lands softly. */
   --dur-after-strikes: 900ms;
-  /* Sign-in text follows the title without delaying the actions for long. */
+  /* Sign-in copy follows the title; actions start this long after the last line ends (negative overlaps it). */
   --hero-rise: 12px;
   --hero-copy-delay: 240ms;
-  --hero-actions-delay: 160ms;
+  --hero-actions-delay: -450ms;
 }
 
 @media (min-width: 40rem) {
   :root {
-    --frame-pad: 2.75rem;
+    --frame-pad: var(--spacing-s6);
   }
 }
 
@@ -707,6 +720,7 @@
     --dur-deck: 1ms;
     --dur-land: 1ms;
     --dur-hero: 1ms;
+    --dur-bloom: 1ms;
     --dur-fall: 1ms;
     --dur-strike: 1ms;
     --dur-after-strikes: 1ms;

@@ -65,7 +65,7 @@ export function StickerTray(props: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-s4">
       {!compact && (
         <header>
           <h2 className="font-sans text-label text-ink">stickers</h2>
@@ -87,7 +87,7 @@ export function StickerTray(props: Props) {
 
       <div
         className={cn(
-          "grid items-start gap-x-10 gap-y-7",
+          "grid items-start gap-x-s6 gap-y-s5",
           props.layout === "page" && "sm:grid-cols-2 lg:grid-cols-3",
         )}
       >
@@ -108,7 +108,7 @@ export function StickerTray(props: Props) {
               selected={sameSelection(selection, categorySelection)}
             >
               {stickers.length === 0 && props.local && (
-                <li className="py-2 text-caption text-ink-muted">nothing here yet</li>
+                <li className="py-s1 text-caption text-ink-muted">nothing here yet</li>
               )}
 
               {stickers.map((sticker) => {
@@ -195,7 +195,7 @@ function ArchivedGroup(props: {
         archived ({props.stickers.length})
       </summary>
 
-      <ul className="mt-3 flex flex-wrap gap-x-2 gap-y-3">
+      <ul className="mt-s2 flex flex-wrap gap-x-s1 gap-y-s2">
         {props.stickers.map((sticker) => (
           <ArchivedTile
             key={sticker.id}

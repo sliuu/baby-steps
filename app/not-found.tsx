@@ -25,9 +25,9 @@ export default function NotFound() {
       title="there’s no such day"
       picture={
         // A visual pun; the heading says it in words.
-        <div aria-hidden="true" className="mb-10 inline-grid animate-rise grid-cols-3">
+        <div aria-hidden="true" className="mb-s6 inline-grid animate-rise grid-cols-3">
           {["mon", "tue", "wed"].map((day, i) => (
-            <div key={day} className={`daylabel pb-2 ${i > 0 ? "border-l border-rule-grid pl-3" : ""}`}>
+            <div key={day} className={`daylabel pb-s1 ${i > 0 ? "border-l border-rule-grid pl-s2" : ""}`}>
               {day}
             </div>
           ))}
@@ -52,21 +52,21 @@ export default function NotFound() {
 function DayFace(props: { numeral: string; mood: Mood; stickers: StickerFace[]; missing?: boolean }) {
   return (
     <div
-      className={`flex min-h-24 w-24 flex-col border-t border-rule-grid pt-2.5 pr-3 sm:w-28 ${
-        props.numeral === "12" ? "" : "border-l pl-3"
+      className={`flex min-h-24 w-24 flex-col border-t border-rule-grid pt-s1 pr-s2 sm:w-28 ${
+        props.numeral === "12" ? "" : "border-l pl-s2"
       }`}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-s1">
         <span
           className={`oldstyle text-label text-ink ${
-            props.missing ? "rounded-full px-2 ring-1 ring-accent-ink text-accent-ink" : ""
+            props.missing ? "rounded-full px-s1 ring-1 ring-accent-ink text-accent-ink" : ""
           }`}
         >
           {props.numeral}
         </span>
         <MoodDot mood={props.mood} />
       </div>
-      <div className="mt-2 flex flex-wrap gap-1">
+      <div className="mt-s1 flex flex-wrap gap-1">
         {props.stickers.map((sticker) => (
           <StickerMark key={sticker.name} sticker={sticker} size="xs" />
         ))}

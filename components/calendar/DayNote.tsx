@@ -23,7 +23,7 @@ const NOTE_TYPE = "note w-full text-caption leading-4.5";
 const PAGE_TYPE = "w-full font-display text-body-lg font-light";
 
 /**
- * Day note. Saves on blur, Escape reverts; draft is local, not board state.
+ * Day note. Saves on blur or Enter, Escape reverts; draft is local, not board state.
  * Height comes from a hidden twin span in the same grid cell (CSS, no jump on
  * first paint). Trailing " " keeps a final newline's line.
  */
@@ -53,7 +53,7 @@ export function DayNote(props: Props) {
 
   return (
     // `shrink-0`: the note never absorbs the column's stretch.
-    <div className={page ? "" : "mt-2 shrink-0 border-t border-rule-grid pt-1.5"}>
+    <div className={page ? "" : "mt-s1 shrink-0 border-t border-rule-grid pt-1.5"}>
       <label className="sr-only" htmlFor={`note-${props.day}`}>
         Notes for {formatDayLong(props.day)}
       </label>
@@ -81,6 +81,11 @@ export function DayNote(props: Props) {
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               setDraft(saved);
+              field.current?.blur();
+            }
+            // Enter saves (via blur); Shift+Enter is a new line. Not mid-IME.
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
               field.current?.blur();
             }
           }}

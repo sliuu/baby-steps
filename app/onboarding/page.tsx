@@ -47,7 +47,7 @@ export default async function OnboardingPage(props: Props) {
         <SheetHeader
           start={<span className={LOGO}><Logo /></span>}
           end={
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-s2">
               <span className="text-caption text-ink-muted">{step} of 3</span>
               {/* Progress: done and current in accent. */}
               <span aria-hidden="true" className="flex gap-1">
@@ -60,7 +60,7 @@ export default async function OnboardingPage(props: Props) {
         />
       }
     >
-      <main className={`${PAGE_WIDTH} flex flex-1 flex-col pt-12 pb-10 sm:pt-16 sm:pb-14`}>
+      <main className={`${PAGE_WIDTH} flex flex-1 flex-col pt-s6 pb-s6 sm:pt-s7 sm:pb-s7`}>
         {step === 1 && <PieStep categories={categories} initial={levels} />}
         {step === 2 && <ActivitiesStep categories={categories} />}
         {step === 3 && <TouchStep phone={profile.data?.phone ?? null} />}

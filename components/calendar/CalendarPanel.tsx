@@ -121,10 +121,10 @@ export function CalendarPanel(props: Props) {
     };
 
     return (
-      <section className="flex flex-col gap-8" data-period={periodKey}>
+      <section className="flex flex-col gap-s5" data-period={periodKey}>
         <PeriodHeader title={title.toLowerCase()} shortTitle={shortTitle?.toLowerCase()} view={view} onStep={step} />
 
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-10">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-s6">
           {/* default="none", or every drop (a transition) would slide the month. */}
           <ViewTransition
             key={periodKey}
@@ -158,7 +158,7 @@ export function CalendarPanel(props: Props) {
           <aside
             ref={asideRef}
             aria-label="selected day"
-            className="scrollbar-app hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:border-l lg:border-rule lg:pr-4 lg:pl-4"
+            className="scrollbar-app hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:border-l lg:border-rule lg:pr-s3 lg:pl-s3"
           >
             <DayPanel
               day={selectedDay}

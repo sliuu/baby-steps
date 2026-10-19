@@ -32,7 +32,7 @@ export function DayPanel(props: Props) {
   const date = <time dateTime={day}>{formatDayHeading(day).toLowerCase()}</time>;
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-s5">
       <header>
         {props.title ? (
           props.title(date)
@@ -57,7 +57,7 @@ export function DayPanel(props: Props) {
         {stickers.activities.length === 0 ? (
           <p className="text-label text-ink-muted">nothing yet.</p>
         ) : (
-          <ul className="flex flex-wrap gap-x-3 gap-y-3">
+          <ul className="flex flex-wrap gap-x-s2 gap-y-s2">
             {stickers.activities.map((sticker) => (
               <li key={sticker.activityId} className="w-16">
                 <button
@@ -86,11 +86,11 @@ export function DayPanel(props: Props) {
         )}
       </section>
 
-      <section aria-labelledby={`add-${day}`} className="border-t border-rule pt-5">
+      <section aria-labelledby={`add-${day}`} className="border-t border-rule pt-s4">
         <h3 id={`add-${day}`} className={LABEL}>
           stickers
         </h3>
-        <div className="mt-4">{props.tray}</div>
+        <div className="mt-s3">{props.tray}</div>
       </section>
 
       <section aria-label="note">

@@ -49,13 +49,13 @@ function Message(props: { result: StepResult }) {
 /** Rule, then back on the left and the way on at the right. */
 function Footer(props: { back?: string; children: React.ReactNode }) {
   return (
-    <div className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-rule pt-6">
+    <div className="mt-auto flex flex-wrap items-center gap-x-s4 gap-y-s2 border-t border-rule pt-s4">
       {props.back && (
         <Link href={props.back} className={LINK}>
           back
         </Link>
       )}
-      <div className="ml-auto flex flex-wrap items-center justify-end gap-x-6 gap-y-3">{props.children}</div>
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-x-s4 gap-y-s2">{props.children}</div>
     </div>
   );
 }
@@ -71,20 +71,20 @@ export function PieStep(props: { categories: StepCategory[]; initial: Record<str
   const [revealed, setRevealed] = useState(false);
 
   const outcome = revealed && (
-    <p className="animate-rise border-t border-rule pt-6 font-display text-subhead font-light text-accent-ink">
+    <p className="animate-rise border-t border-rule pt-s4 font-display text-subhead font-light text-accent-ink">
       {verdict(levels, props.categories)}
     </p>
   );
 
   return (
     <>
-      <div className="grid gap-10 pb-12 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-16">
+      <div className="grid gap-s6 pb-s6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-s7">
         <div>
           {/* Stephanie's copy, from the onboarding board. */}
           <h1 className={HEADING}>
             hello! we&rsquo;re <span className="text-accent-ink">happy you&rsquo;re here</span>
           </h1>
-          <div className={cn(PROSE, "mt-6 flex flex-col gap-4")}>
+          <div className={cn(PROSE, "mt-s4 flex flex-col gap-s3")}>
             <p>
               i made this little corner of the internet inspired by the &ldquo;life pie&rdquo; from{" "}
               <i>the artist&rsquo;s way</i>.
@@ -96,7 +96,7 @@ export function PieStep(props: { categories: StepCategory[]; initial: Record<str
             <p>to try it yourself now, rank how fulfilled you feel in each category around the circle.</p>
           </div>
 
-          <div aria-live="polite" className="mt-8 hidden lg:block">{outcome}</div>
+          <div aria-live="polite" className="mt-s5 hidden lg:block">{outcome}</div>
         </div>
 
         <div>
@@ -107,14 +107,14 @@ export function PieStep(props: { categories: StepCategory[]; initial: Record<str
             className="mx-auto w-full max-w-120"
           />
           {!revealed && (
-            <div className="mt-6 flex justify-center">
+            <div className="mt-s4 flex justify-center">
               <Button variant="outline" size="sm" onClick={() => setRevealed(true)}>
                 done
               </Button>
             </div>
           )}
           {/* Phones: the verdict follows the pie. */}
-          <div aria-live="polite" className="mt-6 lg:hidden">{outcome}</div>
+          <div aria-live="polite" className="mt-s4 lg:hidden">{outcome}</div>
         </div>
       </div>
 
@@ -157,7 +157,7 @@ export function ActivitiesStep(props: { categories: StepCategory[] }) {
       </h1>
 
       {/* Ruled grid: lines between cells, none on the outside. */}
-      <div className="mt-8 mb-12 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-s5 mb-s6 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-3">
         {props.categories.map((category) => {
           const color = categoryColor(category.colorKey);
           const customs = picks.filter(
@@ -169,13 +169,13 @@ export function ActivitiesStep(props: { categories: StepCategory[] }) {
             <section
               key={category.id}
               aria-labelledby={`cat-${category.id}`}
-              className="-mt-px -ml-px border-t border-l border-rule px-0 py-6 sm:px-5"
+              className="-mt-px -ml-px border-t border-l border-rule px-0 py-s4 sm:px-s4"
             >
-              <h2 id={`cat-${category.id}`} className="flex items-center gap-2 font-display text-body-lg text-ink">
+              <h2 id={`cat-${category.id}`} className="flex items-center gap-s1 font-display text-body-lg text-ink">
                 <span aria-hidden="true" className={cn("size-2.5 rounded-full", color.dot)} />
                 {category.name}
               </h2>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="mt-s3 flex flex-wrap items-center gap-s1">
                 {category.owned.map((name) => (
                   <Chip key={`owned-${name}`} variant="chosen" colorKey={category.colorKey} disabled className="cursor-default lowercase">
                     {name}
@@ -237,7 +237,7 @@ function AddOwn(props: { label: string; taken: (name: string) => boolean; onAdd:
   };
 
   return (
-    <div className="mt-5 flex max-w-80 items-end gap-4">
+    <div className="mt-s4 flex max-w-80 items-end gap-s3">
       <input
         aria-label={`add your own ${props.label} activity`}
         maxLength={NAME_MAX}
@@ -265,7 +265,7 @@ export function TouchStep(props: { phone: string | null }) {
   return (
     <form action={action} className="flex flex-1 flex-col">
       <h1 className="font-display text-display-sm font-light text-accent-ink sm:text-display">great!</h1>
-      <div className={cn(PROSE, "mt-4 flex max-w-160 flex-col gap-4")}>
+      <div className={cn(PROSE, "mt-s3 flex max-w-160 flex-col gap-s3")}>
         <p>
           now you can come back here and log how you&rsquo;re spending your time, track your life
           pie, and see how things change over the months.
@@ -276,14 +276,14 @@ export function TouchStep(props: { phone: string | null }) {
         </p>
       </div>
 
-      <section aria-labelledby="texting" className="mt-8 mb-12 border-t border-rule pt-8">
+      <section aria-labelledby="texting" className="mt-s5 mb-s6 border-t border-rule pt-s5">
         <h2 id="texting" className="font-display text-body-lg text-ink">
           text message
         </h2>
         {/* copy: TODO — Stephanie's line goes here. */}
-        <p className="mt-2 text-label text-ink-muted">text what you did, whenever you want.</p>
+        <p className="mt-s1 text-label text-ink-muted">text what you did, whenever you want.</p>
 
-        <div className="mt-6 flex max-w-100 flex-col gap-4">
+        <div className="mt-s4 flex max-w-100 flex-col gap-s3">
           <label className="flex flex-col gap-1">
             <span className="text-caption text-ink">phone number</span>
             <input
@@ -297,7 +297,7 @@ export function TouchStep(props: { phone: string | null }) {
             />
           </label>
 
-          <label className="flex items-center gap-3 text-label text-ink">
+          <label className="flex items-center gap-s2 text-label text-ink">
             <input name="optIn" type="checkbox" defaultChecked={Boolean(props.phone)} className="size-4 accent-ink" />
             text me reminders
           </label>
@@ -308,7 +308,7 @@ export function TouchStep(props: { phone: string | null }) {
             apply.
           </p>
 
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-s3">
             <Button type="submit" name="intent" value="texts" variant="outline" size="sm" disabled={pending}>
               set up texting
             </Button>

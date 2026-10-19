@@ -52,7 +52,7 @@ export function HabitList(props: Props) {
             aria-controls={panel}
             onClick={() => setOpen((was) => !was)}
             // 44px touch floor.
-            className="flex min-h-11 items-center justify-between border-t border-rule-grid py-3 text-label text-ink-muted outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="flex min-h-11 items-center justify-between border-t border-rule-grid py-s2 text-label text-ink-muted outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             {/* The tray's word for it. */}
             <span>archived</span>
@@ -84,7 +84,7 @@ function Rows(props: { rows: HabitRow[]; today: DayString; ruled?: boolean }) {
           <li
             key={row.activityId}
             // Lines between rows only; archived rows start under the toggle.
-            className={`flex items-center gap-3 py-3 ${
+            className={`flex items-center gap-s2 py-s2 ${
               index > 0 || props.ruled ? "border-t border-rule-grid" : ""
             }`}
           >

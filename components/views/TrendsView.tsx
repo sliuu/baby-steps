@@ -1,5 +1,4 @@
 import { TrendsBoard } from "@/components/trends/TrendsBoard";
-import { today } from "@/lib/dates";
 import { getStickerLibrary } from "@/lib/queries/activities";
 import { TokenSettlingError } from "@/lib/queries/settling";
 import { getStickersByDay } from "@/lib/queries/stickers";
@@ -25,11 +24,6 @@ export async function TrendsView() {
   const [groups, stickersByDay] = data;
 
   return (
-    <TrendsBoard
-      groups={groups}
-      stickersByDay={stickersByDay}
-      // Server date for first paint/hydration; the visitor's takes over after.
-      initialToday={today()}
-    />
+    <TrendsBoard groups={groups} stickersByDay={stickersByDay} />
   );
 }

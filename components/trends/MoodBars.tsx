@@ -17,9 +17,9 @@ export function MoodBars(props: { moods: MoodTally }) {
   const most = Math.max(...moods.map((entry) => entry.count));
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col gap-s2">
       {[...moods].reverse().map((entry) => (
-        <li key={entry.mood} className="flex items-center gap-2.5">
+        <li key={entry.mood} className="flex items-center gap-s1">
           <MoodMark mood={entry.mood} />
 
           <span aria-hidden="true" className="h-2 flex-1 overflow-hidden rounded-full bg-rule-grid">

@@ -57,7 +57,8 @@ const TYPE: { token: string; className: string }[] = [
   { token: "caption", className: "text-caption" },
 ];
 
-const SPACING = ["w-1", "w-1.5", "w-2", "w-2.5", "w-3", "w-4", "w-5", "w-6", "w-8", "w-11", "w-14", "w-20"];
+// The scale, s1–s8. Under 8px (w-1, w-1.5) stays on Tailwind's 4px grid.
+const SPACING = ["w-1", "w-1.5", "w-s1", "w-s2", "w-s3", "w-s4", "w-s5", "w-s6", "w-s7", "w-s8"];
 
 const BUTTON_VARIANTS = ["outline", "filled", "text", "default", "secondary", "ghost", "destructive", "link"] as const;
 const BUTTON_SIZES = ["xs", "sm", "default", "md", "lg"] as const;
@@ -76,9 +77,9 @@ export function Reference() {
         />
       }
     >
-      <main className={`${PAGE_WIDTH} flex flex-col gap-11 pt-10 pb-20`}>
+      <main className={`${PAGE_WIDTH} flex flex-col gap-s6 pt-s6 pb-s7`}>
         <Section title="colour">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
             {[...SURFACES, ...RULES].map((name) => (
               <Swatch key={name} token={name} />
             ))}
@@ -89,7 +90,7 @@ export function Reference() {
         </Section>
 
         <Section title="categories">
-          <ul className="flex flex-col gap-6">
+          <ul className="flex flex-col gap-s4">
             {(Object.keys(CATEGORY_COLORS) as CategoryColor[]).map((key) => (
               <CategoryRow key={key} colorKey={key} />
             ))}
@@ -101,7 +102,7 @@ export function Reference() {
         </Section>
 
         <Section title="type">
-          <ul className="flex flex-col gap-5">
+          <ul className="flex flex-col gap-s4">
             {TYPE.map((role) => (
               <TypeRow key={role.token} {...role} />
             ))}
@@ -109,7 +110,7 @@ export function Reference() {
         </Section>
 
         <Section title="spacing">
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-s1">
             {SPACING.map((width) => (
               <SpaceRow key={width} className={width} />
             ))}
@@ -135,7 +136,7 @@ export function Reference() {
 function Section(props: { title: string; children: ReactNode }) {
   return (
     <section className={PANEL}>
-      <h2 className="mb-5 font-display text-subhead text-ink">{props.title}</h2>
+      <h2 className="mb-s4 font-display text-subhead text-ink">{props.title}</h2>
       {props.children}
     </section>
   );
@@ -179,7 +180,7 @@ function Swatch(props: { token: string }) {
     <div className="flex flex-col gap-1.5">
       <span
         style={{ background: `var(--${props.token})` }}
-        className="h-14 rounded-sm ring-1 ring-rule"
+        className="h-14 rounded-lg ring-1 ring-rule"
       />
       <span className="text-label text-ink">--{props.token}</span>
       <span className="tabular text-caption text-ink-muted">{value}</span>
@@ -194,8 +195,8 @@ function CategoryRow(props: { colorKey: CategoryColor }) {
   const on = useToken(`cat-${props.colorKey}-on`);
 
   return (
-    <li className="flex flex-wrap items-center gap-x-8 gap-y-3">
-      <span className={`grid h-12 w-28 place-items-center rounded-sm text-label ${color.ink} ${color.on}`}>
+    <li className="flex flex-wrap items-center gap-x-s5 gap-y-s2">
+      <span className={`grid h-12 w-28 place-items-center rounded-lg text-label ${color.ink} ${color.on}`}>
         on · {on}
       </span>
       <span className="flex w-40 flex-col">
@@ -204,7 +205,7 @@ function CategoryRow(props: { colorKey: CategoryColor }) {
           ink {ink} · text {text}
         </span>
       </span>
-      <span className="flex items-center gap-4">
+      <span className="flex items-center gap-s3">
         {STICKER_SIZES.map((size) => (
           <StickerMark
             key={size}
@@ -220,11 +221,11 @@ function CategoryRow(props: { colorKey: CategoryColor }) {
 function MoodSamples() {
   const [mood, setMood] = useState<Mood | null>("good");
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap gap-8">
+    <div className="flex flex-col gap-s4">
+      <div className="flex flex-wrap gap-s5">
         {MOODS.map((m) => (
-          <div key={m} className="flex flex-col items-center gap-2">
-            <span className="flex items-center gap-2">
+          <div key={m} className="flex flex-col items-center gap-s1">
+            <span className="flex items-center gap-s1">
               <MoodFace mood={m} size="sm" />
               <MoodFace mood={m} size="md" />
               <MoodFace mood={m} size="lg" />
@@ -275,7 +276,7 @@ function SpaceRow(props: { className: string }) {
     if (ref.current) setWidth(getComputedStyle(ref.current).width);
   }, []);
   return (
-    <li className="flex items-center gap-4">
+    <li className="flex items-center gap-s3">
       <span className="tabular w-14 text-caption text-ink-muted">{props.className.slice(2)}</span>
       <span ref={ref} className={`h-3 bg-accent-ink ${props.className}`} />
       <span className="tabular text-caption text-ink-muted">{width}</span>
@@ -294,33 +295,33 @@ function Buttons() {
     });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-s4">
       <p className="text-caption text-ink-muted">tab through to see the focus ring.</p>
       <div className="overflow-x-auto">
         <table className="border-collapse text-left">
           <thead>
             <tr>
-              <th className="pr-4 pb-2 text-caption font-normal text-ink-muted">variant</th>
+              <th className="pr-s3 pb-s1 text-caption font-normal text-ink-muted">variant</th>
               {BUTTON_SIZES.map((size) => (
-                <th key={size} className="px-3 pb-2 text-caption font-normal text-ink-muted">
+                <th key={size} className="px-s2 pb-s1 text-caption font-normal text-ink-muted">
                   {size}
                 </th>
               ))}
-              <th className="px-3 pb-2 text-caption font-normal text-ink-muted">disabled</th>
+              <th className="px-s2 pb-s1 text-caption font-normal text-ink-muted">disabled</th>
             </tr>
           </thead>
           <tbody>
             {BUTTON_VARIANTS.map((variant) => (
               <tr key={variant}>
-                <td className="py-2 pr-4 text-label text-ink">{variant}</td>
+                <td className="py-s1 pr-s3 text-label text-ink">{variant}</td>
                 {BUTTON_SIZES.map((size) => (
-                  <td key={size} className="px-3 py-2">
+                  <td key={size} className="px-s2 py-s1">
                     <Button variant={variant} size={size}>
                       add sticker
                     </Button>
                   </td>
                 ))}
-                <td className="px-3 py-2">
+                <td className="px-s2 py-s1">
                   <Button variant={variant} size="sm" disabled>
                     add sticker
                   </Button>
@@ -331,7 +332,7 @@ function Buttons() {
         </table>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-s1">
         {CATEGORIES.map((category) => (
           <Chip
             key={category.id}
@@ -350,8 +351,8 @@ function Buttons() {
 function BalanceSamples() {
   const [levels, setLevels] = useState<Balance>(MIXED);
   return (
-    <div className="flex flex-col gap-10">
-      <div className="grid gap-8 sm:grid-cols-3">
+    <div className="flex flex-col gap-s6">
+      <div className="grid gap-s5 sm:grid-cols-3">
         {(
           [
             ["all 0", all(0)],
@@ -359,7 +360,7 @@ function BalanceSamples() {
             ["all 3", all(3)],
           ] as const
         ).map(([label, value]) => (
-          <figure key={label} className="flex flex-col items-center gap-2">
+          <figure key={label} className="flex flex-col items-center gap-s1">
             <Flower categories={CATEGORIES} levels={value} className="w-full max-w-72" />
             <figcaption className="text-caption text-ink-muted">{label}</figcaption>
           </figure>
@@ -367,8 +368,8 @@ function BalanceSamples() {
       </div>
 
       {/* One state drives both. */}
-      <div className="grid gap-8 sm:grid-cols-2">
-        <figure className="flex flex-col items-center gap-2">
+      <div className="grid gap-s5 sm:grid-cols-2">
+        <figure className="flex flex-col items-center gap-s1">
           <LifePie
             categories={CATEGORIES}
             levels={levels}
@@ -377,7 +378,7 @@ function BalanceSamples() {
           />
           <figcaption className="text-caption text-ink-muted">life pie: click a ring</figcaption>
         </figure>
-        <figure className="flex flex-col items-center gap-2">
+        <figure className="flex flex-col items-center gap-s1">
           <Flower categories={CATEGORIES} levels={levels} className="w-full max-w-72" />
           <figcaption className="text-caption text-ink-muted">same levels</figcaption>
         </figure>
@@ -397,15 +398,15 @@ const STEP_CATEGORIES: StepCategory[] = CATEGORIES.map((c, i) => ({
 /** The three steps with sample categories. Buttons call the real actions. */
 function OnboardingSamples() {
   return (
-    <div className="flex flex-col gap-14">
+    <div className="flex flex-col gap-s7">
       {[
         <PieStep key={1} categories={STEP_CATEGORIES} initial={{ exercise: 3, work: 2 }} />,
         <ActivitiesStep key={2} categories={STEP_CATEGORIES} />,
         <TouchStep key={3} phone={null} />,
       ].map((step, i) => (
-        <figure key={i} className="flex flex-col gap-3">
+        <figure key={i} className="flex flex-col gap-s2">
           <figcaption className="text-caption text-ink-muted">step {i + 1} of 3</figcaption>
-          <div className="flex flex-col border border-rule px-5 pt-8 pb-6 sm:px-8">{step}</div>
+          <div className="flex flex-col border border-rule px-s4 pt-s5 pb-s4 sm:px-s5">{step}</div>
         </figure>
       ))}
     </div>

@@ -21,7 +21,7 @@ export function MenuContent({
   return (
     <DropdownMenuContent
       className={cn(
-        "w-56 rounded-none border border-rule bg-raised p-1 text-ink shadow-menu ring-0",
+        "w-56 rounded-2xl border border-rule bg-raised p-1.5 text-ink shadow-menu ring-0",
         className,
       )}
       {...props}
@@ -36,7 +36,7 @@ export function MenuItem({
   return (
     <DropdownMenuItem
       className={cn(
-        "rounded-none px-3 py-2 text-ui focus:bg-secondary focus:text-ink",
+        "rounded-full px-s2 py-s1 text-ui focus:bg-secondary focus:text-ink",
         className,
       )}
       {...props}
@@ -50,7 +50,7 @@ export function MenuLabel({
 }: React.ComponentProps<typeof DropdownMenuLabel>) {
   return (
     <DropdownMenuLabel
-      className={cn("px-3 py-2 text-caption font-normal text-ink-muted", className)}
+      className={cn("px-s2 py-s1 text-caption font-normal text-ink-muted", className)}
       {...props}
     />
   );
