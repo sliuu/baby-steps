@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-// Relative, with the extension — see the note in `analytics.test.ts`.
+// Relative, with extension (see `analytics.test.ts`).
 import { polar, type Point } from "./charts.ts";
 import {
   ringPoints,
@@ -10,19 +10,7 @@ import {
   toPoints,
 } from "./lifestar.ts";
 
-/**
- * Nothing in this file can use `assert.equal` on a coordinate.
- *
- * Every number here comes out of `Math.cos` or `Math.sin`, and those return the
- * nearest representable double rather than the answer — the top vertex's x is
- * `260.00000000000006` rather than `260`. Asserting exact equality would fail on
- * correct code, and the usual fix (rounding inside the function to make the test
- * pass) would be the test dictating the implementation. So the tolerance lives
- * here, where it belongs.
- *
- * The generic geometry these build on — `polar`, `normalize`, the label
- * anchoring — is tested in `charts.test.ts`, which is where it now lives.
- */
+/** Trig yields float dust (260.00000000000006), so compare with a tolerance. */
 const CLOSE = 1e-9;
 
 function assertClose(actual: number, expected: number, what: string) {
@@ -37,7 +25,6 @@ function assertPoint(actual: Point, expected: Point, what: string) {
   assertClose(actual.y, expected.y, `${what} y`);
 }
 
-/** Distance from a centre — used to check a radius survived the trip. */
 function distance(p: Point, cx: number, cy: number): number {
   return Math.hypot(p.x - cx, p.y - cy);
 }
@@ -104,8 +91,7 @@ describe("starPoints", () => {
   });
 
   it("agrees with ringPoints when every share is 1", () => {
-    // The outer ring and a maxed-out star have to be the same polygon, or a
-    // full area would sit visibly off its own gridline.
+    // Maxed star must match the outer ring, or it sits off its gridline.
     const star = starPoints([1, 1, 1, 1, 1, 1], 92, 230, 142);
     const ring = ringPoints(6, 92, 230, 142);
     star.forEach((p, i) => assertPoint(p, ring[i], `vertex ${i}`));
@@ -124,9 +110,7 @@ describe("toPoints", () => {
   });
 
   it("rounds the floating-point dust out of the markup", () => {
-    // 260.00000000000006 is what the top vertex's x actually computes to. The
-    // rounding itself is `round2`, tested in charts.test.ts; what's pinned here
-    // is that `toPoints` applies it rather than writing raw doubles into markup.
+    // `toPoints` must apply `round2` (tested in charts.test.ts).
     assert.equal(toPoints([polar(260, 150, 110, -Math.PI / 2)]), "260,40");
   });
 

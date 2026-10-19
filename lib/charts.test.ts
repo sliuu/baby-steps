@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-// Relative, with the extension — see the note in `analytics.test.ts`.
+// Relative with extension; see `analytics.test.ts`.
 import {
   LABEL_GAP,
   LINE,
@@ -15,16 +15,7 @@ import {
 } from "./charts.ts";
 import { spokeAngle } from "./lifestar.ts";
 
-/**
- * Nothing in this file can use `assert.equal` on a coordinate.
- *
- * Every number here comes out of `Math.cos` or `Math.sin`, and those return the
- * nearest representable double rather than the answer — a point at the top of a
- * circle has an x of `260.00000000000006` and a cosine of `6.12e-17` rather
- * than `0`. Asserting exact equality would fail on correct code, and the usual
- * fix — rounding inside the function until the test passes — would be the test
- * dictating the implementation. So the tolerance lives here, where it belongs.
- */
+/** Trig results are inexact doubles, so coordinates compare with a tolerance. */
 const CLOSE = 1e-9;
 
 function assertClose(actual: number, expected: number, what: string) {
@@ -50,19 +41,13 @@ describe("round2", () => {
   });
 
   it("does not round a decimal .005 tie up, and that is fine here", () => {
-    // Pinned rather than fixed. `1.005 * 100` is 100.49999999999999 in binary,
-    // so `Math.round` takes it *down* — the number written as "1.005" is not
-    // quite 1.005 to begin with. Every accurate-rounding fix costs real
-    // complexity, and the quantity being rounded is a hundredth of one viewBox
-    // unit out of 520: far below a pixel. Worth a test so the next person meets
-    // it as a known trade rather than a bug.
+    // Known trade: `1.005 * 100` is 100.4999…, so it rounds down. Sub-pixel.
     assert.equal(round2(1.005), 1);
   });
 });
 
 describe("polar", () => {
   it("puts a point at the top directly above the centre", () => {
-    // The worked example from the doc comment, pinned.
     assertPoint(
       polar(260, 150, 110, -Math.PI / 2),
       { x: 260, y: 40 },
@@ -75,8 +60,7 @@ describe("polar", () => {
   });
 
   it("sweeps clockwise, because SVG's y grows downward", () => {
-    // A quarter turn on from east is *below* the centre on screen. This is the
-    // fact that makes the -π/2 in spokeAngle point up rather than down.
+    // Quarter turn from east is below centre on screen; hence -π/2 in spokeAngle.
     assertPoint(polar(0, 0, 10, Math.PI / 2), { x: 0, y: 10 }, "quarter turn");
   });
 
@@ -87,47 +71,39 @@ describe("polar", () => {
 
 describe("normalize", () => {
   it("scales against the largest count, not the total", () => {
-    // Total would make these 0.5 / 0.3 / 0.2. The largest is what pins the
-    // busiest area to the full extent.
+    // Normalized to the max, not the total.
     assert.deepEqual(normalize([10, 6, 4]), [1, 0.6, 0.4]);
   });
 
-  it("draws an even shape when every area is equal", () => {
+  it("draws an even shape when every category is equal", () => {
     assert.deepEqual(normalize([7, 7, 7, 7]), [1, 1, 1, 1]);
   });
 
   it("gives the same shape for the same proportions at any size", () => {
-    // The stated cost of normalizing to the max, pinned so it can't drift into
-    // being a surprise: a small month and a big one with the same balance are
-    // the same picture.
+    // Known cost of max-normalizing: same balance, same picture.
     assert.deepEqual(normalize([2, 1]), normalize([200, 100]));
   });
 
   it("returns zeros rather than NaN when everything is zero", () => {
     const shares = normalize([0, 0, 0]);
     assert.deepEqual(shares, [0, 0, 0]);
-    // Worth asserting separately: `0/0` is NaN, and deepEqual would not catch
-    // it here because NaN is deepEqual to NaN.
+    // `0/0` is NaN, and deepEqual treats NaN as equal to NaN.
     assert.ok(shares.every(Number.isFinite), "every share is a real number");
   });
 
   it("survives an empty array", () => {
-    // `Math.max()` with no arguments is -Infinity, which would make every share
-    // -0. There are no zero-area users, but a chart that throws on an empty
-    // list is a chart that throws during a migration.
+    // `Math.max()` of nothing is -Infinity; an empty list must not throw.
     assert.deepEqual(normalize([]), []);
   });
 
-  it("puts a zero area at the far end while others are drawn", () => {
+  it("puts a zero category at the far end while others are drawn", () => {
     assert.deepEqual(normalize([4, 0, 2]), [1, 0, 0.5]);
   });
 });
 
 describe("labelAnchor", () => {
   it("centres the label at the top", () => {
-    // The floating-point trap in one case: cos(-π/2) is 6.12e-17, which is
-    // greater than zero, so a bare `cos > 0` anchors this one to `start` and
-    // hangs the name off to the right of a point that is on neither side.
+    // cos(-π/2) is 6.12e-17 > 0, so a bare `cos > 0` would anchor to `start`.
     assert.equal(labelAnchor(spokeAngle(0, 6)), "middle");
   });
 
@@ -164,17 +140,14 @@ describe("labelBaseline", () => {
   });
 
   it("centres every label that is off the vertical axis", () => {
-    // Including the ones at 30°, which are high enough that nudging them
-    // vertically would leave them visibly off the point they name.
+    // Even at 30°: a vertical nudge would leave them off their point.
     for (const i of [1, 2, 4, 5]) {
       assert.equal(labelBaseline(spokeAngle(i, 6)), "middle", `spoke ${i}`);
     }
   });
 
   it("asks a different question from labelAnchor", () => {
-    // Both read the cosine. This one asks "is it on the vertical axis", the
-    // other asks "which side of it" — so the horizontal points of a four-point
-    // chart are `middle` here and `start`/`end` there.
+    // Vertical-axis check, not side: four-point horizontals are `middle` here.
     const angle = spokeAngle(1, 4);
     assert.equal(labelBaseline(angle), "middle");
     assert.equal(labelAnchor(angle), "start");
@@ -183,17 +156,9 @@ describe("labelBaseline", () => {
 
 describe("VIEW", () => {
   it("is wide enough for the widest labels the box was budgeted for", () => {
-    // The budget from VIEW's doc comment, checked rather than trusted, because
-    // the failure mode is a name with its last few letters sliced off at the
-    // viewBox edge and nothing anywhere reports it.
-    //
-    // The estimate: "Romance & Adventure" is 19 characters at 12 units, and EB
-    // Garamond averages ~0.45em.
+    // Clipped labels fail silently. "Romance & Adventure": 19 chars × 12 × ~0.45em.
     const textWidth = 19 * 12 * 0.45;
-    // No cosine, and that's the point. The star's six labels come off at 30°
-    // from horizontal and are pulled in by cos(30°); the donut's sit at its
-    // slice middles, two of which are exactly horizontal. The shared box has to
-    // satisfy the worse of the two.
+    // No cosine: the donut had exactly horizontal labels; box fits the worse case.
     const needed = 2 * (VIEW.radius + LABEL_GAP) + 2 * textWidth;
     assert.ok(
       VIEW.width >= needed,
@@ -202,17 +167,13 @@ describe("VIEW", () => {
   });
 
   it("centres the drawing in its own box", () => {
-    // The star's rings and the donut's ring are both drawn around this centre,
-    // and an off-centre one clips on one side while leaving a gap on the other.
+    // Off-centre rings clip one side.
     assert.equal(VIEW.cx, VIEW.width / 2);
     assert.equal(VIEW.cy, VIEW.height / 2);
   });
 
   it("leaves room above and below for a two-line label", () => {
-    // Two lines because the donut stacked a percentage under each name, and the
-    // box is deliberately still budgeted for that even though the donut is
-    // gone: the star's card would otherwise change height for no reason. See
-    // the note at the top of `charts.ts`.
+    // Still budgeted for the donut's two lines so the card height holds.
     assert.ok(VIEW.cy >= VIEW.radius + LABEL_GAP + 2 * LINE, "vertical room");
   });
 });

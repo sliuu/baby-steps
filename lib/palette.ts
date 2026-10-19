@@ -1,87 +1,45 @@
-import { RAMP_TINT_VALUE } from "./rampValues.ts";
+/** The six category inks. Names are the `--cat-*` tokens in globals.css. */
+export type CategoryColor = "oxblood" | "bottle" | "mustard" | "rose" | "sage" | "plum";
 
-/**
- * `life_areas.color_key` holds a hue name. This maps it to the classes Tailwind
- * generated from the `--color-ramp-*` tokens in globals.css. `tintValue`
- * exposes the sticker-fill rung as a CSS value for inline styles, where a
- * utility class cannot set a data-driven property.
- *
- * The map has to be written out. `bg-ramp-${colorKey}` would be tidier and
- * would produce nothing — Tailwind finds class names by scanning source text,
- * so a name assembled at runtime never appears in the compiled CSS. Same trap
- * as `process.env.NEXT_PUBLIC_…` in Step 3: the tool reads the file, it doesn't
- * run it.
- */
-/*
- * `softFill` and `softStroke` are the SVG halves of `soft`, and none of the
- * three is interchangeable with the others. An SVG shape takes its colour from
- * `fill` and its outline from `stroke`; `background-color` does nothing to a
- * `<circle>`. So the Life Star's vertex dots need their own class per hue and
- * the donut's segments need another — a donut segment is a *stroked* circle, so
- * it has no fill at all. Same six colours, three properties, all written out for
- * the same reason the rest of this map is.
- *
- * They are the pastel end, and there is deliberately no saturated `fill` or
- * `stroke` beside them. There is no general-purpose full-strength utility
- * waiting to be applied casually to every chart vertex.
- */
-/*
- * `tint` is the third rung, and it is the sticker's fill. `StickerMark`, the
- * mark field that previews it, and Trends' mood marks all share that value.
- * It arrived as the pale half of a fill-plus-ring pair; the ring is gone and
- * the rung moved up to 45% to carry the hue on its own, which is why it is
- * written as a `color-mix` on a single `--sticker-fill` percentage rather than
- * as twelve hex values. Turn that one number and both themes follow.
- *
- * There is deliberately no `border` beside it any more. A saturated 1px ring is
- * exactly what this step removed, and leaving `border-ramp-*` in this map is an
- * invitation to put it back one component at a time. Same argument as the
- * missing saturated `fill`/`stroke` above: the rule holds because the class
- * does not exist, not because someone remembers it.
- */
-export const RAMP = {
-  red: { tintValue: RAMP_TINT_VALUE.red, bg: "bg-ramp-red", soft: "bg-ramp-red-soft", lit: "bg-ramp-red-soft/35", tint: "bg-ramp-red-tint", text: "text-ramp-red", softFill: "fill-ramp-red-soft", softStroke: "stroke-ramp-red-soft" },
-  blue: { tintValue: RAMP_TINT_VALUE.blue, bg: "bg-ramp-blue", soft: "bg-ramp-blue-soft", lit: "bg-ramp-blue-soft/35", tint: "bg-ramp-blue-tint", text: "text-ramp-blue", softFill: "fill-ramp-blue-soft", softStroke: "stroke-ramp-blue-soft" },
-  orange: { tintValue: RAMP_TINT_VALUE.orange, bg: "bg-ramp-orange", soft: "bg-ramp-orange-soft", lit: "bg-ramp-orange-soft/35", tint: "bg-ramp-orange-tint", text: "text-ramp-orange", softFill: "fill-ramp-orange-soft", softStroke: "stroke-ramp-orange-soft" },
-  yellow: { tintValue: RAMP_TINT_VALUE.yellow, bg: "bg-ramp-yellow", soft: "bg-ramp-yellow-soft", lit: "bg-ramp-yellow-soft/35", tint: "bg-ramp-yellow-tint", text: "text-ramp-yellow", softFill: "fill-ramp-yellow-soft", softStroke: "stroke-ramp-yellow-soft" },
-  green: { tintValue: RAMP_TINT_VALUE.green, bg: "bg-ramp-green", soft: "bg-ramp-green-soft", lit: "bg-ramp-green-soft/35", tint: "bg-ramp-green-tint", text: "text-ramp-green", softFill: "fill-ramp-green-soft", softStroke: "stroke-ramp-green-soft" },
-  purple: { tintValue: RAMP_TINT_VALUE.purple, bg: "bg-ramp-purple", soft: "bg-ramp-purple-soft", lit: "bg-ramp-purple-soft/35", tint: "bg-ramp-purple-tint", text: "text-ramp-purple", softFill: "fill-ramp-purple-soft", softStroke: "stroke-ramp-purple-soft" },
-} as const;
+// Written out in full: Tailwind only generates classes it finds as literal text.
+// `wash` is the highlight tint behind marked days.
+export const CATEGORY_COLORS = {
+  oxblood: { ink: "bg-cat-oxblood", text: "text-cat-oxblood-text", textFill: "fill-cat-oxblood-text", on: "text-cat-oxblood-on", fill: "fill-cat-oxblood", stroke: "stroke-cat-oxblood", dot: "bg-cat-oxblood", border: "border-cat-oxblood", wash: "bg-cat-oxblood/15" },
+  bottle: { ink: "bg-cat-bottle", text: "text-cat-bottle-text", textFill: "fill-cat-bottle-text", on: "text-cat-bottle-on", fill: "fill-cat-bottle", stroke: "stroke-cat-bottle", dot: "bg-cat-bottle", border: "border-cat-bottle", wash: "bg-cat-bottle/15" },
+  mustard: { ink: "bg-cat-mustard", text: "text-cat-mustard-text", textFill: "fill-cat-mustard-text", on: "text-cat-mustard-on", fill: "fill-cat-mustard", stroke: "stroke-cat-mustard", dot: "bg-cat-mustard", border: "border-cat-mustard", wash: "bg-cat-mustard/15" },
+  rose: { ink: "bg-cat-rose", text: "text-cat-rose-text", textFill: "fill-cat-rose-text", on: "text-cat-rose-on", fill: "fill-cat-rose", stroke: "stroke-cat-rose", dot: "bg-cat-rose", border: "border-cat-rose", wash: "bg-cat-rose/15" },
+  sage: { ink: "bg-cat-sage", text: "text-cat-sage-text", textFill: "fill-cat-sage-text", on: "text-cat-sage-on", fill: "fill-cat-sage", stroke: "stroke-cat-sage", dot: "bg-cat-sage", border: "border-cat-sage", wash: "bg-cat-sage/15" },
+  plum: { ink: "bg-cat-plum", text: "text-cat-plum-text", textFill: "fill-cat-plum-text", on: "text-cat-plum-on", fill: "fill-cat-plum", stroke: "stroke-cat-plum", dot: "bg-cat-plum", border: "border-cat-plum", wash: "bg-cat-plum/15" },
+} as const satisfies Record<CategoryColor, Record<string, string>>;
 
-export type RampKey = keyof typeof RAMP;
+const FALLBACK: CategoryColor = "bottle";
 
-const FALLBACK: RampKey = "blue";
+/** The DB still stores the old hue names (production shares it); map them on read. */
+const DB_KEY: Record<string, CategoryColor> = {
+  red: "oxblood",
+  blue: "bottle",
+  orange: "mustard",
+  yellow: "rose",
+  green: "sage",
+  purple: "plum",
+};
 
-/** A colour_key from the database is a string, so it might not be a real ramp. */
-export function ramp(colorKey: string) {
-  return RAMP[colorKey as RampKey] ?? RAMP[FALLBACK];
+export function isCategoryColor(key: string): key is CategoryColor {
+  return key in CATEGORY_COLORS;
 }
 
-/**
- * The tint a highlighted thing wears: the day cells it lights, its own row in
- * the tray, and the area label above it.
- *
- * One function so those three can't drift — the same argument as `validateDraft`
- * in Step 10, and it's why the tray row you clicked is visibly the same colour
- * as the days that just lit up rather than approximately it.
- *
- * **It is `soft` at 35%, not `soft`, and the alpha is doing real work.** A
- * highlight always has the marks it is pointing at sitting on top of it, and
- * those marks are now filled in the same hue at 45%. Opaque `soft` is 48% of
- * that same hue, so a lit Tuesday and the sticker that lit it landed within
- * 1.06:1 of each other — the sticker disappeared into the evidence for itself.
- *
- * 35% is not a taste call, it is the number that puts the separation back where
- * it was when the fill was 20% and this was opaque: 1.19–1.53 across the six in
- * light, 1.46–1.90 in dark, against 1.19–1.52 and 1.41–1.90 before. Yellow is
- * the floor in both eras, which is what you would expect from the palest hue.
- *
- * `null` means the neutral selected-state surface, which is what a mood gets in
- * the calendar. Trends borrows a narrow slice of the sticker palette for its
- * mood charts, but a selected day is still interface state rather than chart
- * data. Reusing `secondary` keeps that wash aligned with selected navigation
- * instead of deriving a warm tint from the text ink.
- */
+/** A `color_key` from the database, as a category colour. */
+export function fromDbColorKey(key: string): CategoryColor {
+  if (isCategoryColor(key)) return key;
+  return DB_KEY[key] ?? FALLBACK;
+}
+
+/** Classes for a colour key; unknown keys get the fallback. */
+export function categoryColor(colorKey: string) {
+  return CATEGORY_COLORS[isCategoryColor(colorKey) ? colorKey : fromDbColorKey(colorKey)];
+}
+
+/** Highlight wash: the category ink at 15%. `null` = neutral selected surface. */
 export function wash(colorKey: string | null): string {
-  return colorKey ? ramp(colorKey).lit : "bg-secondary";
+  return colorKey ? categoryColor(colorKey).wash : "bg-secondary";
 }

@@ -1,17 +1,6 @@
-// Run with `npm test`. See `changes.test.ts` for why the import carries its
-// ".ts" and why nothing here may reach a `@/` path.
-//
-// This suite doesn't test behaviour so much as shape, and the shape is
-// load-bearing in a way that isn't obvious from either file on its own:
-// `MarkPicker` draws a fixed 9 × 4 grid and pages at 36, so a group of any
-// other size either leaves a hole in a tab or strands icons on a second page
-// that nothing tells you is there. There is no runtime error for that — it just
-// quietly looks wrong — which is exactly the kind of rule that wants a test.
-//
-// The id round-trip is the other half. `iconFor` is the one place a stored
-// string becomes a component, and `iconMark` is its inverse; a set where those
-// two disagree about any icon would show a blank circle for a mark the picker
-// itself had just written.
+// Run with `npm test`; imports keep ".ts" and avoid `@/`.
+// Shape checks: `MarkPicker` pages a fixed 9 × 4 grid, and iconFor/iconMark
+// must round-trip, or marks render blank. Neither fails at runtime.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -24,7 +13,7 @@ import {
   isIconMark,
 } from "./icons.ts";
 
-/** The picker's page, repeated here so a change to either side breaks a test. */
+/** Picker page size, repeated so a change on either side breaks a test. */
 const PER_TAB = 54;
 
 describe("ICON_GROUPS · the shape the picker draws", () => {
@@ -49,8 +38,7 @@ describe("ICON_GROUPS · the shape the picker draws", () => {
   it("gives every group an id and a tab icon", () => {
     for (const group of ICON_GROUPS) {
       assert.ok(group.id, `${group.label} has no id`);
-      // `ok`, not `typeof === "function"`: Lucide's components come out of
-      // `forwardRef`, which returns an object rather than a function.
+      // `ok`: Lucide's forwardRef components are objects, not functions.
       assert.ok(group.Tab, `${group.label} has no Tab`);
     }
   });
@@ -106,8 +94,7 @@ describe("iconFor · the lookup a stored mark goes through", () => {
     assert.equal(iconFor(`${ICON_PREFIX}dumbell`), null);
   });
 
-  // The reason `BY_ID` is a Map and not an object literal: `mark` is free text
-  // out of the database, and `{}["constructor"]` is a function.
+  // Why `BY_ID` is a Map: `mark` is DB text, and `{}["constructor"]` exists.
   it("returns null for an inherited object property", () => {
     assert.equal(iconFor(`${ICON_PREFIX}constructor`), null);
     assert.equal(iconFor(`${ICON_PREFIX}__proto__`), null);

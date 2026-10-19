@@ -5,27 +5,16 @@ import { useTransition } from "react";
 
 import { setArchived } from "@/app/actions/activities";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Props = {
   activityId: string;
   name: string;
   onError: (message: string) => void;
+  className?: string;
 };
 
-/**
- * Bring an archived sticker back to its life area.
- *
- * One click, no confirmation, and that asymmetry is the design: archiving is
- * reversible so it doesn't need a gate, and this is the reverse of a reversible
- * thing so it needs one even less. The only irreversible control in the app is
- * the delete inside the edit dialog, and it's the only one that asks.
- *
- * No optimistic update either, unlike a drop. `refresh()` re-renders the tray
- * on the server and the row moves from the archived section back up to its
- * area — which is a change of *where a thing is*, not of what it looks like.
- * Faking that would mean rendering the row in two places for the length of a
- * round trip.
- */
+/** Brings an archived sticker back. One click, no confirm; no optimistic update. */
 export function RestoreStickerButton(props: Props) {
   const [pending, startTransition] = useTransition();
 
@@ -33,11 +22,11 @@ export function RestoreStickerButton(props: Props) {
     <Button
       type="button"
       variant="ghost"
-      size="icon-sm"
-      aria-label={`Bring ${props.name} back`}
-      title={`Bring ${props.name} back`}
+      size="icon-xs"
+      aria-label={`bring ${props.name} back`}
+      title={`bring ${props.name} back`}
       disabled={pending}
-      className="shrink-0 self-center"
+      className={cn("shrink-0 rounded-full bg-paper ring-1 ring-rule", props.className)}
       onClick={() =>
         startTransition(async () => {
           const result = await setArchived(props.activityId, false);

@@ -2,11 +2,896 @@
 
 Newest first. One entry per step.
 
-**Now:** A sign-in that hits the "JWT issued at future" race keeps its skeleton up and quietly re-requests the page instead of landing on the error page, and GitHub sign-in is back on in Supabase. Before that: a vertical hairline separates the calendar from the sticker tray on desktop, and the rail grew 2rem to pay for it. Before that: the app is printed on newsprint instead of paper. Nothing is `#ffffff` any more — the page is a warm-neutral grey and a card *lifts off* it rather than going white — and today is marked by a 2px press-red rule under its numeral, the only red in the app and the only thing this colour is ever used for. The retheme also fixed an accessibility failure that predated it: the muted ink was 3.62:1 on the old page, below the app's own 4.5 floor, and is 4.85:1 now. Checked on Today, Week, Month, Trends, the day sheet and the tray at 1440 and 390, light and dark. **Dark is proposed, not designed — derived to hold the light theme's relationships, measured for contrast, never seen beside a frame.** Before that: the app is set in two typefaces instead of three. **Schibsted Grotesk** is the whole interface — titles and body and labels, one family — and **Spectral Light Italic** is the first italic the app has ever loaded, reserved for the four places where somebody is *writing* rather than the app reporting: a day's note, the word for how a day felt, "Quiet" on an empty day, and "about every 3 days" under a habit. Syne, DM Sans and Space Mono are gone. Schibsted turned out to run 5–11% *larger* than Syne rather than smaller, so the heading rungs carry a measured 0.94 correction, and two sizes outside those tokens moved with it — the phone's week title, which had started truncating, and the phone bottom bar's padding, where "Trends" was losing its last two letters to a quarter of a pixel. Checked on every screen at 1440 and 390, light and dark. Before that: every control in the app turns the same 4.8px corner — the one the week view cuts its sticker bars with. The nav segments, the Areas · Habits · Moods pill, both Trends dropdowns and the demo's sign-in link were stadiums and aren't any more; circles that are circles by design stayed round. The desktop calendar also stopped scrolling past its own content: the sticker rail's hidden overflow was buying the page ~150px of blank space below the fold, and a further one-pixel error in its viewport cap was raising a scrollbar for a single pixel. Today, Week and Month all end exactly at the fold on a full-screen MacBook now. Before that: Trends looks like the design handoff. Areas · Habits · Moods is a tracked pill on every screen width, and the phone's bottom nav is the same pill. Areas is ranked colour bars (beside the star on a wide screen), Habits is a sticker list on a phone and the table alone on a wide screen — no ranking above it, and no range picker of its own any more — and Moods is mood bars and the day-by-day line, stacked on a phone and side by side on a wide screen. Seen in headless Chrome at 390 and 1440. Before that: the app has a mark. Three stickers in a triangle — red, blue and green, 45% tints with a white die-cut rim — sit in the browser tab and on the iOS home screen, and `create-next-app`'s Vercel triangle and its five sample SVGs are gone from the repo. Before that: Trends' Habits tab is a ranking over a table, and the eight-week strip that used to sit between them is gone — its drawing moved into the table's "When" column, where the ticks became blocks that follow the range: a block a day up to a month, a week up to a year, a month past that. The table has no title, its dates and its **own** range dropdown in the top left (independent of the one governing the rest of the page), an area filter on the right, four sortable headlines, and a pager bottom right saying which page of how many. Every panel on Trends can be read over any of eight ranges — This week, Last 7 days, This month, Last 30 days, This year, Last 12 months, All time, Custom. Before that: a second pass over the same surface, all of it chrome and none of it structural: a tray row is now drawn in whichever shape the calendar beside it is drawing — the month's circle with the name next to it, or the week's named rectangle with the tint filling the whole row — the rail's heading sits still while the stickers under it scroll down a scrollbar drawn to match the app (a rem wider to pay for the width that bar takes), the month's cells went from white to the page's cream, and then nothing on the page is a card any more: the week, the month and all five Trends panels are one thick rule with their content hanging under it, no fill, no radius, no sides and no bottom, with thin lines only inside. The two empty states are the same rule, dashed. Day names are in Space Mono with everything else that labels something. Still never seen in a browser — the extension has been unavailable for five sessions, and the week view can't even be curled, because Month/Week is a hash route. Before that: six passes over the interface, none of them structural: the eyebrows moved to Space Mono, every sticker gained a white die-cut rim and a soft shadow, the five moods lost their words, the tray narrowed from 18rem to 13rem, and the page's cap moved from 72rem to 96rem so the body stretches to 1536px before it stops. The seventh was asked for and declined on the face's own terms — Instrument Serif ships one weight, so there is no bold to add. Before that: There is a demo at **`/demo`**, linked from under the sign-in buttons: the whole app, no account, a year of stickers generated from today by `lib/demo.ts` — four a day, spread across the six areas, 86% of days with a mood, and a habit that visibly stopped. The boards are the real ones; `local` on `CalendarBoard` turns off the network and nothing else. Before that: Trends was re-cut and then split into three tabs — **Areas · Habits · Moods**. No pie, no chart switcher. *Moods* opens with a line joining every day you logged, in ink, with the reading printed above it in words. Never yet seen in a browser. Before that: the calendar grew two views. A Month/Week pill sits beside the title and the same two arrows step whichever one you're in; the week is seven tall columns, each with the day's stickers spelled out as named bars and a note field at the bottom for a line about that day. Before that: every emoji in the app became a Lucide icon, drawn from a 432-icon map with eight hand-drawn sports additions, and the body text moved to DM Sans throughout. **Committed and pushed through this step.** `npm run db:notes` and `npm run adopt:icons` have both been run, so existing stickers carry Lucide icons rather than emoji. The `lib/database.types.ts` item below is still open. One step left after this: deploy.
+**Now:** Onboarding prose in the display face, with bold phrases and tighter headings. Before that: PR #4 review fixes, and swipe down closes the phone add-stickers sheet. Account deletion needed no fix. Before that: From 640px to 896px, the header's three links fold into a dropdown and the date moves above the question. Before that: Today has a note line under the mood row. Before that: Today's date comes from the browser, not the server, so there's no more "hydration failed" around midnight. Before that: A privacy modal, a footer with privacy · github · contact, and one set of corner radii. Before that: The account menu has rounded corners, and the landing flower blooms slower (900ms). Before that: The landing tagline drops "just for kicks,", the rule above "what have you been up to?" is gone, the words sit flush left again, and "what have you been up to?" sits closer and rises in last. Before that: Every spacing value of 8px or more is on the scale 8 · 14 · 18 · 22 · 30 · 44 · 64 · 96 (`s1`–`s8`). Before that: Today's empty-state link reads "add stickers ⌄" and sits at the top. Before that: The landing page shows the balance flower instead of the sticker cluster. Before that: Onboarding step 1: done reveals the verdict. Before that: Matching the boards: all five steps done. Before that: Matching the boards: Today done; calendar next. Before that: Matching the boards: sign in done; Today next. Before that: Matching the boards: onboarding done; sign in next. Before that: Matching the canvas boards: espresso frame, green inset header. Before that: The redesign is finished (plans 01–15). Plan 15 removed the legacy tokens and files and restyled the 404/error pages. Before that: redesign plan 12 is in: three-step onboarding (life pie, activities, stay in touch) for new users; migration applied, your own account reset to walk it. Before that: redesign plan 14 is in: a living design-system sheet at /dev/system (dev only, or allow-listed emails in production). Before that: redesign plan 13 is in: Trends drops pills and boxes for text tabs, 1px rules and full category inks; the habit table gets stickers and calendar-style grid lines. Before that: redesign plan 11 is in: the sign-in page is the welcome with three struck-through labels, Google sign-in and a demo link. Before that: redesign plan 09 is in: month and week are one calendar page with a grid of every sticker, and a side panel (sheet on phones) for the chosen day. Before that: redesign plan 10 is in: the sticker tray sits under Today as coloured category groups of small stickers with names. Tap one to add it to today, or drag it onto a day. The new-sticker dialog suggests ideas as chips. Before that: redesign plan 08 is in: Today is the stationery layout: weekday over a big numeric date, coloured mood faces, today's stickers as large circles with names, a note on a dashed line, and the balance flower beside it (below on phones). Before that: redesign plan 07 is in: a balance flower and an editable life pie exist as components, driven by how many of the last three weeks had a sticker in each category. Neither is on a screen yet (Today gets the flower in plan 08, onboarding the pie in plan 12). Before that: redesign plan 06 is in: moods have colour. Calendar cells show an 11px mood dot, faces sit on their mood colour everywhere else, and the tray's moods are a "how are you feeling?" radio group. Before that: redesign plan 05 is in: stickers are solid circles in the category ink with a paper edge and a faint ring, with no shadow. Before that: redesign plan 04 is in: the app sits on a paper sheet inside a pink frame, with a footer under it. The header reads "baby steps · today calendar trends · avatar", and phones get a three-word bottom bar. Everyone lands on Today. Before that: redesign plan 03 is in: titles are set in a light slab (Zilla Slab) and everything else in Outfit at 400, both stand-ins for the licensed faces. Before that: redesign plan 02 is in: the app is on ivory paper with bottle-green ink, the six categories wear the new stationery colours, and moods run sad → happy. Shapes and type are still the old ones, so it looks half-converted on purpose. Before that: the stationery redesign started (`plans/redesign/`). Plan 01 renamed "life area" to "category" everywhere in the app: code, CSS tokens and on-screen wording. The database keeps its old names, because it is shared with the live site. Before that: A sign-in that hits the "JWT issued at future" race keeps its skeleton up and quietly re-requests the page instead of landing on the error page, and GitHub sign-in is back on in Supabase. Before that: a vertical hairline separates the calendar from the sticker tray on desktop, and the rail grew 2rem to pay for it. Before that: the app is printed on newsprint instead of paper. Nothing is `#ffffff` any more — the page is a warm-neutral grey and a card *lifts off* it rather than going white — and today is marked by a 2px press-red rule under its numeral, the only red in the app and the only thing this colour is ever used for. The retheme also fixed an accessibility failure that predated it: the muted ink was 3.62:1 on the old page, below the app's own 4.5 floor, and is 4.85:1 now. Checked on Today, Week, Month, Trends, the day sheet and the tray at 1440 and 390, light and dark. **Dark is proposed, not designed — derived to hold the light theme's relationships, measured for contrast, never seen beside a frame.** Before that: the app is set in two typefaces instead of three. **Schibsted Grotesk** is the whole interface — titles and body and labels, one family — and **Spectral Light Italic** is the first italic the app has ever loaded, reserved for the four places where somebody is *writing* rather than the app reporting: a day's note, the word for how a day felt, "Quiet" on an empty day, and "about every 3 days" under a habit. Syne, DM Sans and Space Mono are gone. Schibsted turned out to run 5–11% *larger* than Syne rather than smaller, so the heading rungs carry a measured 0.94 correction, and two sizes outside those tokens moved with it — the phone's week title, which had started truncating, and the phone bottom bar's padding, where "Trends" was losing its last two letters to a quarter of a pixel. Checked on every screen at 1440 and 390, light and dark. Before that: every control in the app turns the same 4.8px corner — the one the week view cuts its sticker bars with. The nav segments, the Areas · Habits · Moods pill, both Trends dropdowns and the demo's sign-in link were stadiums and aren't any more; circles that are circles by design stayed round. The desktop calendar also stopped scrolling past its own content: the sticker rail's hidden overflow was buying the page ~150px of blank space below the fold, and a further one-pixel error in its viewport cap was raising a scrollbar for a single pixel. Today, Week and Month all end exactly at the fold on a full-screen MacBook now. Before that: Trends looks like the design handoff. Areas · Habits · Moods is a tracked pill on every screen width, and the phone's bottom nav is the same pill. Areas is ranked colour bars (beside the star on a wide screen), Habits is a sticker list on a phone and the table alone on a wide screen — no ranking above it, and no range picker of its own any more — and Moods is mood bars and the day-by-day line, stacked on a phone and side by side on a wide screen. Seen in headless Chrome at 390 and 1440. Before that: the app has a mark. Three stickers in a triangle — red, blue and green, 45% tints with a white die-cut rim — sit in the browser tab and on the iOS home screen, and `create-next-app`'s Vercel triangle and its five sample SVGs are gone from the repo. Before that: Trends' Habits tab is a ranking over a table, and the eight-week strip that used to sit between them is gone — its drawing moved into the table's "When" column, where the ticks became blocks that follow the range: a block a day up to a month, a week up to a year, a month past that. The table has no title, its dates and its **own** range dropdown in the top left (independent of the one governing the rest of the page), an area filter on the right, four sortable headlines, and a pager bottom right saying which page of how many. Every panel on Trends can be read over any of eight ranges — This week, Last 7 days, This month, Last 30 days, This year, Last 12 months, All time, Custom. Before that: a second pass over the same surface, all of it chrome and none of it structural: a tray row is now drawn in whichever shape the calendar beside it is drawing — the month's circle with the name next to it, or the week's named rectangle with the tint filling the whole row — the rail's heading sits still while the stickers under it scroll down a scrollbar drawn to match the app (a rem wider to pay for the width that bar takes), the month's cells went from white to the page's cream, and then nothing on the page is a card any more: the week, the month and all five Trends panels are one thick rule with their content hanging under it, no fill, no radius, no sides and no bottom, with thin lines only inside. The two empty states are the same rule, dashed. Day names are in Space Mono with everything else that labels something. Still never seen in a browser — the extension has been unavailable for five sessions, and the week view can't even be curled, because Month/Week is a hash route. Before that: six passes over the interface, none of them structural: the eyebrows moved to Space Mono, every sticker gained a white die-cut rim and a soft shadow, the five moods lost their words, the tray narrowed from 18rem to 13rem, and the page's cap moved from 72rem to 96rem so the body stretches to 1536px before it stops. The seventh was asked for and declined on the face's own terms — Instrument Serif ships one weight, so there is no bold to add. Before that: There is a demo at **`/demo`**, linked from under the sign-in buttons: the whole app, no account, a year of stickers generated from today by `lib/demo.ts` — four a day, spread across the six areas, 86% of days with a mood, and a habit that visibly stopped. The boards are the real ones; `local` on `CalendarBoard` turns off the network and nothing else. Before that: Trends was re-cut and then split into three tabs — **Areas · Habits · Moods**. No pie, no chart switcher. *Moods* opens with a line joining every day you logged, in ink, with the reading printed above it in words. Never yet seen in a browser. Before that: the calendar grew two views. A Month/Week pill sits beside the title and the same two arrows step whichever one you're in; the week is seven tall columns, each with the day's stickers spelled out as named bars and a note field at the bottom for a line about that day. Before that: every emoji in the app became a Lucide icon, drawn from a 432-icon map with eight hand-drawn sports additions, and the body text moved to DM Sans throughout. **Committed and pushed through this step.** `npm run db:notes` and `npm run adopt:icons` have both been run, so existing stickers carry Lucide icons rather than emoji. The `lib/database.types.ts` item below is still open. One step left after this: deploy.
 
 Most of Step 16 still hasn't been looked at in a browser; the open items under each entry below are the list.
 
 The plan grew a step: editing a sticker was inserted as Step 16, so motion and deploy became 17 and 18.
+
+---
+
+## 2026-10-19 · Onboarding copy and type
+
+- Prose on steps 1 and 3 is in the display face (light, 20px), with a semibold phrase or two: "life pie" and "rank how fulfilled you feel…" on step 1, "log how you're spending your time" and "log by text" on step 3. Zilla Slab now loads 600 for these.
+- Step 2's heading is one size down (36px, 26px on phones).
+- 44px above every step's heading (was 64px on wider screens).
+- Step 3 reads "you're all set up!"; the romance template "try somewhere new" is "try a new restaurant" (fork and knife).
+
+**Changed:** `app/onboarding/Steps.tsx`, `app/onboarding/page.tsx`, `app/fonts.ts`, `lib/suggestions.ts`
+
+**Not seen:** onboarding needs a signed-in account; tsc, lint and 460 tests pass.
+
+---
+
+## 2026-10-19 · PR #4 review fixes
+
+Three findings from the Devin review on PR #4 · "yeah sure"
+
+- **Account deletion with stickers:** no change; the finding was wrong. Activities cascade straight from `auth.users` as well as hanging off `life_areas`, so they're gone before the `on delete restrict` check runs. Checked against the real schema in an in-memory Postgres (PGlite): deletion succeeds, and fails only if activities lose their own cascade.
+- **Phone day sheet:** tapping a sticker adds it to that day again. Only the desktop day panel still opens the editor on tap (it adds by drag). The sheet edits through the pencil badge, which shows on touch.
+- **Onboarding back → next:** `saveRatings` skips the insert when the newest snapshot already holds the same levels.
+
+- **Swipe down closes the phone add-stickers sheet** (and adds what's picked, like the close button). Drag from anywhere on it; inside the list, only once the list is scrolled to the top. Past 96px or a quick flick it slides away; otherwise it springs back.
+
+**Changed:** `lib/useSwipeDown.ts` (new), `components/tray/AddStickersSheet.tsx`, `components/tray/StickerTray.tsx`, `components/dnd/CalendarBoard.tsx`, `app/actions/onboarding.ts`
+
+**Verified:** tsc, lint, 460 tests; the swipe with emulated touch on /demo at 390 (a 40px drag springs back, a 220px drag closes). **Not seen:** the swipe on a real phone; the other two are signed-in paths. The demo's tray is `local`, so it never had the tap-edits mode.
+
+---
+
+## 2026-10-19 · Mid-width header: a sections dropdown
+
+"on the smallest screen size before it becomes a mobile … its really cramped. maybe we can comperss today / calendar/trends into a dropdown on medium sizes"
+
+- From 640px up to 56rem (896px), "today · calendar · trends" becomes one "today ⌄" dropdown that shows the current section. The header's date moves into Today, above "what have you been up to?", as on phones. The header measured cramped up to about 880px, which is why the cutoff is 896px and not the 768px `md`.
+- Also on Today: the note sits under the mood row (8px in, 18px down), Enter saves it and leaves the field, and the gap above the tray's rule is 44px (was 64px).
+
+**Changed:** `components/TopNav.tsx`, `components/calendar/TodayView.tsx`, `components/calendar/DayNote.tsx`, `components/dnd/CalendarBoard.tsx`, `components/views/CalendarSkeleton.tsx`
+
+**Verified:** tsc, lint, 460 tests. On `/demo` at 640, 760, 860, 880 and 900: the dropdown opens and picking trends goes to #trends.
+
+---
+
+## 2026-10-19 · A note on Today
+
+"lets add a small place to add a note for today on the today section, below mood (so mood moves up)"
+
+- Under the mood row: "a line about today…" on a dashed rule, with a 0/280 counter. It saves when you click away, and Escape undoes. The mood row rises to make room. It's the same note the calendar's day panel edits, using DayNote's existing "page" style.
+
+**Changed:** `components/calendar/TodayView.tsx`
+
+**Verified:** tsc, lint, 460 tests. `/demo` at 1440 and 390.
+
+---
+
+## 2026-10-19 · Today's date comes from the browser
+
+"Hydration failed because the server rendered text didn't match the client" (Today's date: server oct. 18th, browser oct. 19th) · "is this an issue?" · "sure"
+
+- The calendar and Trends show their loading skeletons until the browser knows the visitor's day, then draw. The server no longer guesses the date. In production its clock is UTC, so it would have shown tomorrow every evening in the Americas.
+
+**Changed:** `components/dnd/CalendarBoard.tsx`, `components/trends/TrendsBoard.tsx` (the `initialToday` prop is gone), `components/views/TrendsView.tsx`, `app/demo/page.tsx`
+
+**Verified:** tsc, lint, 460 tests. `/demo` loaded in headless Chrome with the browser on UTC+14 (a day ahead of the server): it shows Oct 20 and logs no errors.
+
+---
+
+## 2026-10-18 · Privacy modal, footer links, consistent corners, jig replay
+
+"lets make sure the border-radiuses everywhere are consistent" · "when i click "sign out" the flower flickers weirdly (twice?)" · "lets write up a small privacy blurb? … link to the github down there, remove terms, and then for contact you can mailto:stxphanieliu@gmail.com"
+
+**What changed about the interface.**
+- **Corners: four radii, one rule each.**
+  - **Full (pill):** every button size and variant, inputs, select triggers, tabs, calendar days, and the highlighted items inside menus and lists.
+  - **16px:** anything floating: menus, select lists, popovers, dialogs, and the top of the phone sheets. `--radius-2xl` is now exactly 1rem (it was 14.4px).
+  - **8px:** tiles and notices in the page: tray rows and tiles, the icon grid, error notes, month cells on phones, skeleton blocks, `/dev/system` swatches.
+  - **None:** rules, grids, dashed underline fields.
+- **Privacy modal** (`components/PrivacyDialog.tsx`), opened from the footer: what's kept, how it's protected (Supabase Postgres, HTTPS, encrypted at rest, row-level security per account), a link to the open GitHub repo, and email for deletion or questions. It promises no reading, selling or sharing, and no ads or analytics.
+- **Footer:** privacy opens the modal, **github** → the repo, contact → `mailto:stxphanieliu@gmail.com`. "terms" is gone.
+- **Motion jig (dev only):** it no longer replays the page right after mounting. React's dev double-run of effects looked like a timing change and remounted the flower 140ms in. This is the likely cause of the double flicker after sign-out, but it's unconfirmed: the flicker couldn't be reproduced without a signed-in session.
+
+**Changed:** `components/ui/{button,dialog,popover,select,dropdown-menu,input,tabs,calendar,skeleton}.tsx`, tray, calendar and dnd files (`rounded-md` → `rounded-lg`), `app/dev/system/Reference.tsx`, `app/globals.css`, `components/PrivacyDialog.tsx` (new), `components/ui/SiteFooter.tsx`, `components/auth/LandingAnimationJig.tsx`
+
+**Review guide:** footer → privacy at 1440 and 390. The account menu, the trends range list, the habit filter menu, the new-sticker dialog and the icon picker for corners. Sign out and watch the flower.
+
+**Verified:** tsc, lint, 460 tests. The privacy modal seen open at 1440 and 390. **Not seen:** the account menu and the sign-out flow (both need a signed-in session).
+
+---
+
+## 2026-10-18 · Rounded account menu; slower landing flower
+
+"i want that upper right dropdown to have a border-radius that matches the rest of the buttons on the side" · "lets have the flower on the login page come in a bit slower"
+
+**What changed about the interface.**
+- The account menu (from the avatar, top right) has 16px corners instead of square ones, the same curve as the 32px pill buttons beside it. Its hover highlight is a pill, inset 6px from the edge.
+- On the landing page, the flower's petals grow over 900ms instead of 420ms. The text keeps its timing. A new `--dur-bloom` token sets this, and reduced motion turns it off.
+
+**Changed:** `components/ui/Menu.tsx`, `app/login/page.tsx`, `app/globals.css`
+
+**Not seen in a browser:** the account menu, which needs a signed-in session.
+
+---
+
+## 2026-10-18 · Landing: drop "just for kicks"
+
+"I want to remove just for kicks, from the tagline"
+
+"remove the horizontal line that spans on the page on top of "place to find balance""
+
+**What changed about the interface.**
+- The tagline reads "your guilt-free, / come as you please," then the three struck labels and "place to find balance". The hero is one line shorter.
+- The full-width rule between the hero and "what have you been up to?" is gone. The spacing around it stays the same.
+- "lets go back to left aligning the landing page words": the hero text and the "what have you been up to?" block lose their 44px desktop inset and line up with the logo again. The flower keeps its right margin.
+- "reduce the space above "what have you been up to?" and have that fade in after the "place to hang out" stuff": the gap above it goes from 108px to 18px (`mt-s3`; the padding that was there for the rule is gone). It and the sign-in buttons now rise only after "place to find balance" has faded in, at about 2.6s instead of 0.16s, halfway through that line's fade so the two overlap. A new `--animate-rise-after` sets that delay from the strike timings. `--hero-actions-delay` now means the offset from the end of the last line (−450ms; negative overlaps). The jig's slider is relabelled and runs −900 to 900ms.
+
+**Changed:** `app/login/page.tsx`, `app/globals.css`, `components/auth/LandingAnimationJig.tsx`
+
+---
+
+## 2026-10-18 · One spacing scale
+
+"do we have a consistent spacing scale in this project?" … "you can choose for now"
+
+**What changed about the interface.**
+- Every gap, margin and padding of 8px or more is now one of eight steps: **8 · 14 · 18 · 22 · 30 · 44 · 64 · 96px**, written `s1`–`s8` (`gap-s4`, `pt-s6`). Under 8px stays on Tailwind's 4px grid.
+- Most moves are 2–4px. The visible ones:
+  - **The wide-screen page gutter goes from 80px to 64px.** Content starts 16px further out at 1280px and up. On the landing page, "welcome to baby steps!" now fits on one line at 1440.
+  - **The landing hero is about 85px shorter**, mostly from its top and bottom padding (80 → 64).
+  - Small clusters like mood rows, tray groups and list rows loosen a little (12 → 14).
+- `/dev/system` shows the eight steps in its spacing section.
+
+**Decisions** (from `plans/spacing-audit.md`; I picked them, so they're open to change): 16 → 18, 20 → 22, 80 → 64, 12 → 14.
+
+**Changed**
+- `app/globals.css`: `--spacing-s1`…`--spacing-s8`. `--frame-pad` uses them.
+- 46 files in `app/`, `components/` and `lib/layout.ts`, about 300 classes in all. Not touched: stock shadcn files in `components/ui/` and the motion jig.
+
+**Review guide:** Landing at 1440 (the gutter and one-line title). Today, month, week and trends at 1440 and 390.
+
+**Verified:** tsc, lint, 460 tests. Before and after headless shots of landing, today, month, week, trends, system and 404 at 1440 and 390. Page heights moved by under 20px except landing (−85).
+
+---
+
+## 2026-10-18 · Today: "add stickers" with a down chevron, top-aligned
+
+"lets make "add stickers below" -> "add stickers (down carat)" and then have that button/link top-align to its div"
+
+**What changed about the interface.**
+- On an empty Today (desktop), the link reads **"add stickers" followed by a small down chevron** (Lucide `ChevronDown`, 14px, 1.5 stroke), instead of "add stickers below".
+- It **sits at the top of the sticker row's 112px slot**, instead of near the bottom where the sticker names would be.
+
+**Changed**
+- `components/calendar/TodayView.tsx`
+
+**Review guide:** Today on desktop with no stickers for today.
+
+**Verified:** tsc, lint. **Not seen in a browser:** the demo always has stickers today, and removing them there didn't respond.
+
+---
+
+## 2026-10-17 · Landing: the flower replaces the stickers
+
+"ok lets go with jsut the flower actually, ignore my changes, and have it animate in the same way it does on the today page"
+
+**What changed about the interface.**
+- The six scattered stickers beside the welcome are gone. In their place is a **full balance flower**: six petals at full length, oxblood at the top, then clockwise in category order. It's 384px and sits 48px in from the right gutter. Its dotted rings are darker than Today's (`rule-input`, 45% ink, instead of `rule-grid`, 14%).
+- **The petals grow in the same way they do on Today**: from nothing to full size over `--dur-hero` with `--ease-enter`, starting when the page loads. With reduced motion they appear already full.
+- The flower has no category labels. It's still decoration: hidden from screen readers and from anything narrower than `lg`.
+- **The last line reads "place to find balance"** (was "place to hang out").
+- On desktop, **the welcome and tagline sit 48px in from the left** (`lg:mx-12`), matching the flower's inset on the right. **"what have you been up to?" and the sign-in row are indented the same amount** (`lg:px-12`), so the left edges line up. The rule above them stays full width. Phones keep the gutter.
+- **"place to find balance" fades in more slowly**: 900ms (new `--dur-after-strikes`) instead of the hero's 420ms. It still starts when the last strike ends, and is instant with reduced motion.
+- The two red phrases, **"baby steps!" and "place to find balance", are set in Zilla Slab 400**. The rest of the hero stays at 300.
+- The layout is as before. The Paper staircase tagline and wider gap aren't included yet.
+
+**Decisions**
+- `Flower` gets a `labels` prop (default on). When it's off, the arc labels are dropped and the viewBox crops to the outer ring, so the flower doesn't sit inside empty label space. A `ringClassName` prop sets the ring stroke. Today is unchanged.
+- The motion jig's "stickers" toggle no longer affects anything on this page.
+- **The motion jig can be committed safely.** The page loads it with a dynamic `import()` inside its `NODE_ENV === "development"` branch, so production builds drop it. A `next build` shows no jig code in the client or server output, and `/login` is still static.
+
+**Changed**
+- `app/login/page.tsx`, `components/balance/Flower.tsx`, `app/globals.css`
+
+**Review guide:** `/login` at 1440, reloaded to watch the petals grow and the new last line fade in. Before/after stills are in `screenshots/landing/` (`old-*.png` still to be added).
+
+**Verified:** tsc, tests, lint. `/login` at 1440 (flower in place and its petal transition goes from scale 0 to 98) and at 811 (flower hidden). The Chrome window couldn't go wider than 811, so I viewed 1440 in a scaled iframe.
+
+---
+
+## 2026-10-17 · Onboarding: "done" reveals the verdict
+
+"For onboarding, I want there to be a "done" choice after the user clicks the pieces of the pie, and only after that do we ease-out animate the text…"
+
+**What changed about the interface.**
+- Step 1 has a small outlined **"done" under the pie**. Pressing it reveals the rule and the verdict, which rise in with an ease-out (instant with reduced motion). After that the verdict updates live.
+- **"next" is greyed out until "done"** is pressed.
+- The tip "tap a ring to fill it in…" is gone.
+
+**Changed**
+- `app/onboarding/Steps.tsx`
+
+**Review guide:** `/dev/system` → onboarding step 1.
+
+**Verified:** tsc, 458 tests, lint. Step 1 at 1440 and 390, before and after "done".
+
+---
+
+---
+
+## 2026-10-17 · Match the boards: calendar
+
+"yes" (to matching the canvas boards; calendar last)
+
+**What changed about the interface.**
+- **Month title** reads "october" alone in the current year. Other years keep it ("december 2025"), so paging back stays clear.
+
+**Decisions**
+- **Kept the month · week toggle**, though the board has none, because it's the only way into week view.
+- **Account menu items left out** (settings, edit my stickers & cups, text & reminders, export, help): those pages don't exist yet.
+
+**Changed**
+- `lib/dates.ts`: `formatMonthTitle(month, current)`; test added
+- `components/calendar/CalendarPanel.tsx`
+
+**Review guide:** `/demo` → calendar, then page back into last year.
+
+**Verified:** tsc, 458 tests, lint, build. `/demo` calendar at 1440 and 390: no sideways scroll.
+
+---
+
+---
+
+## 2026-10-17 · Match the boards: Today
+
+"yes" (to matching the canvas boards; Today fourth)
+
+**What changed about the interface.**
+- **Header on Today:** the date sits beside the logo in oxblood ("baby steps 10/17/2026"). Phones show it small above the heading instead, since the header has no room.
+- **Heading:** "what have you been up to?" replaces the weekday and big date.
+- **Mood** reads "mood" inline with the five faces, without words under them. The day panel and sheet keep their words.
+- **Stickers stand on notebook lines**, one per row. The dashed "+" circle is gone. An empty day says "add stickers below", which scrolls to the tray.
+- **Flower caption:** "the last few weeks".
+- **Your stickers:** each category has a dot and its name in the slab. The "tap one to add…" helper is gone, but "showing X · clear" still appears while highlighting.
+
+**Decisions**
+- **No note line on Today**, as on the board. Notes are still written and read in the calendar's day panel.
+
+**Changed**
+- `components/calendar/TodayView.tsx`, `components/TopNav.tsx` (date via `useToday`)
+- `components/calendar/MoodRow.tsx`: `labels` prop
+- `components/tray/TrayGroup.tsx`, `components/tray/StickerTray.tsx`
+- `app/globals.css`: `ruled` utility
+
+**Review guide:** `/demo` Today at desktop and phone; then calendar to see the tray headings there. In code, `TodayView.tsx`.
+
+**Verified:** tsc, 457 tests, lint, build. `/demo` at 1440 and 390, calendar at 1440: no sideways scroll.
+
+---
+
+---
+
+## 2026-10-17 · Match the boards: sign in
+
+"yes" (to matching the canvas boards; sign in third)
+
+**What changed about the interface.**
+- **Heading** is two colours: "welcome to" in green, "baby steps!" in oxblood.
+- **Tagline** breaks onto three lines ("your guilt-free, / come as you please, / just for kicks,"). The three struck labels are now green ink (they were muted grey), and "place to hang out" lands in oxblood after the strikes.
+- **Six stickers** are scattered on the right, one per colour, from 1024 up. Phones skip them.
+- **A rule**, then "what have you been up to?" at display size, the Google button and an underlined "demo".
+- **"sign in with github"** stays below as a small caption link. It's not on the board, but existing GitHub accounts need a way in.
+
+**Changed**
+- `app/login/page.tsx`
+- `lib/utils.ts`: `cn` knows the `size-sticker-*` sizes, so a `size-24` override wins
+
+**Review guide:** `/login` signed out (wait for the strikes). In code, just `app/login/page.tsx`.
+
+**Verified:** tsc, 457 tests, lint, build. `/login` at 1440, 1024, 390: no sideways scroll.
+
+---
+
+---
+
+## 2026-10-17 · Match the boards: onboarding
+
+"yes" (to matching the canvas boards; onboarding second)
+
+**What changed about the interface.**
+- **Every step** ends in a rule pinned to the bottom of the sheet: "back" (underlined link) on the left, the way on at the right. The header shows "1 of 3" plus three dashes, filled in accent up to the current step.
+- **Step 1** is two columns: "hello! we're *happy you're here*", your three paragraphs, the tip, then the verdict in accent under a rule; the pie sits on the right. Under 1024 it stacks and the verdict follows the pie.
+- **The pie** is now plain wedges: three even rings with no hole, filled solid in the category colour, thin spokes, flat labels around the outside. Two-word names wrap after "&".
+- **Step 2** is a ruled 3×2 grid (2 columns on tablets, 1 on phones). Each category has a dot and its name in the slab, then the chips, then an always-visible dashed "add your own" field with an "add" link (enter works too).
+- **Chips** are dashed pills with an open circle in the category colour; picked, the outline turns that colour and the circle fills.
+- **Step 3**: "great!", your two paragraphs, then a "text message" section with the phone field (solid underline), the reminders checkbox and the carrier small print. **"set up texting" saves the number and stays** on the page with a confirmation. "skip for now" and "go to my day" both finish onboarding.
+
+**Open**
+- `copy: TODO` under "text message": the board's placeholder line ("text what you did, whenever you want") is in for now.
+
+**Changed**
+- `app/onboarding/Steps.tsx`: rewritten to the boards; shared `Footer`
+- `app/onboarding/page.tsx`: progress dashes; main fills the sheet
+- `app/actions/onboarding.ts`: `finishOnboarding` intent "texts" saves the number only; "done" finishes
+- `components/balance/LifePie.tsx`: wedges, flat wrapped labels
+- `components/ui/Chip.tsx`, `lib/palette.ts` (`border` key)
+
+**Review guide:** `/dev/system` → onboarding shows all three steps; then sign in with a fresh account (or reset your flag) for the real flow. In code, `Steps.tsx` then `LifePie.tsx`.
+
+**Verified:** tsc, 457 tests, lint, build. Steps at 1440 and 390 in `/dev/system`: no sideways scroll.
+
+---
+
+---
+
+## 2026-10-17 · Match the boards: frame and header
+
+"yes" (to matching the canvas boards, shared pieces first)
+
+**What changed about the interface.**
+- The frame is **espresso** brown by default; blush is the alternative (`data-frame="blush"`, toggle in `/dev/system`). The footer on it is ivory.
+- The **logo is green ink**, light slab, and bigger: display-sm in the app, heading on sign-in, onboarding and notice pages.
+- The **header is inset**: it lines up with the content, sits lower, and its rule is a softer 45% ink instead of a full-width solid line.
+- Content has wider side margins at 1280+ (80px), 40px from 640, 20px on phones.
+
+**Decisions**
+- Paper stays ivory (asked; you chose it over the boards' cream).
+
+**Changed**
+- `components/ui/SheetHeader.tsx` (new): the one header; `TopNav`, `/login`, `/onboarding`, `NoticePage`, `/dev/system` use it
+- `lib/layout.ts`: `LOGO`; `PAGE_WIDTH` gutter `px-5 sm:px-10 xl:px-20`
+- `app/globals.css`: `--frame` espresso by default, `[data-frame="blush"]` swaps
+
+**Review guide:** look at `/demo` and `/login`. In code, `SheetHeader.tsx` then `TopNav.tsx`.
+
+**Verified:** tsc, 457 tests, lint. `/demo` at 1440, 1024 (calendar) and 390, `/login` at 1440: no sideways scroll.
+
+---
+
+## 2026-10-17 · Remove what the redesign replaced (redesign plan 15)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- **404, error and "couldn't sign you in" pages** are restyled on the paper sheet: logo header, small eyebrow, slab heading, muted line, one filled button, lowercase copy. The 404 keeps its little calendar drawing, now in grid rules with a "404" day ringed in accent ink.
+- **Sticker form**: the mark preview circle is now the solid category ink with a paper/ink icon, matching the real sticker (it was still the old pastel).
+- **Highlight wash** (tray eye toggle) and error banners now use the new inks; they look about the same.
+- **Phone month/week views**: small sizes snapped to the type scale (e.g. 0.83rem → label 0.875rem, 0.95rem → ui 1rem). Hard to spot.
+- Nothing else should look different; this is mostly deletion.
+
+**Decisions**
+- Kept `MoodMark`, `StickerFace`, `MonthDots`, `WeekList`: all still in use (see the plan's amendment).
+- The `.dark` block stays, unused, with a one-line note at its top.
+- The old animation plans (`plans/README.md`) are marked superseded; `FloatingStickers` and `PointerNudge` are gone.
+
+**Changed**
+- Deleted: `components/auth/FloatingStickers.tsx`, `components/auth/PointerNudge.tsx`, `components/views/Placeholder.tsx`
+- `app/globals.css`: removed the legacy aliases (`--bg`, `--surface`, `--hairline`, `--today-mark`, …), all `--ramp-*`, the pastel `-soft`/`-tint` rungs, old role text sizes, `--font-note`
+- `components/ui/NoticePage.tsx` (new); `app/not-found.tsx`, `app/error.tsx`, `app/auth/auth-code-error/page.tsx` rewritten on it
+- `lib/palette.ts`: `soft`/`tint`/`lit`/`bg` keys gone; `dot` and `wash` instead
+- `lib/layout.ts`: down to `PAGE_WIDTH`, `RULE`, `PANEL`; `lib/utils.ts`: `cn` knows only the new sizes
+- Token swaps in calendar, tray, `CalendarBoard`, `TopNav`, `ThemeToggle`, `RangePicker`, `MarkPicker`, `DaySheet`
+- `plans/README.md`: superseded note; `plans/redesign/README.md`: hashes for 02 and 03
+
+**Review guide:** look at a 404 (e.g. `localhost:3000/dev/nope`) and open a sticker's edit form to see the mark preview. In code, `git show --stat` first; the `globals.css` diff is all deletions; then `NoticePage.tsx` and `lib/palette.ts`. The rest is one-token swaps.
+
+**Verified:**
+- tsc, 457 tests, lint and build pass.
+- Every screen at 1440 and 390 (`/demo` today/calendar/trends, `/login`, `/dev/system`, a 404, `/auth/auth-code-error`): no sideways scroll, no console errors.
+- No references left to removed tokens or files.
+
+**Open:**
+- `/onboarding` was checked through `/dev/system` only; walk the real flow signed in.
+- The sticker edit form wasn't screenshotted (needs a signed-in session).
+
+---
+
+## 2026-10-17 · Onboarding (redesign plan 12)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- New users get three steps after first sign-in, under a logo-only header with "1 of 3" on the right:
+  1. **life pie**: "how full is each part of your life right now?" Tap rings to fill slices; the line under the pie updates live ("looks like work is trailing behind, but you're filling your cup with exercise", or "well balanced" when every slice is within one ring).
+  2. **activities**: "what do you like to do?" Each category, in its colour, with dashed suggestion chips; tap to choose (ink outline + dot). "add your own" opens into a dashed input; enter adds it.
+  3. **stay in touch**: "want a little nudge?" Phone (dashed underline), "text me reminders" checkbox, carrier small print, then "set up texting" or "skip for now". **No texts are sent**; this stores consent only.
+- Then today, with the chosen stickers in the tray. Existing users never see it.
+- Headings and helper lines are placeholder copy; the verdict sentences are yours, verbatim.
+
+**Decisions**
+- **Migration applied to the shared Supabase project** (with your OK). Additive: `profiles`, `category_ratings`, and the sign-up trigger now opens a profile. All 4 existing users were backfilled as onboarded. The live site doesn't read the new tables.
+- **Your own `onboarded_at` was reset to null** so you can walk the flow; finishing step 3 sets it again.
+- **Ratings are history**: each "next" on step 1 adds six rows with one timestamp; the latest wins. That leaves room for re-rating later.
+- **Proxy fails open**: if the profile query fails, you get the app, not a redirect loop.
+
+**Changed**
+- `supabase/migrations/20261017090000_onboarding.sql` (new); `lib/database.types.ts` regenerated
+- `app/onboarding/page.tsx`, `app/onboarding/Steps.tsx` (new)
+- `app/actions/onboarding.ts` (new): `saveRatings`, `addActivities` (upsert, skips duplicates), `finishOnboarding`
+- `lib/balance.ts`: `verdict()`; `lib/phone.ts` (new): `toE164`, `formatUS`; `lib/suggestions.ts`: `defaultMark()`. All with tests.
+- `proxy.ts`: the onboarding redirect; long comments trimmed
+- `app/dev/system/Reference.tsx`: verdict line under the pie, plus an onboarding section
+
+**Review guide:** walk it first: load `localhost:3000` signed in and you'll land on step 1. In code, read the migration (RLS + trigger), then `proxy.ts` (the redirect, near the end), then `app/actions/onboarding.ts`. `Steps.tsx` is the UI.
+
+**Verified:**
+- 457 tests (13 new: verdict, phone, defaultMark), lint and build pass.
+- Migration listed then pushed; types regenerated, and they typecheck.
+- RLS: signed out, both tables return "permission denied"; as a made-up signed-in user, 0 rows visible in `profiles`, `category_ratings` and `life_areas`.
+- Backfill: 4 users, 4 profiles, 0 not onboarded (before your reset).
+- The steps at 1440 and 390 in `/dev/system`: no sideways scroll, chips toggle, add-your-own adds a chosen chip.
+
+**Open:**
+- **Not yet walked end to end by a signed-in user**; that's you, next.
+- The cross-user insert check wasn't run (blocked as a production write); the insert policy requires `auth.uid() = user_id` and that you own the category.
+- Placeholder headings and helper copy are marked `copy: TODO` in `Steps.tsx`.
+- Texting itself (sending, STOP handling) isn't built.
+
+---
+
+## 2026-10-17 · Design system reference (redesign plan 14)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- New page at **`/dev/system`**: one long sheet showing the system as it actually renders.
+  - colour: every surface, ink, rule and mood token as a swatch with its live value.
+  - categories: each category's ink, "on" text, text colour, and its sticker at lg/md/sm/xs.
+  - moods: faces at three sizes, dots, and a working mood row.
+  - type: every text size set in its real face, with measured px, line height and weight.
+  - spacing: bars for the spacing steps in use.
+  - buttons and chips: every variant × size, plus disabled. Tab through it to see the focus ring.
+  - balance: flowers at all-0, mixed and all-3, and a working pie that drives a flower.
+- A "blush · espresso" toggle top right swaps the frame colour, and every value updates.
+- Users never see it: production returns 404 unless you're signed in with an allow-listed email.
+
+**Decisions**
+- **Rule from here on: a new component lands in `/dev/system` in the same commit.**
+- **Values are computed, not typed.** Swatch hexes and type sizes are read from the browser, so the page can't go stale against `globals.css`.
+- **Production gate is an env allow-list** (`DEV_SYSTEM_EMAILS`), not a role table; no DB change.
+
+**Changed**
+- `app/dev/system/page.tsx` (new): metadata, noindex, the dev/allow-list gate
+- `app/dev/system/Reference.tsx` (new): the sheet
+- `proxy.ts`: `/dev` public; the page does its own gating
+
+**Review guide:** open `/dev/system` locally and scroll it at 1440 and 390, flipping to espresso. In code, `page.tsx` is the part with consequences (the gate); `Reference.tsx` is display only. Its `useToken`/`useRootChange` re-read computed styles when `<html>`'s class, `data-frame` or style changes.
+
+**Verified:**
+- 444 tests, lint and build pass.
+- `/dev/system` at 1440 and 390 with no sideways scroll; the espresso toggle changes the frame swatch `#f1d0ca` → `#4e4036`; the pie's work slider moves 1 → 3 and the flower follows.
+- `next start` (production build), signed out: `/dev/system` returns 404.
+
+**Open:**
+- Verdict line in the balance section waits on plan 12's `verdict()`.
+- To see it on the deployed site, set `DEV_SYSTEM_EMAILS` in Vercel.
+
+---
+
+## 2026-10-16 · Trends restyle (redesign plan 13)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- The header reads "trends" in light slab, with "categories · habits · moods" as underlined text tabs beside it (under it on phones). The range dropdown is plain lowercase text with an accent underline, and the dates sit beside it.
+- No pills or boxes. Each section sits under a 1px rule with a lowercase slab heading ("by category", "by mood", "day by day"), 44px apart.
+- Categories: bars in full category ink on a `rule-grid` track, names in the category's text colour. The star has dotted rings, ink outline, and category-coloured dots and labels.
+- Habits (wide): the table has inside-only grid lines like the calendar, an xs sticker beside each habit, category names in their colour, and plot blocks in the category ink. Headers are small lowercase captions; the active sort is underlined.
+- Habits (phone): xs stickers, lowercase, 1px rules between rows.
+- Moods: bars run great at the top to rough at the bottom. The line chart has great at the top, `rule-grid` gridlines, a dashed "okay" line, mood-coloured dots with an ink ring, and lowercase dates.
+- All copy is lowercase.
+
+**Decisions**
+- **Range picker stays a dropdown.** The plan asks for text buttons, but there are eight ranges plus custom dates; a row of eight links doesn't fit a phone. It's unboxed text instead.
+- **`RULE` went 1px app-wide.** It also touches `MonthDots`, `WeekList` and `Placeholder`, which are mostly gone after plan 09 (plan 15 cleans up).
+- **Light plot blocks at 60%**: at 40% they read as the old pastels.
+
+**Changed**
+- `components/trends/TrendsBoard.tsx`: header, text tabs, sections
+- `HabitTable.tsx`, `HabitList.tsx`, `MoodLine.tsx`, `MoodBars.tsx`, `CategoryBars.tsx`, `LifeStar.tsx`, `RangePicker.tsx`, `ChartCard.tsx`: restyled, comments trimmed
+- `components/views/TrendsSkeleton.tsx`: matches the new header
+- `lib/layout.ts`: `RULE` 1px, `PANEL` `pt-5`
+
+**Review guide:** start with `TrendsBoard.tsx` (the page shape); then `HabitTable.tsx`, where only `cellClass`, the cell classes and `BlockPlot` changed in substance. The rest are class swaps. The logic (memos, sorting, paging, filters) is untouched.
+
+**Verified:**
+- 444 tests, lint and build pass.
+- `/demo#trends`, all three tabs at 1440 and 390, with no sideways scroll.
+- `grep -rn "ramp-" components/trends` is empty, as are the legacy `.soft`/`.tint`, `hairline` and raw `text-[…]` sizes.
+
+**Open:**
+- `PAGE_TITLE`, `PILL_TRACK` and `pill` in `lib/layout.ts` are now unused by Trends; plan 15.
+
+---
+
+## 2026-10-16 · Sign-in page (redesign plan 11)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- `/login` sits in the paper frame with a small header: logo left, outline "Sign in with Google" right.
+- The body is left-aligned: "welcome to baby steps!" in big oxblood slab, then "your guilt-free, come as you please, just for kicks," with "habit tracker", "activity logger", "life manager" each struck through by an oxblood line drawing in turn, then "place to hang out" fading in.
+- Below: "what have you been up to?", an outline "Sign in with Google" button, and a "demo" link. Under that, a quiet "sign in with github".
+- With reduced motion, all three are struck and the last line is there from the start.
+- The falling stickers and pointer nudge are gone from this page.
+
+**Decisions**
+- **GitHub kept, quietly.** The plan shows Google only, but dropping GitHub would lock out anyone who signed up with it.
+- **Copy verbatim**, including "Sign in with Google" capitalised as written.
+- **Strike timing as tokens:** 600ms wait, 400ms per line, 250ms apart; the last line fades in after the third.
+
+**Changed**
+- `app/login/page.tsx`: rewritten
+- `components/auth/SignInButtons.tsx`: now `SignInButton` (one provider; `sm`, `md` or text look)
+- `app/globals.css`: `strike`/`appear` keyframes, strike timing tokens
+- `app/layout.tsx`: stale comment out
+
+**Review guide:** `app/login/page.tsx` is the whole page; then the strike block in `globals.css` (search `strike`). `SignInButtons.tsx` is the old logic, slimmer.
+
+**Verified:**
+- 444 tests, lint and build pass.
+- 1440 and 390 with no sideways scroll.
+- Playwright: at 1.3s the first line is struck, the second is drawing and the third hasn't started; at 3.8s all are struck and the last line is visible. Reduced motion shows the end state immediately. "demo" opens `/demo`. The body Google button requests Supabase's `/authorize` with `provider=google` and `redirect_to=…/auth/callback`.
+
+**Open:** the full Google round trip wasn't completed in automation; worth one real sign-in.
+
+---
+
+## 2026-10-16 · Month and week with a day panel (redesign plan 09)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- Month and week are one calendar page with a `month · week` text toggle beside a lowercase title, and outline arrows on the right.
+- The grid has lines between cells only. Weekdays are lowercase. Today's date sits in an oxblood circle; the selected day has an oxblood inset ring; future days are faded and can't be picked or dropped on.
+- Every sticker on a day shows at 20px and wraps; a busy day makes its row taller.
+- At ≥1024px a panel sits right of the grid: weekday, numeric date, mood faces, the day's stickers (tap to remove, × on hover), "add to this day" with the sticker bank, then the note. It shows today until you click a day.
+- On phones the dot month and week list are unchanged; tapping a day opens the bottom sheet with the same panel.
+- Week view uses the same cells as month. The old week columns with bars and inline notes are gone.
+- The tray rail beside month/week is gone. Today's dashed add circle now scrolls to the tray.
+
+**Decisions**
+- **Panel defaults to today**, so it's never empty.
+- **Mood in the cell is a dot only.** Setting mood happens in the panel; the popover is gone.
+- **No `+n` cap.** Real data at 1440 looked fine growing.
+- **Highlight by mood is gone** with the rail's mood picker. Category/sticker highlight stays via the eye.
+- **Compact tray** (panel, sheet) keeps the eye and "+ new" but not edit or archive.
+- **Deleted:** `DayModal`, `DayMoodButton`, `WeekDayColumn`, `StickerBar`, `tray/MoodPicker`, `TrayRowFace`, the sticker-edge/shadow tokens.
+
+**Changed**
+- `components/calendar/DayCell.tsx`: rewritten, one cell for month and week
+- `components/calendar/DayPanel.tsx`: new
+- `components/calendar/DaySheet.tsx`, `CalendarPanel.tsx`, `PeriodHeader.tsx`, `MonthGrid.tsx`, `WeekGrid.tsx`, `period.ts`: rewritten
+- `components/tray/StickerTray.tsx`: `layout`, `compact`, `dragScope`
+- `components/dnd/CalendarBoard.tsx`: `addTo(day)`, tray render prop, overlay simplified
+- `components/dnd/DraggableMark.tsx`, `DropSlot.tsx`: xs marks only
+- `app/globals.css`: old sticker-edge tokens out
+
+**Review guide:** start with `DayPanel.tsx` (what you see on the right), then `DayCell.tsx`, then `CalendarPanel.tsx` (selection state and the desktop/phone split). The `CalendarBoard.tsx` diff is mostly deletions plus `addTo`. Deleted files need no review.
+
+**Verified:**
+- 444 tests, lint and build pass.
+- `/demo` at 1440 and 390, no sideways scroll.
+- Playwright: clicking the 8th puts 10/8/2026 in the panel with the date `aria-pressed`; tapping a panel sticker adds it to that cell; at 390 tapping the 8th opens the sheet and tapping a sticker adds it.
+
+**Open:**
+- You chose the rail's mood picker in plan 06; it's gone now. If you miss highlighting by mood, it could come back as an eye on the mood faces.
+- Deep links to `#month` show the Today skeleton while loading.
+
+---
+
+## 2026-10-16 · Sticker tray and suggestions (redesign plan 10)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- On Today, "your stickers" sits under a rule below the day at every width, including phones. Groups are lowercase category names in their colour, each a wrap of small stickers with captions.
+- Tapping a sticker, or pressing Enter on it, adds it to today with the land animation. Dragging still works, and Space still lifts a keyboard drag.
+- On desktop, hovering a sticker shows two badges: an eye (highlight its days) top-left and a pencil (edit) top-right. On touch the pencil is always shown and there's no eye.
+- Each group ends with a dashed "+ new" tile, which opens "new sticker" with that category chosen. The header "+" is gone.
+- The new-sticker dialog shows "ideas" chips for the category, leaving out names you already have. Tapping one fills the name and icon; tapping again clears them. Inputs are dashed lines; buttons are "cancel" (text) and "add sticker" (filled).
+- Archived stickers fold under "archived (n)" with a restore button on each.
+- Week and Month still have the side rail with the new tiles, until plan 09.
+- Fixed everywhere: small filled buttons lost their paper-coloured text (a class-merging bug), and their text is visible again.
+
+**Decisions**
+- **Enter adds, Space drags.** The plan said Enter/Space to add. dnd-kit's keyboard drag already uses Space, so taking both would remove keyboard dragging.
+- **Already on today = no write.** The sticker replays its land animation so the tap visibly did something.
+- **Suggestions hide case-insensitively** ("run" hides when you have "Run"), which is stricter than the database's exact-match rule.
+- **Copy is placeholder.** `lib/suggestions.ts` carries `// copy: TODO`.
+- **Demo:** no new, edit or restore (it has no library writes).
+
+**Changed**
+- `lib/suggestions.ts` + test: new, 4–5 ideas per category
+- `components/ui/Chip.tsx`: new
+- `components/tray/StickerTray.tsx`, `TrayGroup.tsx`: rewritten (tiles, new tile, archived fold)
+- `components/tray/StickerFields.tsx`, `NewStickerForm.tsx`: ideas chips, dashed inputs, lowercase
+- `components/tray/HighlightToggle.tsx`, `RestoreStickerButton.tsx`, `StickerRetire.tsx`, `EditStickerForm.tsx`: badge forms, lowercase
+- `components/dnd/CalendarBoard.tsx`: tray under Today, `addToToday`
+- `components/dnd/DraggableSticker.tsx`: simplified, tap activates
+- `lib/utils.ts`: `cn` knows our text sizes
+- `lib/queries/activities.ts`, `lib/demo.ts`: groups carry the category slug
+- `lib/layout.ts`, `MoodPicker.tsx`, `CalendarSkeleton.tsx`: `TRAY_INSET` gone; skeleton has the tray under Today
+
+**Review guide:** start with `TrayGroup.tsx` (the tile), then `StickerTray.tsx`, then the `CalendarBoard.tsx` diff (`addToToday` and the layout switch). `suggestions.ts` and `Chip.tsx` are small. The `lib/utils.ts` change is three lines but affects every `cn` call.
+
+**Verified:**
+- 444 tests, lint and build pass.
+- `/demo` at 1440 and 390 with no sideways scroll.
+- Playwright: tapping a tile adds it to today with `animate-land` at both widths; the "bike" idea fills name and `icon:bike`; hover shows the eye badge; Week keeps the rail.
+
+**Open:** the new tile, pencil and archived fold only render when signed in, so they were checked in code and a scratch page, not in the signed-in app.
+
+---
+
+## 2026-10-16 · Today view (redesign plan 08)
+
+"feel free to actually just do all the steps left … you dont need my permission to commit"
+
+**What changed about the interface.**
+- Today shows the weekday ("friday") over the date in large light slab ("10/16/2026").
+- "how are you feeling?" is five coloured mood faces with lowercase names. The day sheet uses the same row.
+- "today" is a wrap of 64px stickers with names under them. On desktop, an × appears on hover to take one off; on touch it's always shown. A dashed circle at the end adds one (it opens the add sheet). With no stickers, it's the dashed circle and "nothing yet. tap a sticker to add it."
+- The note is one large line on a dashed rule, with a 0/280 counter.
+- The flower sits to the right at 1024px and up, under "last three weeks". On phones it comes after the note at the column's width.
+- The seven-day strip is gone. Today always shows today; other days are reached from the calendar.
+
+**Decisions**
+
+- **Balance is computed in the browser** from the sticker history the page already loads, rather than in a new server query. The plan allowed reusing an existing query, and this way the flower follows a sticker the moment it lands, before the server confirms it.
+- **The tray stays a side rail** for now. Moving it under Today is part of the tray rework (plan 10).
+- **Desktop columns switch at `lg`** (1024px), like the rest of the calendar.
+
+**Changed**
+
+- `components/calendar/TodayView.tsx`: rewritten
+- `components/calendar/MoodRow.tsx`: coloured faces, lowercase labels
+- `components/calendar/DayNote.tsx`: `variant="page"`
+- `components/calendar/CalendarPanel.tsx`: passes today and the library to Today
+- `components/views/CalendarSkeleton.tsx`: the Today skeleton matches the new shape
+
+**Review guide:** `TodayView.tsx` is the change. `DayNote` and `MoodRow` restyles are small, and the `CalendarPanel` diff is a few lines.
+
+**Verified:**
+- 428 tests, lint and build pass.
+- `/demo` at 1440 and 390 with no sideways scroll.
+- Playwright: × removes a sticker, the dashed circle opens the add sheet, moods toggle, and the flower's aria-label reads correctly.
+
+**Open:** the demo's categories are all at level 3, so the flower going from 0 to 1 was only checked through the unit test and code path, not on screen.
+
+---
+
+## 2026-10-16 · Balance level, flower and life pie (redesign plan 07)
+
+**What changed about the interface.** Nothing visible yet. These are new building blocks, placed on screens by later plans.
+- **Flower:** six petals, one per category, clockwise from the top. A petal's length shows how many of the last 3 weeks had a sticker in that category (0–3). At 0 it's a small grey bud. Petals grow in on load, and don't animate under reduced motion. Category names curve around the outside and read upright at the bottom too.
+- **Life pie:** the same six categories × three rings, for picking a level. Tap ring 2 to set level 2; tap the outermost filled ring again to step down one (so 0 is reachable). With a keyboard, each slice is a slider: arrows change the level and Home/End jump to 0/3. Focus shows an outline around the slice.
+- Screen readers hear the flower as "exercise 3 of 3, work 1 of 3, …".
+
+**Decisions**
+
+- **Weeks start on Sunday,** like the calendar, rather than the plan's Mon–Sun. The plan says to match the calendar. `weekStartsOn: 1` is there if that changes.
+- **No `/dev/system` section yet:** that page is plan 14. The flower at all-0, mixed and all-3, and the pie being clicked, were checked on a throwaway page.
+- **Pie ring edges** are the flower's guide rings (56/80/104) with a 16 hole, so the two read as the same scale.
+
+**Changed**
+
+- `lib/balance.ts` + test (new): `balanceLevels`, `balanceSpread`
+- `lib/balance-geometry.ts` (new): angles, label arcs, ring sectors, petal path
+- `components/balance/Flower.tsx`, `LifePie.tsx`, `shared.tsx` (new)
+- `lib/palette.ts`: `textFill` (`fill-cat-*-text`) for SVG labels
+
+**Review guide:** the logic is all in `lib/balance.ts` and its test. The drawing is in `Flower.tsx` and `LifePie.tsx`. `palette.ts` only gained one key per row.
+
+**Verified:**
+- 428 tests, lint and build pass.
+- Playwright: clicks and arrows set the expected levels; the aria-label reads correctly; labels sit upright and clear of petals.
+
+**Open:** `/dev/system` sections wait for plan 14.
+
+---
+
+## 2026-10-16 · Mood colours, dot and tray picker (redesign plan 06)
+
+"Tray MoodPicker, as written"
+
+**What changed about the interface.**
+- Calendar cells (month, week columns, phone week) show a small mood-coloured dot instead of a face. Clicking it still opens the mood popover.
+- Everywhere else a face appears (Today's "How it felt", the day sheet, the popover, Trends), it sits on its mood colour, from blue (rough) to gold (great). The same day is the same colour everywhere.
+- The tray's mood row is "how are you feeling?" with five coloured circles. The lit one gets an oxblood ring. It still highlights days with that mood rather than setting one.
+- Keyboard: one tab stop for the five, arrows move the selection, Space picks it up to drag. Screen readers hear "mood, radio group, rough, 1 of 5".
+
+**Decisions**
+
+- **Radio group on the tray picker,** as the plan says. Setting a day's mood still happens in `MoodRow` and the popover.
+- **`MoodMark` kept** as the coloured face, rather than deleted.
+
+**Changed**
+
+- `components/ui/Mood.tsx` (new): `MoodFace`, `MoodDot`
+- `components/tray/MoodPicker.tsx`: rewritten as a radio group
+- `components/calendar/MoodMark.tsx`: the face on its colour
+- `DayMoodButton`, `WeekList`, `app/not-found.tsx`: the dot
+- `app/globals.css`: `--size-mood-dot`
+- Plan 06: as-built amendment
+
+**Verified:**
+- 416 tests, lint and build pass.
+- Radio group accessibility tree, arrow keys and click-to-clear checked in Playwright.
+- Seen: Month with a mood lit, Today, Trends moods (1440) and the phone week (390).
+
+**Open:** the picker hasn't been tried with a real screen reader. The tray's moods are hidden below `lg`, as before.
+
+**Review guide:** `Mood.tsx` and `MoodPicker.tsx` are the change. The others swap one component.
+
+---
+
+## 2026-10-16 · Solid stickers (redesign plan 05)
+
+"yeah lets commit and move on."
+
+**What changed about the interface.**
+- Stickers are solid category ink, not the pale 45% tint. They have a 3px paper edge (2px at the smallest size) and a faint 1px ring outside it. The drop shadow is gone.
+- Icons are ivory on oxblood, bottle and plum, and dark ink on mustard, rose and sage.
+- Four sizes: 20px in calendar cells, 36px in the tray and lists, 44px in the day sheet, and 64px (for Today, in plan 08).
+- Tray stickers lift 1px on hover.
+- Week bars (`StickerBar`) still use the old tint. Plan 09 redoes them.
+
+**Decisions**
+
+- **`StickerMark` keeps its `sticker` prop and adds `size`.** It does not use the plan's split `colorKey`/`mark`/`icon` props.
+- **Icon and emoji scale with the sticker** (half the box, and 40% via container units), so the login page's oversized stickers need no font sizes.
+
+**Changed**
+
+- `components/calendar/StickerMark.tsx`: rewritten (138 → 60 lines)
+- `app/globals.css`: `size-sticker-*` tokens and the `sticker-glyph` utility
+- Call sites: `DraggableMark` (xs), `DayModal` (md), `TrayGroup` (sm + lift), `HabitList` (raw 30px removed), `not-found` (xs)
+- Plan 05: as-built amendment
+
+**Verified:**
+- 416 tests, lint and build pass.
+- Icon colours read from the page match the plan for all six inks.
+- Month at 1440: 20px stickers are still identifiable.
+- Also seen: the day sheet, the tray, the phone week at 390 and login at 390 (Playwright, light).
+
+**Open:** Trends habits and the 404 page were not looked at. `/dev/system` waits for plan 14.
+
+**Review guide:** the change is in `StickerMark.tsx`. The call-site edits are one-word size props.
+
+---
+
+## 2026-10-16 · Frame, sheet, header, footer (redesign plan 04)
+
+"ok commit and lets move on."
+
+**What changed about the interface.**
+- The app is a paper sheet on a pink frame: a 44px margin on desktop, 14px on phones. The footer (© year, privacy, terms, contact) sits on the frame below the sheet.
+- Header: "baby steps" in red slab on the left, then today · calendar · trends (the active one is ink and underlined), then the avatar. A dark rule sits under it.
+- Avatar menu: email, "settings" (disabled), "sign out". It is square, on paper.
+- Phones (<640px): the same three words fixed to the bottom on paper, no icons.
+- **Everyone lands on Today**, desktop too. Desktop Today is the phone layout stretched until plan 08.
+- **Week has no button until plan 09.** "calendar" opens Month; `#week` still works.
+- Dark mode and the theme toggle are gone; the app is light only.
+- `/demo`: "sign in" is an ink-outline pill. The banner sits above the frame.
+
+**Decisions**
+
+- **Button variants added to `button.tsx`,** not a new `Button.tsx` (the names collide on macOS). New: `outline` (ink pill), `filled`, `text`, sizes `md` 44px and `sm` 32px, plus `ButtonLink`. The default variant is unchanged.
+- **New primitives:** `PageFrame`, `SiteFooter`, `Menu`.
+- **Footer links go to `#`** until those pages exist.
+
+**Changed**
+
+- `components/ui/`: `PageFrame.tsx`, `SiteFooter.tsx` and `Menu.tsx` (new); `button.tsx` (variants)
+- `components/AppShell.tsx`, `TopNav.tsx`, `BottomNav.tsx`, `UserMenu.tsx`: the new shell
+- `lib/nav.ts` (+ tests): `NAV_ITEMS` maps today/calendar/trends to pages; one `LANDING`
+- `components/calendar/period.ts`, `CalendarPanel.tsx`, `views/CalendarSkeleton.tsx`: a single Today landing
+- `app/layout.tsx`: theme script removed. `app/globals.css`: `--frame-pad`, `--bottom-nav-h`
+- `app/demo/page.tsx`: the sign-in pill; comments trimmed
+- Plan 04: as-built amendment
+
+**Verified:**
+- 416 tests, lint and build pass.
+- `/demo` at 1440: 44px frame, footer outside the sheet.
+- `/demo` at 390: 14px frame, no sideways scroll, all three bottom items visible.
+- Tab order: logo → nav → sign in.
+- The `espresso` frame turns the footer ivory.
+- Checked in Playwright, light.
+
+**Open:**
+- The avatar menu was not opened live; it needs a signed-in session. Radix handles Enter, Esc and focus return.
+- The signed-in app was not looked at.
+
+---
+
+## 2026-10-16 · Slab titles, Outfit text (redesign plan 03)
+
+"we can try outfit 400"
+
+**What changed about the interface.**
+- Titles (page titles, today's date, "Your stickers", the wordmark) are Zilla Slab at 300. Section titles are 400.
+- Everything else is Outfit at 400, rounder than Schibsted. The plan said 300; Stephanie asked to try 400.
+- Body text went from 14.7px to 16px; small text went up to 12 and 14px.
+- Section labels ("Mood", "Spirituality") are no longer spaced capitals. They are 14px muted text.
+- Notes and mood words ("Rough", "Good") are in the slab face, upright, no longer Spectral italic.
+- Fonts not yet swapped for the licensed Winden/Axiforma. `app/fonts.ts` says how.
+
+**Decisions**
+
+- **Old size names point at the new scale** (`page-title` → 46px etc.), so no component changed.
+- **Copy is not lowercased yet.** The rule applies from here; each surface gets lowercased when its plan restyles it.
+- **`lib/layout.ts` untouched.** The phone page title is still 1.88rem; its comment still mentions Schibsted.
+
+**Changed**
+
+- `app/fonts.ts` (new), `app/layout.tsx`: Zilla Slab + Outfit; Schibsted and Spectral removed
+- `app/globals.css`: font stacks, type scale, old names mapped, `note`/`eyebrow`/`daylabel`, body weight 400
+- `lib/dates.ts`: `formatDateNumeric()` ("10/15/2026"), with `lib/dates.test.ts`
+- Plan 03: as-built amendment
+
+**Verified:** 414 tests, lint, build. Built CSS loads only Zilla Slab and Outfit. Demo and login seen at 1440 and 390 (headless Chrome, light).
+
+**Open:** signed-in app not looked at. Dark mode not looked at (plan 04 hides it).
+
+---
+
+## 2026-10-16 · New colours: paper, ink, category inks, moods (redesign plan 02)
+
+**What changed about the interface.**
+- The page is ivory (`#FFFEF5`). Text and rules are bottle green, not near-black.
+- The six categories are oxblood, bottle, mustard, rose, sage and plum. Exercise is green.
+- Moods run sad → happy everywhere (pickers, Trends bars) and have their own blue-to-gold scale.
+- Today's mark and destructive actions use oxblood.
+- Sticker shapes, type and layout are unchanged; plans 03–05 do those.
+
+**Decisions**
+
+- **No migration.** The DB keeps the old `color_key` values; `fromDbColorKey()` maps red→oxblood, blue→bottle, orange→mustard, yellow→rose, green→sage, purple→plum on read. Same reason as plan 01: production shares the database.
+- **Old tokens stay as aliases** (`--bg`, `--surface`, `--ramp-*`, `soft`/`lit`/`tint` classes), pointed at the new colours, so nothing goes unstyled before plans 05–15 move their callers.
+- **Shadow raw tokens are `--sheet-shadow` / `--menu-shadow`.** The plan's names would have made the bridge reference itself.
+- **Dark mode is left alone.** Plan 04 hides the toggle.
+- **`palette.ts` comments are short**, not the long one the plan said to keep (comment-length rule).
+- **`--frame` / `--on-frame` exist but nothing uses them yet.** `data-frame="espresso"` swaps them; plan 04 puts them on screen.
+
+**Changed**
+
+- `app/globals.css`: new primitives, semantic, category and mood tokens; bridge; espresso frame
+- `lib/palette.ts`: `CategoryColor`, `categoryColor()` (was `ramp()`), `fromDbColorKey()`; `lib/palette.test.ts`
+- `lib/rampValues.ts` → `lib/categoryValues.ts`; `lib/categoryValues.test.ts` checks it against globals.css
+- `lib/moods.ts`: sad → happy order, `--mood-*` colours; two analytics tests updated for the order
+- `lib/demo.ts`, `lib/queries/activities.ts`, eight components: new keys and `categoryColor()`
+- Plan 02 and README: the no-migration and shadow-name amendments
+
+**Verified:** `npm test` (413 pass), lint, build. Demo seen at 1440 and 390 in headless Chrome. No new hexes in `.tsx` (`app/apple-icon.tsx` already had its own).
+
+**Open:** espresso frame not looked at (nothing renders `--frame` yet). Signed-in app not looked at.
+
+---
+
+## 2026-10-16 · Life areas are called categories (redesign plan 01)
+
+"Can we just keep the name life_areas? Will that break anything?"
+
+**What changed about the interface.** Only the wording. The Trends tab reads **Categories · Habits · Moods**, the sticker form's dropdown is labelled **Category**, the habit table's column and filter say category ("All categories", "3 categories"), and the month summary counts "categories touched". Nothing moved or changed colour.
+
+**Decisions**
+
+- **The database keeps `life_areas`, `life_area_id` and `seed_life_areas`.** The plan called for a migration to rename the table. The linked Supabase project is the one the deployed site uses, and this branch won't merge until the redesign is done, so the rename would have broken production for the whole redesign. The old names are now confined to where the code talks to the database: `.from("life_areas")` in `lib/queries/activities.ts`, the `life_area_id` writes in `app/actions/activities.ts`, `scripts/seed*.sql` and the generated types. Plans 02 and 12 contain SQL written against `categories` / `category_id` / `seed_categories()`. It has to be translated when we get there; plan 01 and the README now say so.
+- **Wording kept its current case.** The plan said lowercase "category", but every label next to it is still sentence case. Lowercase arrives with the type plan, all at once.
+- **CSS tokens were renamed too** (`--area-*` → `--category-*`, `--color-category-*`). No component used the generated utilities; plan 02 replaces these tokens anyway.
+
+**Changed**
+
+- 56 files under `lib/`, `app/`, `components/` and `scripts/`: identifiers (`areaId`/`lifeAreaId` → `categoryId`, `areaName` → `categoryName`, `areaOf` → `categoryOf`, `kind: "area"` → `kind: "category"`, the form field `lifeArea` → `category`, the `TrendsTab` value `areas` → `categories`), comments and copy
+- `components/trends/AreaBars.tsx` → `CategoryBars.tsx`
+- `app/globals.css`: category tokens
+- `plans/redesign/01-*.md`, `plans/redesign/README.md`: the database-names amendment
+
+**Checked:** `tsc` clean, lint 0, `npm test` 403 passing (same count as before), `npm run build` passes. `/demo` renders Today and Trends in headless Chrome at 1440 and 390; Trends shows the Categories tab with the star and the bars. Nothing was persisted under the old values (no localStorage, URL or hash), so renaming the string values breaks nothing saved.
+
+**Open**
+
+- **Not checked signed in.** Your account's today, month, week and trends, adding and removing a sticker, and creating one in each category. The database is unchanged, so data can't differ, but the forms are the riskiest part (the field was renamed from `lifeArea` to `category`).
+- The 390 headless screenshot is clipped on the right. Very likely headless Chrome's minimum window width, since this plan changes no layout. Worth confirming on a real phone-width window.
 
 ---
 

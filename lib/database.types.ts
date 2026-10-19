@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   graphql_public: {
     Tables: {
@@ -74,6 +74,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "life_areas"
             referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      category_ratings: {
+        Row: {
+          category_id: string
+          level: number
+          rated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          level: number
+          rated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          level?: number
+          rated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_ratings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "life_areas"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -190,11 +219,51 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          onboarded_at: string | null
+          petal_large: number
+          petal_medium: number
+          petal_small: number
+          petal_weeks: number
+          phone: string | null
+          texts_opt_in: boolean
+          user_id: string
+          week_starts_on: number
+        }
+        Insert: {
+          created_at?: string
+          onboarded_at?: string | null
+          petal_large?: number
+          petal_medium?: number
+          petal_small?: number
+          petal_weeks?: number
+          phone?: string | null
+          texts_opt_in?: boolean
+          user_id: string
+          week_starts_on?: number
+        }
+        Update: {
+          created_at?: string
+          onboarded_at?: string | null
+          petal_large?: number
+          petal_medium?: number
+          petal_small?: number
+          petal_weeks?: number
+          phone?: string | null
+          texts_opt_in?: boolean
+          user_id?: string
+          week_starts_on?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      delete_my_account: { Args: never; Returns: undefined }
       seed_life_areas: { Args: { for_user: string }; Returns: undefined }
     }
     Enums: {

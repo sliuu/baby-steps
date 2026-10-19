@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 
-import { MoodMark } from "./MoodMark";
+import { MoodDot } from "@/components/ui/Mood";
+import { MOOD_LABEL } from "@/lib/moods";
 import { StickerMark } from "./StickerMark";
 import type { PeriodProps } from "./period";
 import { formatDayLong, fromDayString, weekGrid } from "@/lib/dates";
@@ -10,73 +11,30 @@ import { dayMatches } from "@/lib/highlight";
 import { RULE } from "@/lib/layout";
 import { wash } from "@/lib/palette";
 import { NO_STICKERS } from "@/lib/stickers";
+import { useSettings } from "@/components/SettingsProvider";
 
 type Props = PeriodProps & {
-  /** Any day inside the week being shown. `weekGrid` finds the Sunday. */
+  /** Any day in the week. */
   anchor: Date;
-  /** Open the day's sheet. `CalendarPanel` owns it — see `DaySheet`. */
+  /** Opens the day's sheet (owned by `CalendarPanel`). */
   onShowDay: (day: Date) => void;
-  /**
-   * Which widths this drawing is for. `CalendarPanel` renders both the phone's
-   * and the desktop's and lets CSS choose — see the note on the branch there.
-   */
+  /** Both phone and desktop render; CSS picks (see `CalendarPanel`). */
   className?: string;
 };
 
 /**
- * The week as seven rows, for a phone.
- *
- * `WeekGrid` turned on its side, and turning it is the whole idea: seven
- * columns each holding a stack of named bars and a note field is a comparison
- * laid out across a page, and a 375px page has no across. Rotated, the seven
- * days become seven lines you read top to bottom — which is the direction a
- * phone already scrolls — and each line is short enough to say the one thing a
- * week is for: was there anything on this day, and how did it feel.
- *
- * It is chosen by window width rather than by section — `CalendarPanel` renders
- * this and `WeekGrid` together and lets `lg:hidden` pick — so a narrow
- * *desktop* window gets it too, and that is deliberate for the same reason the
- * day view is available at every width: a view that exists at one size and not
- * another is a view you can be stranded in by dragging a window. Dragging the
- * window is also why the choice is CSS rather than a hook: a resize crosses
- * the breakpoint mid-session with no re-render to wait for.
- *
- * The cost is that a narrow window's tray can no longer drop onto the week,
- * because there is nothing droppable in here. That is the trade the phone was
- * always going to make, and the way in is a tap now.
- *
- * **What it gives up, said plainly.** Names, notes, and ordering. A sticker is
- * a circle here rather than a named bar, because seven rows of named bars is
- * the column stack again with the same width problem; the names come back the
- * moment you tap through to the day. The note is not on the row at all — a
- * week of notes is seven paragraphs, which is a different screen. And nothing
- * in here is draggable, so there are no slots and no caret.
- *
- * **A row is one tap target and it opens the day's sheet.** Not remove-on-tap:
- * a sticker here is a 32px circle with six neighbours, and the one gesture a
- * row offers should not be one you can fire by mistake and have to undo. So the
- * week is a way of finding a day, and the sheet is where you change it.
- *
- * It opens *over* the week rather than navigating to the day view, which is the
- * one thing that changed here. Tapping Tuesday to add a sticker used to cost
- * you the week you were reading; now the week is still behind the sheet, and
- * closing it puts you back where you were with Tuesday's row already
- * redrawn.
- *
- * The date column is 40px and fixed, so the seven numerals line up down the
- * left edge and the sticker areas all start at the same x. The mood is on the
- * right in a slot of its own, kept whether or not there is a face in it, for
- * the same reason: a row with a mood and a row without have to be the same
- * shape or the stickers shuffle sideways from line to line.
+ * The week as seven rows, for phones and narrow windows (CSS picks, so a
+ * resize swaps it live). Not droppable; a row tap opens the day's sheet.
+ * Fixed date and mood slots keep stickers aligned row to row.
  */
 export function WeekList(props: Props) {
+  const { weekStartsOn } = useSettings();
   const days = useMemo(
-    () => weekGrid(props.anchor, props.todayString),
-    [props.anchor, props.todayString],
+    () => weekGrid(props.anchor, props.todayString, weekStartsOn),
+    [props.anchor, props.todayString, weekStartsOn],
   );
 
   const { highlight } = props;
-  /** The same fade every other view puts on what a selection didn't match. */
   const faded = (matched: boolean) =>
     highlight && !matched ? "opacity-35" : "";
 
@@ -88,10 +46,7 @@ export function WeekList(props: Props) {
 
   return (
     <div className={props.className}>
-      {/* One rule above and hairlines between, which is the house grammar —
-          see `RULE`. No box: the rows are already seven bands of full page
-          width, and an outline round them would be the card the week gave up
-          two steps ago. */}
+      {/* Rule above, hairlines between; no box. */}
       <ul className={RULE}>
         {days.map((day, index) => {
           const stickers = props.stickersByDay.get(day.day) ?? NO_STICKERS;
@@ -103,12 +58,9 @@ export function WeekList(props: Props) {
                 type="button"
                 onClick={() => props.onShowDay(fromDayString(day.day))}
                 data-day={day.day}
-                // 3.5rem is 56px, a comfortable row above the 44px floor, and
-                // it is a minimum rather than a height: a day with nine
-                // stickers wraps to a second line of circles and the row grows
-                // to hold them.
-                className={`flex min-h-14 w-full items-center gap-3 px-1 py-2.5 text-left transition-colors ${
-                  index > 0 ? "border-t border-hairline" : ""
+                // A minimum, not a height: many stickers wrap and the row grows.
+                className={`flex min-h-14 w-full items-center gap-s2 px-1 py-s1 text-left transition-colors ${
+                  index > 0 ? "border-t border-rule-grid" : ""
                 } ${
                   day.isToday
                     ? "bg-secondary"
@@ -117,11 +69,7 @@ export function WeekList(props: Props) {
                       : "hover:bg-secondary/50"
                 }`}
               >
-                {/* The visible date is two pieces of typography and reads as
-                    "Sun 13" out loud, which is not how anyone says a date. The
-                    sentence below is what a screen reader gets instead, and it
-                    is first in the flow so the row is named before its
-                    contents are listed. */}
+                {/* Read first so the row is named as a full date. */}
                 <span className="sr-only">{formatDayLong(day.day)}</span>
 
                 <span
@@ -129,15 +77,11 @@ export function WeekList(props: Props) {
                   className="flex w-10 shrink-0 flex-col items-center gap-0.5"
                 >
                   <span className="daylabel">{day.weekday}</span>
-                  {/* The red rule, not a fill, exactly as in the other three
-                      views — and here it is the only thing besides the row's
-                      own tint that says which day is today, which is the best
-                      argument for the mark being a colour nothing else in the
-                      app uses. */}
+                  {/* Today: the red rule, as in the other views. */}
                   <time
                     dateTime={day.day}
-                    className={`oldstyle grid size-7 place-items-center border-b-2 text-[0.95rem] ${
-                      day.isToday ? "border-today-mark font-medium" : "border-transparent"
+                    className={`oldstyle grid size-7 place-items-center border-b-2 text-ui ${
+                      day.isToday ? "border-accent-ink font-medium" : "border-transparent"
                     }`}
                   >
                     {day.dayOfMonth}
@@ -159,7 +103,8 @@ export function WeekList(props: Props) {
                 <span className="flex w-6 shrink-0 justify-end">
                   {stickers.mood && (
                     <span className={faded(highlight?.mood === stickers.mood)}>
-                      <MoodMark mood={stickers.mood} />
+                      <MoodDot mood={stickers.mood} />
+                      <span className="sr-only">Mood: {MOOD_LABEL[stickers.mood]}</span>
                     </span>
                   )}
                 </span>
@@ -169,7 +114,7 @@ export function WeekList(props: Props) {
         })}
       </ul>
 
-      <p className="mt-3 text-[0.83rem] text-ink-muted">
+      <p className="mt-s2 text-label text-ink-muted">
         {total === 0
           ? "A quiet week so far. Tap a day to put something on it."
           : `${total} sticker${total === 1 ? "" : "s"} this week. Tap a day to add one.`}

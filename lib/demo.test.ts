@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { addDays } from "./daymath.ts";
 import {
-  DEMO_AREA_COUNT,
+  DEMO_CATEGORY_COUNT,
   DEMO_DAYS,
   DEMO_HABIT_COUNT,
   DEMO_PER_DAY,
@@ -22,11 +22,11 @@ function placements(end: DayString) {
 }
 
 describe("demoLibrary", () => {
-  it("mirrors the six seeded life areas, in order", () => {
+  it("mirrors the six seeded categories, in order", () => {
     const groups = demoLibrary();
-    assert.equal(groups.length, DEMO_AREA_COUNT);
+    assert.equal(groups.length, DEMO_CATEGORY_COUNT);
     assert.deepEqual(
-      groups.map((group) => group.areaName),
+      groups.map((group) => group.categoryName),
       [
         "Spirituality",
         "Exercise",
@@ -38,19 +38,19 @@ describe("demoLibrary", () => {
     );
   });
 
-  it("puts every habit under exactly one area", () => {
+  it("puts every habit under exactly one category", () => {
     const stickers = demoLibrary().flatMap((group) => group.stickers);
     assert.equal(stickers.length, DEMO_HABIT_COUNT);
     assert.equal(new Set(stickers.map((s) => s.id)).size, DEMO_HABIT_COUNT);
   });
 
-  it("gives every area at least one habit, so no group is empty", () => {
+  it("gives every category at least one habit, so no group is empty", () => {
     for (const group of demoLibrary()) {
-      assert.ok(group.stickers.length > 0, `${group.areaName} is empty`);
+      assert.ok(group.stickers.length > 0, `${group.categoryName} is empty`);
     }
   });
 
-  it("takes its colour from its area, the way the real query does", () => {
+  it("takes its colour from its category, the way the real query does", () => {
     for (const group of demoLibrary()) {
       for (const sticker of group.stickers) {
         assert.equal(sticker.colorKey, group.colorKey);
@@ -65,7 +65,7 @@ describe("demoLibrary", () => {
 
   it("uses ids no database row could collide with", () => {
     const groups = demoLibrary();
-    assert.ok(groups.every((group) => group.areaId.startsWith("demo-")));
+    assert.ok(groups.every((group) => group.categoryId.startsWith("demo-")));
     assert.ok(
       groups
         .flatMap((group) => group.stickers)
@@ -89,8 +89,7 @@ describe("demoStickers", () => {
 
   it("averages about four placements a day", () => {
     const per = placements(TODAY) / DEMO_DAYS;
-    // A tenth of a sticker either side. The clamp in `chance` biases it
-    // slightly low, which is the harmless direction — see `scale`.
+    // ±0.1 sticker; `chance`'s clamp biases slightly low (see `scale`).
     assert.ok(
       Math.abs(per - DEMO_PER_DAY) < 0.4,
       `${per.toFixed(2)} per day, wanted about ${DEMO_PER_DAY}`,
@@ -111,23 +110,19 @@ describe("demoStickers", () => {
     }
   });
 
-  it("spreads the year across all six areas", () => {
+  it("spreads the year across all six categories", () => {
     const seen = new Map<string, number>();
     for (const day of demoStickers(TODAY).values()) {
       for (const sticker of day.activities) {
         seen.set(sticker.colorKey, (seen.get(sticker.colorKey) ?? 0) + 1);
       }
     }
-    assert.equal(seen.size, DEMO_AREA_COUNT);
-    // No area is a rounding error next to the others: the Life Star should
-    // read as a shape rather than as one spike with five stumps. Three to one
-    // is the widest the weights are allowed to open — wide enough for the star
-    // to say something, narrow enough that every vertex is still visibly out
-    // from the middle.
+    assert.equal(seen.size, DEMO_CATEGORY_COUNT);
+    // Weights within 3:1 so the Life Star is a shape, not one spike.
     const counts = [...seen.values()];
     assert.ok(
       Math.min(...counts) > Math.max(...counts) / 3,
-      `${Math.min(...counts)} to ${Math.max(...counts)} across six areas`,
+      `${Math.min(...counts)} to ${Math.max(...counts)} across six categories`,
     );
   });
 
@@ -192,13 +187,12 @@ describe("demoStickers", () => {
       if (!stickers.activities.some((s) => s.activityId === "demo-deep-work")) {
         continue;
       }
-      // UTC, because a DayString is a calendar square and not an instant.
+      // UTC: a DayString is a calendar square.
       const dow = new Date(`${day}T00:00:00Z`).getUTCDay();
       if (dow === 0 || dow === 6) weekend++;
       else weekday++;
     }
-    // Deep work is a Monday-to-Friday habit. Five days should carry it far
-    // more often than two, and by more than the 5:2 the days alone would give.
+    // Weekday habit: beats weekends by more than 5:2.
     assert.ok(weekday > weekend * 5, `${weekday} weekday, ${weekend} weekend`);
   });
 
@@ -216,9 +210,7 @@ describe("demoStickers", () => {
       if (day < half) early++;
       else late++;
     }
-    // Yoga carries `fade: -1` — it is the habit that stopped. The story has
-    // to survive the normalisation in `scale`, or the demo is a flat year with
-    // nothing for the Trends page to notice.
+    // Yoga fades (`fade: -1`); the decline must survive `scale`.
     assert.ok(early > late * 1.7, `${early} early, ${late} late`);
   });
 });

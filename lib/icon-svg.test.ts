@@ -2,23 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-/**
- * `app/icon.svg` is the browser tab icon, and every way it can break is silent.
- *
- * A favicon has no error surface. If the file is malformed the browser draws
- * nothing, logs nothing, and leaves whatever icon the tab had before — which
- * during development is the previous icon and so looks exactly like a caching
- * problem. It cost an afternoon once. These are the two mistakes that caused
- * it, both of which the four gates otherwise wave straight through: nothing
- * else in the toolchain reads this file.
- */
+// A broken favicon fails silently (looks like caching); nothing else reads this file.
 const svg = readFileSync(new URL("../app/icon.svg", import.meta.url), "utf8");
 
 test("the icon is well-formed XML", () => {
-  // Served as a file, an SVG is parsed as XML rather than HTML, and XML
-  // forbids a double hyphen inside a comment. The file's prose documents CSS
-  // custom properties, whose names begin with exactly that — so writing one
-  // by name in the comment is the easy version of this mistake.
+  // XML forbids `--` in comments, and CSS custom property names start with it.
   const comments = svg.match(/<!--[\s\S]*?-->/g) ?? [];
   for (const comment of comments) {
     assert.ok(
@@ -33,10 +21,7 @@ test("the icon is well-formed XML", () => {
 });
 
 test("no colour is set from a presentation attribute", () => {
-  // A custom property is substituted in a CSS declaration. Whether it is
-  // substituted in a `fill="..."` presentation attribute is not something
-  // every engine agrees on, and where it is not, the fill falls back to
-  // black — which still renders, so nothing looks broken until you look.
+  // `var()` in a fill attribute isn't universal; it falls back to black.
   assert.ok(
     !/\b(?:fill|stroke)="[^"]*var\(/.test(svg),
     "set fill and stroke from the stylesheet, not as presentation attributes",

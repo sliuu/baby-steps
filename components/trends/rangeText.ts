@@ -1,34 +1,9 @@
 import { RANGE_LABEL, type Bounds, type Range } from "@/lib/analytics";
 import { formatDayShort } from "@/lib/dates";
 
-/**
- * What a range rule resolves to, in dates, and what to call the thing it
- * filters.
- *
- * Shared rather than local because more than one thing on this page prints a
- * period — the dates beside the range picker, and the accessible name of every
- * list and table under it — and they have to print it the same way. Two copies
- * of "1 Sep — 13 Sep" is two chances for one of them to grow an en dash or
- * drop a year.
- *
- * Not in `lib/analytics.ts`, which is where `Range` itself lives, because these
- * format dates: `lib/dates.ts` reaches date-fns, and analytics is one of the
- * modules kept importable by `node --test`. See the note at the top of
- * `lib/habits.ts`.
- */
+// Shared so periods print alike. Not in analytics.ts: date-fns vs `node --test`.
 
-/**
- * The dates beside a range dropdown, or null when there's nothing to add.
- *
- * Null in exactly two cases, both of them "the control already said it". "All
- * time" has no edges to print, and its own label is the complete answer. A
- * custom range prints its dates on the popover button itself, so repeating them
- * two inches to the right is the same string twice.
- *
- * So this earns its place only for the fixed ranges, which are the ones whose
- * label is a *rule* — "This month" doesn't tell you it means the 1st to the
- * 13th, and that's the number you'd want to check against the calendar.
- */
+/** Dates beside a range dropdown; null for "All time" and custom (already shown). */
 export function spanLabel(range: Range, bounds: Bounds): string | null {
   if (range.kind === "custom") return null;
   if (!bounds.from && !bounds.to) return null;
@@ -41,19 +16,7 @@ export function spanLabel(range: Range, bounds: Bounds): string | null {
   return `Up to ${formatDayShort(bounds.to!)}`;
 }
 
-/**
- * A list's or a table's accessible name. Never drawn — see the prop's note in
- * `AreaBars`.
- *
- * Says more than `spanLabel` deliberately: on screen the rule and the dates sit
- * beside each other and the table is directly below them, so proximity does the
- * work. A screen reader entering the table has left all of that behind, so this
- * has to be self-contained.
- *
- * `what` is passed in rather than fixed because the lists count different
- * units and are on different tabs — a shared caption would name the wrong one
- * on all but one of them.
- */
+/** Self-contained accessible name for a list/table (never drawn). */
 export function captionFor(what: string, range: Range, bounds: Bounds): string {
   const where = spanLabel(range, bounds);
   if (range.kind === "custom" && bounds.from && bounds.to) {

@@ -2,160 +2,85 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* The two markdown files are documentation, and Tailwind cannot tell
-   documentation from markup — every class name a changelog entry mentions
-   comes out of the build as a live CSS rule for a class nothing wears. That is
-   the same trap the footnote in `lib/layout.ts` describes, arriving from the
-   one direction a comment convention can't fix: PROGRESS.md's whole job is to
-   say which class changed, and it is a hundred entries long.
-
-   So they are excluded from the scan rather than written around. Nothing in
-   either file is ever rendered. */
+/* Docs, not markup: keep their class names out of the build. */
 @source not "../PROGRESS.md";
 @source not "../README.md";
 
 @custom-variant dark (&:is(.dark *));
 
 /* ---------------------------------------------------------------------------
-   Bridge: turn CSS variables into Tailwind utilities.
-
-   Everything named here becomes a class. `--color-area-work` gives you
-   `bg-area-work`, `text-area-work`, `border-area-work`. The values live in
-   :root / .dark below, so a utility resolves differently per theme without a
-   single class name changing.
+   Bridge: CSS variables → Tailwind utilities; values per theme below.
 --------------------------------------------------------------------------- */
 @theme inline {
-  /* One face for everything that is the app talking, and the same one twice:
-     headings and body are both Schibsted Grotesk now, separated by size alone.
-     The two tokens stay separate anyway — they are two jobs, and the app has
-     already given them two different families four times. */
-  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
-  /* The second face, and the only one that isn't the grotesque: Spectral at
-     300 italic, for the handful of places where somebody is writing rather
-     than the app reporting. Reached through the `note` utility below and
-     nowhere else — there is no `font-note` on any call site, because "this is
-     a note" is the decision and the face is the consequence.
+  /* Zilla Slab / Outfit stand in for Winden / Axiforma. */
+  --font-display: var(--font-display-face), Georgia, serif;
+  --font-sans: var(--font-text-face), system-ui, sans-serif;
+  --font-heading: var(--font-display-face), Georgia, serif;
 
-     `--font-mono` used to sit here for Space Mono and the eyebrows. Both are
-     gone: the labels are Schibsted at small sizes, and nothing else in the app
-     ever wore `font-mono` — no code, no tabular anything — so the token went
-     out with the family rather than being left pointing at a fallback. */
-  --font-note: var(--font-spectral), Georgia, serif;
+  /* Spacing scale: 8 · 14 · 18 · 22 · 30 · 44 · 64 · 96px. Under 8px stays on Tailwind's 4px grid. */
+  --spacing-s1: 0.5rem;
+  --spacing-s2: 0.875rem;
+  --spacing-s3: 1.125rem;
+  --spacing-s4: 1.375rem;
+  --spacing-s5: 1.875rem;
+  --spacing-s6: 2.75rem;
+  --spacing-s7: 4rem;
+  --spacing-s8: 6rem;
 
-  /* The heading sizes, named by role rather than by rung.
+  /* Type scale. Text 400, display 300, unless set here. */
+  --text-display-xl: 4rem;
+  --text-display-xl--line-height: 1.05;
+  --text-display-xl--letter-spacing: -0.01em;
+  --text-display: 3.5rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.01em;
+  --text-display-sm: 2.875rem;
+  --text-display-sm--line-height: 1.1;
+  --text-display-sm--letter-spacing: -0.01em;
+  --text-title: 2.5rem;
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.01em;
+  --text-date: 2rem;
+  --text-date--line-height: 1.1;
+  --text-heading: 2.25rem;
+  --text-heading--line-height: 1.15;
+  --text-heading--letter-spacing: -0.01em;
+  --text-subhead: 1.625rem;
+  --text-subhead--line-height: 1.2;
+  --text-subhead--font-weight: 400;
+  --text-logo: 1.5rem;
+  --text-logo--line-height: 1;
+  --text-logo--font-weight: 400;
+  --text-body-lg: 1.25rem;
+  --text-body-lg--line-height: 1.4;
+  --text-ui: 1rem;
+  --text-ui--line-height: 1.4;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.35;
+  --text-label--font-weight: 400;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.3;
+  --text-caption--letter-spacing: 0.02em;
+  --text-caption--font-weight: 400;
 
-     The values below were Tailwind's own for four faces running — text-6xl,
-     text-7xl, text-5xl, text-4xl, text-2xl, text-xl — so this scale changed
-     nothing until the fifth. It existed anyway, because the *right* size for a
-     title is a property of the typeface and this app has now worn five of
-     them; the fifth is the one that finally needed it.
-
-     The arithmetic, for whoever swaps the fourth. Set side by side at one
-     nominal size, the faces this app has tried need these corrections to look
-     the same size: Cormorant 1.06 (it runs small — thin strokes, low
-     x-height), Merriweather 0.90 (drawn for screens, carries most of its em),
-     Instrument Serif 1.04 (a display face, back near Cormorant). Those are
-     absolute, against each other — *not* against whatever is here now. The
-     rungs below were tuned by eye while the headings were Cormorant, so the
-     factor to apply is the new face's number over 1.06, not the new face's
-     number.
-
-     Getting that wrong is what made the Merriweather pass feel oversized: it
-     went in at 0.90 when the correction against Cormorant was 0.90/1.06, about
-     0.85, so every title was still six per cent too big. Instrument Serif is
-     1.04/1.06 — within two per cent — which is why these are the original
-     numbers again.
-
-     Syne went in on those same numbers, uncorrected, and never got a measured
-     factor. Schibsted Grotesk has one, and it is **0.94** — every rung below
-     is Tailwind's own value times 0.94, which is why they read as thirds of a
-     pixel.
-
-     That number was measured rather than guessed, because Schibsted was
-     expected to run *smaller* than Syne and does the opposite. Set at a 100px
-     em and compared with a canvas, Syne gives an x-height of 50.0, a cap
-     height of 65.0 and 1026px of "20 – 26 September 2026"; Schibsted gives
-     52.7, 70.3 and 1139px. It is bigger on every axis — 5% at the x-height, 8%
-     at the cap, 11% across that string — so matching Syne's apparent size
-     wants 0.949 by x-height, 0.925 by cap and 0.901 by width. 0.94 sits
-     between the first two, which is the pair the eye reads a title by.
-
-     The width is what made the decision urgent rather than cosmetic. The week
-     is the title that decides the phone's size — see `PAGE_TITLE` in
-     `lib/layout.ts` — and at 2rem "20 – 26 Sept 2026" came to 251.6px in a
-     252px box, so it fit at one device pixel per CSS pixel and truncated at
-     two. The phone rung is an arbitrary value rather than one of these
-     tokens, so it carries the same 0.94 spelled out there: 1.88rem, which
-     leaves 15px of slack.
-
-     Line heights are restated on every rung: a `--text-*` token with no
-     companion leaves the utility setting font-size alone, and the heading
-     would inherit body leading. */
-  --text-display: 3.525rem;
-  --text-display--line-height: 1;
-  --text-display-lg: 4.23rem;
-  --text-display-lg--line-height: 1;
-  --text-page-title: 2.82rem;
-  --text-page-title--line-height: 1;
-  --text-section-title: 2.115rem;
-  --text-section-title--line-height: 1.111;
-  --text-panel-title: 1.41rem;
-  --text-panel-title--line-height: 1.333;
-  --text-dialog-title: 1.175rem;
-  --text-dialog-title--line-height: 1.4;
-
-  /* The body sizes, and the other half of the same correction.
-
-     The headings above got a new face and a scale to sit on; the body copy got
-     a new face and kept sizes that were chosen by eye while it was EB Garamond.
-     Garamond is a small-x-height face and DM Sans is a large one, so the same
-     nominal size is visibly bigger in the new one — 16px of DM Sans reads
-     roughly like 17px of Garamond, which is why the app felt heavier after the
-     swap without anything having got longer.
-
-     0.92 is that correction, and it is arithmetic rather than taste: the
-     specimen's optical-size numbers are EB Garamond 1.05 and DM Sans 0.97, and
-     0.97/1.05 is 0.924. Every rung below is Tailwind's own value times 0.92,
-     line heights included, so the leading ratio on each rung is unchanged and
-     nothing re-flows out of proportion.
-
-     **0.92 survived the move to Schibsted, and that was checked rather than
-     assumed.** The same canvas measurement that gave the headings their 0.94
-     says DM Sans and Schibsted are the same size where body copy is read: at a
-     100px em their cap heights are 70.0 and 70.3, and Schibsted's x-height is
-     4.6% larger on a string that sets 3.4% *narrower*. Those cancel out to
-     something the eye can't pick up in a 0.92rem line, so every rung below is
-     the number it was — and a body scale that doesn't move is a page that
-     doesn't re-flow.
-
-     Line heights are restated for the same reason as the headings: a `--text-*`
-     token with no companion leaves the utility setting font-size alone.
-
-     `text-3xl` and up are not here because nothing uses them — every title in
-     the app is on a role token above. If a body rung ever needs to be exempt,
-     give it a role name up there rather than un-scaling it here. */
-  --text-xs: 0.69rem;
-  --text-xs--line-height: 0.92rem;
-  --text-sm: 0.805rem;
-  --text-sm--line-height: 1.15rem;
-  --text-base: 0.92rem;
-  --text-base--line-height: 1.38rem;
+  /* Tailwind's small rungs → caption / label / ui; lg+ unchanged. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.3;
+  --text-xs--letter-spacing: 0.02em;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.35;
+  --text-base: 1rem;
+  --text-base--line-height: 1.4;
   --text-lg: 1.035rem;
   --text-lg--line-height: 1.61rem;
   --text-xl: 1.15rem;
   --text-xl--line-height: 1.61rem;
   --text-2xl: 1.38rem;
   --text-2xl--line-height: 1.84rem;
-  /* Emoji first, and that ordering is the whole point — see `StickerMark`. A
-     line box is sized by the *first available* font, not by the font that ends
-     up drawing the character, so a sticker mark set in the body face gets that
-     face's baseline with an emoji's ink hanging off it. Naming the emoji font
-     first makes the two agree. The text face stays on the end for marks that
-     are letters. */
+  /* Emoji first: the first available font sizes the line box. */
   --font-emoji:
     "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
-    var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+    var(--font-text-face), system-ui, sans-serif;
 
   /* shadcn's contract — its components read only these names. */
   --color-background: var(--background);
@@ -177,535 +102,251 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Ours — the vocabulary the rest of Baby Steps speaks. */
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-sunken: var(--surface-sunken);
+  /* Ours. */
+  --color-frame: var(--frame);
+  --color-on-frame: var(--on-frame);
+  --color-paper: var(--paper);
+  --color-raised: var(--raised);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
-  --color-ink-label: var(--ink-label);
-  --color-hairline: var(--hairline);
-  /* Bridged for one utility, `border-today-mark`, and that is the whole reason
-     it is here. See the token for why it is not `--accent`. */
-  --color-today-mark: var(--today-mark);
-
-  /* Hue ramps — what `color_key` names. `bg-ramp-red`, `text-ramp-blue`, … */
-  --color-ramp-red: var(--ramp-red);
-  --color-ramp-blue: var(--ramp-blue);
-  --color-ramp-orange: var(--ramp-orange);
-  --color-ramp-yellow: var(--ramp-yellow);
-  --color-ramp-green: var(--ramp-green);
-  --color-ramp-purple: var(--ramp-purple);
-
-  /* The pastel end of each ramp — the highlight wash, and the fill of every
-     swatch in Trends. The full hue stays for anything that needs to carry at a
-     distance: chart vertices, the dots beside labels, a sticker's outline. */
-  --color-ramp-red-soft: var(--ramp-red-soft);
-  --color-ramp-blue-soft: var(--ramp-blue-soft);
-  --color-ramp-orange-soft: var(--ramp-orange-soft);
-  --color-ramp-yellow-soft: var(--ramp-yellow-soft);
-  --color-ramp-green-soft: var(--ramp-green-soft);
-  --color-ramp-purple-soft: var(--ramp-purple-soft);
-
-  /* The palest end — what a sticker is filled with, under an outline in the
-     full hue. A third rung rather than `bg-ramp-red-soft/40`, because a
-     sticker sits on the surface in the tray and on a sunken day cell in the
-     grid, and a translucent fill would be a different colour in each. */
-  --color-ramp-red-tint: var(--ramp-red-tint);
-  --color-ramp-blue-tint: var(--ramp-blue-tint);
-  --color-ramp-orange-tint: var(--ramp-orange-tint);
-  --color-ramp-yellow-tint: var(--ramp-yellow-tint);
-  --color-ramp-green-tint: var(--ramp-green-tint);
-  --color-ramp-purple-tint: var(--ramp-purple-tint);
-
-  --color-area-spirituality: var(--area-spirituality);
-  --color-area-exercise: var(--area-exercise);
-  --color-area-work: var(--area-work);
-  --color-area-creativity: var(--area-creativity);
-  --color-area-romance: var(--area-romance);
-  --color-area-friends: var(--area-friends);
-
-  /* The die-cut rim and the lift, as `border-sticker-edge` and
-     `shadow-sticker`. Both are declared on `:root` / `.dark` like everything
-     else here, so a sticker in the tray and a sticker on a Tuesday cannot
-     drift apart — and neither can the two themes. */
-  --color-sticker-edge: var(--sticker-edge);
-  --shadow-sticker: var(--sticker-shadow);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-accent-ink: var(--accent-ink);
+  --color-rule-strong: var(--rule-strong);
   --color-rule: var(--rule);
+  --color-rule-grid: var(--rule-grid);
+  --color-rule-input: var(--rule-input);
+  --shadow-sheet: var(--sheet-shadow);
+  --shadow-menu: var(--menu-shadow);
+
+  /* Category inks. */
+  --color-cat-oxblood: var(--cat-oxblood);
+  --color-cat-oxblood-text: var(--cat-oxblood-text);
+  --color-cat-oxblood-on: var(--cat-oxblood-on);
+  --color-cat-bottle: var(--cat-bottle);
+  --color-cat-bottle-text: var(--cat-bottle-text);
+  --color-cat-bottle-on: var(--cat-bottle-on);
+  --color-cat-mustard: var(--cat-mustard);
+  --color-cat-mustard-text: var(--cat-mustard-text);
+  --color-cat-mustard-on: var(--cat-mustard-on);
+  --color-cat-rose: var(--cat-rose);
+  --color-cat-rose-text: var(--cat-rose-text);
+  --color-cat-rose-on: var(--cat-rose-on);
+  --color-cat-sage: var(--cat-sage);
+  --color-cat-sage-text: var(--cat-sage-text);
+  --color-cat-sage-on: var(--cat-sage-on);
+  --color-cat-plum: var(--cat-plum);
+  --color-cat-plum-text: var(--cat-plum-text);
+  --color-cat-plum-on: var(--cat-plum-on);
+
+  /* Moods, sad → happy. */
+  --color-mood-rough: var(--mood-rough);
+  --color-mood-low: var(--mood-low);
+  --color-mood-okay: var(--mood-okay);
+  --color-mood-good: var(--mood-good);
+  --color-mood-great: var(--mood-great);
+
+  /* Sticker diameters: `size-sticker-lg` etc. */
+  --size-sticker-lg: 4rem;
+  --size-sticker-md: 2.75rem;
+  --size-sticker-sm: 2.25rem;
+  --size-sticker-xs: 1.25rem;
+  --size-mood-dot: 0.6875rem;
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-2xl: 1rem;
 
-  /* Two curves, and the difference between them is the whole idea.
-
-     Something arriving should decelerate: fast at the start, easing to a stop,
-     the way a thing set down settles. Something leaving should accelerate:
-     it is on its way out, and lingering over the exit makes the interface feel
-     like it's holding you up. Symmetric easing — the `ease` default — gives
-     both halves the same soft start, which is why a dismissed dialog reads as
-     sluggish even at 100ms.
-
-     `--ease-enter` is a strong ease-out (it covers 60% of the distance in the
-     first quarter of its time). `--ease-exit` is its opposite. `--ease-deck`
-     is a single in-and-out curve for the month deck, where two pages move
-     together and any difference between them would open a gap. */
+  /* Enter decelerates, exit accelerates. Deck is one in-out curve so two pages don't gap. */
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-deck: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* A mark arriving in a day cell — see `DraggableMark`. Scales up past its
-     final size and settles back, which is what reads as "placed" rather than
-     "appeared". The overshoot is small (8%) because a mark is 26px; the same
-     proportion on a large element would look like a bounce. */
+  /* Overshoots 8% and settles, so it reads as "placed". */
   --animate-land: land var(--dur-land) var(--ease-enter) both;
 
-  /* The day sheet rising from the bottom edge — see `DaySheet`.
-
-     `--ease-deck` and not `--ease-enter`, which is the one choice here worth
-     stating. The deck curve is `cubic-bezier(0.32, 0.72, 0, 1)`, the same curve
-     vaul uses for its drawer, and a sheet is the one surface in this app that
-     is asking the same question the deck asks: a large object travelling a long
-     way, where the eye follows the whole journey rather than just noticing the
-     arrival. `--ease-enter` is tuned for the opposite — a small thing that
-     should be *there* almost immediately — and at 100% of a 560px sheet it
-     covers most of the screen in the first 60ms and then creeps.
-
-     Leaving is `--ease-exit` at the shorter duration, like every other panel:
-     an exit you watch is an interface holding you up.
-  */
+  /* Deck curve (vaul's), not ease-enter: a long travel the eye follows. */
   --animate-sheet-in: sheet-up var(--dur-panel-in) var(--ease-deck) both;
   --animate-sheet-out: sheet-down var(--dur-panel-out) var(--ease-exit) both;
 
-  /* The signed-out page's three text elements, which now rise as one block —
-     see `app/login/page.tsx`.
-
-     `both` is kept even though nothing on that page carries a delay any more.
-     It is what holds an element on its first keyframe through a delay instead
-     of leaving it fully visible until the animation starts, so it's the
-     difference between things arriving in order and things twitching in order.
-     Reintroduce a stagger without it and every element sits there at full
-     opacity and then jumps. Costs nothing to leave in. */
+  /* `both` holds the first keyframe through the stagger. */
   --animate-rise: rise var(--dur-hero) var(--ease-enter) both;
 
-  /* The stickers arriving on the signed-out page. Two animations rather than
-     one, because the fall and the reveal are different lengths: the fade is
-     over in the first third so that what you watch descend is a solid object
-     rather than one developing in mid-air. Comma-separated the same way the
-     `::view-transition-*` rules further down this file stack a slide on a fade.
+  /* Nth strike (`--step`) draws; the last line fades in as the third ends (no trailing gap). */
+  --animate-strike: strike var(--dur-strike) var(--ease-enter)
+    calc(var(--strike-wait) + var(--step, 0) * (var(--dur-strike) + var(--strike-gap))) both;
+  --animate-after-strikes: appear var(--dur-after-strikes) var(--ease-enter)
+    calc(var(--strike-wait) + 3 * var(--dur-strike) + 2 * var(--strike-gap)) both;
+  /* Sign-in actions rise once the last line has faded in. */
+  --animate-rise-after: rise var(--dur-hero) var(--ease-enter)
+    calc(var(--strike-wait) + 3 * var(--dur-strike) + 2 * var(--strike-gap) + var(--dur-after-strikes) + var(--hero-actions-delay)) both;
 
-     `both` on each, for the reason `--animate-rise` documents just above: the
-     stagger only works if an element holds its first keyframe through its
-     delay.
-
-     No timing function in the shorthand — `fall` sets one per keyframe, because
-     a single curve cannot both accelerate into the impact and oscillate out of
-     it. */
+  /* Fade done in the first third so it falls solid; `fall` sets per-keyframe easing. */
   --animate-fall:
     fall var(--dur-fall) both,
     sticker-fade calc(var(--dur-fall) * 0.3) linear both;
 
-  /* The stickers loitering behind the signed-out page. This is the vertical
-     half of the drift; `--animate-drift-x` below is the horizontal one, and a
-     sticker wears both — on two nested spans, because an element has one
-     `translate` and two simultaneous translations need two elements. Neither
-     axis alone is the movement: the periods are non-harmonic, so what you
-     watch is a slow open figure rather than a line.
-
-     Duration and delay are read from custom properties rather than baked in,
-     the same trick `deck-slide` uses for its offset: two dozen stickers all
-     drifting on the same six-second clock would pulse in unison, which reads
-     as one animated background rather than two dozen separate objects. Each
-     one sets its own `--drift-dur` and `--drift-delay` so they never line up.
-
-     `--drift-delay` is always *negative*, and that is not a typo. A positive
-     delay makes the element wait at its own natural position and then jump to
-     the animation's first keyframe when the clock runs out — here, 7px up and
-     3.5 degrees over — so every sticker landed, sat still for a second or two,
-     and then twitched into place a second time. A negative delay starts the
-     animation already in progress: at first paint each one is somewhere
-     different in its cycle, nothing waits, and nothing snaps.
-
-     `both` is belt and braces for the same failure. It only matters if someone
-     writes a positive delay here later, and then it holds the first keyframe
-     through the wait instead of jumping to it. */
+  /* Vertical drift (x rides a nested span: one `translate` per element).
+     Per-sticker dur/delay; delays must be negative or stickers snap after waiting. */
   --animate-drift: drift var(--drift-dur, 6s) ease-in-out var(--drift-delay, 0s)
     infinite alternate both;
 
-  /* The horizontal half. Same shape, its own two properties, and the same rule
-     about negative delays — every `--drift-x-delay` in `FloatingStickers` is
-     negative for exactly the reason above. */
+  /* Horizontal half; `--drift-x-delay` is negative too. */
   --animate-drift-x: drift-x var(--drift-x-dur, 8s) ease-in-out
     var(--drift-x-delay, -1s) infinite alternate both;
 }
 
 /* ---------------------------------------------------------------------------
-   Light — newsprint grey, near-black neutral ink, one press-red mark.
+   Light — stationery: ivory paper in an espresso frame, bottle-green ink, oxblood accent.
 --------------------------------------------------------------------------- */
 :root {
-  /* Tells the browser which way *its own* furniture should lean — scrollbars,
-     form controls, the ground it paints before our CSS lands. Without it a dark
-     page still gets a light scrollbar, because the browser has no way to know. */
   color-scheme: light;
 
-  /* 8px. Was 0.625rem — 10px — and the whole radius family is derived from
-     this one number, so the corners on a card, a dialog and a button all
-     tightened by the same fifth. Softer than a square corner, far enough from
-     a pill that nothing reads as a badge. */
+  /* ── primitives ─────────────────────── */
+  --blush: #F1D0CA;
+  --espresso: #4E4036;
+  --ivory: #FFFEF5;
+  --cream: #FBF8EF;
+  --bottle: #23402F;
+  --oxblood: #7A1F1F;
+
+  /* ── semantic: use these, not primitives ── */
+  --frame: var(--espresso);
+  --on-frame: var(--ivory);
+  --paper: var(--ivory);
+  --raised: var(--cream);
+  --ink: var(--bottle);
+  --ink-muted: color-mix(in srgb, var(--ink) 75%, transparent);
+  --ink-subtle: color-mix(in srgb, var(--ink) 45%, transparent);
+  --accent-ink: var(--oxblood);
+  --rule-strong: var(--ink);
+  --rule: color-mix(in srgb, var(--ink) 25%, transparent);
+  --rule-grid: color-mix(in srgb, var(--ink) 14%, transparent);
+  --rule-input: color-mix(in srgb, var(--ink) 45%, transparent);
+  --focus-ring: 2px solid var(--accent-ink);
+
+  /* ── categories: ink / readable text / icon on sticker ── */
+  --cat-oxblood: #7A1F1F; --cat-oxblood-text: #7A1F1F; --cat-oxblood-on: var(--paper);
+  --cat-bottle: #23402F;  --cat-bottle-text: #23402F;  --cat-bottle-on: var(--paper);
+  --cat-mustard: #C9A23A; --cat-mustard-text: #9C7A1E; --cat-mustard-on: var(--ink);
+  --cat-rose: #D98C7A;    --cat-rose-text: #B0614F;    --cat-rose-on: var(--ink);
+  --cat-sage: #8FA98A;    --cat-sage-text: #5E7A59;    --cat-sage-on: var(--ink);
+  --cat-plum: #765B8C;    --cat-plum-text: #765B8C;    --cat-plum-on: var(--paper);
+
+  /* ── moods, sad → happy ── */
+  --mood-rough: #6F95B8;
+  --mood-low: #A8C2D6;
+  --mood-okay: #D3D6C5;
+  --mood-good: #F5DE8E;
+  --mood-great: #EFC548;
+
+  /* ── shadows ── */
+  --sheet-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+  --menu-shadow: 0 6px 24px color-mix(in srgb, var(--ink) 12%, transparent);
+
+  /* ── scrollbar ── */
+  --scroll-thumb: color-mix(in srgb, var(--ink) 22%, transparent);
+  --scroll-thumb-hover: color-mix(in srgb, var(--ink) 38%, transparent);
+
+  /* shadcn's names, pointed at ours. */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  /* Selected / hover surface: a faint ink wash on paper. */
+  --secondary: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  --secondary-foreground: var(--ink);
+  --muted: var(--secondary);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--secondary);
+  --accent-foreground: var(--ink);
+  --destructive: var(--accent-ink);
+  --border: var(--rule);
+  --input: var(--rule-input);
+  --ring: var(--accent-ink);
+
+  /* ── size ── */
   --radius: 0.5rem;
 
-  /* Durations, in pairs: in, then out.
+  /* Page frame: padding around the sheet; phone bottom nav height. */
+  --frame-pad: var(--spacing-s2);
+  --bottom-nav-h: 3.5rem;
 
-     Two rules generate all of them. First, an exit is faster than the matching
-     entrance — roughly two-thirds — because arriving is information ("here is a
-     dialog, here is what's in it") and leaving is just clearing the way.
-     Second, the bigger the thing, the longer it takes: a dialog covers the page
-     and gets 260ms, a dropdown covers a corner of it and gets 180.
-
-     Everything here used to be 100ms, which is below the threshold where motion
-     reads as motion at all — fast enough that you see the before and the after
-     but not the movement between them, which is indistinguishable from a jump
-     cut with extra frames. 180–260ms is the band where a transition reads as
-     deliberate without making you wait for it.
-
-     These are real custom properties rather than `@theme` entries because the
-     reduced-motion block at the bottom of this file rewrites them. A theme
-     value declared `inline` is substituted into the utility at build time and
-     there is nothing left to override. */
+  /* ── motion ── */
+  /* Real properties, not @theme, so reduced-motion below can override them.
+     Exits ~2/3 of entrances; bigger things take longer. */
   --dur-panel-in: 260ms;
   --dur-panel-out: 160ms;
   --dur-menu-in: 180ms;
   --dur-menu-out: 120ms;
   --dur-deck: 340ms;
   --dur-land: 420ms;
-
-  /* The entrance on the signed-out page — the heading, the tagline, the
-     buttons, and all thirty stickers behind them.
-
-     It was 700ms, on the theory that a page with nothing to do on it can
-     afford to take its time. The theory was half right: the page can afford
-     it, but the *buttons* can't. Combined with their delay, 700ms meant the
-     thing you came here to press wasn't fully on screen until a second in, and
-     the login page is not seen once — it's seen again on every sign-out, every
-     bookmark, and every OAuth round trip that comes back unhappy. A flourish
-     you sit through twice is a flourish that's too long.
-
-     420ms is comfortably slower than anything else in this file (a dropdown is
-     180ms), and that is the point: this is the one place where the arrival is
-     the content rather than an explanation of a change, so the words are
-     allowed to take their time coming up. It went 300ms -> 420ms because at
-     300ms the rise read as a page snapping into place next to stickers that
-     fall for 620ms; the two now belong to the same piece of motion.
-
-     It is still bounded by the same rule as everything else here: the visitor
-     should never be waiting on it. That used to be underwritten by the stagger
-     between the three elements — each one arrived early even if the last
-     finished late — and now that they rise together this token is the only
-     thing standing between the visitor and the buttons. Much past 500ms it
-     starts to feel like something you are waiting for. */
+  /* Sign-in page entrance. Keep under ~500ms; the buttons wait on it. */
   --dur-hero: 420ms;
-
-  /* The stickers dropping onto the signed-out page — see `--animate-fall`.
-
-     Longer than `--dur-hero`, and it has to be: this one is not a fade with a
-     nudge, it is a fall, an overshoot and two rebounds, and each of those needs
-     enough time to be seen as a separate event. Under 500ms the settle stops
-     reading as a settle and starts reading as a wobble.
-
-     The cost is paid entirely by decoration. The buttons start moving at 150ms
-     and the sticker layer is `pointer-events-none` from the first frame, so
-     nothing here is ever between the visitor and the thing they came to press.
-     The last sticker lands at the final `ENTER` delay + 620ms, on purpose —
-     see `ENTER` in `FloatingStickers.tsx` for the arithmetic. */
+  /* Sign-in flower's bloom; slower than the text so it unfurls. */
+  --dur-bloom: 900ms;
+  /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
+  --fall-drop: 28px;
+  --sticker-start: 160ms;
+  --sticker-gap: 160ms;
+  /* Sign-in strikes: each line, the gap between, the wait before the first. */
+  --dur-strike: 475ms;
+  --strike-gap: 150ms;
+  --strike-wait: 425ms;
+  /* The last line's fade; slower than the hero so it lands softly. */
+  --dur-after-strikes: 900ms;
+  /* Sign-in copy follows the title; actions start this long after the last line ends (negative overlaps it). */
+  --hero-rise: 12px;
+  --hero-copy-delay: 240ms;
+  --hero-actions-delay: -450ms;
+}
 
-  /* **Newsprint grey, and no white anywhere.** The page was an off-white a
-     hair below pure white, with the cards and sheets sitting on actual #ffffff
-     above it. That is a screen's idea of paper: the ground is the brightest
-     thing in the room and every surface is brighter still. This palette
-     inverts the premise — the page is a grey stock at #ebeae4, and a surface
-     lifts *off* it to #f3f2ed rather than going white. Nothing on screen is
-     #ffffff any more.
+@media (min-width: 40rem) {
+  :root {
+    --frame-pad: var(--spacing-s6);
+  }
+}
 
-     What that buys is the app's own drawings. Six sticker tints, five mood
-     faces and a page of coloured bars were all being read against the
-     brightest possible ground, which is the one ground that makes a pastel
-     look washed. Dropping the page eighteen points of lightness gives every
-     tint an edge it did not have to be redrawn to get — and the tint mixes are
-     made against `--surface` (see `--ramp-*-tint` below), so they followed on
-     their own without a single ramp value changing.
-
-     The three rungs keep their old relationship: sunken, page, surface. What
-     changed is that the whole ladder moved down and lost its warmth. These are
-     near-neutral greys with a trace of yellow left in them — a paper stock,
-     not a cool grey and not the cream this was before. */
-  --bg: #ebeae4;
-  --surface: #f3f2ed;
-  --surface-sunken: #e3e2db;
-  --ink: #141414;
-  /* **4.85:1 on `--bg`, and the old value was 3.62:1.** This rung had been
-     under the app's own 4.5 floor since it was picked against a near-white
-     page, which is the failure that hides best: #8a8378 on #fbfbfa looks
-     merely quiet rather than illegible. On a grey ground it would have got
-     worse, so it came down to #66655f. It clears the floor on all three
-     surfaces, though only just on the sunken one — 4.50:1 exactly — so
-     `--surface-sunken` is the rung to re-check first if any of these move. */
-  --ink-muted: #66655f;
-  /* Between the two. Letterspaced caps are set small and spaced apart, which
-     costs them contrast twice over — --ink-muted is legible in a sentence and
-     faint in a label. This is the weight a label needs to hold its own without
-     competing with the thing it's naming. 8.23:1 on the page. */
-  --ink-label: #434341;
-  --hairline: #cfcdc4;
-
-  /* The scrollbar, which is furniture we draw ourselves now — see
-     `scrollbar-app`. Two rungs, resting and hovered, and both are literal
-     alphas for the reason `--sticker-shadow` is: a `color-mix` that gets
-     dropped renders as full-opacity ink, which here is a solid black bar down
-     the side of the tray. Ink rather than a fixed grey so it sits in the
-     palette, and translucent so it reads as laid over whatever it scrolls. */
-  --scroll-thumb: rgb(20 20 20 / 0.22);
-  --scroll-thumb-hover: rgb(20 20 20 / 0.38);
-
-  /* The one line heavier than a hairline: the rule the week hangs off. A
-     hairline divides things that are already understood to be a set — two
-     cells of one grid — and at 2px on its own above seven columns it reads as
-     a smudge rather than as a rule. It is neutral rather than borrowed from
-     the text ink, so it belongs to the structural palette.
-
-     0.22 rather than 0.2, and the two points are the grey ground's doing: the
-     same alpha that read as a rule over a near-white page reads as a shadow of
-     one over #ebeae4. The scroll thumb took the same correction for the same
-     reason, which is why the two still share their alphas.
-
-     Literal, and for the same reason `--sticker-shadow` is. The obvious
-     spelling was a border utility taking ink through Tailwind's slash-opacity
-     syntax, and Lightning CSS compiles those with a full-opacity `var(--ink)`
-     fallback ahead of the `color-mix`: on a browser without `color-mix` that
-     is a 2px near-black bar across the top of every week. Fine for the drop
-     outline, which is transient; not fine for permanent chrome.
-
-     (And writing that utility's name out in this comment emitted it. The
-     scanner reads comments — see the footnote in `lib/layout.ts`.) */
-  --rule: rgb(20 20 20 / 0.22);
-
-  /* **The one red in the app, and it marks today.** A grey page with one warm
-     accent on it is the whole idea of the palette: press-red on newsprint,
-     spent on exactly one thing. It is a 2px rule under today's numeral in all
-     four calendar views — see `border-today-mark` at those call sites.
-
-     Three things it is deliberately not. It is not `--accent`: shadcn spends
-     that on hover and selected surfaces, so anything put there would tint half
-     the furniture in the app. It is not `--destructive`, which stays the red
-     area ramp — an error and a date are different claims on the same colour,
-     and the loud one should not be the one you see every day. And it is not
-     for links or buttons; the moment a second thing is red, neither is a mark.
-
-     4.24:1 on the page, which clears the 3:1 that a 2px non-text rule is held
-     to and does not clear the 4.5 that text is. Keep it a rule. Today also
-     keeps `font-medium` at every call site, so the mark is never carried by
-     colour alone. */
-  --today-mark: #d4271c;
-
-  /* Ramps are named by hue, because `life_areas.color_key` stores a hue. An
-     area is a database row that points at one of these; it is not itself a
-     colour. Adding a seventh area later means picking a ramp, not editing CSS. */
-  --ramp-red: #c4483c;
-  --ramp-blue: #3178b5;
-  --ramp-orange: #d9762b;
-  --ramp-yellow: #ddb63c;
-  --ramp-green: #4c8b4a;
-  --ramp-purple: #9457c0;
-
-  /* Each hue at 48% over the surface. A sticker is a tint, not a block
-     of colour — six saturated circles on one day shout over the dates they're
-     meant to annotate. The mark on top is --ink, so legibility never depends on
-     the tint being light enough for white.
-
-     Was 28%, raised in Step 14 when Trends started wearing these too. A tint
-     that carries a 26px sticker was too faint to carry a 10px swatch: at 28%
-     the palest sat at 1.19:1 against this surface. 48% is one number rather
-     than six hand-picked values, which is the point of writing them as a mix —
-     the whole ramp moves together, and a seventh hue is derived rather than
-     guessed. Ink still clears 7:1 on all six here. */
-  --ramp-red-soft: #e2a69e;
-  --ramp-blue-soft: #9bbdd8;
-  --ramp-orange-soft: #ecbc96;
-  --ramp-yellow-soft: #eeda9e;
-  --ramp-green-soft: #a8c6a4;
-  --ramp-purple-soft: #cbaddd;
-
-  /* The fill a sticker wears, and the only rung that is written as live
-     arithmetic rather than as six hex values.
-
-     It was 20% over the surface, because the sticker also wore a 1px ring in
-     the full hue and the ring was what named the area — a fill that faint is
-     there to stay out of the way. The ring is gone now and the fill has to
-     carry the hue on its own, so it moved up to 45%: enough colour that six
-     circles on a Tuesday read as six areas at a glance, short of the mid-tone
-     that made an emoji fight its own background at the old 48% soft rung.
-
-     Written as a `color-mix` because 45% is a design decision someone will
-     want to turn, and a percentage you can edit in one place is a knob where
-     twelve hand-picked hex values are a chore. It also means the dark theme
-     needs no copy of this block at all: `--ramp-*` and `--surface` are both
-     redefined on `.dark`, which is the same element this is declared on, so
-     each mix re-resolves against the dark hue over the dark card.
-
-     The second argument is `--surface` and not `--surface-sunken`, and that is
-     an approximation on purpose. A mark sits on the card in the tray and on a
-     sunken cell in the grid; picking one keeps this six values instead of
-     twelve, and the two grounds are four points apart. */
-  --sticker-fill: 45%;
-  --ramp-red-tint: color-mix(in srgb, var(--ramp-red) var(--sticker-fill), var(--surface));
-  --ramp-blue-tint: color-mix(in srgb, var(--ramp-blue) var(--sticker-fill), var(--surface));
-  --ramp-orange-tint: color-mix(in srgb, var(--ramp-orange) var(--sticker-fill), var(--surface));
-  --ramp-yellow-tint: color-mix(in srgb, var(--ramp-yellow) var(--sticker-fill), var(--surface));
-  --ramp-green-tint: color-mix(in srgb, var(--ramp-green) var(--sticker-fill), var(--surface));
-  --ramp-purple-tint: color-mix(in srgb, var(--ramp-purple) var(--sticker-fill), var(--surface));
-
-  /* The die-cut edge, and the shadow that lifts it off the page.
-
-     A real sticker is a shape cut out of a sheet, and the cut leaves a margin
-     of the backing paper around the art. That white rim is the single most
-     recognisable thing about the object — more than the gloss, more than the
-     shape — so it is what the tint circles borrow to stop reading as flat
-     coloured dots and start reading as things placed on the day.
-
-     Pure white in light, and deliberately *not* `--surface`. The two are the
-     same colour on the tray's card, which would make the rim invisible there;
-     they differ on a sunken grid cell, which is where a sticker actually sits.
-     Hard-coding white is what makes the rim the paper's colour rather than
-     whatever it happens to be lying on.
-
-     In dark it is mixed back 70% toward the surface. A full white rim on a
-     #201f1d cell is a bright ring around every mark, and a month of them is a
-     page of holes punched in the dark — the rim has to stay the lightest thing
-     in the sticker without becoming the lightest thing on the screen.
-
-     The shadow is one soft step, not a stack. It says "this is on top of the
-     page" and nothing else; anything deeper starts to say "this is draggable",
-     which is the drag overlay's line and not a resting sticker's. Two stops: a
-     hairline contact shadow holding the bottom edge down, and a wider, much
-     fainter one for the lift.
-
-     **Written as a literal alpha, and not mixed from `--ink`.** Mixing from
-     ink is the move the rest of this file makes and it is wrong for exactly
-     this property. Every other token here wants to flip with the theme; a
-     shadow does not. Ink is `#141414` in light and `#ecebe5` in dark, so an
-     ink-derived shadow becomes a pale *glow* in dark mode — which, under a rim
-     that is already the lightest thing in the sticker, reads as a halo rather
-     than as a lift.
-
-     So the colour is the light theme's ink as a literal — which with the
-     retheme is a neutral near-black rather than the warm one it used to be,
-     and still sits in the palette — and `.dark` overrides it with a
-     true black at a higher alpha: a dark shadow on a dark surface has to work
-     harder to register at all. The literal also avoids a `color-mix` fallback
-     that Lightning CSS renders as full-opacity ink on browsers without
-     `color-mix` — invisible in the ramps that already use it, and a heavy
-     black ring under every sticker here. */
-  --sticker-edge: #ffffff;
-  --sticker-shadow:
-    0 1px 1.5px rgb(20 20 20 / 0.16),
-    0 2px 5px rgb(20 20 20 / 0.09);
-
-  /* The default six, by name. Aliases — the ramp above is the real value. */
-  --area-spirituality: var(--ramp-red);
-  --area-exercise: var(--ramp-blue);
-  --area-work: var(--ramp-orange);
-  --area-creativity: var(--ramp-yellow);
-  --area-romance: var(--ramp-green);
-  --area-friends: var(--ramp-purple);
-
-  /* shadcn's names, pointed at ours. */
-  --background: var(--bg);
-  --foreground: var(--ink);
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-  --primary: #141414;
-  --primary-foreground: #f3f2ed;
-  /* Selected and muted controls sit *below* the page rather than above it now,
-     which is the one structural change the grey ground forced. On a near-white
-     page a selected state could only be a step down, and #f0f0ee was that step.
-     On #ebeae4 it would be a step up — a lit cell, which reads as a highlight
-     rather than as a selection. #e0dfd8 is eleven points under the page, the
-     same distance the old value sat under the old one, so navigation, today
-     rows and hover furniture all keep the weight they had. */
-  --secondary: #e0dfd8;
-  --secondary-foreground: var(--ink);
-  --muted: #e0dfd8;
-  --muted-foreground: var(--ink-muted);
-  --accent: #e0dfd8;
-  --accent-foreground: var(--ink);
-  /* Still the red area ramp, and still not `--today-mark`. See that token. */
-  --destructive: var(--area-spirituality);
-  --border: var(--hairline);
-  --input: var(--hairline);
-  --ring: #a6a49b;
+[data-frame="blush"] {
+  --frame: var(--blush);
+  --on-frame: var(--bottle);
 }
 
 /* ---------------------------------------------------------------------------
-   Dark — neutral charcoal, not blue-black and no longer warm. Area hues lift
-   ~12% so they hold their contrast against a dark ground. **Proposed values:
-   see the note at the top of the block.**
+   Dark — proposed values, not designed.
 --------------------------------------------------------------------------- */
+/* Old newsprint dark theme; not applied. Replace when a dark stationery theme is designed. */
 .dark {
   color-scheme: dark;
 
-  /* **This half of the palette is proposed, not designed.** The light theme
-     came from a frame; these are the values that keep the same relationships
-     on a dark ground — the ladder, the steps between rungs, the neutral cast —
-     derived rather than drawn, and every one of them measured for contrast but
-     none of them looked at beside a design. They are all above the app's 4.5
-     floor with room to spare, so this is a question of feel rather than of
-     legibility: whether the ground is the right darkness, whether the surface
-     lifts far enough off it, whether the mark is the right red. Treat them as
-     a starting point and expect the frame to move them.
-
-     The move itself is the light theme's, upside down: the card lifts off the
-     ground instead of sinking toward it. What changed with the retheme is the
-     cast — this was a warm charcoal to match a cream page, and the page is a
-     neutral grey stock now, so the dark ground lost its warmth alongside it. */
+  /* Proposed: contrast-checked, never seen beside a design. */
   --bg: #161615;
   --surface: #201f1d;
   --surface-sunken: #111110;
   --ink: #ecebe5;
-  /* 6.03:1 on the page. Dark themes have the easier job here — the same
-     perceptual step away from the ink buys more contrast going down from a
-     light ink than going up from a dark one — which is why this rung was never
-     the problem its light-theme counterpart was. */
+  /* 6.03:1 on the page. */
   --ink-muted: #97958c;
-  /* "Darker" inverts here, as the pastels did: more presence against a dark
-     ground means lighter, not darker. Same step away from --ink-muted, toward
-     --ink rather than away from it. 10.14:1. */
+  /* Lighter here = more presence on dark. 10.14:1. */
   --ink-label: #c4c2b8;
   --hairline: #34332f;
 
-  /* Light-on-dark, and *not* the light theme's alphas inverted. A translucent
-     white on #161615 loses contrast faster than a translucent black on grey,
-     so the resting rung comes up rather than down. The channels follow --ink,
-     which moved with the retheme. */
+  /* Not inverted: translucent white loses contrast faster on dark. */
   --scroll-thumb: rgb(236 235 229 / 0.2);
   --scroll-thumb-hover: rgb(236 235 229 / 0.34);
 
-  /* Up rather than mirrored, same as the thumb above it: light ink on a
-     #161615 page loses more contrast at the same alpha than dark ink on
-     grey. */
+  /* Higher alpha, same reason as the thumb. */
   --rule: rgb(236 235 229 / 0.24);
 
-  /* Brighter and a shade toward orange, because #d4271c on a near-black ground
-     is a dark red on a dark page — 2.2:1, a mark you have to look for. #ff5a47
-     is 5.87:1 and still reads as the same accent rather than as a second hue.
-     See the light theme's token for why this colour has exactly one job. */
+  /* Brighter: #d4271c on near-black is 2.2:1; this is 5.87:1. */
   --today-mark: #ff5a47;
 
-  /* Lifted ~12% in lightness. Only the ramps are redefined — the area aliases
-     and the mood aliases follow automatically. */
+  /* Lifted ~12%; category and mood aliases follow. */
   --ramp-red: #d75f52;
   --ramp-blue: #4a93ce;
   --ramp-orange: #e88c42;
@@ -713,17 +354,7 @@
   --ramp-green: #63a55f;
   --ramp-purple: #a971d2;
 
-  /* "Pastel" inverts in the dark theme: a tint toward the surface is a *darker*
-     muted hue, not a lighter one. Same mix, opposite direction, so --ink still
-     reads on top.
-
-     42%, not the 48% the light theme uses, and the gap is the one place these
-     two ramps can't move together. Mixing further from the surface means
-     *toward the full hue*, which is brighter here and darker there — so the
-     same step that adds contrast under --ink in the light theme takes it away
-     in this one. --ramp-yellow is the binding constraint: at 48% the mark on a
-     Creativity & Play sticker falls to 4.03:1, under the 4.5 it has always
-     held. 42% is the furthest this side can travel and still clear it. */
+  /* Mixes toward the surface (darker here). 42%, not 48%: yellow stays ≥ 4.5:1. */
   --ramp-red-soft: #6f3a33;
   --ramp-blue-soft: #32516a;
   --ramp-orange-soft: #784e2d;
@@ -731,41 +362,8 @@
   --ramp-green-soft: #3d5939;
   --ramp-purple-soft: #5b416b;
 
-  /* The six fills follow from the mix in :root — only the percentage is
-     restated here, and it has to be, for the same reason the soft rung is 42%
-     on this side and 48% on the other.
-
-     Mixing further from the surface means *toward the full hue*, which is
-     brighter in the light theme and darker in this one. So the step that adds
-     contrast under --ink there takes it away here, and the two sides stopped
-     being able to share a number the moment this rung went from 20% (faint,
-     miles of headroom either way) to 45% (carrying the hue on its own).
-
-     --ramp-yellow is the binding constraint again: at 45% a mark on a
-     Creativity & Play sticker falls to 4.29:1 on the card, under the 4.5 this
-     app has always held. 40% puts it at 4.83 and costs the other five nothing
-     — the floor across the six is that same yellow, and red, the darkest, sits
-     at 7.60. The 5-point gap is invisible side by side; the failure it avoids
-     is not. */
+  /* 40%, not :root's: at 45% yellow marks fall under 4.5:1. */
   --sticker-fill: 40%;
-
-  /* See the light theme for what the rim is and why it isn't `--surface`. Here
-     it is pulled 70% of the way back to the surface: enough to still read as a
-     cut edge against a 40% tint, not enough to ring every mark in white.
-     Unlike the ramps, this one does get a `color-mix` fallback worth thinking
-     about — without `color-mix` it lands on plain `#fff`, which is the light
-     theme's rim on a dark cell. Bright, but still a rim, so it degrades to
-     "too strong" rather than to "wrong thing".
-
-     The shadow is overridden rather than inherited, and the light theme's note
-     says why: shadows do not flip with the theme, so it cannot be derived from
-     ink. Pure black here rather than the warm ink, at roughly triple the
-     alpha — a shadow on a #201f1d surface has almost no contrast to work with
-     and a light-theme alpha simply vanishes. */
-  --sticker-edge: color-mix(in srgb, #ffffff 70%, var(--surface));
-  --sticker-shadow:
-    0 1px 1.5px rgb(0 0 0 / 0.5),
-    0 2px 5px rgb(0 0 0 / 0.3);
 
   --background: var(--bg);
   --foreground: var(--ink);
@@ -775,19 +373,15 @@
   --popover-foreground: var(--ink);
   --primary: #ecebe5;
   --primary-foreground: #161615;
-  /* Up rather than down, which is the one place this half of the palette does
-     not mirror the light theme. There a selected cell sinks below the page;
-     here it lifts, because below #161615 there is nowhere left to go. #292826
-     is nine points over the page and nine under the surface — a step you can
-     see without it becoming a card. */
+  /* Lifts rather than sinks: nothing below #161615. */
   --secondary: #292826;
   --secondary-foreground: var(--ink);
   --muted: #292826;
   --muted-foreground: var(--ink-muted);
   --accent: #292826;
   --accent-foreground: var(--ink);
-  /* Still the red area ramp, and still not `--today-mark`. See that token. */
-  --destructive: var(--area-spirituality);
+  /* Still the red category ramp, and still not `--today-mark`. See that token. */
+  --destructive: var(--ramp-red);
   --border: var(--hairline);
   --input: var(--hairline);
   --ring: #5a5852;
@@ -807,149 +401,50 @@
   font-variant-numeric: oldstyle-nums proportional-nums;
 }
 
-/* ---------------------------------------------------------------------------
-   Somebody writing, rather than the app reporting.
-
-   Spectral at 300 italic — the app's only non-grotesque face and its only
-   italic. The rule for wearing it is narrow on purpose, because a second face
-   stops meaning anything the moment it is decorative:
-
-     · the note under a day, in the week column and in the day sheet;
-     · the word for how a day felt, wherever a mood is spelled out;
-     · the cadence line in Trends — "about every 11 days".
-
-   What those have in common is that none of them is a fact the app measured
-   and printed. A note is the visitor's own sentence. A mood word is a
-   feeling. A cadence is a reading *of* the count rather than the count, which is why it is the softer half of the pair it sits in — see
-   `MonthDots`. Everything that is a number, a name or a label stays in the
-   grotesque, which is what keeps the italic legible as a change of voice.
-
-   Size and colour are deliberately not set here. Every call site already has
-   its own — these are small lines inside dense layouts, and a utility that
-   also decided how big they were would be four overrides in five places.
---------------------------------------------------------------------------- */
+/* Somebody writing (notes, mood words, cadence). Size and colour stay per call site. */
 @utility note {
-  font-family: var(--font-note);
-  font-style: italic;
+  font-family: var(--font-display);
   font-weight: 300;
 }
 
-/* ---------------------------------------------------------------------------
-   The small letterspaced caps that name a section: SUN–SAT over the grid, a
-   life area over its stickers, the line above a page title.
-
-   One utility rather than five copies of the same four classes, which had
-   already drifted into three sizes and two tracking values. Size lives here
-   too, so the family stays a family — override it in a call site only when you
-   mean to break rank.
---------------------------------------------------------------------------- */
+/* Section label. No caps or tracking (all copy is lowercase). */
 @utility eyebrow {
-  /* The text face, at the size and tracking that make it read as a label —
-     see the third block of `app/layout.tsx` for why the labels no longer get a
-     family of their own. Both numbers moved when Space Mono left, and both
-     moved because a proportional face is not a mono:
-
-     **Size, up from 0.6rem.** A mono spends its advance on air — every glyph
-     gets the widest character's width — so it reads a rung *larger* than a
-     proportional face set at the same number. 0.6rem of Space Mono and
-     0.66rem of Schibsted are the same apparent size; going back to the old
-     0.645rem would have made the labels quietly shrink along with the family.
-
-     **Tracking, up from 0.08em.** 0.08 was the mono's number for the same
-     reason: it arrived with spacing drawn into the glyphs and only needed
-     topping up. A proportional face sets caps tight, and small caps set tight
-     are a word rather than a label, so this goes back near where it was before
-     the mono — 0.1em, which is enough to separate without reading as an
-     ellipsis between letters.
-
-     **A weight that isn't asked for.** Still no `font-weight` here, for the
-     same reason the headings carry no weight utility.
-
-     `daylabel` below shares the face and takes the same correction, but it is
-     still not this utility: SUN–SAT over the grid is seven words being scanned
-     rather than seven tags, so it keeps its own size and stays at sentence
-     case. Same family, different job — and now that there is only one text
-     family, the tracking and the uppercasing are the whole of the difference
-     between a label and a line of prose. */
   font-family: var(--font-sans);
-  font-size: 0.66rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-label);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--ink-muted);
 }
 
-/* ---------------------------------------------------------------------------
-   SUN–SAT over the calendar: the eyebrows' face, and not the eyebrow.
+/* Emoji/letter mark: scales with the sticker (an `@container`). */
+@utility sticker-glyph {
+  font-size: 40cqi;
+  line-height: 1;
+}
 
-   Those seven cells wore `eyebrow` itself until the type changed, and
-   letterspaced caps are the wrong shape for them. An eyebrow *names a section
-   you are about to read* — "Mood", "Work & Study" — and spacing it out is what stops a
-   three-letter label reading as an abbreviation of something. The weekday
-   header names seven columns you are about to scan, and `format(…, "EEE")`
-   already hands over "Sun", which is a word. Uppercasing it into S U N turns a
-   word back into three letters and costs a beat per column, seven times, on
-   the densest screen in the app.
+/* Notebook lines, one per 7rem row (Today's stickers sit on them). */
+@utility ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 calc(7rem - 1px),
+    var(--rule) calc(7rem - 1px) 7rem
+  );
+}
 
-   So: the same family and the same colour — this is still a label, not
-   content, and a weekday heading set in a different face from every other
-   heading in the app was the one thing here nobody was asking for — and then
-   its own size and just enough tracking that the words don't crowd inside a
-   1px-gapped cell.
---------------------------------------------------------------------------- */
+/* Weekday header over the calendar. */
 @utility daylabel {
-  /* The text face, same as `eyebrow`, and the same correction with it in the
-     other direction: a mono read a rung larger at the same nominal size, so
-     0.65rem goes back up to 0.7rem now that the mono is gone. That is the
-     number this had before Space Mono arrived, which is the tell that the
-     correction was the face's and not the cell's.
-
-     Tracking stays at the hair it always had. `eyebrow` needs 0.1em because it
-     is uppercase; these are words, and words set in caps-tracking look
-     stretched.
-
-     What it still does *not* take from `eyebrow` is the uppercasing. The note
-     above is the reason and it survives the change of face — `format(…,"EEE")`
-     hands over "Sun", which is a word being scanned, and S U N is three
-     letters to reassemble, seven times, on the densest screen in the app. So
-     this is the text face at sentence case: same family as the labels, still
-     not a label. */
   font-family: var(--font-sans);
-  font-size: 0.7rem;
-  letter-spacing: 0.01em;
-  color: var(--ink-label);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+  color: var(--ink-muted);
 }
 
 /* ---------------------------------------------------------------------------
-   The scrollbar inside the sticker rail.
-
-   A browser scrollbar is the one piece of furniture on the page we don't draw,
-   and in the rail that shows: a 15px slab of system grey against a 14rem
-   column of warm paper. This draws it instead — 8px wide, a 4px pill of
-   translucent ink inset inside its own track, no groove behind it.
-
-   **Why the WebKit pseudo-elements and not just `scrollbar-color`.** The
-   standard properties are the better mechanism and `html` uses them for the
-   page. They can set a thumb colour and nothing else: no radius, no inset, no
-   hover. They also can't do the thing this is for — on macOS both engines
-   overlay the scrollbar and fade it out when idle unless the visitor has set
-   "Show scroll bars: Always", so a rail that scrolls has *no* visible
-   indication that it does. Styling `::-webkit-scrollbar` opts the element out
-   of overlay scrollbars altogether: the bar is always there, and it takes real
-   layout width, which is why the rail got 1rem wider in the same pass.
-
-   **Why the standard properties are handed back.** Blink and WebKit ignore
-   `::-webkit-scrollbar` on any element whose `scrollbar-width` or
-   `scrollbar-color` is not `auto`, and both of those *inherit* — `html` sets
-   them, so without this they would arrive here and silently switch the rules
-   below off. Returning them to `auto` is scoped by `@supports selector()`, so
-   it happens only in the engines that have the pseudo-elements to replace
-   them: Firefox never matches, keeps the inherited thin ink scrollbar, and
-   gets the closest thing it can draw.
-
-   The inset is a transparent border plus `background-clip: padding-box` rather
-   than a narrower bar, so the thumb has air on both sides and the track stays
-   the full 8px of hit area. A 4px-wide scrollbar is accurate and very hard to
-   grab.
+   Sticker rail scrollbar. WebKit pseudo-elements opt out of macOS overlay
+   (always visible). They're ignored unless scrollbar-width/color are `auto`,
+   so those are reset where supported; Firefox keeps the inherited thin bar.
+   Transparent border + padding-box inset keeps an 8px hit area.
 --------------------------------------------------------------------------- */
 @utility scrollbar-app {
   @supports selector(::-webkit-scrollbar) {
@@ -962,9 +457,7 @@
     height: 0.5rem;
   }
 
-  /* No groove. A visible track draws a line down the side of the tray that
-     isn't part of the design, and it would be there whether or not the list
-     is long enough to scroll. */
+  /* No groove. */
   &::-webkit-scrollbar-track,
   &::-webkit-scrollbar-corner {
     background: transparent;
@@ -983,21 +476,10 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Motion.
-
-   Keyframes live at the top level rather than inside `@theme` so they are
-   emitted whether or not a utility happens to reference them — the view
-   transition rules below are hand-written CSS, not Tailwind classes, and
-   Tailwind has no way to see that they need `deck-slide`.
+   Motion. Keyframes top level so they emit even when only hand-written CSS uses them.
 --------------------------------------------------------------------------- */
 
-/* The day sheet, in and out. `translate` rather than `transform`, so nothing
-   here fights the `-translate-x-1/2` that the centred dialog content uses —
-   these are different surfaces, but they share a stylesheet and the property
-   form is the house one (see `rise` and `fall`).
-
-   100% of the element's own height, which is what makes the distance correct
-   for a short sheet and a tall one without either of them knowing the number. */
+/* `translate`, not `transform`, to not fight dialog centring. 100% = own height. */
 @keyframes sheet-up {
   from {
     translate: 0 100%;
@@ -1032,18 +514,27 @@
   }
 }
 
-/* The signed-out page arriving, one element at a time.
+/* Sign-in strike line; pair with `origin-left`. */
+@keyframes strike {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}
 
-   Up rather than down, and only 14px of it. A thing that rises into place
-   reads as settling; the same distance downward reads as dropping, which
-   wants a bounce to finish it and this doesn't have one. The translate is
-   small because the fade is doing most of the work — far enough to give the
-   opacity somewhere to happen, not so far that the text is legibly in the
-   wrong place first. */
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Up, not down: rising reads as settling. */
 @keyframes rise {
   from {
     opacity: 0;
-    translate: 0 14px;
+    translate: 0 var(--hero-rise, 14px);
   }
   to {
     opacity: 1;
@@ -1051,29 +542,8 @@
   }
 }
 
-/* A sticker dropping onto the signed-out page and settling like something
-   landing on water: it falls, plunges past where it belongs, and rocks back
-   twice before it stops. The heading and the paragraph still `rise` — the
-   content asserts itself upward, the decoration drops in around it.
-
-   The distance is `--fall-drop` rather than a literal, the same way
-   `deck-slide` reads `--deck-offset`, so the big stickers can fall further than
-   the small ones without four near-identical keyframe blocks drifting apart.
-   Every other stop is a fraction of it, so re-tuning the drop re-tunes the
-   whole bounce in proportion.
-
-   The per-keyframe `animation-timing-function` is the load-bearing part, and it
-   is worth knowing that a keyframe's timing function governs the segment that
-   *starts* at it, not the one that ends there. The first segment is the fall
-   and accelerates — ease-in-quad is the displacement curve of a falling body,
-   and it is the one place in this app where an ease-in is correct rather than a
-   mistake. Do not "fix" it to an ease-out. The three after it are half-swings
-   of an oscillation, so they take a symmetric sine-like curve instead, and they
-   get equal slices of time because a damped oscillator has a constant period.
-
-   Reduced motion needs no rule of its own: the blanket block at the bottom of
-   this file flattens the duration to 1ms, and `both` holds the final keyframe,
-   which is the resting position. */
+/* Falls, overshoots, rocks back twice. A keyframe's easing governs the segment
+   that starts at it: ease-in for the fall (gravity, keep it), sine for swings. */
 @keyframes fall {
   0% {
     translate: 0 calc(var(--fall-drop, 28px) * -1);
@@ -1096,10 +566,7 @@
   }
 }
 
-/* The sticker becoming visible, on its own clock so it can finish long before
-   the fall does. Separate from `fall` rather than an extra pair of stops inside
-   it, because an opacity keyframe in the middle of the descent would split the
-   gravity curve into two shallower ones. */
+/* Separate from `fall` so an opacity stop doesn't split the gravity curve. */
 @keyframes sticker-fade {
   from {
     opacity: 0;
@@ -1109,21 +576,7 @@
   }
 }
 
-/* The decorative stickers, breathing. `alternate` rather than a loop back to
-   the start, so there is no seam — the animation reverses instead of jumping
-   home. Small numbers on purpose: this runs forever behind a page someone is
-   trying to read a sentence on, and anything you can *watch* is too much.
-
-   This is half the drift. `drift-x` below is the other half, and the two are
-   on two different elements for the reason that keyframe's comment gives.
-
-   Reduced motion *does* need a rule of its own, and this is the one animation
-   in the file that does — see `.animate-drift` inside the
-   `prefers-reduced-motion` block at the bottom. The blanket rule there caps the
-   iteration count at one, which for an `alternate` animation with `both` means
-   a single forward pass that ends on the last keyframe and stays there. For
-   every other animation here that is the right answer, because they all end
-   where the element belongs. This one ends 7px down and 3.5° over. */
+/* `alternate`, so no seam. Ends off-position, hence its reduced-motion rule. */
 @keyframes drift {
   from {
     translate: 0 -7px;
@@ -1135,17 +588,7 @@
   }
 }
 
-/* The other half of the drift. Splitting the two axes across two elements is
-   not tidiness — `translate` is one property, so a second animation on the same
-   span would simply win and the vertical drift would vanish with no error
-   anywhere to say why.
-
-   The periods are deliberately not multiples of each other (each is 1.37× its
-   sticker's vertical one), which is what turns two bobs into a slow open figure
-   that never repeats visibly. It also removes the hang at the ends of the
-   cycle: `ease-in-out` with `alternate` brings each axis to a stop at its
-   extremes, and two axes stopping at different moments means the object itself
-   never does. */
+/* Separate element: one `translate` per element. Period 1.37× the vertical's. */
 @keyframes drift-x {
   from {
     translate: -5px 0;
@@ -1155,10 +598,7 @@
   }
 }
 
-/* The month deck. One keyframe pair drives all four cases — old and new,
-   forward and back — by reading `--deck-offset`, which each rule sets to a
-   different sign. Written once and steered by a variable, because four
-   near-identical keyframe blocks drift apart the first time one is tuned. */
+/* One pair for all four cases, steered by `--deck-offset`. */
 @keyframes deck-slide {
   from {
     translate: var(--deck-offset);
@@ -1178,37 +618,9 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Period deck — see `CalendarPanel`.
-
-   These pseudo-elements are the browser's screenshots of the outgoing and
-   incoming period, painted over the page for the length of the transition.
-   They are attached to the document root no matter where in the tree the
-   element lives, which is why these selectors are unnested and why they are
-   matched by class: `<ViewTransition enter={{ "step-next": "deck-next" }}>`
-   puts `deck-next` on the pseudo-element, and
-   `::view-transition-new(.deck-next)` is how CSS gets at it.
-
-   The transition types are `step-next` and `step-previous` rather than
-   anything with "month" in the name, because the same two arrows now step a
-   month or a week and the animation is the same either way. The class names
-   below stayed — they describe the picture, not the unit.
-
-   `reverse` on the outgoing side is doing real work: it means one keyframe
-   describes arriving, and leaving is that same motion played backwards. The
-   offsets are percentages of the grid's own width, so the movement stays
-   proportional from a phone to a wide monitor.
-
-   The offset is deliberately small — 8%, not a full page width. A calendar
-   grid isn't a page you're flipping away from; it's the same grid holding
-   different days. Enough sideways motion to say which direction you went, and
-   the fade does the rest. Small also keeps the snapshots from sweeping visibly
-   across the rest of the layout, since a view-transition pseudo-element is not
-   clipped by whatever box its source element lived in.
-
-   A fade-free version was built and rejected: a full-width slide with a
-   `clip-path` cutting each page off at the frame's edge, so it read like
-   turning a page in a book. It worked, and it was too much event for stepping
-   between two views of the same grid.
+   Period deck — see `CalendarPanel`. Pseudo-elements live on the root, so
+   unnested and matched by class. Old side plays `reverse`. 8% offset: same
+   grid, new days; also unclipped, so keep it small.
 --------------------------------------------------------------------------- */
 ::view-transition-old(.deck-next) {
   --deck-offset: -8%;
@@ -1238,13 +650,7 @@
     var(--dur-deck) var(--ease-deck) both deck-slide;
 }
 
-/* The month name, which sits above the grid and swaps at the same moment.
-
-   It gets a fade and no slide. Two elements sliding the same distance side by
-   side looks like one plane moving, which is right for a deck of days but wrong
-   for a title — the title is a label *on* the deck, not part of it. The arrows
-   beside it are outside the transition entirely and never move, so there is
-   always one fixed thing to aim at while the rest changes. */
+/* Label fades, no slide: it's on the deck, not part of it. */
 ::view-transition-old(.deck-label) {
   animation: 120ms var(--ease-exit) both deck-fade reverse;
 }
@@ -1258,28 +664,7 @@
     @apply border-border outline-ring/50;
   }
 
-  /* The hand cursor, which Tailwind v3 used to add for you and v4 does not.
-     Preflight now leaves `button` at the browser default, which is an arrow —
-     defensible, since that *is* the spec's default, and disorienting on a page
-     where every other affordance says "click me".
-
-     One rule rather than a `cursor-pointer` on each control. Twelve call sites
-     across nine components had already grown that class one at a time, which is
-     what a missing base rule looks like from the inside: the fix keeps working,
-     so the cause never gets found, and the next control starts the count at
-     thirteen. All twelve came out with this rule going in.
-
-     The list is what Radix actually renders, not a guess. A radio item and a
-     dropdown trigger are real `<button>`s, so they come free; a Select option
-     is a `<div role="option">` and a menu item is `<div role="menuitem">`, so
-     those are named. `label[for]` is here because a label bound to a control is
-     a click target too — the mood picker's rows are the case — and a bare
-     `<label>` wrapping nothing is not.
-
-     Disabled controls are excluded three ways because the three libraries
-     spell it three ways: a native `disabled`, Radix's `data-disabled`, and
-     `aria-disabled` on things that can't take the attribute. A hand cursor
-     over a control that will not respond is a promise the page can't keep. */
+  /* Pointer cursor (v4 dropped it). Lists what Radix renders; disabled three ways. */
   button,
   summary,
   label[for],
@@ -1300,106 +685,32 @@
   html {
     @apply font-sans;
 
-    /* Two values: the thumb (the part you drag), then the track behind it. Both
-       inherit, so every scrolling box on the page gets them — the sticker rail
-       included — without a class anywhere.
-
-       The thumb is `--scroll-thumb`, the same token the rail's own scrollbar
-       uses, so the page and the tray are drawn in one colour from one place;
-       it is defined per theme, so this lands correctly in both from a single
-       declaration. A fixed grey would be too dark on the grey page or
-       invisible on charcoal. The track is transparent: a visible groove would draw a line
-       down the page that isn't part of the design.
-
-       On a Mac these only show if scroll bars are set to "Always" in System
-       Settings; otherwise macOS overlays its own and hides them when idle —
-       which is the whole reason the rail does not stop here. See
-       `scrollbar-app`. */
+    /* Thumb, track; inherited by every scroller. macOS: see `scrollbar-app`. */
     scrollbar-width: thin;
     scrollbar-color: var(--scroll-thumb) transparent;
   }
 
   body {
     @apply bg-background text-foreground;
-
-    /* The base rung, applied. Text with no `text-*` class of its own would
-       otherwise sit at the browser's 16px and miss the 0.92 correction
-       entirely, which would leave the scale true everywhere except the
-       paragraphs nobody remembered to size. On `body` rather than `html` on
-       purpose: `rem` stays 16px, so spacing, radii and every max-width are
-       untouched and this moves type only. */
-    font-size: 0.92rem;
+    font-size: 1rem;
+    font-weight: 400;
   }
 
-  h1,
-  h2,
-  h3 {
-    @apply font-heading;
-  }
-
-  /* -0.03em, and it survived the swap for a different reason than it was
-     written for. Syne is drawn wide and spaced for display, so at title sizes
-     the gaps between its letters read as air rather than rhythm and this was
-     pulling a loose face back to a set word. Schibsted Grotesk arrives already
-     set — nothing needs rescuing — but a neutral grotesque at 45 and 56px
-     wants tightening anyway, because default tracking is drawn for a
-     paragraph and a display line at the same value looks slack. Same number,
-     now doing the ordinary optical-size job. Kept in ems so it scales with
-     every size a heading is set at, which is what makes one value work from
-     the 67px display rung down to the 19px dialog title.
-
-     Here rather than as a companion on the `--font-heading` token, because
-     Tailwind only carries letter-spacing on `--text-*` tokens, and the titles
-     are set on four of those plus an arbitrary `text-[1.88rem]` on a phone. In
-     `base`, so any `tracking-*` utility or a class like `eyebrow` (an `h3`
-     wearing the label treatment) still wins — and that override matters more
-     now than it did, because the eyebrows are the same family as the headings
-     rather than a mono, so this rule would otherwise pull them the wrong way.
-     `.font-heading` covers the face wherever it is set outside an h1–h3 — the
-     wordmark, the Trends readouts, the month count, the account menu — so the
-     headings are spaced one way everywhere. */
   h1,
   h2,
   h3,
   .font-heading {
-    letter-spacing: -0.03em;
+    font-family: var(--font-heading);
+    font-weight: 300;
+    letter-spacing: -0.01em;
   }
 }
 
 /* ---------------------------------------------------------------------------
-   Reduced motion.
-
-   "Reduce" is an accessibility setting, not a preference for a plainer look.
-   For some people motion on screen causes actual nausea and dizziness —
-   vestibular disorders respond to large sliding and scaling movement much the
-   way motion sickness responds to a car — and for others it's an attention
-   cost they've chosen not to pay. Either way the request is specific: cut the
-   movement, keep the interface.
-
-   So this doesn't hide anything or change a layout. Everything still appears
-   and disappears at the same moments; it just stops travelling to get there.
-
-   Three things to know about how it's written:
-
-   1. The durations are rewritten at the source. Every timing in this app comes
-      from one of the `--dur-*` tokens, so setting them here reaches the dialog,
-      the menus, the deck and the landing mark in one place. The blanket `*`
-      rules underneath are a backstop for anything that hardcodes a duration —
-      a third-party component, or a class someone adds later without reading
-      this comment.
-
-   2. 1ms, never 0s. Radix keeps a closing dialog mounted until its animation
-      fires `animationend`, and an animation with no duration is entitled not
-      to fire that event at all. Zero out the durations and the dialog closes
-      visually but its overlay stays in the DOM, holding focus and blocking
-      clicks. 1ms is imperceptible and still emits the event.
-
-   3. `!important` and `*`, which are usually a smell, are correct here: this
-      has to beat every utility class in the app, including ones that don't
-      exist yet.
-
-   The `::view-transition-*` pseudo-elements need their own rules because they
-   are not elements in the document and `*` does not reach them. */
+   Reduced motion: stop travel, keep the interface. Tokens → 1ms at the source;
+   `*` is a backstop. 1ms, never 0: Radix waits for `animationend` to unmount.
+   View-transition pseudos need their own rule.
+--------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-panel-in: 1ms;
@@ -1409,7 +720,10 @@
     --dur-deck: 1ms;
     --dur-land: 1ms;
     --dur-hero: 1ms;
+    --dur-bloom: 1ms;
     --dur-fall: 1ms;
+    --dur-strike: 1ms;
+    --dur-after-strikes: 1ms;
   }
 
   *,
@@ -1423,24 +737,7 @@
     scroll-behavior: auto !important;
   }
 
-  /* The drift needs its own rule, and it is the one animation in this app that
-     does. The blanket rule above stops everything by flattening the duration
-     and capping the iteration count at one — which for an `alternate` animation
-     with `both` means a single forward pass that finishes on the *last*
-     keyframe and stays there. Every other animation in this file ends where the
-     element belongs, so that is the right answer for all of them. The drift
-     ends 7px down and 3.5° over, so capping it would park all thirty
-     stickers below their positions and tilted the same way — still, but visibly
-     wrong, and wrong in a way that reads as a bug rather than as a preference
-     being honoured.
-
-     `animation: none` instead: no animation, so the elements sit where layout
-     puts them. The per-sticker `tilt` and `offset` are ordinary utilities
-     rather than animations, so the field keeps its scatter and only loses its
-     movement — which is precisely what the request asks for.
-
-     Class specificity beats `*`, so this wins the `!important` contest against
-     the blanket rule above. */
+  /* Drift ends off-position, so a capped pass would park stickers wrong: none instead. */
   .animate-drift,
   .animate-drift-x {
     animation: none !important;

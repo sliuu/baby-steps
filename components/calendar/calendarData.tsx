@@ -23,11 +23,7 @@ type CalendarData = {
 
 const CalendarDataContext = createContext<CalendarData | null>(null);
 
-/**
- * Keeps confirmed calendar edits alive while the shell switches between the
- * Calendar and Trends trees. The server still supplies the initial snapshot;
- * this is the client-side handoff that avoids refetching it after every edit.
- */
+/** Keeps confirmed edits across Calendar/Trends switches, so no refetch per edit. */
 export function CalendarDataProvider(props: { children: React.ReactNode }) {
   const [snapshot, setSnapshot] = useState<CalendarSnapshot | null>(null);
   return (

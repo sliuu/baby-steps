@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-// Relative, with the extension. Same rule as every other test in here: there is
-// no bundler in this process, so `@/lib/habits` would resolve to nothing.
+// Relative `.ts` import: no bundler under node --test.
 import {
   HABITS_PER_PAGE,
   SORT_START,
@@ -25,21 +24,13 @@ import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
 
 /**
- * Two areas, three habits, one retired — the deleted strip's fixture,
- * because the two modules share their row rule and a shared rule deserves a
- * shared shape of test. Walk is archived and that is the point: the same
- * library has to produce a different number of rows depending on whether Walk
- * was placed inside the window.
- *
- * The areas are named so that alphabetical order ("Health", "Spirituality")
- * matches library order, and the sort tests below rely on being able to tell
- * those two apart — so one test deliberately builds a library in the other
- * order.
+ * Walk is archived: rows depend on whether it was placed in the window.
+ * Category names sort alphabetically in library order (one test reverses it).
  */
 const GROUPS: LibraryGroup[] = [
   {
-    areaId: "area-health",
-    areaName: "Health",
+    categoryId: "category-health",
+    categoryName: "Health",
     colorKey: "green",
     stickers: [
       { id: "act-gym", name: "Gym", mark: "G", colorKey: "green", archived: false },
@@ -47,8 +38,8 @@ const GROUPS: LibraryGroup[] = [
     ],
   },
   {
-    areaId: "area-spirit",
-    areaName: "Spirituality",
+    categoryId: "category-spirit",
+    categoryName: "Spirituality",
     colorKey: "red",
     stickers: [
       { id: "act-med", name: "Meditation", mark: "M", colorKey: "red", archived: false },
@@ -57,13 +48,8 @@ const GROUPS: LibraryGroup[] = [
 ];
 
 /**
- * Placements by day. The placement `id` can never equal the `activityId`, which
- * is the guard against counting by the wrong one — a table built on `id` comes
- * out as a column of ones.
- *
- * `name`, `mark` and `colorKey` are wrong on purpose: the placement carries a
- * joined name in the real query, and the point of the fixture is that
- * `habitTable` reads the *library's* name, not this one.
+ * Placement `id` never equals `activityId` (catches counting by the wrong one).
+ * Names are wrong on purpose: `habitTable` must read the library's.
  */
 function days(entries: Record<string, string[]>): StickersByDay {
   const map: StickersByDay = new Map();
@@ -83,7 +69,7 @@ function days(entries: Record<string, string[]>): StickersByDay {
   return map;
 }
 
-/** A day carrying a mood and nothing else — the calendar writes these. */
+/** A mood-only day. */
 function moodOnly(day: string): StickersByDay {
   return new Map([[day, { mood: "good" as const, note: null, activities: [] }]]);
 }
@@ -111,8 +97,7 @@ describe("earliestPlacement", () => {
   });
 
   it("ignores a day that carries only a mood", () => {
-    // The window is about placements. A day you recorded a feeling on but
-    // placed nothing is not where the counting starts.
+    // Mood-only days don't start the window.
     assert.equal(earliestPlacement(moodOnly("2020-01-01")), null);
   });
 
@@ -146,24 +131,20 @@ describe("habitWindow", () => {
   });
 
   it("collapses to today when there is no history at all", () => {
-    // All time over an empty database. One day rather than a span back to the
-    // epoch, which would draw every plot as a tick against 20,000 days of
-    // nothing.
+    // Empty all-time is one day, not a span back to the epoch.
     const window = habitWindow({ from: null, to: null }, "2026-09-12", null);
     assert.deepEqual(window, { from: "2026-09-12", to: "2026-09-12", days: 1 });
   });
 
   it("keeps a custom range that runs into the future", () => {
-    // The span the user drew is the span the rates are about, even the part of
-    // it that hasn't happened.
+    // Rates cover the drawn span, future included.
     const window = habitWindow({ from: "2026-09-01", to: "2026-12-31" }, "2026-09-12", null);
     assert.equal(window.to, "2026-12-31");
     assert.equal(window.days, 122);
   });
 
   it("never runs backwards", () => {
-    // A left edge past the right one would make every position in the plot
-    // negative. Reachable when the clock is behind the data.
+    // Reachable when the clock is behind the data.
     const window = habitWindow({ from: "2026-09-30", to: null }, "2026-09-12", null);
     assert.equal(window.from, "2026-09-12");
     assert.equal(window.days, 1);
@@ -205,8 +186,7 @@ describe("habitTable · which rows exist", () => {
   });
 
   it("comes out in library order, not sorted", () => {
-    // Meditation is placed more often and still comes second, because sorting
-    // is the table's own state and this function has no opinion about it.
+    // No sorting here; that's the table's state.
     const rows = habitTable(
       days({ "2026-09-05": ["act-med"], "2026-09-06": ["act-med"], "2026-09-07": ["act-gym"] }),
       GROUPS,
@@ -224,15 +204,15 @@ describe("habitTable · which rows exist", () => {
 });
 
 describe("habitTable · what a row says", () => {
-  it("names the habit from the library and the area from its group", () => {
+  it("names the habit from the library and the category from its group", () => {
     const rows = habitTable(days({ "2026-09-05": ["act-gym"] }), GROUPS, WINDOW);
     const gym = rowFor(rows, "act-gym");
     // Not `joined-act-gym`: the fixture's placement name is wrong on purpose.
     assert.equal(gym.name, "Gym");
     assert.equal(gym.mark, "G");
     assert.equal(gym.colorKey, "green");
-    assert.equal(gym.areaId, "area-health");
-    assert.equal(gym.areaName, "Health");
+    assert.equal(gym.categoryId, "category-health");
+    assert.equal(gym.categoryName, "Health");
   });
 
   it("counts marks, not days", () => {
@@ -243,8 +223,7 @@ describe("habitTable · what a row says", () => {
   });
 
   it("plots one hit per day, carrying that day's count", () => {
-    // Three marks on one day is one entry, not three — the plot draws days —
-    // but the count rides along so a block can shade for how full it was.
+    // One entry per day; the count rides along for shading.
     const map = days({ "2026-09-05": ["act-gym", "act-gym", "act-gym"] });
     const gym = rowFor(habitTable(map, GROUPS, WINDOW), "act-gym");
     assert.deepEqual(gym.hits, [{ offset: 4, count: 3 }]);
@@ -319,9 +298,7 @@ describe("habitTable · what a row says", () => {
 
 describe("habitTable · the interval", () => {
   it("divides the window by the count, not by the observed stretch", () => {
-    // Two marks a day apart in a 30-day window is every 15 days. The other
-    // reading — every 1 day — would make the row disagree with its own plot,
-    // which shows two ticks at the left edge and 28 empty days.
+    // Two marks in 30 days = every 15 days (matches the plot).
     const map = days({ "2026-09-01": ["act-gym"], "2026-09-02": ["act-gym"] });
     assert.equal(rowFor(habitTable(map, GROUPS, WINDOW), "act-gym").interval, 15);
   });
@@ -355,8 +332,8 @@ describe("frequencyLabel", () => {
       name: "Gym",
       mark: "G",
       colorKey: "green",
-      areaId: "area-health",
-      areaName: "Health",
+      categoryId: "category-health",
+      categoryName: "Health",
       count: 0,
       days: 0,
       hits: [],
@@ -386,7 +363,7 @@ describe("frequencyLabel", () => {
   });
 
   it("says About daily for something done more than once a day", () => {
-    // A calendar of days cannot say more than daily, and it shouldn't try.
+    // Never more often than daily.
     assert.equal(frequencyLabel(row({ count: 60, interval: 0.5 })), "About daily");
   });
 
@@ -398,11 +375,9 @@ describe("frequencyLabel", () => {
 
 describe("SORT_START", () => {
   it("starts every column at its useful end", () => {
-    // Counts and last-done open on the biggest and the most recent; frequency
-    // ascends because the smallest interval is the most-done habit. Same
-    // intent, opposite arrows, which is why it is a table.
+    // Counts and last-done start descending; frequency ascending.
     assert.deepEqual(SORT_START, {
-      area: "asc",
+      category: "asc",
       count: "desc",
       interval: "asc",
       last: "desc",
@@ -418,8 +393,8 @@ describe("sortHabits", () => {
       name: "Alpha",
       mark: "A",
       colorKey: "green",
-      areaId: "area-1",
-      areaName: "Body",
+      categoryId: "category-1",
+      categoryName: "Body",
       count: 9,
       days: 9,
       hits: [{ offset: 1, count: 1 }],
@@ -432,8 +407,8 @@ describe("sortHabits", () => {
       name: "Bravo",
       mark: "B",
       colorKey: "red",
-      areaId: "area-2",
-      areaName: "Craft",
+      categoryId: "category-2",
+      categoryName: "Craft",
       count: 2,
       days: 2,
       hits: [{ offset: 5, count: 1 }],
@@ -446,8 +421,8 @@ describe("sortHabits", () => {
       name: "Charlie",
       mark: "C",
       colorKey: "blue",
-      areaId: "area-3",
-      areaName: "Admin",
+      categoryId: "category-3",
+      categoryName: "Admin",
       count: 1,
       days: 1,
       hits: [{ offset: 20, count: 1 }],
@@ -460,8 +435,8 @@ describe("sortHabits", () => {
       name: "Delta",
       mark: "D",
       colorKey: "yellow",
-      areaId: "area-4",
-      areaName: "Zeal",
+      categoryId: "category-4",
+      categoryName: "Zeal",
       count: 0,
       days: 0,
       hits: [],
@@ -484,15 +459,13 @@ describe("sortHabits", () => {
     assert.deepEqual(ids(sortHabits(ROWS, "count", "asc")), ["d", "c", "b", "a"]);
   });
 
-  it("orders by area name, alphabetically", () => {
-    assert.deepEqual(ids(sortHabits(ROWS, "area", "asc")), ["c", "a", "b", "d"]);
-    assert.deepEqual(ids(sortHabits(ROWS, "area", "desc")), ["d", "b", "a", "c"]);
+  it("orders by category name, alphabetically", () => {
+    assert.deepEqual(ids(sortHabits(ROWS, "category", "asc")), ["c", "a", "b", "d"]);
+    assert.deepEqual(ids(sortHabits(ROWS, "category", "desc")), ["d", "b", "a", "c"]);
   });
 
   it("treats a single mark as rarer than any rate", () => {
-    // Charlie has one mark and no interval. Ascending by frequency runs from
-    // most-often to least, so it lands last among the rows that have marks —
-    // and ahead of Delta, which has none.
+    // One mark, no interval: last among marked rows, ahead of none.
     assert.deepEqual(ids(sortHabits(ROWS, "interval", "asc")), ["a", "b", "c", "d"]);
     assert.deepEqual(ids(sortHabits(ROWS, "interval", "desc")), ["c", "b", "a", "d"]);
   });
@@ -519,14 +492,13 @@ describe("sortHabits", () => {
       { ...ROWS[0], activityId: "m", name: "Mike", count: 5 },
       { ...ROWS[0], activityId: "e", name: "Echo", count: 5 },
     ];
-    // Ascending and descending agree, because the tie-break is not flipped by
-    // the direction: it is the stable order underneath it.
+    // The tie-break is stable, not flipped by direction.
     assert.deepEqual(ids(sortHabits(tied, "count", "desc")), ["e", "m", "z"]);
     assert.deepEqual(ids(sortHabits(tied, "count", "asc")), ["e", "m", "z"]);
   });
 
   it("handles every key without throwing on an empty table", () => {
-    const keys: HabitSortKey[] = ["area", "count", "interval", "last"];
+    const keys: HabitSortKey[] = ["category", "count", "interval", "last"];
     for (const key of keys) {
       assert.deepEqual(sortHabits([], key, "asc"), []);
     }
@@ -556,8 +528,7 @@ describe("pageOf", () => {
   });
 
   it("clamps a page past the end to the last one", () => {
-    // What happens when you filter to one area while on page 3: the rows are
-    // still there, so show the last page rather than an empty table.
+    // Filtered while on page 3: clamp to the last page.
     assert.deepEqual(pageOf(rows, 9, 10), [20, 21, 22]);
   });
 
@@ -582,8 +553,7 @@ describe("pageOf", () => {
 
 describe("plotGrain", () => {
   it("gives a block a day for anything up to a month", () => {
-    // The picker's whole short half — this week, last 7, this month, last 30 —
-    // lands here, which is the case the user asked for by name.
+    // This week, last 7, this month, last 30.
     assert.equal(plotGrain(1), "day");
     assert.equal(plotGrain(7), "day");
     assert.equal(plotGrain(30), "day");
@@ -598,7 +568,7 @@ describe("plotGrain", () => {
   });
 
   it("gives a block a month past a year", () => {
-    // The other case the user named: longer than a year is drawn in months.
+    // Over a year: months.
     assert.equal(plotGrain(367), "month");
     assert.equal(plotGrain(1827), "month");
   });
@@ -646,8 +616,7 @@ describe("plotBlocks · day grain", () => {
 });
 
 describe("plotBlocks · week grain", () => {
-  // 1 Sep 2026 is a Tuesday, so the first block is a short one — which is the
-  // point of cutting on the calendar rather than from the window's own start.
+  // 1 Sep 2026 is a Tuesday: blocks cut on the calendar, so the first is short.
   const window = habitWindow(
     { from: "2026-09-01", to: "2026-11-30" },
     "2026-12-01",
@@ -674,8 +643,7 @@ describe("plotBlocks · week grain", () => {
   });
 
   it("deals marks into the week they fall in", () => {
-    // Offsets 0 (Tue 1 Sep, the short first block) and 5 (Sun 6 Sep, the
-    // second), which is the boundary the calendar cut puts between them.
+    // Offsets 0 (Tue 1 Sep) and 5 (Sun 6 Sep).
     const blocks = plotBlocks(window, [
       { offset: 0, count: 1 },
       { offset: 5, count: 2 },
@@ -687,9 +655,7 @@ describe("plotBlocks · week grain", () => {
 });
 
 describe("plotBlocks · month grain", () => {
-  // Fifteen months, which is what it takes to get past the week grain's year —
-  // and it crosses two year ends, which is where string arithmetic on the month
-  // digits would go wrong if it were going to.
+  // Fifteen months, crossing two year ends.
   const window = habitWindow(
     { from: "2025-11-14", to: "2027-02-03" },
     "2027-02-03",
@@ -784,9 +750,7 @@ describe("plotBlocks · edges", () => {
   });
 
   it("drops a hit that lands outside the window rather than clamping it", () => {
-    // Can't happen from `habitTable`, which only ever records days inside the
-    // window. Asserted because the alternative — piling a stray offset onto
-    // the last block — would draw a habit as busier than it was.
+    // Unreachable from `habitTable`; don't pile strays onto the last block.
     const window = habitWindow(
       { from: "2026-09-01", to: "2026-09-10" },
       "2026-09-12",
@@ -825,8 +789,7 @@ describe("blockLevel", () => {
   });
 
   it("needs two marks on a single day to go heavy", () => {
-    // The strip's own rule, kept so that a day block means what it always
-    // meant.
+    // The strip's own rule.
     assert.equal(blockLevel(block(1, 1)), 1);
     assert.equal(blockLevel(block(2, 1)), 2);
   });
@@ -842,28 +805,18 @@ describe("blockLevel", () => {
   });
 
   it("reads a clipped block against the days it actually covers", () => {
-    // A "this month" window on the 13th ends in a 13-day block. Seven marks in
-    // it is a hard fortnight and has to draw like one, which is what clipping
-    // `days` to the window buys.
+    // `days` is clipped to the window, so a 13-day block draws full.
     assert.equal(blockLevel(block(7, 13)), 2);
     assert.equal(blockLevel(block(7, 30)), 1);
   });
 
   it("judges each block on its own, never against the row's busiest", () => {
-    // Two rows, same block, same answer — which is what makes a column of
-    // plots comparable down the page.
+    // Same block, same answer, so plots compare down the column.
     assert.equal(blockLevel(block(4, 7)), blockLevel(block(4, 7)));
   });
 });
 
-/**
- * The Sunday on or before a day, worked out here rather than imported.
- *
- * `startOfWeek` is not exported from `lib/habits.ts` and shouldn't be — it is
- * `lib/daymath.ts`'s — but importing a second module into this test would add a
- * resolution path for no gain. Three lines of string arithmetic against a known
- * anchor is the cheaper assertion.
- */
+/** Sunday on or before `day`, computed locally to avoid importing daymath. */
 function startOfWeekString(day: string): string {
   const anchor = Date.UTC(2026, 8, 6); // Sunday 6 Sep 2026
   const [y, m, d] = day.split("-").map(Number);
@@ -874,13 +827,7 @@ function startOfWeekString(day: string): string {
   return sunday.toISOString().slice(0, 10);
 }
 
-/**
- * The blocks cover the window once: no gap, no overlap, no day lost at an edge.
- *
- * The invariant every grain shares, and the one that would actually break if
- * `nextBoundary` were wrong about a month or a leap year — a drawing with a
- * missing week in it looks like a quiet week.
- */
+/** Blocks tile the window: no gap, overlap, or lost edge day. */
 function assertCovers(
   blocks: PlotBlock[],
   from: string,

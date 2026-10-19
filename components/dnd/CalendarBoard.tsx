@@ -33,65 +33,34 @@ import {
 } from "@/app/actions/stickers";
 import { CalendarPanel } from "@/components/calendar/CalendarPanel";
 import { useCalendarData } from "@/components/calendar/calendarData";
-import { DayModal } from "@/components/calendar/DayModal";
 import { MoodMark } from "@/components/calendar/MoodMark";
-import { StickerBar } from "@/components/calendar/StickerBar";
 import { StickerMark } from "@/components/calendar/StickerMark";
-import type { Landed } from "@/components/calendar/period";
+import { LANDING_VIEW, type Landed } from "@/components/calendar/period";
 import { useCalendarView } from "@/components/calendar/viewMode";
+import { AddStickersSheet } from "@/components/tray/AddStickersSheet";
 import { StickerTray } from "@/components/tray/StickerTray";
 import { applyChange, type CalendarChange } from "@/lib/changes";
-import { formatDayLong, toDayString, type DayString } from "@/lib/dates";
+import { formatDateNumeric, formatDayLong, fromDayString, type DayString } from "@/lib/dates";
 import { buildHighlight, type Selection } from "@/lib/highlight";
-import { TRAY_INSET } from "@/lib/layout";
-import type { LibraryGroup } from "@/lib/queries/activities";
-import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
+import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
+import { faceOf, type StickersByDay } from "@/lib/stickers";
 import { readDropTarget, type DropTarget } from "./dropTarget";
 import { snapToCursor } from "./snapToCursor";
+import { CalendarSkeleton } from "@/components/views/CalendarSkeleton";
+import { useToday } from "@/lib/useToday";
 import { payloadName, readDragPayload, type DragPayload } from "./payload";
 
 type Props = {
   groups: LibraryGroup[];
   stickersByDay: StickersByDay;
-  /**
-   * Demo mode: every change is applied here and written nowhere.
-   *
-   * The signed-out demo at `/demo` renders this exact board over a generated
-   * year — see `lib/demo.ts` — and the whole of the difference is this flag.
-   * That is the reason it is a flag rather than a second board: a demo you have
-   * to maintain alongside the real thing is a demo that drifts, and the first
-   * thing it stops showing is whatever changed last week.
-   *
-   * What it turns off is the network, nothing else. Dragging, the caret, the
-   * landing animation, the day modal, moods, notes and the highlight all run
-   * unchanged, because none of them ever asked the server anything — `commit`
-   * is the single place that did. The library is not editable in a demo; see
-   * `StickerTray`'s own `local`.
-   */
+  // Demo mode: every change is applied here and written nowhere.
   local?: boolean;
 };
 
-/**
- * How long a mark's landing animation runs, matching `--dur-land` in
- * globals.css.
- *
- * Written twice, in two languages, which is worth being honest about: CSS owns
- * the animation and JavaScript owns the cleanup, and neither can read the
- * other's value without either a `getComputedStyle` call on every placement or
- * a stylesheet generated from a module. Both cost more than they're worth for
- * one number. The failure if they drift is mild and self-correcting — too short
- * and the animation is cut off, too long and the class lingers on a finished
- * element — so the comment on each is the link between them.
- */
+/** Matches `--dur-land` in globals.css. */
 const LANDING_MS = 420;
 
-/**
- * Where a change puts a mark, or null if it doesn't put one anywhere.
- *
- * `move` reads `to` rather than `from`: the animation belongs to the arrival.
- * Removals and mood changes get nothing — a mood is painted on the day as a
- * whole and has no mark to land, and a removal is the opposite of an arrival.
- */
+/** Where a change lands a mark (move uses `to`); null for removals and moods. */
 function arrivalOf(change: CalendarChange): Landed | null {
   switch (change.kind) {
     case "place":
@@ -103,7 +72,6 @@ function arrivalOf(change: CalendarChange): Landed | null {
   }
 }
 
-/** Which action a change is. The only place the two are matched up. */
 function runChange(change: CalendarChange): Promise<PlaceResult> {
   switch (change.kind) {
     case "place":
@@ -127,45 +95,9 @@ function runChange(change: CalendarChange): Promise<PlaceResult> {
 }
 
 /**
- * The pointer's rule for a pointer, the keyboard's rule for a keyboard.
- *
- * `closestCenter` compares the centre of the *dragged* thing to the centre of
- * each day. That's wrong for a pointer here: the overlay is a whole tray row,
- * so its centre can sit a hundred pixels from your cursor and the wrong square
- * lights up. `pointerWithin` asks the only question a mouse user is asking —
- * which cell is under the tip? — and it's exact.
- *
- * This used to be written as a *fallback*: `pointerWithin`, and `closestCenter`
- * whenever it came back empty. That reads as "cover the keyboard case too", and
- * it quietly did something else — `pointerWithin` returns empty every time the
- * cursor is outside the grid, so the fallback fired there as well and handed
- * back the nearest square. Releasing over the tray, the header, or the margin
- * dropped a sticker on whichever border cell happened to be closest. There was
- * no way to abandon a drag with the mouse, and the one you thought you'd
- * abandoned had already landed somewhere.
- *
- * The discriminator is `pointerCoordinates`, which is null for exactly one
- * reason: dnd-kit derives it from the activator event's `clientX`/`clientY`, and
- * a `KeyboardEvent` has neither, so `getEventCoordinates` returns null. Checked
- * in `@dnd-kit/utilities`, not assumed. So the two branches are now "is there a
- * pointer at all" rather than "did the pointer find anything" — and an empty
- * result from `pointerWithin` means what it says: nothing here to drop on.
- *
- * A keyboard drag keeps `closestCenter` and can never be "outside", which is
- * right — there's no cursor to be outside with, and Escape is already its way
- * out.
- *
- * What's new is the second half. There are two kinds of droppable in this
- * context now — days, and the gaps between the marks on a day — and they answer
- * different questions. `pointerWithin` still answers the first, over cells
- * only, because a gap has no width and so contains no pointer ever. The gaps
- * are then measured directly: nearest centre inside the day the cursor is
- * actually in.
- *
- * Two rules rather than one pass over everything, because "which day" and
- * "where in it" fail differently. Nearest-gap alone would happily hand back a
- * slot in the cell next door when the cursor sat in a margin; asking the day
- * first means the answer is always inside the square that's lit up.
+ * Pointer: `pointerWithin` over cells, then the nearest slot in that cell.
+ * Never fall back to `closestCenter` for a pointer, or releasing off-grid drops
+ * on the nearest border cell. Keyboard (no pointerCoordinates): `closestCenter`.
  */
 const collisionDetection: CollisionDetection = (args) => {
   const cells = args.droppableContainers.filter(
@@ -173,8 +105,7 @@ const collisionDetection: CollisionDetection = (args) => {
   );
 
   if (!args.pointerCoordinates) {
-    // No cursor, so no gaps to aim at: a keyboard drag picks whole squares and
-    // `readDropTarget` reads a bare cell as the end of the day.
+    // Keyboard: whole cells; `readDropTarget` reads a bare cell as end of day.
     return closestCenter({ ...args, droppableContainers: cells });
   }
 
@@ -189,25 +120,12 @@ const collisionDetection: CollisionDetection = (args) => {
     const data = container.data.current;
     if (data?.kind !== "slot" || data.day !== cell.id) continue;
 
-    // `droppableRects`, not the container's own `rect.current`. The map is what
-    // dnd-kit measured when this drag began, and it's the same source both
-    // built-in algorithms read — taking the rect from anywhere else is how the
-    // caret and the lit square end up disagreeing after the page scrolls.
+    // `droppableRects` (measured at drag start), or caret and lit cell drift on scroll.
     const rect = args.droppableRects.get(container.id);
     if (!rect) continue;
 
-    // The slot has no extent along the axis it divides, so on that axis the
-    // near edge *is* the centre; on the other axis the centre has to be
-    // computed. Which is which is what `axis` says — see `DropSlot`.
-    //
-    // The cross axis counts quadruple, and it's the weighting rather than the
-    // distance that makes the caret land where you're pointing. In a month
-    // cell a day's marks wrap onto several lines, and 30px of line height is
-    // small next to 85px of width, so plain distance lets the last gap on the
-    // line above win while the cursor is clearly on the line below. In a week
-    // column the same thing happens transposed: the slots are as wide as the
-    // column, so without the weighting the caret would rather jump a row than
-    // notice you had moved sideways within one.
+    // Slots have no extent on their axis, so near edge = centre. Cross axis is
+    // weighted 4x so the caret follows the line/column you're actually on.
     const block = data.axis === "block";
     const along = block ? pointer.y - rect.top : pointer.x - rect.left;
     const across = block
@@ -224,30 +142,10 @@ const collisionDetection: CollisionDetection = (args) => {
   return nearest ? [{ id: nearest.id }] : [cell];
 };
 
-/**
- * The drag arena, and the reason this component exists at all.
- *
- * `DndContext` has to be an ancestor of both the thing you pick up and the
- * thing you drop it on — the tray and the grid. Those were siblings inside a
- * Server Component until now, with nothing above them but layout, so the layout
- * is what had to move. Which means the two-column arrangement, the tray, and
- * the grid are all in the browser bundle now; `CalendarView` kept the part that
- * matters, which is the fetching.
- *
- * It also owns the optimistic copy of the calendar. `useOptimistic` takes the
- * saved Map and a reducer, and hands back a Map that includes drops still in
- * flight. A successful write is folded into that saved Map; a failed one is
- * not, so the optimistic value rolls back when its transition expires. This
- * avoids re-rendering and re-querying the entire route after every small edit.
- */
+/** Owns the DndContext (tray and grid must share it) and the optimistic calendar. */
 export function CalendarBoard(props: Props) {
   const { snapshot, setSnapshot } = useCalendarData();
-  /**
-   * The last confirmed copy of the calendar. In the app, a successful Server
-   * Action advances it; in the demo, the local change does. If a wider server
-   * refresh replaces the prop (for example after editing a sticker), reset to
-   * that authoritative snapshot.
-   */
+  // Last confirmed calendar; reset when a server refresh replaces the prop.
   const [saved, setSaved] = useState(
     snapshot?.source === props.stickersByDay
       ? snapshot.data
@@ -263,100 +161,34 @@ export function CalendarBoard(props: Props) {
   const [stickersByDay, apply] = useOptimistic(saved, applyChange);
   const [dragging, setDragging] = useState<DragPayload | null>(null);
 
-  /**
-   * Month or week — read here, owned by the top nav.
-   *
-   * It is read at this level and not lower down because the drag overlay below
-   * is the panel's sibling and has to know: the thing under the cursor must be
-   * the same shape as the hole it is going into — a circle over the month grid,
-   * a named bar over the week strip. The panel owns *which period*; this reads
-   * *which shape*.
-   */
+  // Which view; owned by the top nav. Decides where the tray goes.
   const view = useCalendarView();
-  const [openDay, setOpenDay] = useState<DayString | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /**
-   * Where a release would land right now, or null when it would land nowhere.
-   *
-   * `over` lives inside dnd-kit and the `DragOverlay`'s children aren't given
-   * it, so it gets mirrored out here. It used to be a bare boolean, for the
-   * overlay's benefit only — the day itself lit up from its own `isOver`, so
-   * nothing out here needed to know *which* day. Slots changed that: on a
-   * pointer drag the thing dnd-kit calls `over` is a gap inside a cell, and the
-   * cell's own `isOver` goes false. So this is now the single answer that the
-   * overlay, the lit square, and the caret all read.
-   */
+  // Mirrored out of dnd-kit: overlay, lit cell and caret all read it.
   const [target, setTarget] = useState<DropTarget | null>(null);
-  /**
-   * The mark that just arrived, so it can be animated into place — and nothing
-   * else on the calendar with it.
-   *
-   * This is state rather than dnd-kit's own drop animation on purpose. dnd-kit
-   * flies the overlay back to the element it was picked *up* from, which is
-   * right for a reorder and wrong for everything else here: a sticker dragged
-   * out of the tray would sail back into the rail at the exact moment it should
-   * be settling onto a Tuesday. `dropAnimation={null}` turns that off, and this
-   * puts the motion where the result is instead of where the gesture was.
-   *
-   * It also covers the arrivals that were never a drag at all. Ticking an
-   * activity in the day modal places a sticker with no gesture behind it, and
-   * that mark should land the same way the dragged one does — the animation is
-   * about the outcome, not the input.
-   */
+  // Just-arrived mark to animate. Not dnd-kit's drop animation, which flies back to the source.
   const [landed, setLanded] = useState<Landed | null>(null);
   const [, startTransition] = useTransition();
 
-  /**
-   * Highlight mode, and the whole of it is this one line.
-   *
-   * It sits here for the plainest reason there is: the tray sets it, the grid
-   * draws it, and those two are siblings. The lowest component containing both
-   * is this one — which already exists because `DndContext` needed exactly the
-   * same thing, so lifting state up cost nothing this time.
-   *
-   * What's worth noticing is where it *isn't*. There's no column for it, no
-   * server action, no `refresh()`, nothing in the URL and nothing in
-   * `localStorage`. A highlight is a way of looking at the month rather than a
-   * fact about it, so it lives for as long as the component does and dies on
-   * reload. It doesn't even survive switching to the Trends tab, because
-   * `AppShell` unmounts this whole tree to do that — and coming back to a month
-   * still filtered by something you clicked five minutes ago would be a small
-   * mystery, not a feature.
-   *
-   * Contrast the sticker sitting next to it on a day: that's a fact, it went
-   * through a Server Action, and it's still there next year. Same click, same
-   * tray, opposite lifetimes — which is the distinction this step is about.
-   */
+  // Ephemeral view state: no DB, URL or storage; dies on reload.
   const [selection, setSelection] = useState<Selection | null>(null);
+  // Phones: the add-stickers sheet.
+  const [picking, setPicking] = useState(false);
+  // Null on the server: it can't know the visitor's day.
+  const todayString = useToday(null);
 
-  /**
-   * Everything visible about the selection, derived rather than stored.
-   *
-   * `selection` is three fields of identity; this is the colour, the label, and
-   * the set of activity ids that count. Keeping the second computed means a
-   * sticker renamed or recoloured on the server changes what the highlight says
-   * with no code, and it's why nothing has to reset the selection when the
-   * library reloads under it. Null when the selected thing is gone.
-   */
+  // Derived, so server renames/recolours flow through; null if the target is gone.
   const highlight = useMemo(
     () => (selection ? buildHighlight(selection, props.groups) : null),
     [selection, props.groups],
   );
 
-  /**
-   * How many days each sticker is on, for the delete confirmation in the tray.
-   *
-   * Built from the optimistic Map rather than the prop, so a mark dropped a
-   * second ago is already in the number the warning quotes. One pass over data
-   * this component is holding anyway — the same argument `tally` makes for
-   * grouping in the browser instead of asking Postgres for a `group by`.
-   */
+  // Days per sticker for the delete confirmation; optimistic so it's current.
   const markCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const [, day] of stickersByDay) {
       for (const sticker of day.activities) {
-        // The activity, not the placement. Counting `sticker.id` would count
-        // every mark as its own sticker and report 1 for all of them.
+        // Per activity, not per placement.
         counts.set(
           sticker.activityId,
           (counts.get(sticker.activityId) ?? 0) + 1,
@@ -366,42 +198,22 @@ export function CalendarBoard(props: Props) {
     return counts;
   }, [stickersByDay]);
 
-  /**
-   * Escape clears it, which is the third way out after pressing the lit row's
-   * eye again and the "clear" link in the tray header.
-   *
-   * Bound only while something is lit *and* the modal is shut. Escape is
-   * heavily subscribed here — Radix closes the dialog with it, dnd-kit cancels
-   * a drag with it — and a listener that isn't attached can't race with either.
-   */
+  // Escape clears the highlight; bound only while something is lit.
   useEffect(() => {
-    if (!selection || openDay) return;
+    if (!selection) return;
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setSelection(null);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selection, openDay]);
+  }, [selection]);
 
   const sensors = useSensors(
-    // Four pixels of travel before a press counts as a drag. Without it every
-    // click on a sticker starts one, and both the day cell and — since Step 11
-    // — the tray row want that click.
+    // 4px before a press is a drag, so clicks still reach cells and rows.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
-      // Space lifts, Enter opens. Both start a drag by default, and the sensor
-      // calls `preventDefault()` on activation, so the button's own click never
-      // fires — which left a keyboard user unable to reach whatever the row's
-      // click meant. Dropping Enter from `start` hands it back to the button.
-      // In Step 11 that was the highlight; it's the editor now, and the swap
-      // needed no change here, which is the sign the seam was in the right
-      // place.
-      //
-      // Space is the one that stayed with the drag because dnd-kit's built-in
-      // screen-reader instructions — read out on focus — say "to pick up a
-      // draggable item, press the space bar". The instructions below add the
-      // other half rather than contradicting this one.
+      // Enter left out of `start` so it reaches the row's button (opens editor).
       keyboardCodes: {
         start: ["Space"],
         cancel: ["Escape"],
@@ -411,28 +223,16 @@ export function CalendarBoard(props: Props) {
   );
 
   /**
-   * The single way anything changes, whichever door it came through.
-   *
-   * Everything here happens inside one transition, and the order matters.
-   * `apply` is only allowed to be called from inside one — that's how React
-   * knows when the optimistic value has expired. The await keeps the transition
-   * open for the round trip, and Next.js commits the re-rendered page inside it
-   * too, so a sticker is drawn continuously: optimistic first, real second, no
-   * frame in between where it's missing.
+   * The single write path. `apply` must run inside the transition; awaiting keeps
+   * it open so optimistic and real renders hand off with no gap.
    */
   function commit(change: CalendarChange) {
-    // Outside the transition, so the flag is set in the same render as the
-    // optimistic sticker rather than a frame later — the class has to be on the
-    // element the first time it paints, or the animation starts from a mark
-    // that's already sitting there.
+    // Outside the transition so the class is on the mark's first paint.
     setLanded(arrivalOf(change));
 
     startTransition(async () => {
       apply(change);
-      // A demo's truth is the state above, so folding the change into it is the
-      // whole of the write. The optimistic value expires a moment later and
-      // falls back to a `saved` that already contains the change — the same
-      // handoff the server does, with the round trip taken out.
+      // Demo: folding into `saved` is the whole write.
       if (props.local) {
         setSaved((current) => applyChange(current, change));
         setSnapshot((current) => {
@@ -465,19 +265,8 @@ export function CalendarBoard(props: Props) {
     });
   }
 
-  /**
-   * Clear the flag once the animation has had time to finish.
-   *
-   * A timer rather than `onAnimationEnd`, because the element the animation
-   * runs on may not survive it — a cross-month move unmounts the mark
-   * mid-flight, and an event that fires on a removed node never arrives. The
-   * timer is owned by the effect, so a second placement before the first has
-   * expired cancels the old one on the way in.
-   *
-   * Slightly longer than the animation so it's the animation that ends the
-   * motion, not the cleanup. Both come from the same token, so a change to
-   * either stays in step.
-   */
+  // Timer, not onAnimationEnd: a cross-month move unmounts the mark mid-flight.
+  // Slightly longer than the animation.
   useEffect(() => {
     if (!landed) return;
     const timer = window.setTimeout(() => setLanded(null), LANDING_MS + 80);
@@ -486,29 +275,11 @@ export function CalendarBoard(props: Props) {
 
   function handleDragStart(event: DragStartEvent) {
     setDragging(readDragPayload(event.active.data.current));
-    // A drag starts over nothing — even one lifted off a day, because dnd-kit
-    // hasn't hit-tested yet. Cleared explicitly rather than left over from last
-    // time: `onDragOver` fires on *changes*, so a drag that begins and ends
-    // outside the grid never fires it at all.
+    // Reset: `onDragOver` fires only on changes.
     setTarget(null);
   }
 
-  /**
-   * Where it was dropped, and where it came from, decide between four things.
-   *
-   * The grid became a drag *source* as well as a target in Step 16, and that one
-   * change doubled this function. The same two questions now have four answers:
-   *
-   *                     from the tray        from a day
-   *   onto a day        place                move
-   *   onto nothing      cancel               remove
-   *
-   * Which is why `from` travels in the payload. Note the diagonal: releasing over
-   * empty space is a no-op in one column and a deletion in the other, so it is
-   * the only gesture on the page whose meaning depends on where it began. The
-   * overlay has to say which one is about to happen, because by the time you find
-   * out from the calendar it has already happened.
-   */
+  // Tray→day: place; day→day: move; tray→nothing: cancel; day→nothing: remove.
   function handleDragEnd(event: DragEndEvent) {
     setDragging(null);
     setTarget(null);
@@ -517,9 +288,7 @@ export function CalendarBoard(props: Props) {
     if (!payload) return;
     const landed = readDropTarget(event.over);
 
-    // Released over nothing. Dragged off the calendar, that's the delete gesture
-    // — the sticker was carried out of the month and let go. Out of the tray it
-    // is still just a change of mind.
+    // Off the calendar: removes a placed mark, cancels a tray drag.
     if (!landed) {
       if (payload.kind === "activity" && payload.from) {
         commit({
@@ -531,9 +300,7 @@ export function CalendarBoard(props: Props) {
       return;
     }
 
-    // A drag says what was dropped where; `commit` decides what that means.
-    // A mood ignores the slot half of the answer: `unique (user_id, day)` means
-    // a day holds one, so there is nowhere in a day for it to be.
+    // One mood per day, so the slot index is ignored.
     if (payload.kind === "mood") {
       commit({ kind: "mood", day: landed.day, mood: payload.mood });
       return;
@@ -559,38 +326,65 @@ export function CalendarBoard(props: Props) {
     );
   }
 
-  /**
-   * The overlay is about to be a deletion rather than a cancellation.
-   *
-   * Two facts, and neither is enough alone: the thing in the air came off a day
-   * (`from`), and it is currently over nothing. Derived at render rather than
-   * stored, because both halves are already state — a third piece of state
-   * holding their conjunction is a thing that can disagree with them.
-   */
+  // About to delete: lifted off a day and over nothing.
   const leaving = !target && dragging?.kind === "activity" && !!dragging.from;
 
-  /**
-   * Whether the thing in the air is a named bar rather than a circle.
-   *
-   * The week columns are wide enough to spell the activity out, so that is what
-   * they draw — and the overlay has to agree, or you'd be carrying a circle
-   * towards a row of bars. The day view draws bars too, at full width, so the
-   * test is "not the month" rather than "the week". Moods stay a circle in all
-   * three: a mood belongs to the day rather than to the stack inside it, and it
-   * sits in the day's header either way.
-   */
-  const bar = view !== "month" && dragging?.kind === "activity";
+  const onToday = (view ?? LANDING_VIEW) === "today";
+
+  /** Tap-to-add: the same "place" a drop makes, at the end of the day. */
+  function addTo(day: DayString, sticker: LibrarySticker) {
+    const placed = stickersByDay.get(day)?.activities ?? [];
+    // Already there: replay the land as feedback, write nothing.
+    if (placed.some((p) => p.activityId === sticker.id)) {
+      setLanded({ day, activityId: sticker.id });
+      return;
+    }
+    commit({
+      kind: "place",
+      day,
+      activityId: sticker.id,
+      face: faceOf(sticker),
+      index: placed.length,
+    });
+  }
+
+  /** The sheet's batch: each a "place" at the end, in pick order. */
+  function addMany(day: DayString, stickers: LibrarySticker[]) {
+    const placed = stickersByDay.get(day)?.activities ?? [];
+    stickers.forEach((sticker, i) =>
+      commit({ kind: "place", day, activityId: sticker.id, face: faceOf(sticker), index: placed.length + i }),
+    );
+  }
+
+  const tray = (layout: "column" | "page", day: DayString, scope?: string) => (
+    <StickerTray
+      groups={props.groups}
+      selection={selection}
+      onSelect={setSelection}
+      onClear={() => setSelection(null)}
+      label={highlight?.label ?? null}
+      markCounts={markCounts}
+      onError={setError}
+      local={props.local}
+      onAdd={(sticker) => addTo(day, sticker)}
+      addTo={layout === "page" ? "today" : formatDateNumeric(fromDayString(day))}
+      layout={layout}
+      compact={layout === "column"}
+      // The phone sheet can't drag, so its taps add.
+      tapEdits={scope === "panel"}
+      dragScope={scope}
+    />
+  );
+
+  const errorLine = error && (
+    <p className="mt-s4 rounded-lg bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label">{error}</p>
+  );
+
+  if (!todayString) return <CalendarSkeleton />;
 
   return (
     <DndContext
-      // Not decoration, and not optional. dnd-kit stamps every draggable with
-      // `aria-describedby="DndDescribedBy-N"`, where N comes from a counter
-      // living in a module variable. On the client that module is fresh, so N
-      // starts at 0. On the server the module is cached for the life of the
-      // Node process, so N keeps climbing with every request — the second
-      // render of this page sends `-1`, the third `-2`, and hydration finds an
-      // attribute that doesn't match what it computed. Passing an id of our own
-      // makes dnd-kit use it verbatim instead of counting, so both sides agree.
+      // Fixed id: dnd-kit's describedby counter differs server vs client (hydration).
       id="calendar-board"
       sensors={sensors}
       collisionDetection={collisionDetection}
@@ -603,320 +397,95 @@ export function CalendarBoard(props: Props) {
         setTarget(null);
       }}
     >
-      <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
-        {/* min-w-0 is doing real work: a flex child defaults to refusing to
-            shrink below its content's width, so without it a wide grid would
-            push the rail off the side instead of narrowing. */}
-        <div className="min-w-0 flex-1">
-          {/* The server's day, so first paint isn't blank and isn't the 1st
-              of the month. CalendarPanel corrects it on mount if the visitor's
-              timezone disagrees — see `initialDay` there. */}
-          <CalendarPanel
-            initialDay={toDayString(new Date())}
-            view={view}
-            // The day sheet's "New sticker" chip writes to the database, and
-            // the demo has none. Same omission the tray makes with its `+`.
-            local={props.local}
-            // For the day view's picker only. The tray gets the same list
-            // below — one query, two surfaces onto it, which is the point of
-            // the library living up here rather than in either of them.
-            groups={props.groups}
-            stickersByDay={stickersByDay}
-            onOpenDay={setOpenDay}
-            onCommit={commit}
-            error={error}
-            highlight={highlight}
-            target={target}
-            // A mood lands on the day, not in it. The square lights up either
-            // way; the caret only appears when there is really an order about
-            // to change.
-            caret={dragging?.kind === "activity"}
-            landed={landed}
-          />
-        </div>
+      <CalendarPanel
+        initialDay={todayString}
+        view={view}
+        groups={props.groups}
+        stickersByDay={stickersByDay}
+        onCommit={commit}
+        error={error}
+        highlight={highlight}
+        target={target}
+        // Moods land on the day; only stickers get a caret.
+        caret={dragging?.kind === "activity"}
+        landed={landed}
+        tray={(day, scope) => tray("column", day, scope)}
+        onPickStickers={() => setPicking(true)}
+      />
 
-        {/* Beside the calendar once there's room, stacked underneath when there
-            isn't. Sticky below the 4rem nav so it stays put while a tall month
-            scrolls — which is what makes it usable as a drag source — and
-            scrolling on its own once the list outgrows the window, rather than
-            pushing the page taller than the calendar it sits beside.
+      {picking && (
+        <AddStickersSheet
+          groups={props.groups}
+          placed={
+            new Set(
+              (stickersByDay.get(todayString)?.activities ?? []).map((a) => a.activityId),
+            )
+          }
+          onAdd={(stickers) => addMany(todayString, stickers)}
+          onClose={() => setPicking(false)}
+          markCounts={markCounts}
+          local={props.local}
+        />
+      )}
 
-            What scrolls is no longer this element. It is a flex column that
-            *caps* the height, and `StickerTray` divides that height between a
-            header that stays put and a list that scrolls under it — the
-            heading, the `+` and the line that offers the way out of a
-            highlight used to scroll away with the stickers. The error line
-            below is the other flex child, so it sits under the scrolling list
-            rather than at the end of it, and a failure can't be scrolled out
-            of sight.
+      {onToday && (
+        // Under Today, past a rule. Phones use the + sheet instead.
+        <section
+          id="your-stickers"
+          aria-label="stickers"
+          className="mt-s6 hidden scroll-mt-6 border-t border-rule pt-s6 lg:block"
+        >
+          {tray("page", todayString)}
+        </section>
+      )}
 
-            `145px` is that promise written down, and it has to be kept in step
-            with the page's own padding. The tray's top edge is the nav — 64px
-            of `h-16` **and the hairline under it** — plus `main`'s 40px of top
-            padding, and there are another 40px of bottom padding beneath it:
-            64 + 1 + 40 + 40. A cap any larger and the tray alone makes a page
-            scroll that would otherwise have fit — it was `8rem`, and 48 stray
-            pixels of scrollbar on a week that ended well above the fold is
-            exactly what that bought. Then it was `9rem`, which is the same
-            mistake one pixel wide: 144 forgets the hairline, so a full-screen
-            laptop showing the week or today got a scrollbar for a single
-            pixel, which is worse than a long scroll — it looks like a bug
-            rather than like content. Written in px rather than rem because one
-            of the four numbers it adds up is a border, and a border is not
-            going to be re-expressed in rem. If `py-10` in `AppShell` or the
-            nav's height ever changes, this changes with it.
-
-            That scroll is vertical only wherever it lives, and keeping it that
-            way is a rule, not a preference: nothing in here may be wider than
-            the rail. Note that `overflow-y-auto` does not leave the other axis
-            alone — CSS promotes `overflow-x` from `visible` to `auto`
-            alongside it — so a single child bleeding past the edge is a
-            horizontal scrollbar, and hiding it would only move the problem.
-            Long names truncate; hit areas fill the width rather than reaching
-            past it. */}
-        {/* `lg:w-64` — 16rem. It was 18rem, then 13, then 13 plus the
-            scrollbar, and now that plus the hairline's 2rem of clearance; the
-            note on the tag below has the arithmetic. What follows is where
-            the 13 came from, and it is still the floor everything else is
-            measured against.
-
-            13rem was measured as close to the floor: `TRAY_INSET` costs 16px,
-            the mark is 26, the gap to the name is 10, and the eye on the right
-            is about 24 with its own gap — 76px of furniture, leaving ~130px of
-            name, around 19 characters of DM Sans at `--text-base` against a
-            `NAME_MAX` of 24. Every one of those numbers still holds; what
-            changed is that the list now draws its own 8px scrollbar and that
-            bar takes real width rather than floating over the content the way
-            macOS's does. Handing back a whole rem instead of exactly 8px is
-            deliberate: the thumb is inset inside its track, so at 8px the
-            names would end flush against the bar with no air between them.
-
-            The five moods were the binding constraint before the sticker row
-            was — five labelled columns wanted ~54px each — which is what
-            losing their words bought. */}
-        {/* **Desktop only, and that is the mobile design rather than a
-            responsive afterthought.** This rail is a drag source: you pick a
-            sticker up here and drop it on a day. A touch screen cannot take
-            that gesture, so on a phone the whole interaction runs the other
-            way round — tap the day, then tap the sticker, in `DaySheet`. A tray
-            you can see and cannot use is worse than no tray, and at 375px it
-            is also a second full-height column below the calendar that the
-            page has to scroll past to get to nothing.
-
-            What a phone loses with it: editing a sticker, retiring one, and
-            the highlight that dims everything a selection didn't match. Making
-            one is the exception — the sheet carries its own "New sticker"
-            chip. The other three are still desktop-only and are the honest
-            next piece of work.
-
-            `hidden` first and then `lg:flex`, not `lg:block`: the rail is a
-            flex column and `twMerge` resolves the two display classes in
-            argument order, so the class that turns it back on has to be the
-            display it actually wants.
-
-            **`lg:overflow-hidden` is what stops the page scrolling past its
-            own content.** The list inside already scrolls on its own, and it
-            is capped at the viewport by `max-h` — but the overflow it hides
-            was still counted in the document's scroll height, so a tray with
-            more stickers than fit bought the *page* a few hundred pixels of
-            blank space below the fold. Nothing is clipped that wasn't already:
-            this only says that what the rail hides is hidden from the page
-            too. The drag preview is unaffected — `DragOverlay` renders at the
-            board, not in here. */}
-        {/* **The hairline, and the 2rem the rail grew to pay for it.** The
-            line is a left border on this element rather than a divider of its
-            own, so it inherits the rail's own height and stickiness for free:
-            it starts under the nav because the rail does, it ends where the
-            rail's cap ends, and there is no second thing to keep in sync. It
-            is `lg:`-prefixed like everything else here, so it disappears with
-            the rail below 64rem — where the tray stacks and a vertical rule
-            would be drawing a line down the middle of nothing.
-
-            `lg:w-64` and not `lg:w-56` is the part that isn't in the brief.
-            The border and its `pl-8` take 33px out of the *inside* of a
-            fixed-width rail, and the width above was measured rather than
-            picked: 13rem of content plus a rem for the list's own scrollbar.
-            Left at 14rem, a sticker name's slot went from 136px to 103px —
-            18 characters down to 13, against a `NAME_MAX` of 24 — so a third
-            of the names people can actually type would have started
-            truncating. 16rem hands back exactly what the line costs and the
-            slot lands at 135px. What pays for it is the calendar, which is
-            `flex-1`: seven columns share the loss, about 4.5px each. */}
-        <aside className="hidden lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-145px)] lg:w-64 lg:shrink-0 lg:flex-col lg:overflow-hidden lg:border-l lg:border-hairline lg:pl-8">
-          <StickerTray
-            groups={props.groups}
-            selection={selection}
-            onSelect={setSelection}
-            onClear={() => setSelection(null)}
-            label={highlight?.label ?? null}
-            markCounts={markCounts}
-            onError={setError}
-            local={props.local}
-          />
-
-          {/* Rendered always, filled sometimes. A live region the browser only
-              discovers at the moment it gains text is a live region that often
-              doesn't announce — it has to be in the tree beforehand for the
-              change to be a change. So no `empty:hidden`: that is
-              `display: none`, which takes it out of the tree. The margin is on
-              the line instead, so an empty region is zero high. */}
-          <div role="status" aria-live="polite" className="lg:shrink-0">
-            {/* Edge to edge like a row's highlight, with its text on the same
-                inset as the sticker names above it. Filled things span the
-                rail; words start at TRAY_INSET. */}
-            {error && (
-              <p
-                className={`${TRAY_INSET} mt-6 rounded-md bg-ramp-red-soft py-2 text-[0.83rem]`}
-              >
-                {error}
-              </p>
-            )}
-          </div>
-        </aside>
+      {/* Desktop's error line, under the content. One live region per width. */}
+      <div role="status" aria-live="polite" className="hidden lg:block">
+        {errorLine}
       </div>
 
-      {/* **The phone's copy of the same line, and it is not a duplicate for
-          long.** The rail above is `hidden` below 64rem, and a live region
-          inside `display: none` is invisible *and* silent — screen readers
-          skip it too. Without this, a failed write on a phone is a sticker
-          that appears and then vanishes when the optimistic value expires,
-          with nothing anywhere saying why.
-
-          Two nodes rather than one moved node, because the two placements are
-          genuinely different objects: the rail's line is a block at the foot
-          of a column that is already there, and this is a banner over a page
-          that has no spare room. Exactly one of them is ever displayed — this
-          is `lg:hidden` and the rail is `hidden lg:flex` — so there is exactly
-          one live region in play at any width, which is the thing that would
-          actually break if both showed at once.
-
-          Pinned to the top, and not above the bottom bar where the tap
-          happened. The likeliest way to see this at all is tapping a chip in
-          `DaySheet`, and the sheet occupies the bottom 85% of the screen — a
-          bar down there lands underneath it or on top of the thing you were
-          reading. `z-60` clears the sheet's own 50 for the same reason: a
-          failure notice that the sheet covers is the bug this is fixing.
-
-          **Seen here, but only heard here when no sheet is open.** An open
-          Radix dialog hides everything outside it from assistive technology,
-          this included, so `DaySheet` carries its own `sr-only` copy of the
-          same line. Mounted always, for the reason the rail's is: no
-          `empty:hidden`, which is `display: none`. `pointer-events-none`
-          instead, so the empty strip across the top never eats a tap. */}
+      {/* Phone copy, pinned above the sheet (z-60); the sheet has an sr-only copy. */}
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 top-0 z-60 px-3 pt-[calc(0.75rem+env(safe-area-inset-top))] lg:hidden"
+        className="pointer-events-none fixed inset-x-0 top-0 z-60 px-s2 pt-[calc(var(--spacing-s2)+env(safe-area-inset-top))] lg:hidden"
       >
         {error && (
-          <p className="mx-auto max-w-[34rem] rounded-md bg-ramp-red-soft px-3 py-2 text-[0.83rem] shadow-[0_4px_16px_rgb(70_50_20/0.18)]">
+          <p className="mx-auto max-w-136 rounded-lg bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label shadow-menu">
             {error}
           </p>
         )}
       </div>
 
-      {/* The floating copy. It exists so the original can stay exactly where it
-          is: nothing is removed from the tray mid-drag, so nothing below it
-          jumps up to fill the gap while your hand is still moving.
-
-          It also escapes `overflow: hidden` and every transform on the way up,
-          because it renders at the top of the arena rather than inside the
-          rail. A sticker dragged out of a scrolling container would otherwise
-          be clipped at its edge. */}
+      {/* The floating copy; the original stays put so nothing reflows mid-drag. */}
       <DragOverlay
         dropAnimation={null}
-        // The overlay's box is dnd-kit's copy of the box you picked *from*, and
-        // a tray row is ten times the width of the circle inside it. Left at
-        // that size the wrapper is a 288px invisible slab with a 26px mark
-        // pinned to its left edge. `max-content` shrinks it to the mark, which
-        // is what makes the modifier below able to centre it: you can't put the
-        // middle of a box under the cursor while the box is mostly empty.
+        // Shrink to the mark so snapToCursor can centre it.
         style={{ width: "max-content", height: "max-content" }}
         modifiers={[snapToCursor]}
       >
         {dragging && (
+          // Over a day: full. Outside: pale. Outside from a day (delete): red ring.
           <div
-            // Just the mark. No card, no border, no name — whatever you picked
-            // up, what's under the cursor is the thing itself.
-            //
-            // It used to be a copy of the tray row, name and all, and that was
-            // right while the tray was the only place a drag could start. Once
-            // a mark could be lifted off the calendar the same overlay was
-            // drawing two different gestures: a labelled card for one, and for
-            // the other a labelled card standing in for a 26px circle four
-            // times smaller than it. The card was also the reason the collision
-            // rule had to move to `pointerWithin` in the first place — a wide
-            // box under a cursor is a lie about where the cursor is. Dropping
-            // it makes the two drags identical, which they always were, and
-            // makes the thing in the air the size of the hole it's going into.
-            //
-            // The three states survive the loss of the border, because they
-            // were never really about the border. Over a day: full strength,
-            // with a shadow — a thing about to be put down. Outside: pale, no
-            // shadow, nothing will land. Outside *and* lifted off a day, which
-            // is the gesture that deletes: pale, plus a red ring. Same circle,
-            // same size, in all three; only weight and hue move, because
-            // anything that changed size mid-drag would shift under the cursor
-            // at the exact moment you're aiming it.
-            //
-            // The corner radius is the one thing that does follow the view,
-            // for the same reason the child below does: the ring and the
-            // shadow have to trace the shape actually being carried.
-            className={`transition-opacity ${
-              bar ? "rounded-md" : "rounded-full"
-            } ${
+            className={`rounded-full transition-opacity ${
               target
                 ? "opacity-100 drop-shadow-md"
-                : `opacity-50 ${leaving ? "ring-2 ring-ramp-red" : ""}`
+                : `opacity-50 ${leaving ? "ring-2 ring-accent-ink" : ""}`
             }`}
           >
             {dragging.kind === "mood" ? (
               <MoodMark mood={dragging.mood} />
-            ) : bar ? (
-              // `w-max` because the overlay's box is `max-content` and a bar is
-              // `w-full`: inside a shrink-wrapped parent that resolves to the
-              // width of the name, which is the right size for something in the
-              // air. In a column it will stretch; here it shouldn't.
-              <StickerBar sticker={dragging.face} className="w-max" />
             ) : (
               <StickerMark sticker={dragging.face} />
             )}
           </div>
         )}
       </DragOverlay>
-
-      {/* The second door. It reads the same optimistic Map the grid draws from
-          and reports back through the same `commit`, so a sticker ticked here
-          and a sticker dropped over there are indistinguishable by the time
-          anything acts on them. */}
-      <DayModal
-        day={openDay}
-        stickers={
-          openDay ? (stickersByDay.get(openDay) ?? NO_STICKERS) : NO_STICKERS
-        }
-        groups={props.groups}
-        onClose={() => setOpenDay(null)}
-        onCommit={commit}
-        error={error}
-      />
     </DndContext>
   );
 }
 
-/**
- * What a screen reader is told the moment a tray row takes focus.
- *
- * This used to open with "To highlight every day this appears on, press Enter",
- * because in Step 11 that was the only way anyone without sight could find the
- * highlight: it was a feature made of colour, triggered by a key nothing
- * mentioned. The sentence was a workaround for a missing affordance.
- *
- * The eye button beside each row is that affordance, and it's a labelled toggle
- * one Tab away — so the instruction had nothing left to teach and went back to
- * dnd-kit's own, which covers the part that really is invisible. Worth noticing
- * as a pattern: **prose that explains an interaction is usually a control that
- * hasn't been built yet.**
- */
+/** dnd-kit's default instructions (no Enter-to-highlight; the eye button does that). */
 const screenReaderInstructions = {
   draggable: `
     To pick up a draggable item, press the space bar.
@@ -925,19 +494,7 @@ const screenReaderInstructions = {
   `,
 };
 
-/**
- * What a screen reader says during a drag.
- *
- * dnd-kit announces by default, but it only knows ids — and ours are uuids and
- * date strings, so the default reads out "draggable item
- * 8f3c…-…-…". These say the sticker's name and the day in words.
- *
- * Each one branches on origin for the same reason the overlay's border does:
- * releasing over nothing cancels a tray drag and deletes a placed mark, and
- * "let go to cancel" said over a deletion would be a lie told at the exact
- * moment it can't be checked. The sighted version of this warning is a red
- * dashed border; this is that border, in words.
- */
+/** Names and dates instead of ids; branches on origin since off-grid deletes. */
 const announcements: Announcements = {
   onDragStart: ({ active }) => {
     const payload = readDragPayload(active.data.current);
@@ -946,11 +503,7 @@ const announcements: Announcements = {
       ? `Picked up ${payloadName(payload)} from ${formatDayLong(payload.from)}.`
       : `Picked up ${payloadName(payload)}.`;
   },
-  // `over.id` is no longer the day. It's a slot id most of the time — the gaps
-  // between marks are droppables too — so the day comes back through
-  // `readDropTarget`, which is the same function the drop handler uses. Reading
-  // the id directly here would have kept compiling and started announcing
-  // "slot:2026-08-20:1" out loud.
+  // `over.id` may be a slot id; read the day via `readDropTarget`.
   onDragOver: ({ active, over }) => {
     const payload = readDragPayload(active.data.current);
     if (!payload) return;

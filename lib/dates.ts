@@ -11,6 +11,19 @@ import {
   startOfWeek,
 } from "date-fns";
 
+import type { WeekStart } from "./settings.ts";
+
+/** "10/15/2026". Display only. */
+export function formatDateNumeric(date: Date): string {
+  return format(date, "M/d/yyyy");
+}
+
+/** Today's date: "oct. 17th 2026"; May has no period. */
+export function formatDateShort(date: Date): string {
+  const month = format(date, "MMM").toLowerCase();
+  return `${month}${month === "may" ? "" : "."} ${format(date, "do yyyy")}`;
+}
+
 /** A calendar day, as stored in Postgres: "2026-08-12". */
 export type DayString = string;
 
@@ -18,85 +31,47 @@ export type DayCellData = {
   day: DayString;
   /** 1–31, for display. */
   dayOfMonth: number;
-  /** False for the leading and trailing days borrowed from adjacent months. */
+  /** False for days borrowed from adjacent months. */
   inMonth: boolean;
   isToday: boolean;
 };
 
-/**
- * A `Date` formatted as YYYY-MM-DD using its *local* parts.
- *
- * The obvious alternative is `date.toISOString().slice(0, 10)`, and it is wrong
- * roughly a third of the day. `toISOString` converts to UTC first, so 11pm on
- * the 12th in California is already the 13th in UTC — a sticker placed at night
- * would land on tomorrow. `format` reads the local calendar fields instead.
- */
+/** Local YYYY-MM-DD. Not `toISOString`: UTC puts late-night stickers on tomorrow. */
 export function toDayString(date: Date): DayString {
   return format(date, "yyyy-MM-dd");
 }
 
-/** Today, in the viewer's own timezone. */
+/** Today, in the viewer's timezone. */
 export function today(): DayString {
   return toDayString(new Date());
 }
 
-/** "August 2026" — the grid's title. */
+/** "August 2026". */
 export function formatMonthTitle(month: Date): string {
   return format(month, "MMMM yyyy");
 }
 
-/**
- * "2026-08-12" back into a `Date` at local midnight.
- *
- * `parse` with an explicit format, not `new Date("2026-08-12")`. The string form
- * is parsed as UTC midnight, which is the previous evening in California — the
- * same trap `toDayString` avoids at the other end.
- *
- * Exported because the range picker needs it: react-day-picker's API is `Date`,
- * while every day in this app is a string. That conversion happens at that one
- * boundary and turns straight back, so this is the inverse of `toDayString` and
- * the pair has to stay honest.
- */
+/** "2026-08-12" → local midnight. Not `new Date(str)`, which parses as UTC. */
 export function fromDayString(day: DayString): Date {
   return parse(day, "yyyy-MM-dd", new Date());
 }
 
-/**
- * "Wednesday, 12 August 2026" — for screen reader announcements during a drag,
- * where "2026-08-12" would be read out as three numbers.
- */
+/** "Wednesday, 12 August 2026": for screen readers, not three numbers. */
 export function formatDayLong(day: DayString): string {
   return format(fromDayString(day), "EEEE, d MMMM yyyy");
 }
 
-/**
- * "12 Aug 2026" — short enough to sit on a button.
- *
- * `format` rather than `toLocaleDateString`. The browser's locale and the
- * server's are not the same thing, so a locale-formatted date rendered during
- * hydration is a mismatch waiting for the first visitor outside en-US — the same
- * class of bug as reading the clock during render, and harder to notice because
- * it depends on who's looking.
- */
+/** "Saturday October 17th". */
+export function formatDayHeading(day: DayString): string {
+  return format(fromDayString(day), "EEEE MMMM do");
+}
+
+/** "12 Aug 2026". `format`, not `toLocaleDateString`: locale differs on hydration. */
 export function formatDayShort(day: DayString): string {
   return format(fromDayString(day), "d MMM yyyy");
 }
 
-/**
- * "Sunday" and "13 September" — the two halves of the day view's masthead.
- *
- * Two functions rather than one that returns a pair, because they are set in
- * two different faces at two different sizes and nothing joins them back up.
- *
- * The title carries no year, which is a deliberate omission rather than a
- * missing case. It sits directly under a strip of the seven days around it and
- * directly under a nav that only reaches today by default, so the year is
- * almost always the current one and printing it costs the line its shape —
- * "13 September 2026" wraps on a 375px screen at this size and "13 September"
- * doesn't. Stepping back far enough for that to mislead means stepping through
- * the strip a week at a time; the month grid is the view for travelling, and
- * it says the year in its own title.
- */
+/** "Sunday" / "13 September": the masthead's two faces. No year, to fit 375px. */
 export function formatWeekdayLong(day: DayString): string {
   return format(fromDayString(day), "EEEE");
 }
@@ -105,12 +80,12 @@ export function formatDayTitle(day: DayString): string {
   return format(fromDayString(day), "d MMMM");
 }
 
-/** "2026-08" — stable, sortable, and safe in a URL. */
+/** "2026-08": sortable, URL-safe. */
 export function toMonthString(month: Date): string {
   return format(month, "yyyy-MM");
 }
 
-/** "2026-08" back into a Date at the first of that month, local midnight. */
+/** "2026-08" → first of that month, local midnight. */
 export function fromMonthString(month: string): Date {
   return parse(month, "yyyy-MM", new Date());
 }
@@ -119,29 +94,18 @@ export function stepMonth(month: Date, by: number): Date {
   return startOfMonth(addMonths(month, by));
 }
 
-/** The number of week rows the grid always draws. */
 export const WEEKS_IN_GRID = 6;
 
 /**
- * The 42 cells of a month grid: the month itself, padded at both ends with the
- * days needed to fill whole Sunday-to-Saturday weeks.
- *
- * Always 42, never 35. A month can genuinely need six rows — a 31-day month
- * starting on a Friday spans them — and a grid that changes height between
- * August and September makes the whole page jump on every arrow press.
- *
- * Derived from `month` on every render rather than held in state. There is one
- * source of truth for what the grid shows, and it is which month you're on.
- *
- * `todayString` is passed in rather than read from the clock in here. Calling
- * `isToday()` during render would make the output depend on *where* it runs —
- * and the server and the browser are not always on the same date. See MonthGrid.
+ * Always 42 cells (six weeks) so the grid height never jumps.
+ * `todayString` is passed in: server and browser clocks can disagree.
  */
 export function monthGrid(
   month: Date,
   todayString: DayString | null,
+  weekStartsOn: WeekStart = 0,
 ): DayCellData[] {
-  const firstCell = startOfWeek(startOfMonth(month)); // Sunday, per date-fns default
+  const firstCell = startOfWeek(startOfMonth(month), { weekStartsOn });
   const cells: DayCellData[] = [];
 
   for (let i = 0; i < WEEKS_IN_GRID * 7; i++) {
@@ -158,58 +122,32 @@ export function monthGrid(
   return cells;
 }
 
-/** SUN–SAT, for the header row. Derived so the labels can never drift from the columns. */
-export function weekdayLabels(): string[] {
-  const firstCell = startOfWeek(new Date());
+/** SUN–SAT, derived so labels can't drift from columns. */
+export function weekdayLabels(weekStartsOn: WeekStart = 0): string[] {
+  const firstCell = startOfWeek(new Date(), { weekStartsOn });
   return Array.from({ length: 7 }, (_, i) =>
     format(addDays(firstCell, i), "EEE"),
   );
 }
 
-/* ---------------------------------------------------------------------------
-   The week.
-
-   Everything below is the month's arithmetic done one row at a time. The month
-   grid borrows days from its neighbours to fill whole weeks; a week borrows
-   nothing, so there is no `inMonth` here and no fixed cell count to defend —
-   seven columns, always, and every one of them is a real day you can point at.
-
-   What a week column needs and a month cell doesn't is the weekday *on the
-   column itself*. The month grid names its columns once, in a header row, and
-   the forty-two cells below inherit that naming by position. Seven columns
-   can't: they are wide enough to read as seven separate lists rather than as
-   one grid, so each one says which day it is.
---------------------------------------------------------------------------- */
-
-/** A day in the week strip — a `DayCellData` with its own weekday name. */
 export type WeekDayData = {
   day: DayString;
   /** 1–31, for display. */
   dayOfMonth: number;
-  /** "Mon". The column's own label, not a header two rows up. */
+  /** "Mon". */
   weekday: string;
   isToday: boolean;
 };
 
-/** The number of columns the week strip always draws. */
 export const DAYS_IN_WEEK = 7;
 
-/**
- * The seven days of the week containing `anchor`, Sunday first.
- *
- * `anchor` is any day inside the week, not the Sunday — the caller steps a date
- * and this finds the week around it, which is what makes `stepWeek` a plain
- * `addWeeks` rather than something that has to stay aligned to a boundary.
- *
- * `todayString` is passed in for the same reason `monthGrid` takes it: reading
- * the clock during render makes the output depend on which machine ran it, and
- * the server and the browser are not always on the same date.
- */
+/** The week around `anchor` (any day). */
 export function weekGrid(
   anchor: Date,
   todayString: DayString | null,
+  weekStartsOn: WeekStart = 0,
 ): WeekDayData[] {
-  const first = startOfWeek(anchor); // Sunday, per date-fns default
+  const first = startOfWeek(anchor, { weekStartsOn });
 
   return Array.from({ length: DAYS_IN_WEEK }, (_, i) => {
     const date = addDays(first, i);
@@ -223,31 +161,19 @@ export function weekGrid(
   });
 }
 
-/** "2026-08-09" — the Sunday, as a stable key for the week's view transition. */
-export function toWeekString(anchor: Date): DayString {
-  return toDayString(startOfWeek(anchor));
+/** The first day, as a stable key for the week's view transition. */
+export function toWeekString(anchor: Date, weekStartsOn: WeekStart = 0): DayString {
+  return toDayString(startOfWeek(anchor, { weekStartsOn }));
 }
 
-export function stepWeek(anchor: Date, by: number): Date {
-  return startOfWeek(addWeeks(anchor, by));
+export function stepWeek(anchor: Date, by: number, weekStartsOn: WeekStart = 0): Date {
+  return startOfWeek(addWeeks(anchor, by), { weekStartsOn });
 }
 
-/**
- * "9 – 15 August 2026", and the two cases where that isn't enough.
- *
- * A week is the one period in this app that routinely straddles a boundary, so
- * the title has to say which parts are shared and which aren't. Three shapes,
- * narrowest first: inside one month the month and year are said once at the
- * end; across two months of one year each end names its own month; across two
- * years each end names everything. Anything less makes "29 – 4 September" a
- * date range that runs backwards.
- *
- * An en dash with spaces, not a hyphen — this is a range, and at this size the
- * hyphen reads as part of the number next to it.
- */
-export function formatWeekTitle(anchor: Date): string {
-  const first = startOfWeek(anchor);
-  const last = endOfWeek(anchor);
+/** "9 – 15 August 2026"; names each end's month/year when the week straddles. */
+export function formatWeekTitle(anchor: Date, weekStartsOn: WeekStart = 0): string {
+  const first = startOfWeek(anchor, { weekStartsOn });
+  const last = endOfWeek(anchor, { weekStartsOn });
 
   if (isSameMonth(first, last)) {
     return `${format(first, "d")} – ${format(last, "d MMMM yyyy")}`;
@@ -258,24 +184,16 @@ export function formatWeekTitle(anchor: Date): string {
   return `${format(first, "d MMM yyyy")} – ${format(last, "d MMM yyyy")}`;
 }
 
-/**
- * The months as they're written by hand, and not date-fns's `MMM`. "Sept" and
- * not "Sep"; June and July left whole, since cutting a letter off a four-letter
- * word saves nothing and reads as a typo.
- */
+/** Hand-written short months: "Sept", whole "June"/"July". */
 const SHORT_MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "June",
   "July", "Aug", "Sept", "Oct", "Nov", "Dec",
 ];
 
-/**
- * "13 – 19 Sept 2026": the week's title for a phone, where the whole of
- * "September" pushes the title into truncation beside the arrows. Same three
- * shapes as `formatWeekTitle`, every month in its short form.
- */
-export function formatWeekTitleShort(anchor: Date): string {
-  const first = startOfWeek(anchor);
-  const last = endOfWeek(anchor);
+/** "13 – 19 Sept 2026": phone week title; same shapes as `formatWeekTitle`. */
+export function formatWeekTitleShort(anchor: Date, weekStartsOn: WeekStart = 0): string {
+  const first = startOfWeek(anchor, { weekStartsOn });
+  const last = endOfWeek(anchor, { weekStartsOn });
   const dayMonth = (date: Date) =>
     `${format(date, "d")} ${SHORT_MONTHS[date.getMonth()]}`;
 

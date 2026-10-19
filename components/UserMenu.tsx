@@ -1,64 +1,68 @@
 "use client";
 
+import { useState } from "react";
+
 import { signOut } from "@/app/actions/auth";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+  MenuTrigger,
+} from "@/components/ui/Menu";
 import type { SessionUser } from "@/lib/user";
 
 type Props = {
   user: SessionUser;
+  /** E.164, or null when texts are off. */
+  phone: string | null;
 };
 
 export function UserMenu(props: Props) {
   const { user } = props;
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        aria-label={`Account menu for ${user.name}`}
-      >
-        <Avatar className="size-9">
-          {user.avatarUrl ? (
-            <AvatarImage src={user.avatarUrl} alt="" />
-          ) : null}
-          <AvatarFallback className="bg-secondary font-heading text-sm text-ink-muted">
-            {user.initial}
-          </AvatarFallback>
-        </Avatar>
-      </DropdownMenuTrigger>
+    <>
+      <Menu>
+        <MenuTrigger
+          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-(--focus-ring) focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+          aria-label={`Account menu for ${user.name}`}
+        >
+          <Avatar className="size-8">
+            {user.avatarUrl ? (
+              <AvatarImage src={user.avatarUrl} alt="" />
+            ) : null}
+            <AvatarFallback className="bg-raised text-label text-ink">
+              {user.initial}
+            </AvatarFallback>
+          </Avatar>
+        </MenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <span className="block truncate font-heading text-base text-ink">
-            {user.name}
-          </span>
-          {user.email && user.email !== user.name ? (
-            <span className="block truncate text-xs text-ink-muted">
-              {user.email}
-            </span>
-          ) : null}
-        </DropdownMenuLabel>
-
-        <DropdownMenuSeparator />
-
-        {/* A form, so sign-out is a POST. A GET link would let any page that
-            embeds an image pointed here sign you out without asking. */}
-        <form action={signOut}>
-          <DropdownMenuItem asChild>
-            <button type="submit" className="w-full">
-              Sign out
-            </button>
-          </DropdownMenuItem>
-        </form>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <MenuContent align="end">
+          <MenuLabel className="truncate">{user.email ?? user.name}</MenuLabel>
+          <MenuSeparator />
+          <MenuItem onSelect={() => setSettingsOpen(true)}>settings</MenuItem>
+          {/* POST, so an embedded GET can't sign you out. */}
+          <form action={signOut}>
+            <MenuItem asChild>
+              <button type="submit" className="w-full">
+                sign out
+              </button>
+            </MenuItem>
+          </form>
+        </MenuContent>
+      </Menu>
+      {settingsOpen && (
+        <SettingsDialog
+          phone={props.phone}
+          email={user.email || null}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { useActionState, useId, useState, type ReactNode } from "react";
 import type { SaveResult } from "@/app/actions/activities";
 import { MarkPicker } from "@/components/tray/MarkPicker";
 import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/Chip";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,72 +17,47 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MARK_ICON_SIZE, MARK_STROKE, iconFor } from "@/lib/icons";
-import { ramp } from "@/lib/palette";
+import { categoryColor } from "@/lib/palette";
 import { readDraft, validateDraft, type DraftField } from "@/lib/stickers";
+import type { Suggestion } from "@/lib/suggestions";
+import { cn } from "@/lib/utils";
 
-/** The life areas, as the form needs them: an id, a name, and a colour. */
-export type FormArea = {
+export type FormCategory = {
   id: string;
   name: string;
   colorKey: string;
+  /** Unused starting ideas; only the new-sticker form shows them. */
+  suggestions?: Suggestion[];
 };
 
 /** What the three inputs start out holding. Empty strings mean a new sticker. */
 export type StickerValues = {
   name: string;
   mark: string;
-  lifeAreaId: string;
+  categoryId: string;
 };
 
-const BLANK: StickerValues = { name: "", mark: "", lifeAreaId: "" };
+const BLANK: StickerValues = { name: "", mark: "", categoryId: "" };
+
+/** Stationery input: no box, dashed bottom rule. */
+const DASHED =
+  "h-10 rounded-none border-0 border-b border-dashed border-rule-input bg-transparent px-0 text-ui focus-visible:border-solid focus-visible:border-ink focus-visible:ring-0 dark:bg-transparent";
+const LABEL = "text-label font-normal text-ink-muted";
 
 type Props = {
-  areas: FormArea[];
-  /**
-   * The row being written, already bound.
-   *
-   * The whole reason this component has two callers. `createActivity` takes
-   * `(formData)` and `updateActivity` takes `(activityId, formData)`, and the
-   * difference is not this component's business — the caller closes over the id
-   * and hands down one shape. So there is no `mode` prop and no `if (editing)`
-   * anywhere below: the verb on the button is a string, and the row to write is
-   * a function.
-   */
+  categories: FormCategory[];
+  /** The row being written, already bound (create, or update with its id). */
   action: (formData: FormData) => Promise<SaveResult>;
-  /** Pre-filled values. Omitted when making a new sticker from scratch. */
+  /** Pre-filled values. Omitted when making a sticker from scratch. */
   initial?: StickerValues;
-  /**
-   * The area this sticker's existing marks sit under — so changing the dropdown
-   * can warn that they'd all move. Only the edit dialog has an answer.
-   *
-   * This was derived until the `+` on each life area arrived. The old rule was
-   * `initial.lifeAreaId !== ""`, on the reasoning that only an edit arrives with
-   * an area already chosen — self-answering, and documented as the reason there
-   * was no `mode` prop. A create that opens with its area pre-filled breaks
-   * exactly that assumption, and the symptom would have been a brand-new sticker
-   * warning you about past marks it cannot have.
-   *
-   * Still not a mode flag: it's a value, it means one specific thing, and the
-   * question it answers is "is there history to move", which is the question the
-   * sentence is actually about. The old version was a proxy for it that happened
-   * to agree.
-   */
-  historyArea?: string;
-  /** "Add sticker" / "Save changes". */
+  /** Edit only: the past marks' category, for the "marks move" warning. */
+  historyCategory?: string;
+  /** Show the category's suggestion chips above the name. */
+  suggest?: boolean;
   submitLabel: string;
-  /** "Adding…" / "Saving…". */
   pendingLabel: string;
   onDone: () => void;
-  /**
-   * Anything that belongs beside Cancel and Save but isn't part of saving —
-   * today, the archive and delete controls on the edit dialog.
-   *
-   * A slot for the same reason `TrayRow.action` is one: what goes in here owns
-   * its own confirmation state and calls its own actions, and a callback would
-   * mean this component held both. It sits at the far left of the footer, which
-   * is where a control that isn't the happy path belongs — well away from the
-   * button your hand is already moving towards.
-   */
+  /** Left end of the footer: archive/delete on the edit dialog. */
   footerStart?: ReactNode;
 };
 
@@ -89,72 +65,18 @@ type Props = {
 type Problem = { field: DraftField | null; message: string } | null;
 
 /**
- * The three fields and the buttons — shared by both dialogs.
- *
- * There used to be a preview above them: the sticker as the tray would draw it,
- * updating as you typed. It went when the area moved to the top, because at
- * that point the mark field could wear the area's colour itself and the preview
- * was a second copy of a thing already on screen. Two circles saying the same
- * sentence, one of them hidden from screen readers because every word in it had
- * been typed two inches below.
- *
- * It moved out of `NewStickerForm` the moment editing arrived, which is this
- * project's standing rule for shared code: it moves when the second caller
- * does, not when someone predicts one. Same as `firstGrapheme` in Step 10 and
- * `lib/charts.ts` in Step 14.
- *
- * What makes the sharing honest is that create and edit genuinely are the same
- * form. Same three inputs, same validator, same error mapping, same unique
- * constraint to bump into. If they had diverged anywhere real, two
- * components would have been the right answer — the tell is that the only
- * differences left are two strings and a bound argument.
- *
- * It still holds all of its own state, and the dialogs above still mount it
- * only while they're open. That's what makes closing the dialog the reset:
- * there is no clearing code, no effect watching `open`, and no chance of
- * reopening onto last time's typing or a stale error. It's also what makes
- * `initial` safe to read once — this component is born when the dialog opens
- * and dies when it closes, so there is no "the prop changed underneath me" case
- * to handle.
+ * Category, mark, name and the buttons — shared by create and edit.
+ * Mounted only while its dialog is open, so closing is the reset.
  */
 export function StickerFields(props: Props) {
-  const { areas, initial = BLANK, onDone } = props;
+  const { categories, initial = BLANK, onDone } = props;
 
   const [name, setName] = useState(initial.name);
   const [mark, setMark] = useState(initial.mark);
-  const [lifeAreaId, setLifeAreaId] = useState(initial.lifeAreaId);
-
-  /**
-   * Unique per mounted form, rather than one constant string.
-   *
-   * It was a module-level constant while there was one dialog and could only
-   * ever be one. There still can only be one open at a time — but the id is now
-   * generated by two different components, and a duplicate `id` in a document
-   * points `aria-describedby` at whichever one the browser found first. `useId`
-   * costs nothing and removes the question.
-   */
+  const [categoryId, setCategoryId] = useState(initial.categoryId);
   const errorId = useId();
 
-  /**
-   * The form's action: both checks, three lines apart.
-   *
-   * `useActionState` gives back the action's last return value, a function to
-   * hand to `<form action={…}>`, and a pending flag that lasts exactly as long
-   * as the round trip. The function here is *ours* — a client function that
-   * wraps the Server Action — which buys two things:
-   *
-   * 1. The friendly check. `validateDraft` runs on the same FormData the
-   *    server would receive, so an empty name never leaves the browser and the
-   *    message appears with no round trip at all. It is the same function the
-   *    action calls, so the two can't drift and the sentence is identical.
-   * 2. Somewhere to put "and then close". The success path is a UI decision,
-   *    not the server's, so it belongs on this side.
-   *
-   * It also means the actions keep a plain `(formData) => result` signature
-   * rather than the `(previousState, formData)` shape `useActionState` would
-   * otherwise impose — the previous state is only ever consulted here, and here
-   * it isn't consulted at all.
-   */
+  // Same validator as the server, run first so obvious mistakes skip the round trip.
   const [problem, submit, pending] = useActionState<Problem, FormData>(
     async (_previous, formData) => {
       const check = validateDraft(readDraft(formData));
@@ -169,37 +91,16 @@ export function StickerFields(props: Props) {
     null,
   );
 
-  /**
-   * The icon this mark names, or null when it is a letter, an emoji or empty.
-   *
-   * Everything the mark field does differently below hangs off this one value:
-   * an icon is drawn rather than typed, so the field shows a picture, submits
-   * from a hidden input, and hands its own value back to the empty string so
-   * that typing over it replaces the icon instead of appending to its name.
-   */
+  // An icon mark is drawn, submitted from a hidden input, and replaced by typing.
   const markIcon = iconFor(mark);
 
-  const area = areas.find((candidate) => candidate.id === lifeAreaId);
-  /** The chosen area's colour, worn by the mark field. `ramp` has a fallback. */
-  const { tint } = ramp(area?.colorKey ?? "");
+  const category = categories.find((candidate) => candidate.id === categoryId);
+  const color = categoryColor(category?.colorKey ?? "");
+  const suggestions = props.suggest ? (category?.suggestions ?? []) : [];
 
-  /**
-   * Are we about to move an existing sticker's history to a different area?
-   *
-   * Only true when there is history — `historyArea` is undefined for both kinds
-   * of create, including the one that opens with an area already chosen.
-   */
   const moving =
-    props.historyArea !== undefined && lifeAreaId !== props.historyArea;
+    props.historyCategory !== undefined && categoryId !== props.historyCategory;
 
-  /**
-   * Mark the field the complaint is about, and point it at the sentence.
-   *
-   * `aria-invalid` is what turns an input's border red — shadcn styles it — and
-   * `aria-describedby` is what makes a screen reader read the message when
-   * focus lands on the field, rather than leaving it stranded in the live
-   * region at the bottom.
-   */
   function fieldProps(field: DraftField) {
     const invalid = problem?.field === field;
     return {
@@ -209,43 +110,26 @@ export function StickerFields(props: Props) {
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-4">
-      {/* Life area first, and that ordering is what let the preview go. The
-          area decides the colour, so once it's chosen the mark field below can
-          simply *be* the sticker — same fill, same glyph the tray
-          will draw. A separate preview panel was showing you a copy of a thing
-          the form can just show you directly. */}
+    <form action={submit} className="flex flex-col gap-s4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`${errorId}-area`}>Life area</Label>
-        {/* `name` is what makes a Radix Select part of the form: given one, it
-            renders a hidden native <select> alongside the button, so the value
-            arrives in FormData like any other field. Without it the trigger is
-            just a button and `lifeArea` would always be empty. */}
-        <Select
-          name="lifeArea"
-          value={lifeAreaId}
-          onValueChange={setLifeAreaId}
-        >
+        <Label htmlFor={`${errorId}-category`} className={LABEL}>
+          category
+        </Label>
+        {/* `name` makes Radix render a hidden native select for FormData. */}
+        <Select name="category" value={categoryId} onValueChange={setCategoryId}>
           <SelectTrigger
-            id={`${errorId}-area`}
-            className="w-full"
-            {...fieldProps("lifeArea")}
+            id={`${errorId}-category`}
+            className={cn(DASHED, "w-full shadow-none")}
+            {...fieldProps("category")}
           >
-            <SelectValue placeholder="Choose one" />
+            <SelectValue placeholder="choose one" />
           </SelectTrigger>
           <SelectContent>
-            {areas.map((option) => (
+            {categories.map((option) => (
               <SelectItem key={option.id} value={option.id}>
-                {/* The soft end. This dot used to be the full ramp, because
-                    tint is perceived by area and 10px is no area at all. That
-                    was right about the problem and wrong about the fix — the
-                    answer was to deepen the ramp rather than to saturate one
-                    dot, and now the swatch matches both the sticker it will
-                    produce and the identical dot in Trends' area table. Three
-                    places, one dot, one meaning. */}
                 <span
                   aria-hidden="true"
-                  className={`size-2.5 rounded-full ${ramp(option.colorKey).soft}`}
+                  className={`size-2.5 rounded-full ${categoryColor(option.colorKey).dot}`}
                 />
                 {option.name}
               </SelectItem>
@@ -253,114 +137,74 @@ export function StickerFields(props: Props) {
           </SelectContent>
         </Select>
 
-        {/* One sentence, and only when it applies.
-
-            Moving a sticker doesn't just change what colour it is from now on —
-            `tally` reads an activity's area as it stands *now*, so every mark
-            it has ever made moves with it, and last month's Trends page
-            redraws. That was decided deliberately back in Step 12 ("you
-            reclassified the habit, not the days") and it is the right
-            behaviour, but it is not a thing anyone would guess from a dropdown.
-
-            It used to share the line with a resting sentence — "it takes that
-            area's colour, and names are unique within it" — which was a line of
-            permanent text explaining two things the form now demonstrates: the
-            mark below wears the colour the moment you pick an area, and the
-            uniqueness rule only matters at the moment you break it, when the
-            error says so in the same words. A warning that is only sometimes
-            true doesn't need a filler sentence to keep its seat warm. */}
         {moving && (
-          <p className="text-[0.735rem] text-ink-muted">
-            Marks you’ve already placed move with it, so past months will show
-            it under the new area.
+          <p className="text-caption text-ink-muted">
+            marks you’ve already placed move with it, so past months will show
+            it under the new category.
           </p>
         )}
       </div>
 
-      <div className="flex items-end gap-3">
-        {/* The mark field *is* the preview: the same fill `StickerMark` draws
-            in the tray, wrapped around the input you type into. Before an area
-            is chosen it wears `ramp()`'s fallback, which is what the grid shows
-            for an unrecognised colour too — one fallback, one appearance.
+      {suggestions.length > 0 && (
+        <div className="flex flex-col gap-s1">
+          <p className={LABEL}>ideas</p>
+          <ul className="flex flex-wrap gap-s1">
+            {suggestions.map((idea) => {
+              const chosen = name.trim() === idea.name && mark === idea.mark;
+              return (
+                <li key={idea.name}>
+                  <Chip
+                    variant={chosen ? "chosen" : "suggestion"}
+                    colorKey={category?.colorKey}
+                    onClick={() => {
+                      setName(chosen ? "" : idea.name);
+                      setMark(chosen ? "" : idea.mark);
+                    }}
+                  >
+                    {idea.name}
+                  </Chip>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
-            It lost its ring when the sticker did, and it has to stay in step or
-            the preview stops being one. The transparent 1px border is kept for
-            the same reason it is kept there: `size-11` is the border-box, and
-            dropping the border would draw this circle 2px smaller than the one
-            it is previewing.
-
-            The colour lives on this wrapper rather than on the input because
-            shadcn's input carries a `dark:` background of its own, and a
-            `dark:`-less fill would lose to it in dark mode. The fill on the
-            outside, a transparent field on the inside. */}
+      <div className="flex items-end gap-s3">
+        {/* The mark field is the preview: the sticker's own fill around the input. */}
         <div
-          className={`relative size-11 shrink-0 rounded-full border border-transparent ${tint}`}
+          className={`relative size-11 shrink-0 rounded-full border border-transparent ${color.ink} ${color.on}`}
         >
-          {/* No maxLength, and that's the whole lesson of this field: the
-              attribute counts UTF-16 code units, so maxLength={1} accepts "A"
-              and silently truncates every emoji into half a surrogate pair. The
-              rule "one character" can only be enforced by counting graphemes,
-              which is what validateDraft does on both sides.
-
-              `font-emoji` for the same reason `StickerMark` uses it: a line box
-              takes its metrics from the first available font, so a mark set in
-              the body serif sits low. Labelled by `aria-label` rather than a
-              <Label> — the circle is 44px across and a word above it would be
-              wider than the control it names. */}
           {markIcon && (
             <>
-              {/* The picture, over an input that is deliberately empty.
-
-                  `1.35rem` is not chosen, it is converted: `StickerMark` draws
-                  a 26px circle around `text-[0.8rem]`, and `MARK_ICON_SIZE` is
-                  1.25em of that, so the icon is 61.5% of the circle. This
-                  circle is 44px, and 1.35rem is the type size that lands the
-                  same fraction here. Change either number there and this one
-                  follows, or the preview stops being one.
-
-                  `pointer-events-none` so the field underneath still takes the
-                  click: the way back to a letter is to type one. */}
+              {/* 1.35rem keeps the icon at StickerMark's proportion of its circle. */}
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 grid place-items-center text-[1.35rem] text-ink"
+                className="pointer-events-none absolute inset-0 grid place-items-center text-[1.35rem]"
               >
-                <markIcon.Icon
-                  className={MARK_ICON_SIZE}
-                  strokeWidth={MARK_STROKE}
-                />
+                <markIcon.Icon className={MARK_ICON_SIZE} strokeWidth={MARK_STROKE} />
               </span>
-              {/* What actually submits while an icon is chosen. The visible
-                  field gives up its `name` in the same breath, so `mark`
-                  appears in the FormData exactly once either way. */}
               <input type="hidden" name="mark" value={mark} />
             </>
           )}
+          {/* No maxLength: it counts UTF-16 units; validateDraft counts graphemes. */}
           <Input
             name={markIcon ? undefined : "mark"}
             value={markIcon ? "" : mark}
             onChange={(event) => setMark(event.target.value)}
             autoComplete="off"
-            // The label says what is in the circle, because the field is empty
-            // when an icon is in it and "Mark" on its own would be read out as
-            // a blank one.
-            aria-label={markIcon ? `Mark: ${markIcon.label}` : "Mark"}
+            aria-label={markIcon ? `mark: ${markIcon.label}` : "mark"}
             placeholder={markIcon ? "" : "G"}
-            className="font-emoji size-full rounded-full border-0 bg-transparent px-0 text-center text-base dark:bg-transparent"
+            className="font-emoji size-full rounded-full border-0 bg-transparent px-0 text-center text-base text-inherit dark:bg-transparent"
             {...fieldProps("mark")}
           />
-          {/* Sets the field rather than owning it. The input behind it is still
-              the value — you can type or paste a letter and never open this —
-              which is why the picker takes a setter and keeps no idea of what's
-              currently chosen. It sits on the circle's corner because picking a
-              mark and seeing the mark are one thing, not two. */}
-          <MarkPicker
-            onPick={setMark}
-            className="absolute -right-1 -bottom-1 rounded-full"
-          />
+          <MarkPicker onPick={setMark} className="absolute -right-1 -bottom-1 rounded-full" />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <Label htmlFor={`${errorId}-name`}>Name</Label>
+          <Label htmlFor={`${errorId}-name`} className={LABEL}>
+            name
+          </Label>
           <Input
             id={`${errorId}-name`}
             name="name"
@@ -368,42 +212,31 @@ export function StickerFields(props: Props) {
             onChange={(event) => setName(event.target.value)}
             autoComplete="off"
             autoFocus
-            placeholder="Gym"
+            placeholder="gym"
+            className={DASHED}
             {...fieldProps("name")}
           />
         </div>
       </div>
 
-      {/* Rendered always, filled sometimes — a live region the browser only
-          discovers at the moment it gains text often doesn't announce. Same
-          pattern, and the same red as, the tray's error line. */}
+      {/* Always rendered so the live region announces. */}
       <div role="status" aria-live="polite" className="empty:hidden">
         {problem && (
-          <p
-            id={errorId}
-            className="rounded-md bg-ramp-red-soft px-2 py-1.5 text-[0.83rem]"
-          >
+          <p id={errorId} className="rounded-lg bg-accent-ink/10 text-accent-ink px-s1 py-1.5 text-label">
             {problem.message}
           </p>
         )}
       </div>
 
-      <DialogFooter>
-        {/* `sm:mr-auto` is what puts it at the other end: the footer is a
-            right-aligned row, and an auto margin on the first child eats all
-            the space between it and the pair that follows. */}
-        {props.footerStart && (
-          <div className="sm:mr-auto">{props.footerStart}</div>
-        )}
+      <DialogFooter className="border-rule bg-transparent sm:items-center">
+        {props.footerStart && <div className="sm:mr-auto">{props.footerStart}</div>}
         <DialogClose asChild>
-          <Button type="button" variant="outline">
-            Cancel
+          <Button type="button" variant="text" size="sm">
+            cancel
           </Button>
         </DialogClose>
-        {/* Disabled for the length of the round trip, which is what stops a
-            double-click becoming two writes — on a create, the second one hits
-            the unique constraint and reports a name clash with itself. */}
-        <Button type="submit" disabled={pending}>
+        {/* Disabled during the round trip so a double-click isn't two writes. */}
+        <Button type="submit" variant="filled" size="sm" disabled={pending}>
           {pending ? props.pendingLabel : props.submitLabel}
         </Button>
       </DialogFooter>

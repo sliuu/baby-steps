@@ -1,5 +1,7 @@
 # Animation plans — the signed-out page
 
+> **Superseded.** The stationery redesign (`plans/redesign/`, plans 01–15, all DONE; commit hashes in its README) replaced the sign-in page and deleted `FloatingStickers` and `PointerNudge`.
+
 Findings from an `improve-animations` audit of `/login` at commit `b8ee038`.
 Everything below is scoped to the signed-out page's motion; nothing touches the
 app behind it.
