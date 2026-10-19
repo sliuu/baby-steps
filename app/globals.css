@@ -358,7 +358,8 @@
   --menu-shadow: 0 6px 24px rgb(0 0 0 / 0.45);
 }
 
-[data-theme="dark"] [data-frame="blush"] {
+/* Both attributes sit on <html>; outranks the dark root block. */
+:root[data-theme="dark"][data-frame="blush"] {
   --frame: #3A2B27;
   --on-frame: var(--ink);
 }

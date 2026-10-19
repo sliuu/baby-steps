@@ -64,6 +64,8 @@ export function AppShell(props: Props) {
     if (window.location.hash !== `#${next}`) {
       window.history.pushState(null, "", `#${next}`);
     }
+    // Claimed now, so a quick back before the update still registers.
+    shown.current = next;
     transition(() => setPage(next));
   }
 
