@@ -31,8 +31,10 @@ type Props = {
   addTo: string;
   /** "column": the day panel. "page": wide grid under Today. */
   layout: "column" | "page";
-  /** The day panel and sheet: no heading, badges or archive; tap edits. */
+  /** The day panel and sheet: no heading or archive. */
   compact?: boolean;
+  /** Desktop day panel: tap edits, adding is by drag. Elsewhere tap adds. */
+  tapEdits?: boolean;
   /** Prefixes drag ids, so two mounted trays don't collide. */
   dragScope?: string;
 };
@@ -55,9 +57,9 @@ export function StickerTray(props: Props) {
       .map((sticker) => ({ sticker, categoryId: group.categoryId })),
   )[0];
 
-  const manage = !props.local && !compact;
-  // Calendar trays: tap edits; adding is by drag.
-  const tapEdits = !props.local && compact;
+  const tapEdits = !props.local && !!props.tapEdits;
+  // The pencil badge, wherever a tap doesn't already edit.
+  const manage = !props.local && !tapEdits;
 
   function toggle(next: Selection) {
     if (sameSelection(selection, next)) props.onClear();
@@ -149,7 +151,7 @@ export function StickerTray(props: Props) {
           );
         })}
 
-        {manage && archived.length > 0 && (
+        {manage && !compact && archived.length > 0 && (
           <ArchivedGroup
             stickers={archived}
             onError={props.onError}

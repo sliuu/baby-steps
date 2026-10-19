@@ -14,6 +14,34 @@ async function signedInClient() {
   return { supabase, userId: data?.claims.sub ?? null };
 }
 
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/** Whether the newest snapshot already holds these levels (back, then next again). */
+async function sameAsLatest(
+  supabase: Supabase,
+  userId: string,
+  rows: { category_id: string; level: number }[],
+): Promise<boolean> {
+  const { data: newest } = await supabase
+    .from("category_ratings")
+    .select("rated_at")
+    .eq("user_id", userId)
+    .order("rated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!newest) return false;
+
+  const { data: latest } = await supabase
+    .from("category_ratings")
+    .select("category_id, level")
+    .eq("user_id", userId)
+    .eq("rated_at", newest.rated_at);
+  if (!latest || latest.length !== rows.length) return false;
+
+  const was = new Map(latest.map((row) => [row.category_id, row.level]));
+  return rows.every((row) => was.get(row.category_id) === row.level);
+}
+
 /** Step 1: one rating row per category, all with the same timestamp. */
 export async function saveRatings(levels: Record<string, number>): Promise<StepResult> {
   const { supabase, userId } = await signedInClient();
@@ -29,7 +57,7 @@ export async function saveRatings(levels: Record<string, number>): Promise<StepR
       rated_at: ratedAt,
     }));
 
-  if (rows.length > 0) {
+  if (rows.length > 0 && !(await sameAsLatest(supabase, userId, rows))) {
     const { error } = await supabase.from("category_ratings").insert(rows);
     if (error) {
       console.error("Ratings insert failed", { message: error.message, code: error.code });

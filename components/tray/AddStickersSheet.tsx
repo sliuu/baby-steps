@@ -10,6 +10,7 @@ import { NewStickerForm, formCategories } from "@/components/tray/NewStickerForm
 import { NewTile, TrayGroup } from "@/components/tray/TrayGroup";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
+import { useSwipeDown } from "@/lib/useSwipeDown";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -47,6 +48,9 @@ export function AddStickersSheet(props: Props) {
     props.onClose();
   }
 
+  // Swipe down closes too (and so adds).
+  const { sheetRef, scrollerRef } = useSwipeDown(close);
+
   return (
     <DialogPrimitive.Root
       open
@@ -57,6 +61,7 @@ export function AddStickersSheet(props: Props) {
       <DialogPortal>
         <DialogOverlay className="bg-ink/25" />
         <DialogPrimitive.Content
+          ref={sheetRef}
           aria-describedby={undefined}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-136 flex-col gap-s2",
@@ -88,7 +93,7 @@ export function AddStickersSheet(props: Props) {
             )}
           </div>
 
-          <div className="-mx-s3 flex min-h-0 flex-1 flex-col gap-s4 overflow-y-auto px-s3 py-1">
+          <div ref={scrollerRef} className="-mx-s3 flex min-h-0 flex-1 flex-col gap-s4 overflow-y-auto px-s3 py-1">
             {props.groups.map((group) => {
               const stickers = group.stickers.filter((sticker) => !sticker.archived);
               if (stickers.length === 0 && props.local) return null;

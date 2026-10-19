@@ -370,6 +370,8 @@ export function CalendarBoard(props: Props) {
       addTo={layout === "page" ? "today" : formatDateNumeric(fromDayString(day))}
       layout={layout}
       compact={layout === "column"}
+      // The phone sheet can't drag, so its taps add.
+      tapEdits={scope === "panel"}
       dragScope={scope}
     />
   );
