@@ -6,7 +6,8 @@
 @source not "../PROGRESS.md";
 @source not "../README.md";
 
-@custom-variant dark (&:is(.dark *));
+/* `data-theme` is set before paint by THEME_INIT_SCRIPT (lib/theme.ts). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ---------------------------------------------------------------------------
    Bridge: CSS variables → Tailwind utilities; values per theme below.
@@ -111,6 +112,7 @@
   --color-ink-muted: var(--ink-muted);
   --color-ink-subtle: var(--ink-subtle);
   --color-accent-ink: var(--accent-ink);
+  --color-on-mood: var(--on-mood);
   --color-rule-strong: var(--rule-strong);
   --color-rule: var(--rule);
   --color-rule-grid: var(--rule-grid);
@@ -240,6 +242,8 @@
   --mood-okay: #D3D6C5;
   --mood-good: #F5DE8E;
   --mood-great: #EFC548;
+  /* Faces on a mood colour. */
+  --on-mood: var(--ink);
 
   /* ── shadows ── */
   --sheet-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
@@ -287,24 +291,24 @@
   --dur-deck: 340ms;
   --dur-land: 420ms;
   /* Sign-in page entrance. Keep under ~500ms; the buttons wait on it. */
-  --dur-hero: 420ms;
+  --dur-hero: 300ms;
   /* Sign-in flower's bloom; slower than the text so it unfurls. */
-  --dur-bloom: 900ms;
+  --dur-bloom: 620ms;
   /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
   --fall-drop: 28px;
   --sticker-start: 160ms;
   --sticker-gap: 160ms;
   /* Sign-in strikes: each line, the gap between, the wait before the first. */
-  --dur-strike: 475ms;
-  --strike-gap: 150ms;
-  --strike-wait: 425ms;
+  --dur-strike: 320ms;
+  --strike-gap: 100ms;
+  --strike-wait: 280ms;
   /* The last line's fade; slower than the hero so it lands softly. */
-  --dur-after-strikes: 900ms;
+  --dur-after-strikes: 620ms;
   /* Sign-in copy follows the title; actions start this long after the last line ends (negative overlaps it). */
   --hero-rise: 12px;
-  --hero-copy-delay: 240ms;
-  --hero-actions-delay: -450ms;
+  --hero-copy-delay: 160ms;
+  --hero-actions-delay: -310ms;
 }
 
 @media (min-width: 40rem) {
@@ -319,72 +323,62 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Dark — proposed values, not designed.
+   Dark — stationery at night: espresso paper, ivory ink. The system's
+   setting until the footer switch picks one.
 --------------------------------------------------------------------------- */
-/* Old newsprint dark theme; not applied. Replace when a dark stationery theme is designed. */
-.dark {
+:root[data-theme="dark"] {
   color-scheme: dark;
 
-  /* Proposed: contrast-checked, never seen beside a design. */
-  --bg: #161615;
-  --surface: #201f1d;
-  --surface-sunken: #111110;
-  --ink: #ecebe5;
-  /* 6.03:1 on the page. */
-  --ink-muted: #97958c;
-  /* Lighter here = more presence on dark. 10.14:1. */
-  --ink-label: #c4c2b8;
-  --hairline: #34332f;
+  --frame: #15120F;
+  --on-frame: #E9E3D2;
+  --paper: #221E1A;
+  --raised: #2B2621;
+  /* 13.8:1 on paper. */
+  --ink: #EFEADB;
+  /* 6.5:1. */
+  --accent-ink: #E8887A;
 
-  /* Not inverted: translucent white loses contrast faster on dark. */
-  --scroll-thumb: rgb(236 235 229 / 0.2);
-  --scroll-thumb-hover: rgb(236 235 229 / 0.34);
+  /* Lifted so they read on dark paper; text ≥ 6.5:1, icons ≥ 3.5:1. */
+  --cat-oxblood: #B3443C; --cat-oxblood-text: #E8887A; --cat-oxblood-on: #F5EFDF;
+  --cat-bottle: #4F7D5F;  --cat-bottle-text: #8EC09D;  --cat-bottle-on: #F5EFDF;
+  --cat-mustard: #D2AA45; --cat-mustard-text: #D9B455; --cat-mustard-on: var(--paper);
+  --cat-rose: #DE9483;    --cat-rose-text: #E5A190;    --cat-rose-on: var(--paper);
+  --cat-sage: #93AE8E;    --cat-sage-text: #A8C2A3;    --cat-sage-on: var(--paper);
+  --cat-plum: #8E73A8;    --cat-plum-text: #BBA3D3;    --cat-plum-on: #F5EFDF;
 
-  /* Higher alpha, same reason as the thumb. */
-  --rule: rgb(236 235 229 / 0.24);
+  /* A touch dimmer, so the pale ones don't glare. */
+  --mood-low: #9DB6CA;
+  --mood-okay: #BFC2B1;
+  --mood-good: #E3CD82;
+  --mood-great: #E0B744;
+  --on-mood: #1F2A22;
 
-  /* Brighter: #d4271c on near-black is 2.2:1; this is 5.87:1. */
-  --today-mark: #ff5a47;
+  /* Shadows go black; ink-tinted ones vanish on dark. */
+  --sheet-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --menu-shadow: 0 6px 24px rgb(0 0 0 / 0.45);
+}
 
-  /* Lifted ~12%; category and mood aliases follow. */
-  --ramp-red: #d75f52;
-  --ramp-blue: #4a93ce;
-  --ramp-orange: #e88c42;
-  --ramp-yellow: #e8c755;
-  --ramp-green: #63a55f;
-  --ramp-purple: #a971d2;
+/* Both attributes sit on <html>; outranks the dark root block. */
+:root[data-theme="dark"][data-frame="blush"] {
+  --frame: #3A2B27;
+  --on-frame: var(--ink);
+}
 
-  /* Mixes toward the surface (darker here). 42%, not 48%: yellow stays ≥ 4.5:1. */
-  --ramp-red-soft: #6f3a33;
-  --ramp-blue-soft: #32516a;
-  --ramp-orange-soft: #784e2d;
-  --ramp-yellow-soft: #786a35;
-  --ramp-green-soft: #3d5939;
-  --ramp-purple-soft: #5b416b;
-
-  /* 40%, not :root's: at 45% yellow marks fall under 4.5:1. */
-  --sticker-fill: 40%;
-
-  --background: var(--bg);
-  --foreground: var(--ink);
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-  --primary: #ecebe5;
-  --primary-foreground: #161615;
-  /* Lifts rather than sinks: nothing below #161615. */
-  --secondary: #292826;
-  --secondary-foreground: var(--ink);
-  --muted: #292826;
-  --muted-foreground: var(--ink-muted);
-  --accent: #292826;
-  --accent-foreground: var(--ink);
-  /* Still the red category ramp, and still not `--today-mark`. See that token. */
-  --destructive: var(--ramp-red);
-  --border: var(--hairline);
-  --input: var(--hairline);
-  --ring: #5a5852;
+/* ---------------------------------------------------------------------------
+   Switching today · calendar · trends (AppShell): old fades, then new rises in.
+--------------------------------------------------------------------------- */
+/* Header and nav switch instantly; only the page content moves. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(page) {
+  animation: appear var(--dur-menu-out) var(--ease-exit) reverse both;
+}
+/* Waits for the old one to clear: overlapped, two layouts read as a mess. */
+::view-transition-new(page) {
+  --hero-rise: 6px;
+  animation: rise var(--dur-menu-in) var(--ease-enter) var(--dur-menu-out) both;
 }
 
 /* ---------------------------------------------------------------------------

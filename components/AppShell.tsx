@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 import { BottomNav } from "./BottomNav";
 import { SettingsProvider } from "./SettingsProvider";
@@ -23,14 +24,34 @@ type Props = {
   settings?: Settings;
 };
 
+/** Crossfades a section change where the browser can (CSS in globals.css); instant otherwise. */
+function transition(update: () => void) {
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!document.startViewTransition || still) return update();
+  document.startViewTransition(() => flushSync(update));
+}
+
 /** Section state + frame; views come as props so they render on the server. */
 export function AppShell(props: Props) {
   // Null until a section is pressed (or read from the URL); draws the landing.
   const [page, setPage] = useState<Page | null>(null);
+  const shown = useRef(page);
+  useEffect(() => {
+    shown.current = page;
+  });
 
   useEffect(() => {
-    const readLocation = () => setPage(pageFromHash(window.location.hash));
-    readLocation();
+    const read = () => setPage(pageFromHash(window.location.hash));
+    // Back fires popstate and hashchange; only a real change animates.
+    const readLocation = () => {
+      const next = pageFromHash(window.location.hash);
+      if (next === shown.current) return;
+      // Claimed now: the transition's update runs a frame later.
+      shown.current = next;
+      transition(read);
+    };
+    // The first read draws the landing section, so it skips the transition.
+    read();
     window.addEventListener("popstate", readLocation);
     window.addEventListener("hashchange", readLocation);
     return () => {
@@ -43,7 +64,9 @@ export function AppShell(props: Props) {
     if (window.location.hash !== `#${next}`) {
       window.history.pushState(null, "", `#${next}`);
     }
-    setPage(next);
+    // Claimed now, so a quick back before the update still registers.
+    shown.current = next;
+    transition(() => setPage(next));
   }
 
   return (
@@ -59,7 +82,7 @@ export function AppShell(props: Props) {
               <TopNav page={page} onPageChange={changePage} end={props.navEnd} />
             }
           >
-            <main className={`${PAGE_WIDTH} flex-1 py-s4 lg:py-s6`}>
+            <main className={`${PAGE_WIDTH} flex-1 py-s4 [view-transition-name:page] lg:py-s6`}>
               {page === null || isCalendar(page) ? props.calendar : props.trends}
             </main>
           </PageFrame>

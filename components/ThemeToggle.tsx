@@ -1,46 +1,37 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
+
 import { THEME_STORAGE_KEY, type Theme } from "@/lib/theme";
 
-/** The <head> script owns the class; nothing else changes it behind our back. */
-const noSubscription = () => () => {};
+const ICON = "size-4.5";
 
+/** Header icon to the other theme: a moon in light, a sun in dark. Swapped in CSS, so the server needn't know the theme. */
 export function ThemeToggle() {
-  // Server can't know the theme; null server snapshot avoids a wrong-icon flash.
-  const domTheme = useSyncExternalStore<Theme | null>(
-    noSubscription,
-    () => (document.documentElement.classList.contains("dark") ? "dark" : "light"),
-    () => null,
-  );
-
-  const [chosen, setChosen] = useState<Theme | null>(null);
-  const theme = chosen ?? domTheme;
-  const ready = theme !== null;
-
   function toggle() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    setChosen(next);
-    document.documentElement.classList.toggle("dark", next === "dark");
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem(THEME_STORAGE_KEY, next);
+    const root = document.documentElement;
+    const next: Theme = root.dataset.theme === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch {}
   }
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      className="grid size-9 place-items-center rounded-full text-ink-muted transition-colors hover:bg-secondary hover:text-ink"
+      // Negative margin: the hit area doesn't grow the header.
+      className="-my-1.5 grid size-8 place-items-center rounded-full text-ink-muted transition-colors hover:bg-secondary hover:text-ink"
     >
-      {ready ? (
-        theme === "dark" ? (
-          <Sun className="size-4.5" strokeWidth={1.5} />
-        ) : (
-          <Moon className="size-4.5" strokeWidth={1.5} />
-        )
-      ) : null}
+      <span className="contents dark:hidden">
+        <Moon className={ICON} strokeWidth={1.5} aria-hidden="true" />
+        <span className="sr-only">dark mode</span>
+      </span>
+      <span className="hidden dark:contents">
+        <Sun className={ICON} strokeWidth={1.5} aria-hidden="true" />
+        <span className="sr-only">light mode</span>
+      </span>
     </button>
   );
 }

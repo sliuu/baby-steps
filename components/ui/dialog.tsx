@@ -40,7 +40,7 @@ function DialogOverlay({
       data-slot="dialog-overlay"
       className={cn(
         // Exit faster than enter; duration-*/ease-* steer tw-animate-css's keyframes.
-        "fixed inset-0 isolate z-50 bg-black/10 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-open:duration-[var(--dur-panel-in)] data-open:ease-enter data-closed:animate-out data-closed:fade-out-0 data-closed:duration-[var(--dur-panel-out)] data-closed:ease-exit",
+        "fixed inset-0 isolate z-50 bg-black/10 dark:bg-black/50 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-open:duration-[var(--dur-panel-in)] data-open:ease-enter data-closed:animate-out data-closed:fade-out-0 data-closed:duration-[var(--dur-panel-out)] data-closed:ease-exit",
         className
       )}
       {...props}

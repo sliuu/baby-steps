@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const FACE_SIZE = { sm: "size-5", md: "size-6", lg: "size-7" } as const;
 
-/** Head, eyes, mouth in ink. Decorative; callers name it. */
+/** Head, eyes, mouth in dark ink (it always sits on a mood colour). Decorative; callers name it. */
 export function MoodFace(props: {
   mood: Mood;
   size?: keyof typeof FACE_SIZE;
@@ -13,7 +13,7 @@ export function MoodFace(props: {
     <svg
       viewBox="0 0 24 24"
       aria-hidden="true"
-      className={cn("shrink-0 text-ink", FACE_SIZE[props.size ?? "sm"], props.className)}
+      className={cn("shrink-0 text-on-mood", FACE_SIZE[props.size ?? "sm"], props.className)}
     >
       <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
       <circle cx="9" cy="9.5" r="1.05" fill="currentColor" />
