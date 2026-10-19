@@ -56,7 +56,8 @@ export function PrivacyDialog(props: { className?: string }) {
               <a href="https://github.com/sliuu/baby-steps" className={LINK}>
                 github
               </a>
-              . to have your account and everything in it deleted, or to ask a question,{" "}
+              . you can delete your account and everything in it any time, from settings. with
+              any question,{" "}
               <a href="mailto:stxphanieliu@gmail.com" className={LINK}>
                 get in touch
               </a>
