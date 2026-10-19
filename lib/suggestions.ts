@@ -43,7 +43,7 @@ export const SUGGESTIONS: Record<CategorySlug, Suggestion[]> = {
   romance: [
     { name: "date night", mark: "icon:heart" },
     { name: "hike", mark: "icon:mountain" },
-    { name: "try somewhere new", mark: "icon:map-pin" },
+    { name: "try a new restaurant", mark: "icon:utensils" },
     { name: "travel", mark: "icon:plane" },
   ],
   friends: [

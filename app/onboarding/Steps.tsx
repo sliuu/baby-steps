@@ -32,7 +32,8 @@ export type StepCategory = {
 };
 
 const HEADING = "font-display text-heading font-light text-ink sm:text-display-sm";
-const PROSE = "max-w-120 text-ui text-ink";
+// Display face, like the Today note: prose here is read, not scanned.
+const PROSE = "max-w-120 font-display text-body-lg font-light text-ink";
 const LINK = "text-label text-ink underline underline-offset-4 hover:text-accent-ink";
 const UNDERLINE =
   "w-full border-0 border-b bg-transparent px-0 text-ui text-ink outline-none placeholder:text-ink-subtle focus-visible:border-ink";
@@ -86,14 +87,14 @@ export function PieStep(props: { categories: StepCategory[]; initial: Record<str
           </h1>
           <div className={cn(PROSE, "mt-s4 flex flex-col gap-s3")}>
             <p>
-              i made this little corner of the internet inspired by the &ldquo;life pie&rdquo; from{" "}
+              i made this little corner of the internet inspired by the <b className="font-semibold">&ldquo;life pie&rdquo;</b> from{" "}
               <i>the artist&rsquo;s way</i>.
             </p>
             <p>
               the idea is to think about our lives like this pie. we pour our energy into different
               pieces, but sometimes we end up lopsided and need a bit of correction
             </p>
-            <p>to try it yourself now, rank how fulfilled you feel in each category around the circle.</p>
+            <p>to try it yourself now, <b className="font-semibold">rank how fulfilled you feel in each category around the circle.</b></p>
           </div>
 
           <div aria-live="polite" className="mt-s5 hidden lg:block">{outcome}</div>
@@ -151,7 +152,7 @@ export function ActivitiesStep(props: { categories: StepCategory[] }) {
 
   return (
     <>
-      <h1 className={cn(HEADING, "max-w-200")}>
+      <h1 className="max-w-200 font-display text-subhead font-light text-ink sm:text-heading">
         add activities you do or would like to do for each category, or take inspiration from our
         templates
       </h1>
@@ -264,24 +265,20 @@ export function TouchStep(props: { phone: string | null }) {
 
   return (
     <form action={action} className="flex flex-1 flex-col">
-      <h1 className="font-display text-display-sm font-light text-accent-ink sm:text-display">great!</h1>
+      <h1 className="font-display text-display-sm font-light text-accent-ink sm:text-display">you&rsquo;re all set up!</h1>
       <div className={cn(PROSE, "mt-s3 flex max-w-160 flex-col gap-s3")}>
         <p>
-          now you can come back here and log how you&rsquo;re spending your time, track your life
-          pie, and see how things change over the months.
+          now you can come back here and <b className="font-semibold">log how you&rsquo;re spending your time, track your life
+          pie, and see how things change over the months.</b>
         </p>
         <p>
           if you&rsquo;d like to log by text instead, you can set that up here, and we&rsquo;ll
-          remind you daily to send us a text about what you&rsquo;ve been up to
+          remind you daily to send us a text about what you&rsquo;ve been up to (WIP!)
         </p>
       </div>
 
       <section aria-labelledby="texting" className="mt-s5 mb-s6 border-t border-rule pt-s5">
-        <h2 id="texting" className="font-display text-body-lg text-ink">
-          text message
-        </h2>
         {/* copy: TODO — Stephanie's line goes here. */}
-        <p className="mt-s1 text-label text-ink-muted">text what you did, whenever you want.</p>
 
         <div className="mt-s4 flex max-w-100 flex-col gap-s3">
           <label className="flex flex-col gap-1">
@@ -303,10 +300,6 @@ export function TouchStep(props: { phone: string | null }) {
           </label>
 
           {/* Carrier registration needs these; keep them. */}
-          <p className="text-caption text-ink-muted">
-            up to one text a day. reply STOP to opt out, HELP for help. message and data rates may
-            apply.
-          </p>
 
           <div className="flex flex-wrap items-center gap-s3">
             <Button type="submit" name="intent" value="texts" variant="outline" size="sm" disabled={pending}>
@@ -318,9 +311,6 @@ export function TouchStep(props: { phone: string | null }) {
       </section>
 
       <Footer back="/onboarding?step=2">
-        <Button type="submit" name="intent" value="done" variant="text" disabled={pending} className={LINK}>
-          skip for now
-        </Button>
         <Button type="submit" name="intent" value="done" variant="filled" size="md" disabled={pending}>
           go to my day
         </Button>

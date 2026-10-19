@@ -60,7 +60,7 @@ export default async function OnboardingPage(props: Props) {
         />
       }
     >
-      <main className={`${PAGE_WIDTH} flex flex-1 flex-col pt-s6 pb-s6 sm:pt-s7 sm:pb-s7`}>
+      <main className={`${PAGE_WIDTH} flex flex-1 flex-col pt-s6 pb-s6 sm:pb-s7`}>
         {step === 1 && <PieStep categories={categories} initial={levels} />}
         {step === 2 && <ActivitiesStep categories={categories} />}
         {step === 3 && <TouchStep phone={profile.data?.phone ?? null} />}
