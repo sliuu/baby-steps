@@ -7,11 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 
 type Provider = "google";
 
-const NAME: Record<Provider, string> = { google: "Google" };
+// Lowercase, like the rest of the voice.
+const NAME: Record<Provider, string> = { google: "google" };
 
 type Props = {
   provider: Provider;
-  /** "sm" in the header, "md" in the body. */
+  /** Same look; the words differ on purpose: "sm" (header) signs in, "md" (body) signs up. */
   look: "sm" | "md";
   className?: string;
 };
@@ -44,20 +45,17 @@ export function SignInButton(props: Props) {
   }, []);
 
   const name = NAME[props.provider];
-  // Phones: the header's button drops "with Google" to leave room for the logo.
-  const label = pending ? (
-    `Taking you to ${name}…`
-  ) : (
-    <>
-      Sign in<span className={props.look === "sm" ? "max-sm:hidden" : undefined}> with {name}</span>
-    </>
-  );
+  const label = pending
+    ? `taking you to ${name}…`
+    : props.look === "sm"
+      ? "sign in"
+      : `sign up with ${name}`;
 
   return (
     <>
       <Button
         variant="outline"
-        size={props.look}
+        size="cta"
         disabled={pending}
         onClick={signIn}
         className={props.className}

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import { addStarterStickers, finishTour } from "@/app/actions/onboarding";
 import { AppShell } from "@/components/AppShell";
 import { UserMenu } from "@/components/UserMenu";
 import { CalendarSkeleton } from "@/components/views/CalendarSkeleton";
@@ -27,10 +28,9 @@ export default async function Home() {
   return (
     <AppShell
       settings={settingsFromRow(profile)}
-      navEnd={<UserMenu
-          user={toSessionUser(claims)}
-          phone={profile?.texts_opt_in ? (profile.phone ?? null) : null}
-        />}
+      // Until finished or skipped once; no row (an old account) means no tour.
+      tour={profile && profile.onboarded_at === null ? { user: claims.sub, save: addStarterStickers, finish: finishTour } : undefined}
+      navEnd={<UserMenu user={toSessionUser(claims)} />}
       // Props, not imports, so both views render on the server; one boundary
       // each so neither blocks the shell or the other.
       calendar={

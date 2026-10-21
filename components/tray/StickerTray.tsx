@@ -26,7 +26,8 @@ type Props = {
   /** Demo: no library writes, so no new/edit/restore. */
   local?: boolean;
   /** Tap (or Enter) on a sticker. */
-  onAdd: (sticker: LibrarySticker) => void;
+  /** `from`: the tapped tile, for the fly-in. */
+  onAdd: (sticker: LibrarySticker, from?: HTMLElement) => void;
   /** Where a tap lands, for labels: "today", "16/10". */
   addTo: string;
   /** "column": the day panel. "page": wide grid under Today. */
@@ -37,12 +38,16 @@ type Props = {
   tapEdits?: boolean;
   /** Prefixes drag ids, so two mounted trays don't collide. */
   dragScope?: string;
+  /** Today's tray: tap only, no dragging. */
+  noDrag?: boolean;
 };
 
 /** Sticker bank by category. Presentational; the board owns state. */
 export function StickerTray(props: Props) {
   const { selection, onSelect, compact } = props;
   const tileSize = props.layout === "page" ? "md" : "sm";
+  // Today has no days to light, so no eyes.
+  const highlights = props.layout !== "page";
 
   // An id, so a refresh after saving shows the new name and a delete closes it.
   const [editing, setEditing] = useState<string | null>(null);
@@ -68,23 +73,18 @@ export function StickerTray(props: Props) {
 
   return (
     <div className="flex flex-col gap-s4">
-      {!compact && (
-        <header>
-          <h2 className="font-sans text-label text-ink">stickers</h2>
-          {/* The way out of a highlight. */}
-          {props.label && (
-            <p className="mt-1 text-caption text-ink-muted">
-              showing <span className="text-ink">{props.label}</span> ·{" "}
-              <button
-                type="button"
-                onClick={props.onClear}
-                className="underline underline-offset-2 hover:text-ink"
-              >
-                clear
-              </button>
-            </p>
-          )}
-        </header>
+      {/* The way out of a highlight. No "stickers" label: the section says it. */}
+      {!compact && highlights && props.label && (
+        <p className="text-caption text-ink-muted">
+          showing <span className="text-ink">{props.label}</span> ·{" "}
+          <button
+            type="button"
+            onClick={props.onClear}
+            className="underline underline-offset-2 hover:text-ink"
+          >
+            clear
+          </button>
+        </p>
       )}
 
       <div
@@ -106,8 +106,10 @@ export function StickerTray(props: Props) {
               key={group.categoryId}
               label={group.categoryName}
               colorKey={group.colorKey}
-              onSelect={() => toggle(categorySelection)}
-              selected={sameSelection(selection, categorySelection)}
+              onSelect={highlights ? () => toggle(categorySelection) : undefined}
+              selected={highlights && sameSelection(selection, categorySelection)}
+              // 64px tile, 44px mark.
+              flush={props.layout === "page"}
             >
               {stickers.length === 0 && props.local && (
                 <li className="py-s1 text-caption text-ink-muted">nothing here yet</li>
@@ -124,11 +126,12 @@ export function StickerTray(props: Props) {
                     face={sticker}
                     size={tileSize}
                     dragId={props.dragScope ? `${props.dragScope}:${sticker.id}` : sticker.id}
+                    noDrag={props.noDrag}
                     payload={{ kind: "activity", activityId: sticker.id, face: faceOf(sticker) }}
-                    onAdd={tapEdits ? () => setEditing(sticker.id) : () => props.onAdd(sticker)}
+                    onAdd={tapEdits ? () => setEditing(sticker.id) : (from) => props.onAdd(sticker, from)}
                     addLabel={tapEdits ? `edit ${sticker.name}` : `add ${sticker.name} to ${props.addTo}`}
-                    selected={sameSelection(selection, stickerSelection)}
-                    onSelect={() => toggle(stickerSelection)}
+                    selected={highlights && sameSelection(selection, stickerSelection)}
+                    onSelect={highlights ? () => toggle(stickerSelection) : undefined}
                     onEdit={manage ? () => setEditing(sticker.id) : undefined}
                   />
                 );

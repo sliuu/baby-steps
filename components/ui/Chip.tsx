@@ -18,7 +18,7 @@ export function Chip({ variant, colorKey, className, children, ...props }: Props
       type="button"
       aria-pressed={chosen}
       className={cn(
-        "inline-flex h-8 items-center gap-s1 rounded-full border px-s2 text-label text-ink transition-colors",
+        "inline-flex h-8 items-center gap-s1 rounded-md border px-s2 text-label text-ink transition-colors",
         chosen ? color.border : "border-dashed border-rule hover:border-ink",
         className,
       )}

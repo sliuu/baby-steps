@@ -222,7 +222,7 @@ export function StickerFields(props: Props) {
       {/* Always rendered so the live region announces. */}
       <div role="status" aria-live="polite" className="empty:hidden">
         {problem && (
-          <p id={errorId} className="rounded-lg bg-accent-ink/10 text-accent-ink px-s1 py-1.5 text-label">
+          <p id={errorId} className="rounded-md bg-accent-ink/10 text-accent-ink px-s1 py-1.5 text-label">
             {problem.message}
           </p>
         )}

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { BottomNav } from "./BottomNav";
 import { SettingsProvider } from "./SettingsProvider";
 import { TopNav } from "./TopNav";
+import { TourProvider, type TourActions } from "@/components/tour/Tour";
 import { PageFrame } from "@/components/ui/PageFrame";
 import { CalendarDataProvider } from "@/components/calendar/calendarData";
 import { CalendarViewProvider } from "@/components/calendar/viewMode";
@@ -22,6 +23,8 @@ type Props = {
   banner?: React.ReactNode;
   /** Defaults on `/demo`. */
   settings?: Settings;
+  /** A new account's first-run tour; absent once onboarded. */
+  tour?: TourActions;
 };
 
 /** Crossfades a section change where the browser can (CSS in globals.css); instant otherwise. */
@@ -60,35 +63,39 @@ export function AppShell(props: Props) {
     };
   }, []);
 
-  function changePage(next: Page) {
+  // Stable: the tour calls it from an effect.
+  const changePage = useCallback((next: Page) => {
     if (window.location.hash !== `#${next}`) {
       window.history.pushState(null, "", `#${next}`);
     }
     // Claimed now, so a quick back before the update still registers.
     shown.current = next;
     transition(() => setPage(next));
-  }
+  }, []);
+  const showToday = useCallback(() => changePage("today"), [changePage]);
 
   return (
     <SettingsProvider settings={props.settings ?? DEFAULT_SETTINGS}>
       <CalendarDataProvider>
-        <CalendarViewProvider
-          view={page === null || isCalendar(page) ? page : "month"}
-        >
-          {props.banner}
-          <PageFrame
-            bottomNav
-            header={
-              <TopNav page={page} onPageChange={changePage} end={props.navEnd} />
-            }
+        <TourProvider actions={props.tour} page={page} showToday={showToday}>
+          <CalendarViewProvider
+            view={page === null || isCalendar(page) ? page : "month"}
           >
-            <main className={`${PAGE_WIDTH} flex-1 py-s4 [view-transition-name:page] lg:py-s6`}>
-              {page === null || isCalendar(page) ? props.calendar : props.trends}
-            </main>
-          </PageFrame>
+            {props.banner}
+            <PageFrame
+              bottomNav
+              header={
+                <TopNav page={page} onPageChange={changePage} end={props.navEnd} />
+              }
+            >
+              <main className={`${PAGE_WIDTH} flex-1 py-s4 [view-transition-name:page] lg:py-s6`}>
+                {page === null || isCalendar(page) ? props.calendar : props.trends}
+              </main>
+            </PageFrame>
 
-          <BottomNav page={page} onPageChange={changePage} />
-        </CalendarViewProvider>
+            <BottomNav page={page} onPageChange={changePage} />
+          </CalendarViewProvider>
+        </TourProvider>
       </CalendarDataProvider>
     </SettingsProvider>
   );

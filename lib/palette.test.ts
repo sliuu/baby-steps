@@ -7,20 +7,20 @@ describe("fromDbColorKey", () => {
   it("maps the old hue names the database stores", () => {
     assert.deepEqual(
       ["red", "blue", "orange", "yellow", "green", "purple"].map(fromDbColorKey),
-      ["oxblood", "bottle", "mustard", "rose", "sage", "plum"],
+      ["mustard", "sage", "slate", "plum", "rose", "amber"],
     );
   });
 
   it("passes new names through and falls back on unknowns", () => {
     assert.equal(fromDbColorKey("sage"), "sage");
-    assert.equal(fromDbColorKey("teal"), "bottle");
+    assert.equal(fromDbColorKey("teal"), "slate");
   });
 });
 
 describe("categoryColor", () => {
   it("accepts old and new keys alike", () => {
-    assert.equal(categoryColor("blue").ink, "bg-cat-bottle");
-    assert.equal(categoryColor("bottle").ink, "bg-cat-bottle");
+    assert.equal(categoryColor("blue").ink, "bg-cat-sage");
+    assert.equal(categoryColor("slate").ink, "bg-cat-slate");
   });
 });
 

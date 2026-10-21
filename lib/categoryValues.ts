@@ -1,9 +1,9 @@
 /** Category hexes for literals (SVG export). Must match globals.css. */
 export const CATEGORY_VALUE = {
-  oxblood: { ink: "#7A1F1F", text: "#7A1F1F" },
-  bottle: { ink: "#23402F", text: "#23402F" },
-  mustard: { ink: "#C9A23A", text: "#9C7A1E" },
-  rose: { ink: "#D98C7A", text: "#B0614F" },
-  sage: { ink: "#8FA98A", text: "#5E7A59" },
-  plum: { ink: "#765B8C", text: "#765B8C" },
+  plum: { ink: "#9A86B2", text: "#765B8C" },
+  rose: { ink: "#C47A88", text: "#9C4D5B" },
+  mustard: { ink: "#CBA43C", text: "#86671A" },
+  slate: { ink: "#7E9DBE", text: "#4A6582" },
+  sage: { ink: "#8FA98A", text: "#55704F" },
+  amber: { ink: "#C9743F", text: "#985222" },
 } as const;

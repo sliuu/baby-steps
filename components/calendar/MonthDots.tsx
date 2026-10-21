@@ -82,10 +82,7 @@ export function MonthDots(props: Props) {
                 type="button"
                 onClick={() => props.onShowDay(fromDayString(cell.day))}
                 data-day={cell.day}
-                // Dimmed, not blanked: still a real, openable day.
                 className={`flex h-11 flex-col items-center justify-center gap-1 rounded-lg transition-colors ${
-                  cell.inMonth ? "" : "opacity-40"
-                } ${
                   cell.isToday
                     ? "bg-secondary"
                     : lit && highlight
@@ -99,9 +96,10 @@ export function MonthDots(props: Props) {
                 <time
                   aria-hidden="true"
                   dateTime={cell.day}
+                  // Dimmed, not blanked: a real, openable day, so muted (4.5:1), not faded.
                   className={`oldstyle text-ui leading-none ${
                     cell.isToday ? "font-medium" : ""
-                  }`}
+                  } ${cell.inMonth ? "" : "text-ink-muted"}`}
                 >
                   {cell.dayOfMonth}
                 </time>
@@ -109,7 +107,7 @@ export function MonthDots(props: Props) {
                 {/* Fixed 5px row keeps numerals aligned across rows. */}
                 <span
                   aria-hidden="true"
-                  className="flex h-1.25 max-w-8.5 flex-wrap items-center justify-center gap-0.5"
+                  className={`flex h-1.25 max-w-8.5 flex-wrap items-center justify-center gap-0.5 ${cell.inMonth ? "" : "opacity-40"}`}
                 >
                   {stickers.activities.slice(0, DOT_CAP).map((sticker) => (
                     <span

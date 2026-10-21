@@ -28,7 +28,7 @@ import {
 import type { DayString } from "@/lib/dates";
 import { daysBetween } from "@/lib/daymath";
 import { earliestPlacement, habitTable, habitWindow } from "@/lib/habits";
-import { PANEL, RULE } from "@/lib/layout";
+import { PANEL, RULE, SECTION_TITLE, TITLE } from "@/lib/layout";
 import type { LibraryGroup } from "@/lib/queries/activities";
 import type { StickersByDay } from "@/lib/stickers";
 import { useToday } from "@/lib/useToday";
@@ -116,7 +116,7 @@ function Board(props: Props & { todayString: DayString }) {
     >
       <div className="flex flex-col gap-s3 lg:flex-row lg:items-end lg:justify-between lg:gap-s4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-s4">
-          <h1 className="font-display text-heading font-light text-ink lowercase sm:text-display-sm">
+          <h1 className={TITLE}>
             trends
           </h1>
           {/* Radix primitive: tablist role and arrow keys, no styles to undo. */}
@@ -157,7 +157,7 @@ function Board(props: Props & { todayString: DayString }) {
             </div>
 
             <section aria-labelledby="trends-by-category" className={`min-w-0 ${PANEL}`}>
-              <h2 id="trends-by-category" className={TITLE}>
+              <h2 id="trends-by-category" className={`mb-s4 ${SECTION_TITLE}`}>
                 by category
               </h2>
               <Readout
@@ -203,7 +203,7 @@ function Board(props: Props & { todayString: DayString }) {
         <div className="flex flex-col gap-s6">
           <div className="grid items-start gap-x-s7 gap-y-s6 lg:grid-cols-2">
             <section aria-label={recordCaption} className={`flex min-w-0 flex-col ${PANEL}`}>
-              <h2 className={TITLE}>by mood</h2>
+              <h2 className={`mb-s4 ${SECTION_TITLE}`}>by mood</h2>
               <MoodBars moods={moods} />
             </section>
 
@@ -224,10 +224,9 @@ function Board(props: Props & { todayString: DayString }) {
   );
 }
 
-const TITLE = "mb-s4 font-display text-subhead text-ink";
-
 const CONTENT =
-  "text-label outline-none animate-in fade-in-0 duration-150 motion-reduce:animate-none";
+  // Radix makes a panel focusable; it gets the app's ring.
+  "rounded-sm text-label outline-none focus-visible:ring-2 focus-visible:ring-(--focus-ring) focus-visible:ring-offset-4 focus-visible:ring-offset-paper animate-in fade-in-0 duration-150 motion-reduce:animate-none";
 
 function Empty(props: { range: Range }) {
   return (

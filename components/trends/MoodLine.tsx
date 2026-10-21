@@ -1,10 +1,14 @@
 import { format } from "date-fns";
+import { useId } from "react";
+
+import { MoodMark } from "@/components/calendar/MoodMark";
 
 import { MOOD_SCORE, type MoodPoint, type MoodSeries } from "@/lib/analytics";
 import { round2 } from "@/lib/charts";
 import { formatDayShort, fromDayString, type DayString } from "@/lib/dates";
 import { addDays, daysBetween } from "@/lib/daymath";
-import { MOODS, MOOD_BG, MOOD_MOUTH, type Mood } from "@/lib/moods";
+import { SECTION_TITLE } from "@/lib/layout";
+import { MOODS, MOOD_BG, MOOD_COLOR } from "@/lib/moods";
 
 type Props = {
   series: MoodSeries;
@@ -19,6 +23,9 @@ const LINE_FROM = 2;
 
 const TOP_SCORE = MOODS.length;
 
+/** Plot height and insets, shared with MoodBars so its rows sit on the gridlines. */
+export const MOOD_PLOT = "h-59 pt-s2 pb-s4";
+
 /**
  * Mood over time, great at the top. HTML dots and labels over a stretched SVG
  * line, so text and dots keep their size at any width. Positioned by date;
@@ -26,6 +33,7 @@ const TOP_SCORE = MOODS.length;
  */
 export function MoodLine(props: Props) {
   const { points, from, to } = props.series;
+  const gradient = useId();
 
   if (points.length < LINE_FROM || !from || !to) return null;
 
@@ -33,22 +41,20 @@ export function MoodLine(props: Props) {
 
   return (
     <section className={`flex flex-col ${props.className ?? ""}`}>
-      <h2 className="mb-s4 font-display text-subhead text-ink">day by day</h2>
+      <h2 className={`mb-s4 ${SECTION_TITLE}`}>day by day</h2>
 
       {/* The chart for screen readers; the drawing is aria-hidden. */}
       {props.takeaway && <p className="sr-only">{props.takeaway}</p>}
 
       {/* Inner box is the plot; left gutter holds the faces. */}
-      <div aria-hidden="true" className="h-59 pt-s2 pr-s2 pb-s4 pl-s5">
+      <div aria-hidden="true" className={`${MOOD_PLOT} pr-s2 pl-s6`}>
         <div className="relative size-full">
-          {/* Gridline per mood, okay dashed. Borders keep dashes unstretched. */}
+          {/* Gridline per mood. */}
           {MOODS.map((mood, i) => (
             <span
               key={mood}
               style={{ top: `${(i / (MOODS.length - 1)) * 100}%` }}
-              className={`absolute inset-x-0 border-t ${
-                mood === "okay" ? "border-dashed border-rule-strong" : "border-rule-grid"
-              }`}
+              className="absolute inset-x-0 border-t border-rule-grid"
             />
           ))}
 
@@ -56,31 +62,44 @@ export function MoodLine(props: Props) {
             <span
               key={mood}
               style={{ top: `${level(MOOD_SCORE[mood])}%` }}
-              className="absolute -left-8 -translate-y-1/2 text-ink-muted"
+              className="absolute -left-8.5 -translate-y-1/2"
             >
-              <Face mood={mood} />
+              <MoodMark mood={mood} />
             </span>
           ))}
 
-          {/* One polyline per run; a run of one is just its dot. */}
+          {/* A segment per pair of days, its colour running from one mood to the next. */}
           <svg
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
             className="absolute inset-0 size-full overflow-visible"
           >
-            {runs.map((run) => (
-              <polyline
-                key={run[0].day}
-                points={run
-                  .map((p) => `${round2(p.at * 100)},${round2(level(p.score))}`)
-                  .join(" ")}
-                className="fill-none stroke-ink"
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
+            {runs.flatMap((run) =>
+              run.slice(1).map((b, i) => {
+                const a = run[i];
+                const id = `${gradient}-${b.day}`;
+                const [x1, y1, x2, y2] = [a.at * 100, level(a.score), b.at * 100, level(b.score)].map(round2);
+                return (
+                  <g key={b.day}>
+                    {/* User space: a flat segment has no height to stretch a box gradient over. */}
+                    <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={x1} y1={y1} x2={x2} y2={y2}>
+                      <stop offset="0" stopColor={MOOD_COLOR[a.mood]} />
+                      <stop offset="1" stopColor={MOOD_COLOR[b.mood]} />
+                    </linearGradient>
+                    <line
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      stroke={`url(#${id})`}
+                      strokeWidth={3}
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </g>
+                );
+              }),
+            )}
           </svg>
 
           {points.map((point) => (
@@ -90,7 +109,7 @@ export function MoodLine(props: Props) {
                 left: `${round2(point.at * 100)}%`,
                 top: `${round2(level(point.score))}%`,
               }}
-              className={`absolute size-2.5 -translate-1/2 rounded-full border border-ink ${MOOD_BG[point.mood]}`}
+              className={`absolute size-2.5 -translate-1/2 rounded-full ${MOOD_BG[point.mood]}`}
             />
           ))}
 
@@ -128,26 +147,8 @@ function Ticks(props: { from: DayString; to: DayString }) {
   );
 }
 
-/** MoodMark's face, bare and small, for the axis. */
-function Face(props: { mood: Mood }) {
-  return (
-    <svg viewBox="0 0 24 24" className="block size-4.5">
-      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="9" cy="9.5" r="1.1" fill="currentColor" />
-      <circle cx="15" cy="9.5" r="1.1" fill="currentColor" />
-      <path
-        d={MOOD_MOUTH[props.mood]}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 /** Score to % from top: 5 is 0%, 1 is 100%. */
-function level(score: number): number {
+export function level(score: number): number {
   return ((TOP_SCORE - score) / (TOP_SCORE - 1)) * 100;
 }
 

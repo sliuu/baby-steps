@@ -5,6 +5,8 @@ export const display = Zilla_Slab({
   subsets: ["latin"],
   // 600: the bold phrases in onboarding's prose.
   weight: ["300", "400", "600"],
+  // Italic: the app asking you something ("what have you been up to?").
+  style: ["normal", "italic"],
   variable: "--font-display-face",
   display: "swap",
 });

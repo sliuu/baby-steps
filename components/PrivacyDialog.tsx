@@ -10,7 +10,7 @@ import {
 
 const HEADING = "font-display text-subhead text-ink";
 const PROSE = "mt-s1 text-ui text-ink-muted";
-const LINK = "text-ink underline underline-offset-4 hover:text-accent-ink";
+const LINK = "text-ink underline underline-offset-4 hover:text-ink-muted";
 
 /** Footer link that opens a short privacy promise, true to how the app is built. */
 export function PrivacyDialog(props: { className?: string }) {

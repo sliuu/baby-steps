@@ -81,7 +81,7 @@ export function WeekList(props: Props) {
                   <time
                     dateTime={day.day}
                     className={`oldstyle grid size-7 place-items-center border-b-2 text-ui ${
-                      day.isToday ? "border-accent-ink font-medium" : "border-transparent"
+                      day.isToday ? "border-ink font-medium" : "border-transparent"
                     }`}
                   >
                     {day.dayOfMonth}

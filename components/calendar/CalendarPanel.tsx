@@ -51,6 +51,8 @@ type Props = Omit<PeriodProps, "todayString" | "onOpenDay" | "selectedDay"> & {
   tray: (day: DayString, scope: string) => ReactNode;
   /** Phones: opens the add-stickers sheet. */
   onPickStickers: () => void;
+  /** Desktop: opens Today's tray and brings it into view. */
+  onOpenTray: () => void;
 };
 
 /** Owns the period anchor, the selected day (desktop) and the open sheet (phones). */
@@ -97,9 +99,7 @@ export function CalendarPanel(props: Props) {
         <TodayView
           day={today}
           groups={props.groups}
-          onAddSticker={() =>
-            document.getElementById("your-stickers")?.scrollIntoView({ behavior: "smooth" })
-          }
+          onAddSticker={props.onOpenTray}
           onPickStickers={props.onPickStickers}
           {...passthrough}
         />

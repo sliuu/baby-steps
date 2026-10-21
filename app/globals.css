@@ -41,15 +41,17 @@
   --text-title: 2.5rem;
   --text-title--line-height: 1.1;
   --text-title--letter-spacing: -0.01em;
-  --text-date: 2rem;
+  --text-date: 1.375rem;
   --text-date--line-height: 1.1;
   --text-heading: 2.25rem;
   --text-heading--line-height: 1.15;
   --text-heading--letter-spacing: -0.01em;
+  --text-page-title: 1.875rem;
+  --text-page-title--line-height: 1.2;
   --text-subhead: 1.625rem;
   --text-subhead--line-height: 1.2;
   --text-subhead--font-weight: 400;
-  --text-logo: 1.5rem;
+  --text-logo: 1.25rem;
   --text-logo--line-height: 1;
   --text-logo--font-weight: 400;
   --text-body-lg: 1.25rem;
@@ -121,24 +123,24 @@
   --shadow-menu: var(--menu-shadow);
 
   /* Category inks. */
-  --color-cat-oxblood: var(--cat-oxblood);
-  --color-cat-oxblood-text: var(--cat-oxblood-text);
-  --color-cat-oxblood-on: var(--cat-oxblood-on);
-  --color-cat-bottle: var(--cat-bottle);
-  --color-cat-bottle-text: var(--cat-bottle-text);
-  --color-cat-bottle-on: var(--cat-bottle-on);
-  --color-cat-mustard: var(--cat-mustard);
-  --color-cat-mustard-text: var(--cat-mustard-text);
-  --color-cat-mustard-on: var(--cat-mustard-on);
-  --color-cat-rose: var(--cat-rose);
-  --color-cat-rose-text: var(--cat-rose-text);
-  --color-cat-rose-on: var(--cat-rose-on);
-  --color-cat-sage: var(--cat-sage);
-  --color-cat-sage-text: var(--cat-sage-text);
-  --color-cat-sage-on: var(--cat-sage-on);
   --color-cat-plum: var(--cat-plum);
   --color-cat-plum-text: var(--cat-plum-text);
   --color-cat-plum-on: var(--cat-plum-on);
+  --color-cat-rose: var(--cat-rose);
+  --color-cat-rose-text: var(--cat-rose-text);
+  --color-cat-rose-on: var(--cat-rose-on);
+  --color-cat-mustard: var(--cat-mustard);
+  --color-cat-mustard-text: var(--cat-mustard-text);
+  --color-cat-mustard-on: var(--cat-mustard-on);
+  --color-cat-slate: var(--cat-slate);
+  --color-cat-slate-text: var(--cat-slate-text);
+  --color-cat-slate-on: var(--cat-slate-on);
+  --color-cat-sage: var(--cat-sage);
+  --color-cat-sage-text: var(--cat-sage-text);
+  --color-cat-sage-on: var(--cat-sage-on);
+  --color-cat-amber: var(--cat-amber);
+  --color-cat-amber-text: var(--cat-amber-text);
+  --color-cat-amber-on: var(--cat-amber-on);
 
   /* Moods, sad → happy. */
   --color-mood-rough: var(--mood-rough);
@@ -154,11 +156,13 @@
   --size-sticker-xs: 1.25rem;
   --size-mood-dot: 0.6875rem;
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: 1rem;
+  /* Radius scales with size, about 3/8 of a control's height; nested boxes
+     take the outer radius less the padding. Circles stay `rounded-full`. */
+  --radius-sm: 0.5rem; /* 24–28px: xs buttons, tray rows */
+  --radius-md: 0.75rem; /* 32px: buttons, inputs, chips, notices */
+  --radius-lg: 1rem; /* 42–64px: CTAs, tiles, day cells */
+  --radius-xl: 1.25rem; /* menus, popovers */
+  --radius-2xl: 1.5rem; /* dialogs, sheets, the page */
 
   /* Enter decelerates, exit accelerates. Deck is one in-out curve so two pages don't gap. */
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
@@ -175,14 +179,14 @@
   /* `both` holds the first keyframe through the stagger. */
   --animate-rise: rise var(--dur-hero) var(--ease-enter) both;
 
-  /* Nth strike (`--step`) draws; the last line fades in as the third ends (no trailing gap). */
+  /* Nth strike (`--step`) draws; the last line fades in as the last strike ends (no trailing gap). */
   --animate-strike: strike var(--dur-strike) var(--ease-enter)
     calc(var(--strike-wait) + var(--step, 0) * (var(--dur-strike) + var(--strike-gap))) both;
   --animate-after-strikes: appear var(--dur-after-strikes) var(--ease-enter)
-    calc(var(--strike-wait) + 3 * var(--dur-strike) + 2 * var(--strike-gap)) both;
+    calc(var(--strike-wait) + var(--strikes) * var(--dur-strike) + (var(--strikes) - 1) * var(--strike-gap)) both;
   /* Sign-in actions rise once the last line has faded in. */
   --animate-rise-after: rise var(--dur-hero) var(--ease-enter)
-    calc(var(--strike-wait) + 3 * var(--dur-strike) + 2 * var(--strike-gap) + var(--dur-after-strikes) + var(--hero-actions-delay)) both;
+    calc(var(--strike-wait) + var(--strikes) * var(--dur-strike) + (var(--strikes) - 1) * var(--strike-gap) + var(--dur-after-strikes) + var(--hero-actions-delay)) both;
 
   /* Fade done in the first third so it falls solid; `fall` sets per-keyframe easing. */
   --animate-fall:
@@ -226,15 +230,17 @@
   --rule: color-mix(in srgb, var(--ink) 25%, transparent);
   --rule-grid: color-mix(in srgb, var(--ink) 14%, transparent);
   --rule-input: color-mix(in srgb, var(--ink) 45%, transparent);
-  --focus-ring: 2px solid var(--accent-ink);
+  --focus-ring: var(--ink);
 
   /* ── categories: ink / readable text / icon on sticker ── */
-  --cat-oxblood: #7A1F1F; --cat-oxblood-text: #7A1F1F; --cat-oxblood-on: var(--paper);
-  --cat-bottle: #23402F;  --cat-bottle-text: #23402F;  --cat-bottle-on: var(--paper);
-  --cat-mustard: #C9A23A; --cat-mustard-text: #9C7A1E; --cat-mustard-on: var(--ink);
-  --cat-rose: #D98C7A;    --cat-rose-text: #B0614F;    --cat-rose-on: var(--ink);
-  --cat-sage: #8FA98A;    --cat-sage-text: #5E7A59;    --cat-sage-on: var(--ink);
-  --cat-plum: #765B8C;    --cat-plum-text: #765B8C;    --cat-plum-on: var(--paper);
+  /* No red: red means errors and deletes. Warm hues part by lightness.
+     Every icon is ink, so fills stay light enough for it (≥3.3:1). */
+  --cat-plum: #9A86B2;    --cat-plum-text: #765B8C;    --cat-plum-on: var(--ink);
+  --cat-rose: #C47A88;    --cat-rose-text: #9C4D5B;    --cat-rose-on: var(--ink);
+  --cat-mustard: #CBA43C; --cat-mustard-text: #86671A; --cat-mustard-on: var(--ink);
+  --cat-slate: #7E9DBE;   --cat-slate-text: #4A6582;   --cat-slate-on: var(--ink);
+  --cat-sage: #8FA98A;    --cat-sage-text: #55704F;    --cat-sage-on: var(--ink);
+  --cat-amber: #C9743F;   --cat-amber-text: #985222;   --cat-amber-on: var(--ink);
 
   /* ── moods, sad → happy ── */
   --mood-rough: #6F95B8;
@@ -272,10 +278,10 @@
   --destructive: var(--accent-ink);
   --border: var(--rule);
   --input: var(--rule-input);
-  --ring: var(--accent-ink);
+  --ring: var(--ink);
 
   /* ── size ── */
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
   /* Page frame: padding around the sheet; phone bottom nav height. */
   --frame-pad: var(--spacing-s2);
@@ -291,24 +297,25 @@
   --dur-deck: 340ms;
   --dur-land: 420ms;
   /* Sign-in page entrance. Keep under ~500ms; the buttons wait on it. */
-  --dur-hero: 300ms;
+  --dur-hero: 260ms;
   /* Sign-in flower's bloom; slower than the text so it unfurls. */
-  --dur-bloom: 620ms;
+  --dur-bloom: 540ms;
   /* Sign-in stickers falling; longer so the bounce reads. See ENTER in FloatingStickers. */
   --dur-fall: 620ms;
   --fall-drop: 28px;
   --sticker-start: 160ms;
   --sticker-gap: 160ms;
-  /* Sign-in strikes: each line, the gap between, the wait before the first. */
-  --dur-strike: 320ms;
-  --strike-gap: 100ms;
-  --strike-wait: 280ms;
+  /* Sign-in strikes: how many, each line, the gap between, the wait before the first. */
+  --strikes: 2;
+  --dur-strike: 280ms;
+  --strike-gap: 90ms;
+  --strike-wait: 240ms;
   /* The last line's fade; slower than the hero so it lands softly. */
-  --dur-after-strikes: 620ms;
+  --dur-after-strikes: 540ms;
   /* Sign-in copy follows the title; actions start this long after the last line ends (negative overlaps it). */
   --hero-rise: 12px;
-  --hero-copy-delay: 160ms;
-  --hero-actions-delay: -310ms;
+  --hero-copy-delay: 140ms;
+  --hero-actions-delay: -270ms;
 }
 
 @media (min-width: 40rem) {
@@ -339,12 +346,12 @@
   --accent-ink: #E8887A;
 
   /* Lifted so they read on dark paper; text ≥ 6.5:1, icons ≥ 3.5:1. */
-  --cat-oxblood: #B3443C; --cat-oxblood-text: #E8887A; --cat-oxblood-on: #F5EFDF;
-  --cat-bottle: #4F7D5F;  --cat-bottle-text: #8EC09D;  --cat-bottle-on: #F5EFDF;
+  --cat-plum: #8E73A8;    --cat-plum-text: #BBA3D3;    --cat-plum-on: var(--paper);
+  --cat-rose: #CF8A97;    --cat-rose-text: #E6A9B4;    --cat-rose-on: var(--paper);
   --cat-mustard: #D2AA45; --cat-mustard-text: #D9B455; --cat-mustard-on: var(--paper);
-  --cat-rose: #DE9483;    --cat-rose-text: #E5A190;    --cat-rose-on: var(--paper);
+  --cat-slate: #6F8FAE;   --cat-slate-text: #A6BFD8;   --cat-slate-on: var(--paper);
   --cat-sage: #93AE8E;    --cat-sage-text: #A8C2A3;    --cat-sage-on: var(--paper);
-  --cat-plum: #8E73A8;    --cat-plum-text: #BBA3D3;    --cat-plum-on: #F5EFDF;
+  --cat-amber: #D4874F;   --cat-amber-text: #E7A574;   --cat-amber-on: var(--paper);
 
   /* A touch dimmer, so the pale ones don't glare. */
   --mood-low: #9DB6CA;

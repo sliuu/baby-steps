@@ -8,13 +8,13 @@ import type { Mood } from "@/lib/moods";
 import type { StickerFace } from "@/lib/stickers";
 
 const MONDAY: StickerFace[] = [
-  { name: "gym", mark: "icon:dumbbell", colorKey: "bottle" },
-  { name: "meditate", mark: "icon:sparkles", colorKey: "oxblood" },
+  { name: "gym", mark: "icon:dumbbell", colorKey: "sage" },
+  { name: "meditate", mark: "icon:sparkles", colorKey: "mustard" },
 ];
 
 const WEDNESDAY: StickerFace[] = [
-  { name: "piano", mark: "icon:piano", colorKey: "rose" },
-  { name: "date night", mark: "icon:heart", colorKey: "sage" },
+  { name: "piano", mark: "icon:piano", colorKey: "plum" },
+  { name: "date night", mark: "icon:heart", colorKey: "rose" },
 ];
 
 /** Unmatched URL: three calendar days, the middle one missing. */
@@ -41,10 +41,7 @@ export default function NotFound() {
           <Link href="/">back to the calendar</Link>
         </Button>
       }
-    >
-      this link points at a day that was never in your calendar. everything you&rsquo;ve filled in is
-      where you left it.
-    </NoticePage>
+    />
   );
 }
 

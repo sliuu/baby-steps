@@ -10,6 +10,7 @@ import { NewStickerForm, formCategories } from "@/components/tray/NewStickerForm
 import { NewTile, TrayGroup } from "@/components/tray/TrayGroup";
 import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import type { LibraryGroup, LibrarySticker } from "@/lib/queries/activities";
+import { useReturnFocus } from "@/lib/useReturnFocus";
 import { useSwipeDown } from "@/lib/useSwipeDown";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,7 @@ export function AddStickersSheet(props: Props) {
 
   // Swipe down closes too (and so adds).
   const { sheetRef, scrollerRef } = useSwipeDown(close);
+  const returnFocus = useReturnFocus();
 
   return (
     <DialogPrimitive.Root
@@ -62,6 +64,7 @@ export function AddStickersSheet(props: Props) {
         <DialogOverlay className="bg-ink/25" />
         <DialogPrimitive.Content
           ref={sheetRef}
+          {...returnFocus}
           aria-describedby={undefined}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-136 flex-col gap-s2",

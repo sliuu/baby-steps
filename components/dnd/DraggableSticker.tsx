@@ -9,9 +9,11 @@ import type { DragPayload } from "./payload";
 type Props = {
   id: string;
   payload: DragPayload;
-  /** Click or Enter. Space stays with the keyboard drag. */
-  onActivate?: () => void;
+  /** Click or Enter, with the button (where a fly-in starts). Space stays with the keyboard drag. */
+  onActivate?: (from: HTMLElement) => void;
   label?: string;
+  /** Tap only: no drag. */
+  disabled?: boolean;
   className?: string;
   children: ReactNode;
 };
@@ -21,6 +23,7 @@ export function DraggableSticker(props: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: props.id,
     data: props.payload,
+    disabled: props.disabled,
   });
 
   return (
@@ -29,11 +32,11 @@ export function DraggableSticker(props: Props) {
       type="button"
       {...listeners}
       {...attributes}
-      onClick={props.onActivate}
+      onClick={(event) => props.onActivate?.(event.currentTarget)}
       aria-label={props.label}
       className={cn(
         "touch-none",
-        isDragging ? "opacity-35" : "cursor-grab active:cursor-grabbing",
+        isDragging ? "opacity-35" : props.disabled ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
         props.className,
       )}
     >

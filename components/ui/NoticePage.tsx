@@ -8,7 +8,8 @@ import { SheetHeader } from "./SheetHeader";
 type Props = {
   eyebrow: string;
   title: string;
-  children: React.ReactNode;
+  /** The line under the title; the 404 goes without. */
+  children?: React.ReactNode;
   action: React.ReactNode;
   /** Above the eyebrow. */
   picture?: React.ReactNode;
@@ -34,9 +35,11 @@ export function NoticePage(props: Props) {
         <h1 className="mt-s2 animate-rise font-display text-heading font-light text-ink text-balance sm:text-display-sm">
           {props.title}
         </h1>
-        <p className="mt-s4 max-w-120 animate-rise text-body-lg text-ink-muted text-balance">
-          {props.children}
-        </p>
+        {props.children && (
+          <p className="mt-s4 max-w-120 animate-rise text-body-lg text-ink-muted text-balance">
+            {props.children}
+          </p>
+        )}
         <div className="mt-s6 animate-rise">{props.action}</div>
       </main>
     </PageFrame>

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { supabaseEnv } from "@/lib/supabase/env";
 
-/** Next 16 `middleware.ts`: refresh session; signed-out → /login, new → /onboarding. */
+/** Next 16 `middleware.ts`: refresh session; signed-out → /login. New accounts get the tour on `/`. */
 
 /** Reachable signed out. `/demo` is generated data, nobody's rows. */
 const PUBLIC_PATHS = [
@@ -69,30 +69,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.nextUrl));
   }
 
-  // One PK lookup; no row or an error lets them through.
-  if (signedIn && !isPublic && path !== "/onboarding") {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarded_at")
-      .eq("user_id", data!.claims.sub)
-      .maybeSingle();
-    if (profile && profile.onboarded_at === null) {
-      return redirectKeepingCookies(new URL("/onboarding", request.nextUrl), response);
-    }
-  }
-
   // Must be `setAll`'s response, or a refreshed token is dropped.
   return response;
-}
-
-/** Redirect that carries any refreshed session cookies along. */
-function redirectKeepingCookies(url: URL, from: NextResponse) {
-  const redirect = NextResponse.redirect(url);
-  for (const cookie of from.cookies.getAll()) redirect.cookies.set(cookie);
-  for (const [name, value] of from.headers) {
-    if (name !== "set-cookie" && /cache|expires|pragma/i.test(name)) redirect.headers.set(name, value);
-  }
-  return redirect;
 }
 
 export const config = {

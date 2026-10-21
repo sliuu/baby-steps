@@ -14,6 +14,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { ChevronDown } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -21,6 +22,7 @@ import {
   useState,
   useTransition,
 } from "react";
+import { flushSync } from "react-dom";
 
 import {
   clearDayMood,
@@ -39,6 +41,7 @@ import { LANDING_VIEW, type Landed } from "@/components/calendar/period";
 import { useCalendarView } from "@/components/calendar/viewMode";
 import { AddStickersSheet } from "@/components/tray/AddStickersSheet";
 import { StickerTray } from "@/components/tray/StickerTray";
+import { useTour } from "@/components/tour/Tour";
 import { applyChange, type CalendarChange } from "@/lib/changes";
 import { formatDateNumeric, formatDayLong, fromDayString, type DayString } from "@/lib/dates";
 import { buildHighlight, type Selection } from "@/lib/highlight";
@@ -59,6 +62,17 @@ type Props = {
 
 /** Matches `--dur-land` in globals.css. */
 const LANDING_MS = 420;
+
+const TRAY_KEY = "baby-steps:tray-open";
+
+/** Closed unless this browser last left it open; storage can be blocked. */
+function readTrayOpen() {
+  try {
+    return typeof window !== "undefined" && localStorage.getItem(TRAY_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /** Where a change lands a mark (move uses `to`); null for removals and moods. */
 function arrivalOf(change: CalendarChange): Landed | null {
@@ -174,8 +188,20 @@ export function CalendarBoard(props: Props) {
   const [selection, setSelection] = useState<Selection | null>(null);
   // Phones: the add-stickers sheet.
   const [picking, setPicking] = useState(false);
+  // Desktop: Today's tray, closed until asked for; remembered per browser.
+  const [trayOpen, setTrayOpen] = useState(readTrayOpen);
   // Null on the server: it can't know the visitor's day.
   const todayString = useToday(null);
+  const tour = useTour();
+  const tourStep = tour?.step;
+  const setTourGroups = tour?.setGroups;
+  const pauseTour = tour?.pause;
+  // "click on them": the tour points at the tray, so it opens with that step.
+  const [tourWas, setTourWas] = useState(tourStep);
+  if (tourStep !== tourWas) {
+    setTourWas(tourStep);
+    if (tourStep === "tap") setTrayOpen(true);
+  }
 
   // Derived, so server renames/recolours flow through; null if the target is gone.
   const highlight = useMemo(
@@ -197,6 +223,10 @@ export function CalendarBoard(props: Props) {
     }
     return counts;
   }, [stickersByDay]);
+
+  // The tour's stickers step lists this library; its bubble waits out the phone sheet.
+  useEffect(() => setTourGroups?.(props.groups), [setTourGroups, props.groups]);
+  useEffect(() => pauseTour?.(picking), [pauseTour, picking]);
 
   // Escape clears the highlight; bound only while something is lit.
   useEffect(() => {
@@ -331,12 +361,28 @@ export function CalendarBoard(props: Props) {
 
   const onToday = (view ?? LANDING_VIEW) === "today";
 
+  function showTray(open: boolean) {
+    setTrayOpen(open);
+    try {
+      localStorage.setItem(TRAY_KEY, open ? "1" : "0");
+    } catch {}
+  }
+
+  /** "add": open the tray (now, so it can be scrolled to), then just enough scroll to show it. */
+  function openTray() {
+    flushSync(() => showTray(true));
+    document.getElementById("your-stickers")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
   /** Tap-to-add: the same "place" a drop makes, at the end of the day. */
-  function addTo(day: DayString, sticker: LibrarySticker) {
+  function addTo(day: DayString, sticker: LibrarySticker, tile?: HTMLElement) {
     const placed = stickersByDay.get(day)?.activities ?? [];
+    // The tile's mark, so Today can fly it in from there.
+    const from = tile?.firstElementChild?.getBoundingClientRect();
+    tour?.placed();
     // Already there: replay the land as feedback, write nothing.
     if (placed.some((p) => p.activityId === sticker.id)) {
-      setLanded({ day, activityId: sticker.id });
+      setLanded({ day, activityId: sticker.id, from });
       return;
     }
     commit({
@@ -346,11 +392,13 @@ export function CalendarBoard(props: Props) {
       face: faceOf(sticker),
       index: placed.length,
     });
+    if (from) setLanded({ day, activityId: sticker.id, from });
   }
 
   /** The sheet's batch: each a "place" at the end, in pick order. */
   function addMany(day: DayString, stickers: LibrarySticker[]) {
     const placed = stickersByDay.get(day)?.activities ?? [];
+    if (stickers.length) tour?.placed();
     stickers.forEach((sticker, i) =>
       commit({ kind: "place", day, activityId: sticker.id, face: faceOf(sticker), index: placed.length + i }),
     );
@@ -366,18 +414,19 @@ export function CalendarBoard(props: Props) {
       markCounts={markCounts}
       onError={setError}
       local={props.local}
-      onAdd={(sticker) => addTo(day, sticker)}
+      onAdd={(sticker, from) => addTo(day, sticker, from)}
       addTo={layout === "page" ? "today" : formatDateNumeric(fromDayString(day))}
       layout={layout}
       compact={layout === "column"}
       // The phone sheet can't drag, so its taps add.
       tapEdits={scope === "panel"}
       dragScope={scope}
+      noDrag={layout === "page"}
     />
   );
 
   const errorLine = error && (
-    <p className="mt-s4 rounded-lg bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label">{error}</p>
+    <p className="mt-s4 rounded-md bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label">{error}</p>
   );
 
   if (!todayString) return <CalendarSkeleton />;
@@ -411,6 +460,7 @@ export function CalendarBoard(props: Props) {
         landed={landed}
         tray={(day, scope) => tray("column", day, scope)}
         onPickStickers={() => setPicking(true)}
+        onOpenTray={openTray}
       />
 
       {picking && (
@@ -433,9 +483,27 @@ export function CalendarBoard(props: Props) {
         <section
           id="your-stickers"
           aria-label="stickers"
-          className="mt-s6 hidden scroll-mt-6 border-t border-rule pt-s6 lg:block"
+          className="mt-s6 hidden scroll-mt-6 border-t border-rule pt-s3 lg:block"
         >
-          {tray("page", todayString)}
+          <button
+            type="button"
+            aria-expanded={trayOpen}
+            aria-controls="your-stickers-list"
+            onClick={() => showTray(!trayOpen)}
+            className="inline-flex items-center gap-1 text-label text-ink-muted hover:text-ink"
+          >
+            {trayOpen ? "hide stickers" : "show all stickers"}
+            <ChevronDown
+              aria-hidden="true"
+              strokeWidth={1.5}
+              className={`size-3.5 transition-transform ${trayOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {trayOpen && (
+            <div id="your-stickers-list" data-tour="tray" className="pt-s4">
+              {tray("page", todayString)}
+            </div>
+          )}
         </section>
       )}
 
@@ -451,7 +519,7 @@ export function CalendarBoard(props: Props) {
         className="pointer-events-none fixed inset-x-0 top-0 z-60 px-s2 pt-[calc(var(--spacing-s2)+env(safe-area-inset-top))] lg:hidden"
       >
         {error && (
-          <p className="mx-auto max-w-136 rounded-lg bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label shadow-menu">
+          <p className="mx-auto max-w-136 rounded-md bg-accent-ink/10 text-accent-ink px-s2 py-s1 text-label shadow-menu">
             {error}
           </p>
         )}

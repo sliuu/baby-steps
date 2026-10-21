@@ -6,16 +6,16 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-(--focus-ring) focus-visible:ring-offset-2 focus-visible:ring-offset-paper active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-(--focus-ring) focus-visible:ring-offset-2 focus-visible:ring-offset-paper active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
-        // Stationery: ink outline pill (default look for new UI).
+        // Stationery: ink outline (default look for new UI).
         outline:
           "border-ink bg-transparent font-normal text-ink hover:bg-secondary aria-expanded:bg-secondary",
-        // Ink pill. One per screen.
-        filled: "bg-ink font-normal text-paper hover:bg-ink/90",
+        // Ink fill. One per screen. Border matches the fill, so it sizes like outline.
+        filled: "border-ink bg-ink font-normal text-paper hover:border-ink/90 hover:bg-ink/90",
         // Underline on hover only.
         text: "rounded-none px-0 font-normal text-ink underline-offset-4 hover:underline",
         secondary:
@@ -29,14 +29,16 @@ const buttonVariants = cva(
       size: {
         default:
           "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 px-2 text-xs has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        xs: "h-6 gap-1 rounded-sm px-2 text-xs has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         // 44px: the touch minimum.
-        md: "h-11 gap-2 px-5 text-ui",
+        md: "h-11 gap-2 rounded-lg px-5 text-ui",
         sm: "h-8 gap-1.5 px-3.5 text-label [&_svg:not([class*='size-'])]:size-3.5",
+        // The landing's calls to action, header and body alike: 42px.
+        cta: "h-10.5 gap-1.5 rounded-lg px-4 text-ui [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         icon: "size-8",
         "icon-xs":
-          "size-6 [&_svg:not([class*='size-'])]:size-3",
+          "size-6 rounded-sm [&_svg:not([class*='size-'])]:size-3",
         "icon-sm":
           "size-7",
         "icon-lg": "size-9",
