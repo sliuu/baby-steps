@@ -3,6 +3,7 @@ import { ViewTransition } from "react";
 
 import type { CalendarViewMode } from "./period";
 import { Button } from "@/components/ui/button";
+import { TITLE } from "@/lib/layout";
 import { cn } from "@/lib/utils";
 
 type SteppablePeriod = Exclude<CalendarViewMode, "today">;
@@ -19,11 +20,12 @@ type Props = {
 /** Title, `month · week`, and the arrows. */
 export function PeriodHeader(props: Props) {
   return (
-    <div className="flex items-end justify-between gap-s4">
-      {/* Toggle drops under the title on phones, so the title fits. */}
-      <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-s4">
-        {/* The h1 stays mounted so aria-live announces the new period. */}
-        <h1 aria-live="polite" className="min-w-0 font-display text-heading font-light sm:text-display-sm text-ink lowercase">
+    // Toggle drops under the title on phones, so the title fits.
+    <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-s4">
+      {/* Arrows beside the title they change; quiet, no outlines. */}
+      <div className="flex min-w-0 items-center gap-s1">
+        {/* Today's question's face. Stays mounted for aria-live. */}
+        <h1 aria-live="polite" className={`${TITLE} min-w-0 lowercase`}>
           {/* Crossfade only; the grid does the travelling. */}
           <ViewTransition key={props.title} enter="deck-label" exit="deck-label" default="none">
             {/* leading 1.25 + negative margin: room for descenders under truncate. */}
@@ -40,22 +42,22 @@ export function PeriodHeader(props: Props) {
           </ViewTransition>
         </h1>
 
-        {/* Hash links: AppShell follows the hash. */}
-        <nav aria-label="calendar view" className="shrink-0 text-label text-ink-muted">
-          <ViewLink view="month" current={props.view} />
-          <span aria-hidden="true"> · </span>
-          <ViewLink view="week" current={props.view} />
-        </nav>
+        <div className="flex shrink-0 items-center">
+          <Button variant="ghost" size="icon-sm" className="text-ink-muted hover:text-ink" aria-label={`previous ${props.view}`} onClick={() => props.onStep(-1)}>
+            <ChevronLeft strokeWidth={1.5} />
+          </Button>
+          <Button variant="ghost" size="icon-sm" className="text-ink-muted hover:text-ink" aria-label={`next ${props.view}`} onClick={() => props.onStep(1)}>
+            <ChevronRight strokeWidth={1.5} />
+          </Button>
+        </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-s1 pb-1">
-        <Button variant="outline" size="icon-sm" aria-label={`previous ${props.view}`} onClick={() => props.onStep(-1)}>
-          <ChevronLeft strokeWidth={1.5} />
-        </Button>
-        <Button variant="outline" size="icon-sm" aria-label={`next ${props.view}`} onClick={() => props.onStep(1)}>
-          <ChevronRight strokeWidth={1.5} />
-        </Button>
-      </div>
+      {/* Hash links: AppShell follows the hash. */}
+      <nav aria-label="calendar view" className="shrink-0 text-label text-ink-muted">
+        <ViewLink view="month" current={props.view} />
+        <span aria-hidden="true"> · </span>
+        <ViewLink view="week" current={props.view} />
+      </nav>
     </div>
   );
 }
@@ -68,7 +70,7 @@ function ViewLink(props: { view: SteppablePeriod; current: SteppablePeriod }) {
       aria-current={on ? "page" : undefined}
       className={cn(
         "underline-offset-4 hover:text-ink",
-        on && "text-ink underline decoration-accent-ink",
+        on && "text-ink underline decoration-ink",
       )}
     >
       {props.view}

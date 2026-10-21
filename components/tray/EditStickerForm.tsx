@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { LibrarySticker } from "@/lib/queries/activities";
+import { useReturnFocus } from "@/lib/useReturnFocus";
 
 type Props = {
   /** Library sticker, not a placement: `id` must be the activities row id. */
@@ -33,6 +34,7 @@ export function EditStickerForm(props: Props) {
   const { onOpenChange } = props;
   /** Mid-delete. Lifted here: the warning and footer buttons both need it. */
   const [confirming, setConfirming] = useState(false);
+  const returnFocus = useReturnFocus();
   /** Archive/delete failure; the form has its own for saving. */
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -49,7 +51,7 @@ export function EditStickerForm(props: Props) {
       }}
     >
       {/* No description; tell Radix so it doesn't warn. */}
-      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
+      <DialogContent {...returnFocus} className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="text-body-lg">edit sticker</DialogTitle>
         </DialogHeader>
@@ -65,7 +67,7 @@ export function EditStickerForm(props: Props) {
         {problem && (
           <p
             role="status"
-            className="rounded-lg bg-accent-ink/10 text-accent-ink px-s1 py-s1 text-label"
+            className="rounded-md bg-accent-ink/10 text-accent-ink px-s1 py-s1 text-label"
           >
             {problem}
           </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { signOut } from "@/app/actions/auth";
 import { SettingsDialog } from "@/components/SettingsDialog";
@@ -17,18 +17,18 @@ import type { SessionUser } from "@/lib/user";
 
 type Props = {
   user: SessionUser;
-  /** E.164, or null when texts are off. */
-  phone: string | null;
 };
 
 export function UserMenu(props: Props) {
   const { user } = props;
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
 
   return (
     <>
       <Menu>
         <MenuTrigger
+          ref={trigger}
           className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-(--focus-ring) focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
           aria-label={`Account menu for ${user.name}`}
         >
@@ -58,9 +58,9 @@ export function UserMenu(props: Props) {
       </Menu>
       {settingsOpen && (
         <SettingsDialog
-          phone={props.phone}
           email={user.email || null}
           onClose={() => setSettingsOpen(false)}
+          returnFocusTo={trigger}
         />
       )}
     </>

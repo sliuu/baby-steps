@@ -12,34 +12,32 @@ import { Chip } from "@/components/ui/Chip";
 import { MoodDot, MoodFace } from "@/components/ui/Mood";
 import { PageFrame } from "@/components/ui/PageFrame";
 import { SheetHeader } from "@/components/ui/SheetHeader";
-import { ActivitiesStep, PieStep, TouchStep, type StepCategory } from "@/app/onboarding/Steps";
 import { verdict, type Balance, type Level } from "@/lib/balance";
 import { today } from "@/lib/dates";
 import { Logo } from "@/components/ui/Logo";
 import { LOGO, PAGE_WIDTH, PANEL } from "@/lib/layout";
 import { MOODS, type Mood } from "@/lib/moods";
 import { CATEGORY_COLORS, categoryColor, type CategoryColor } from "@/lib/palette";
-import { suggestionsFor } from "@/lib/suggestions";
 
 const SURFACES = ["frame", "on-frame", "paper", "raised", "ink", "ink-muted", "ink-subtle", "accent-ink"];
 const RULES = ["rule-strong", "rule", "rule-grid", "rule-input"];
 
 const CATEGORIES: BalanceCategory[] = [
-  { id: "spirituality", name: "spirituality", colorKey: "oxblood" },
-  { id: "exercise", name: "exercise", colorKey: "bottle" },
-  { id: "work", name: "work", colorKey: "mustard" },
-  { id: "creativity", name: "creativity & play", colorKey: "rose" },
-  { id: "romance", name: "romance & adventure", colorKey: "sage" },
-  { id: "friends", name: "friends & family", colorKey: "plum" },
+  { id: "spirituality", name: "spirituality", colorKey: "mustard" },
+  { id: "exercise", name: "exercise", colorKey: "sage" },
+  { id: "work", name: "work", colorKey: "slate" },
+  { id: "creativity", name: "creativity & play", colorKey: "plum" },
+  { id: "romance", name: "romance & adventure", colorKey: "rose" },
+  { id: "friends", name: "friends & family", colorKey: "amber" },
 ];
 
 const MARKS: Record<CategoryColor, string> = {
-  oxblood: "icon:sparkles",
-  bottle: "icon:dumbbell",
-  mustard: "icon:inbox",
-  rose: "🎨",
-  sage: "icon:footprints",
-  plum: "icon:brain",
+  mustard: "icon:sparkles",
+  sage: "icon:dumbbell",
+  slate: "icon:inbox",
+  plum: "🎨",
+  rose: "icon:footprints",
+  amber: "icon:brain",
 };
 
 const STICKER_SIZES: StickerSize[] = ["lg", "md", "sm", "xs"];
@@ -123,10 +121,6 @@ export function Reference() {
 
         <Section title="balance">
           <BalanceSamples />
-        </Section>
-
-        <Section title="onboarding">
-          <OnboardingSamples />
         </Section>
       </main>
     </PageFrame>
@@ -388,31 +382,6 @@ function BalanceSamples() {
   );
 }
 
-const STEP_CATEGORIES: StepCategory[] = CATEGORIES.map((c, i) => ({
-  ...c,
-  slug: c.id,
-  owned: i === 1 ? ["gym"] : [],
-  suggestions: suggestionsFor(c.id, i === 1 ? ["gym"] : []),
-}));
-
-/** The three steps with sample categories. Buttons call the real actions. */
-function OnboardingSamples() {
-  return (
-    <div className="flex flex-col gap-s7">
-      {[
-        <PieStep key={1} categories={STEP_CATEGORIES} initial={{ exercise: 3, work: 2 }} />,
-        <ActivitiesStep key={2} categories={STEP_CATEGORIES} />,
-        <TouchStep key={3} phone={null} />,
-      ].map((step, i) => (
-        <figure key={i} className="flex flex-col gap-s2">
-          <figcaption className="text-caption text-ink-muted">step {i + 1} of 3</figcaption>
-          <div className="flex flex-col border border-rule px-s4 pt-s5 pb-s4 sm:px-s5">{step}</div>
-        </figure>
-      ))}
-    </div>
-  );
-}
-
 /** Espresso (default) or blush frame, via `data-frame` on <html>. */
 function FrameToggle() {
   const [frame, setFrame] = useState<"blush" | "espresso">("espresso");
@@ -433,7 +402,7 @@ function FrameToggle() {
             type="button"
             aria-pressed={frame === name}
             onClick={() => setFrame(name)}
-            className={`underline-offset-4 hover:text-ink ${frame === name ? "text-ink underline decoration-accent-ink" : ""}`}
+            className={`underline-offset-4 hover:text-ink ${frame === name ? "text-ink underline decoration-ink" : ""}`}
           >
             {name}
           </button>

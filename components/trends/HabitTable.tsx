@@ -278,7 +278,7 @@ function Header(props: {
         onClick={() => props.onClick(key)}
         // On the button so only the words are the hit area.
         className={`group inline-flex cursor-pointer items-center gap-1 underline-offset-4 hover:text-ink focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
-          active ? "text-ink underline decoration-accent-ink" : ""
+          active ? "text-ink underline decoration-ink" : ""
         } ${column.align === "right" ? "flex-row-reverse" : ""}`}
       >
         {column.label}

@@ -51,6 +51,8 @@ export function MoodRow(props: Props) {
             }
             className={cn(
               "group/mood flex flex-col items-center gap-1.5 transition-[opacity,filter]",
+              // Small faces, but a full-size tap on touch.
+              props.size === "sm" && "pointer-coarse:min-h-11 pointer-coarse:min-w-11 justify-center",
               faded,
               greyed && "opacity-40 grayscale hover:opacity-100 hover:grayscale-0",
             )}
@@ -62,7 +64,7 @@ export function MoodRow(props: Props) {
                 MOOD_BG[mood],
                 props.stickerBorder && "border-3 border-paper ring-1 ring-rule",
                 chosen && !props.greyOthers
-                  ? "inset-ring-2 inset-ring-accent-ink"
+                  ? "inset-ring-2 inset-ring-ink"
                   : "inset-ring-1 inset-ring-rule group-hover/mood:inset-ring-ink",
               )}
             >

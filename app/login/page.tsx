@@ -1,7 +1,9 @@
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { SignInButton } from "@/components/auth/SignInButtons";
+import { Button } from "@/components/ui/button";
 import { Flower } from "@/components/balance/Flower";
 import { PageFrame } from "@/components/ui/PageFrame";
 import { SheetHeader } from "@/components/ui/SheetHeader";
@@ -10,32 +12,32 @@ import type { Balance } from "@/lib/balance";
 import { LOGO, PAGE_WIDTH } from "@/lib/layout";
 
 // Copy is Stephanie's; keep it verbatim.
-const STRUCK = ["habit tracker", "activity logger", "life manager"];
+// Two strikes; `--strikes` in globals.css times the line after them.
+const STRUCK = ["habit tracker", "life manager"];
 
 // Every category full: the flower the app grows toward.
 const PETALS = [
-  { id: "spirituality", name: "spirituality", colorKey: "oxblood" },
-  { id: "exercise", name: "exercise", colorKey: "bottle" },
-  { id: "work", name: "work", colorKey: "mustard" },
-  { id: "creativity", name: "creativity & play", colorKey: "rose" },
-  { id: "romance", name: "romance & adventure", colorKey: "sage" },
-  { id: "friends", name: "friends & family", colorKey: "plum" },
+  { id: "spirituality", name: "spirituality", colorKey: "mustard" },
+  { id: "exercise", name: "exercise", colorKey: "sage" },
+  { id: "work", name: "work", colorKey: "slate" },
+  { id: "creativity", name: "creativity & play", colorKey: "plum" },
+  { id: "romance", name: "romance & adventure", colorKey: "rose" },
+  { id: "friends", name: "friends & family", colorKey: "amber" },
 ];
 const FULL: Balance = Object.fromEntries(PETALS.map(({ id }) => [id, 3 as const]));
 
-/** Signed out: the welcome, three crossed-out labels, and sign in. */
+/** Signed out: the welcome, two crossed-out labels, the demo and sign in. */
 export default async function LoginPage() {
   const content = (
-    <main className={`${PAGE_WIDTH} pt-s7 pb-s7 sm:pt-s5`}>
+    <main className={`${PAGE_WIDTH} pt-s7 pb-s7`}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="animate-rise font-display text-display font-light text-ink sm:text-display-xl">
-            welcome to <span className="font-normal text-accent-ink">baby steps!</span>
+            welcome to <span className="font-normal">baby steps!</span>
           </h1>
 
           <p className="mt-s5 animate-rise font-display text-heading font-light text-ink [animation-delay:var(--hero-copy-delay)]">
             <span className="block">your guilt-free,</span>
-            <span className="block">come as you please,</span>
             {STRUCK.map((label, step) => (
               <span key={label} className="block">
                 <s className="relative no-underline">
@@ -49,32 +51,36 @@ export default async function LoginPage() {
                 </s>
               </span>
             ))}
-            <span className="block animate-after-strikes font-normal text-accent-ink">place to find balance</span>
+            <span className="block animate-after-strikes font-normal">place to find balance</span>
           </p>
+
+          <div className="mt-s6 animate-rise-after">
+            {/* Italic: the app asking, not describing. */}
+            <p className="font-display text-subhead font-light italic text-ink-muted">
+              what have you been up to?
+            </p>
+
+            {/* The demo is filled and last, since it asks nothing. */}
+            <div className="mt-s3 flex flex-wrap items-center gap-x-s3 gap-y-s2">
+              <SignInButton provider="google" look="md" />
+              <Button asChild variant="filled" size="cta">
+                <Link href="/demo">
+                  take a look
+                  <ArrowRight aria-hidden="true" strokeWidth={1.5} />
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* Decoration: hidden from screen readers and phones. Petals bloom slower than the text. */}
+        {/* Labelled, so it shows the six categories; centred on the whole left column. Hidden from screen readers and phones. Petals bloom slower than the text. */}
         <div aria-hidden="true" className="mr-s6 hidden shrink-0 [--dur-hero:var(--dur-bloom)] lg:block">
           <Flower
             categories={PETALS}
             levels={FULL}
-            labels={false}
             ringClassName="stroke-rule-input"
-            className="size-96 mt-s5"
+            className="size-88"
           />
-        </div>
-      </div>
-
-      <div className="mt-s3 animate-rise-after">
-        <p className="font-display text-heading font-light text-ink sm:text-display-sm">
-          what have you been up to?
-        </p>
-
-        <div className="mt-s5 flex flex-wrap items-center gap-x-s5 gap-y-s2">
-          <SignInButton provider="google" look="md" />
-          <Link href="/demo" className="text-ui text-ink underline underline-offset-4 hover:text-accent-ink">
-            demo
-          </Link>
         </div>
       </div>
     </main>
@@ -85,8 +91,9 @@ export default async function LoginPage() {
       header={
         <SheetHeader
           start={
+            // Mark only: the headline already says the name.
             <Link href="/" className={LOGO}>
-              <Logo />
+              <Logo markOnly />
             </Link>
           }
           end={<SignInButton provider="google" look="sm" />}

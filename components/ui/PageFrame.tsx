@@ -18,7 +18,7 @@ export function PageFrame(props: Props) {
       }`}
     >
       {/* Taller than the window, so the footer starts below the fold. */}
-      <div className="flex min-h-[calc(100dvh-2*var(--frame-pad))] flex-col bg-paper shadow-sheet">
+      <div className="flex min-h-[calc(100dvh-2*var(--frame-pad))] flex-col overflow-clip rounded-2xl bg-paper shadow-sheet">
         {props.header}
         <div className="flex flex-1 flex-col">{props.children}</div>
       </div>

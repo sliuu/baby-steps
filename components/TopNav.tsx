@@ -15,7 +15,7 @@ type Props = {
   /** Null = landing. */
   page: Page | null;
   onPageChange: (page: Page) => void;
-  /** Right end: `UserMenu`, or "sign in" on `/demo`. */
+  /** Right end: `UserMenu`, or "exit" on `/demo`. */
   end: React.ReactNode;
 };
 
@@ -49,7 +49,7 @@ export function TopNav(props: Props) {
             <Logo />
           </a>
           {today && current === "today" && (
-            <time dateTime={today} className="hidden translate-y-0.5 font-display text-date font-normal text-accent-ink min-[56rem]:inline">
+            <time dateTime={today} className="hidden translate-y-0.5 font-display text-date font-normal text-ink min-[56rem]:inline">
               {formatDateShort(fromDayString(today))}
             </time>
           )}

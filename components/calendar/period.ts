@@ -11,7 +11,8 @@ export type CalendarViewMode = "month" | "week" | "today";
 export const LANDING_VIEW: CalendarViewMode = "today";
 
 /** Keyed by activity: the row id changes when the insert lands. */
-export type Landed = { day: DayString; activityId: string };
+/** `from`: where a tapped tray sticker's mark was, so it flies in from there. */
+export type Landed = { day: DayString; activityId: string; from?: DOMRect };
 
 /** After today. False until the browser knows which day today is. */
 export function isFuture(day: DayString, todayString: DayString | null): boolean {

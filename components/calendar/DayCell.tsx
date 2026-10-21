@@ -72,7 +72,7 @@ export function DayCell(props: Props) {
       {props.selected && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 inset-ring-2 inset-ring-accent-ink"
+          className="pointer-events-none absolute inset-0 inset-ring-2 inset-ring-ink"
         />
       )}
 
@@ -96,9 +96,10 @@ export function DayCell(props: Props) {
           className={cn(
             "grid size-5.5 place-items-center rounded-full text-caption tabular-nums",
             props.isToday
-              ? "bg-accent-ink text-paper"
+              ? "bg-ink text-paper"
               : props.inMonth === false
-                ? "text-ink-subtle"
+                ? // Muted, not subtle: still a real, openable day, so it needs 4.5:1.
+                  "text-ink-muted"
                 : "text-ink",
           )}
         >

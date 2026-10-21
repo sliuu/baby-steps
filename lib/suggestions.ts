@@ -41,6 +41,7 @@ export const SUGGESTIONS: Record<CategorySlug, Suggestion[]> = {
     { name: "photography", mark: "icon:camera" },
   ],
   romance: [
+    { name: "adventure", mark: "icon:compass" },
     { name: "date night", mark: "icon:heart" },
     { name: "hike", mark: "icon:mountain" },
     { name: "try a new restaurant", mark: "icon:utensils" },

@@ -9,6 +9,7 @@ import { DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import type { CalendarChange } from "@/lib/changes";
 import type { DayString } from "@/lib/dates";
 import { NO_STICKERS, type StickersByDay } from "@/lib/stickers";
+import { useReturnFocus } from "@/lib/useReturnFocus";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -26,6 +27,7 @@ type Props = {
 export function DaySheet(props: Props) {
   const day = props.day;
   const stickers = (day && props.stickersByDay.get(day)) || NO_STICKERS;
+  const returnFocus = useReturnFocus();
 
   return (
     <DialogPrimitive.Root
@@ -39,6 +41,7 @@ export function DaySheet(props: Props) {
         <DialogOverlay className="bg-ink/25" />
 
         <DialogPrimitive.Content
+          {...returnFocus}
           aria-describedby={undefined}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[85dvh] w-full max-w-136 flex-col gap-s2",

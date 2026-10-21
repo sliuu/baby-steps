@@ -107,7 +107,7 @@ export function LifePie(props: Props) {
       {focused !== null && (
         <path
           d={ringSector(0, EDGES[3], itemAngle(focused, n) - half, itemAngle(focused, n) + half)}
-          className="pointer-events-none fill-none stroke-accent-ink stroke-2"
+          className="pointer-events-none fill-none stroke-ink stroke-2"
         />
       )}
 

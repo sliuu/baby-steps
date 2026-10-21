@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { toE164 } from "@/lib/phone";
 import { petalRuleError, type PetalRule } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,7 +34,7 @@ async function saveProfile(
   return { ok: true, message: "saved." };
 }
 
-/** One save for petals, week start and texts. */
+/** One save for petals and week start. */
 export async function saveSettings(
   _: SettingsResult,
   form: FormData,
@@ -49,9 +48,6 @@ export async function saveSettings(
   const ruleError = petalRuleError(rule);
   if (ruleError) return { ok: false, message: ruleError };
 
-  const texts = textFields(form);
-  if ("error" in texts) return { ok: false, message: texts.error };
-
   return saveProfile(
     {
       petal_weeks: rule.weeks,
@@ -59,23 +55,9 @@ export async function saveSettings(
       petal_medium: rule.medium,
       petal_large: rule.large,
       week_starts_on: form.get("weekStartsOn") === "1" ? 1 : 0,
-      ...texts,
     },
     "Settings",
   );
-}
-
-/** Blank number clears it and turns texts off. */
-function textFields(
-  form: FormData,
-): { error: string } | { phone: string | null; texts_opt_in: boolean } {
-  const raw = String(form.get("phone") ?? "").trim();
-  if (!raw) return { phone: null, texts_opt_in: false };
-  const phone = toE164(raw);
-  if (!phone) return { error: "that doesn't look like a us phone number." };
-  if (form.get("optIn") !== "on")
-    return { error: "tick “text me reminders” to save a number." };
-  return { phone, texts_opt_in: true };
 }
 
 /** Typed confirmation; the RPC cascades every row. */

@@ -2,40 +2,43 @@
   <!-- The Today flower, every petal full, in the category inks. Colours live in the style block (see lib/icon-svg.test.ts). -->
   <style>
     :root {
-      --oxblood: #7A1F1F;
-      --bottle: #23402F;
-      --mustard: #C9A23A;
-      --rose: #D98C7A;
       --sage: #8FA98A;
-      --plum: #765B8C;
+      --slate: #7E9DBE;
+      --mustard: #CBA43C;
+      --plum: #9A86B2;
+      --rose: #C47A88;
+      --amber: #C9743F;
+      --ink: #23402F;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --oxblood: #7A1F1F;
-        --bottle: #8FB79C;
-        --mustard: #C9A23A;
-        --rose: #D98C7A;
-        --sage: #8FA98A;
-        --plum: #765B8C;
+        --sage: #93AE8E;
+        --slate: #6F8FAE;
+        --mustard: #D2AA45;
+        --plum: #8E73A8;
+        --rose: #CF8A97;
+        --amber: #D4874F;
+        --ink: #EFEADB;
       }
     }
-    .oxblood { fill: var(--oxblood); }
-    .bottle { fill: var(--bottle); }
-    .mustard { fill: var(--mustard); }
-    .rose { fill: var(--rose); }
     .sage { fill: var(--sage); }
+    .slate { fill: var(--slate); }
+    .mustard { fill: var(--mustard); }
     .plum { fill: var(--plum); }
+    .rose { fill: var(--rose); }
+    .amber { fill: var(--amber); }
+    .ink { fill: var(--ink); }
   </style>
   <defs>
     <path id="p" d="M 0 0 C 0.28 -0.2 0.28 -1 0 -1 C -0.28 -1 -0.28 -0.2 0 0 Z"/>
   </defs>
   <g transform="translate(140 140)">
-    <use href="#p" transform="rotate(0) translate(0 -6) scale(98)" class="oxblood"/>
-    <use href="#p" transform="rotate(60) translate(0 -6) scale(98)" class="bottle"/>
-    <use href="#p" transform="rotate(120) translate(0 -6) scale(98)" class="mustard"/>
-    <use href="#p" transform="rotate(180) translate(0 -6) scale(98)" class="rose"/>
-    <use href="#p" transform="rotate(240) translate(0 -6) scale(98)" class="sage"/>
-    <use href="#p" transform="rotate(300) translate(0 -6) scale(98)" class="plum"/>
-    <circle r="4.5" class="bottle"/>
+    <use href="#p" transform="rotate(0) translate(0 -6) scale(98)" class="mustard"/>
+    <use href="#p" transform="rotate(60) translate(0 -6) scale(98)" class="sage"/>
+    <use href="#p" transform="rotate(120) translate(0 -6) scale(98)" class="slate"/>
+    <use href="#p" transform="rotate(180) translate(0 -6) scale(98)" class="plum"/>
+    <use href="#p" transform="rotate(240) translate(0 -6) scale(98)" class="rose"/>
+    <use href="#p" transform="rotate(300) translate(0 -6) scale(98)" class="amber"/>
+    <circle r="4.5" class="ink"/>
   </g>
 </svg>

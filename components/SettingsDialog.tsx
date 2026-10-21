@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, type RefObject } from "react";
 
 import {
   deleteAccount,
@@ -16,12 +16,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatUS } from "@/lib/phone";
+import { LEVEL_RADII, PETAL_PATH } from "@/lib/balance-geometry";
 import { PETAL_WEEK_CHOICES } from "@/lib/settings";
+import { useReturnFocus } from "@/lib/useReturnFocus";
 import { cn } from "@/lib/utils";
 
-const UNDERLINE =
-  "border-0 border-b border-rule-input bg-transparent px-0 text-ui text-ink outline-none placeholder:text-ink-subtle focus-visible:border-ink";
+/** Boxed field: reads as something to change, not more text. */
+const FIELD =
+  "h-8 rounded-md border border-rule-input bg-paper px-s1 text-ui text-ink outline-none transition-colors hover:border-ink focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/20";
 
 const SIZES = ["small", "medium", "large"] as const;
 
@@ -31,33 +33,48 @@ type Draft = {
   medium: string;
   large: string;
   weekStartsOn: string;
-  phone: string;
-  optIn: boolean;
 };
 
 function sameDraft(a: Draft, b: Draft) {
   return (Object.keys(a) as (keyof Draft)[]).every((key) => a[key] === b[key]);
 }
 
+/** Title and hint on the left; a short control sits beside them, a long one below. */
 function Section(props: {
   id: string;
   title: string;
   hint?: string;
-  children: React.ReactNode;
+  aside?: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
-    <section
-      aria-labelledby={props.id}
-      className="border-t border-rule pt-s4 first:border-0 first:pt-0"
-    >
-      <h3 id={props.id} className="font-display text-body-lg text-ink">
-        {props.title}
-      </h3>
-      {props.hint && (
-        <p className="mt-1 text-label text-ink-muted">{props.hint}</p>
-      )}
-      <div className="mt-s3">{props.children}</div>
+    <section aria-labelledby={props.id} className="flex flex-col gap-s3">
+      <div className="flex flex-wrap items-center justify-between gap-x-s4 gap-y-s2">
+        <div>
+          <h3 id={props.id} className="font-display text-subhead text-ink">
+            {props.title}
+          </h3>
+          {props.hint && <p className="text-label text-ink-muted">{props.hint}</p>}
+        </div>
+        {props.aside}
+      </div>
+      {props.children}
     </section>
+  );
+}
+
+/** The petal each size grows, at the flower's own proportions. */
+function Petal(props: { level: number }) {
+  const height = (LEVEL_RADII[props.level] - 6) * 0.6;
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="-0.3 -1 0.6 1"
+      style={{ height, width: height * 0.6 }}
+      className="fill-cat-sage"
+    >
+      <path d={PETAL_PATH} />
+    </svg>
   );
 }
 
@@ -77,23 +94,22 @@ function Message(props: { result: SettingsResult }) {
 }
 
 type Props = {
-  /** E.164, or null when texts are off. */
-  phone: string | null;
   email: string | null;
   onClose: () => void;
+  /** Where focus goes on close: the menu item that opened it is gone by then. */
+  returnFocusTo?: RefObject<HTMLElement | null>;
 };
 
 /** Mounted only while open; closes on save. */
 export function SettingsDialog(props: Props) {
   const settings = useSettings();
+  const returnFocus = useReturnFocus(props.returnFocusTo);
   const [saved] = useState<Draft>(() => ({
     weeks: String(settings.petals.weeks),
     small: String(settings.petals.small),
     medium: String(settings.petals.medium),
     large: String(settings.petals.large),
     weekStartsOn: String(settings.weekStartsOn),
-    phone: props.phone ? formatUS(props.phone) : "",
-    optIn: Boolean(props.phone),
   }));
   const [draft, setDraft] = useState(saved);
   const [warning, setWarning] = useState(false);
@@ -131,6 +147,7 @@ export function SettingsDialog(props: Props) {
       }}
     >
       <DialogContent
+        {...returnFocus}
         aria-describedby={undefined}
         className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 p-0 sm:max-w-lg"
       >
@@ -140,25 +157,20 @@ export function SettingsDialog(props: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex min-h-0 flex-col gap-s4 overflow-y-auto px-s4 pb-s4">
-          <form
-            id="settings-form"
-            action={action}
-            className="flex flex-col gap-s4"
-          >
+        <div className="flex min-h-0 flex-col gap-s6 overflow-y-auto px-s4 pt-s1 pb-s5">
+          <form id="settings-form" action={action} className="flex flex-col gap-s6">
             <Section
               id="petals"
               title="petals"
-              hint="how many stickers in a category grow its petal."
-            >
-              <div className="flex flex-col gap-s3">
-                <label className="flex items-center gap-s2 text-label text-ink">
-                  counting the last
+              hint="stickers in a category it takes to grow each petal."
+              aside={
+                <label className="flex items-center gap-s1 text-label text-ink-muted">
+                  over the last
                   <select
                     name="weeks"
                     value={draft.weeks}
                     onChange={(event) => set("weeks", event.target.value)}
-                    className={cn(UNDERLINE, "h-9")}
+                    className={FIELD}
                   >
                     {PETAL_WEEK_CHOICES.map((n) => (
                       <option key={n} value={n}>
@@ -167,24 +179,27 @@ export function SettingsDialog(props: Props) {
                     ))}
                   </select>
                 </label>
-                {SIZES.map((size) => (
-                  <label
-                    key={size}
-                    className="flex items-center gap-s2 text-label text-ink"
-                  >
-                    <span className="w-16">{size}</span>
-                    at least
+              }
+            >
+              {/* The three sizes side by side, so the rule reads as growth. */}
+              <div className="grid grid-cols-3 gap-s2 rounded-xl bg-secondary p-s3">
+                {SIZES.map((size, i) => (
+                  <label key={size} className="flex flex-col items-center gap-s1 text-label text-ink">
+                    <span className="flex h-16 items-end">
+                      <Petal level={i} />
+                    </span>
+                    {size}
                     <input
                       name={size}
                       type="number"
                       min={1}
                       max={999}
                       required
+                      aria-label={`${size}: at least this many stickers`}
                       value={draft[size]}
                       onChange={(event) => set(size, event.target.value)}
-                      className={cn(UNDERLINE, "h-9 w-14 text-center")}
+                      className={cn(FIELD, "tabular w-14 [appearance:textfield] text-center [&::-webkit-inner-spin-button]:appearance-none")}
                     />
-                    stickers
                   </label>
                 ))}
               </div>
@@ -194,65 +209,35 @@ export function SettingsDialog(props: Props) {
               id="week"
               title="week starts on"
               hint="for the calendar and the petal weeks."
-            >
-              <div
-                role="radiogroup"
-                aria-labelledby="week"
-                className="flex gap-s4"
-              >
-                {[
-                  { value: "0", label: "sunday" },
-                  { value: "1", label: "monday" },
-                ].map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-s1 text-label text-ink"
-                  >
-                    <input
-                      type="radio"
-                      name="weekStartsOn"
-                      value={option.value}
-                      checked={draft.weekStartsOn === option.value}
-                      onChange={() => set("weekStartsOn", option.value)}
-                      className="size-4 accent-ink"
-                    />
-                    {option.label}
-                  </label>
-                ))}
-              </div>
-            </Section>
-
-            <Section
-              id="texts"
-              title="texts"
-              hint="clear the number to stop texts."
-            >
-              <div className="flex flex-col gap-s3">
-                <label className="flex flex-col gap-1">
-                  <span className="text-caption text-ink">phone number</span>
-                  <input
-                    name="phone"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel-national"
-                    placeholder="(555) 555-5555"
-                    value={draft.phone}
-                    onChange={(event) => set("phone", event.target.value)}
-                    className={cn(UNDERLINE, "h-10 w-full max-w-80")}
-                  />
-                </label>
-                <label className="flex items-center gap-s2 text-label text-ink">
-                  <input
-                    name="optIn"
-                    type="checkbox"
-                    checked={draft.optIn}
-                    onChange={(event) => set("optIn", event.target.checked)}
-                    className="size-4 accent-ink"
-                  />
-                  text me reminders
-                </label>
-              </div>
-            </Section>
+              aside={
+                // Segmented: both choices visible, the chosen one filled.
+                <div
+                  role="radiogroup"
+                  aria-labelledby="week"
+                  className="inline-flex rounded-md border border-rule-input p-0.5"
+                >
+                  {[
+                    { value: "0", label: "sunday" },
+                    { value: "1", label: "monday" },
+                  ].map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex h-7 cursor-pointer items-center rounded-[calc(var(--radius-md)-2px)] px-s2 text-label text-ink transition-colors has-checked:bg-ink has-checked:text-paper has-focus-visible:ring-2 has-focus-visible:ring-ink/30"
+                    >
+                      <input
+                        type="radio"
+                        name="weekStartsOn"
+                        value={option.value}
+                        checked={draft.weekStartsOn === option.value}
+                        onChange={() => set("weekStartsOn", option.value)}
+                        className="sr-only"
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              }
+            />
           </form>
 
           <AccountSection email={props.email} />
@@ -261,7 +246,7 @@ export function SettingsDialog(props: Props) {
         <div className="flex flex-wrap items-center justify-end gap-s3 border-t border-rule px-s4 py-s3">
           {warning ? (
             <>
-              <p role="alert" className="mr-auto text-label text-accent-ink">
+              <p role="alert" className="mr-auto text-label text-destructive">
                 you have unsaved changes.
               </p>
               <Button
@@ -275,7 +260,7 @@ export function SettingsDialog(props: Props) {
               <Button
                 type="submit"
                 form="settings-form"
-                variant="outline"
+                variant="filled"
                 size="sm"
                 disabled={pending}
               >
@@ -290,7 +275,7 @@ export function SettingsDialog(props: Props) {
               <Button
                 type="submit"
                 form="settings-form"
-                variant="outline"
+                variant="filled"
                 size="sm"
                 disabled={pending || !dirty}
               >
@@ -313,21 +298,23 @@ function AccountSection(props: { email: string | null }) {
       id="account"
       title="account"
       hint={props.email ? `signed in as ${props.email}` : undefined}
-    >
-      <div className="flex flex-col gap-s4">
+      aside={
         <form action={signOut}>
           <Button type="submit" variant="outline" size="sm">
             sign out
           </Button>
         </form>
-
+      }
+    >
+      {/* Set apart and quiet: the one thing here you can't undo. */}
+      <div className="border-t border-rule pt-s3">
         {!confirming ? (
           <div>
             <Button
               type="button"
               variant="text"
               onClick={() => setConfirming(true)}
-              className="text-label text-destructive"
+              className="h-auto px-0 text-label text-destructive"
             >
               delete my account
             </Button>
@@ -346,7 +333,7 @@ function AccountSection(props: { email: string | null }) {
                 name="confirm"
                 autoComplete="off"
                 autoCapitalize="none"
-                className={cn(UNDERLINE, "h-10 max-w-60")}
+                className={cn(FIELD, "max-w-60")}
               />
             </label>
             <div className="flex flex-wrap items-center gap-s3">

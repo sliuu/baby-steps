@@ -20,6 +20,8 @@ type Props = {
   selected: boolean;
   /** One <li> per sticker. */
   children: ReactNode;
+  /** Pulls the first mark's edge to the column's (its tile is wider than the mark). */
+  flush?: boolean;
 };
 
 /** One category: coloured heading, then a wrap of sticker tiles. */
@@ -28,7 +30,7 @@ export function TrayGroup(props: Props) {
     <section>
       <div
         className={cn(
-          "group/row -mx-s1 flex h-7 items-center gap-s1 rounded-lg px-s1",
+          "group/row -mx-s1 flex h-7 items-center gap-s1 rounded-sm px-s1",
           props.selected && categoryColor(props.colorKey).wash,
         )}
       >
@@ -45,7 +47,7 @@ export function TrayGroup(props: Props) {
           />
         )}
       </div>
-      <ul className="mt-s1 flex flex-wrap gap-x-s1 gap-y-s2">{props.children}</ul>
+      <ul className={cn("mt-s1 flex flex-wrap gap-x-s1 gap-y-s2", props.flush && "-ml-2.5")}>{props.children}</ul>
     </section>
   );
 }
@@ -78,8 +80,9 @@ type TileProps = {
   size?: StickerSize;
   dragId: string;
   payload: DragPayload;
+  noDrag?: boolean;
   /** Tap or Enter: add to the day. */
-  onAdd?: () => void;
+  onAdd?: (from: HTMLElement) => void;
   /** Accessible name for the add, e.g. "add gym to today". */
   addLabel: string;
   /** Lit by its eye. */
@@ -104,6 +107,7 @@ export function TrayTile(props: TileProps) {
         id={props.dragId}
         payload={props.payload}
         onActivate={props.onAdd}
+        disabled={props.noDrag}
         label={props.addLabel}
         className="flex w-full flex-col items-center gap-1.5 rounded-lg pt-1 pointer-coarse:touch-pan-y"
       >

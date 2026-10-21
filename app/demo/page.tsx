@@ -29,19 +29,20 @@ export default async function DemoPage() {
     <AppShell
       banner={
         // Above the frame; scrolls away.
-        <div className="border-b border-rule bg-secondary">
+        // A landmark, so screen readers don't skip it.
+        <aside aria-label="demo" className="border-b border-rule bg-secondary">
           <p className={`${PAGE_WIDTH} py-s1 text-center text-label text-ink-muted`}>
             demo
           </p>
-        </div>
+        </aside>
       }
       navEnd={
-        // Full load, so the invented year is dropped.
+        // Back to the landing. Full load, so the invented year is dropped.
         <a
           href="/login"
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
         >
-          sign in
+          exit
         </a>
       }
       // `local`: same board, writes to memory instead of Supabase.

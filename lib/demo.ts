@@ -41,16 +41,16 @@ type DemoHabit = {
 
 /** Mirrors `seed_life_areas`; the migration wins if they disagree. */
 const CATEGORIES: { slug: string; name: string; colorKey: string }[] = [
-  { slug: "spirituality", name: "Spirituality", colorKey: "oxblood" },
-  { slug: "exercise", name: "Exercise", colorKey: "bottle" },
-  { slug: "work", name: "Work", colorKey: "mustard" },
-  { slug: "creativity", name: "Creativity & Play", colorKey: "rose" },
-  { slug: "romance", name: "Romance & Adventure", colorKey: "sage" },
-  { slug: "friends", name: "Friends & Family", colorKey: "plum" },
+  { slug: "spirituality", name: "Spirituality", colorKey: "mustard" },
+  { slug: "exercise", name: "Exercise", colorKey: "sage" },
+  { slug: "work", name: "Work", colorKey: "slate" },
+  { slug: "creativity", name: "Creativity & Play", colorKey: "plum" },
+  { slug: "romance", name: "Romance & Adventure", colorKey: "rose" },
+  { slug: "friends", name: "Friends & Family", colorKey: "amber" },
 ];
 
 /**
- * Mirrors `scripts/seed.sql`. `base` is relative; `scale` normalises to
+ * Starts with `scripts/seed.sql`'s habits. `base` is relative; `scale` normalises to
  * `DEMO_PER_DAY`. Tuned so categories stay within ~3:1, or the star is a spike.
  */
 const HABITS: DemoHabit[] = [
@@ -166,7 +166,125 @@ const HABITS: DemoHabit[] = [
     days: [5, 6],
     fade: 0.3,
   },
+  // Demo only, past the seed: a fuller tray. Low rates, so the seed habits lead.
+  {
+    slug: "gratitude",
+    category: "spirituality",
+    name: "Gratitude",
+    mark: "icon:hand-heart",
+    base: 0.16,
+    fade: 0,
+  },
+  {
+    slug: "time-outside",
+    category: "spirituality",
+    name: "Time outside",
+    mark: "icon:sprout",
+    base: 0.16,
+    days: [0, 6],
+    fade: 0,
+  },
+  {
+    slug: "bike",
+    category: "exercise",
+    name: "Bike",
+    mark: "icon:bike",
+    base: 0.16,
+    days: [0, 6],
+    fade: 0,
+  },
+  {
+    slug: "hike",
+    category: "exercise",
+    name: "Hike",
+    mark: "icon:mountain-snow",
+    base: 0.16,
+    days: [6],
+    fade: 0,
+  },
+  {
+    slug: "side-project",
+    category: "work",
+    name: "Side project",
+    mark: "icon:laptop",
+    base: 0.16,
+    days: [0, 6],
+    fade: 0,
+  },
+  {
+    slug: "planning",
+    category: "work",
+    name: "Planning",
+    mark: "icon:pencil-ruler",
+    base: 0.16,
+    days: [1],
+    fade: 0,
+  },
+  {
+    slug: "cooking",
+    category: "creativity",
+    name: "Cooking",
+    mark: "icon:chef-hat",
+    base: 0.16,
+    fade: 0,
+  },
+  {
+    slug: "reading",
+    category: "creativity",
+    name: "Reading",
+    mark: "icon:book-open",
+    base: 0.16,
+    fade: 0,
+  },
+  {
+    slug: "photos",
+    category: "creativity",
+    name: "Photos",
+    mark: "icon:camera",
+    base: 0.16,
+    days: [0, 6],
+    fade: 0,
+  },
+  {
+    slug: "trip",
+    category: "romance",
+    name: "Trip",
+    mark: "icon:plane",
+    base: 0.16,
+    days: [5, 6],
+    fade: 0,
+  },
+  {
+    slug: "camping",
+    category: "romance",
+    name: "Camping",
+    mark: "icon:tent",
+    base: 0.16,
+    days: [6],
+    fade: 0,
+  },
+  {
+    slug: "game-night",
+    category: "friends",
+    name: "Game night",
+    mark: "icon:dices",
+    base: 0.16,
+    days: [5],
+    fade: 0,
+  },
+  {
+    slug: "coffee",
+    category: "friends",
+    name: "Coffee",
+    mark: "icon:coffee",
+    base: 0.16,
+    days: [0, 6],
+    fade: 0,
+  },
 ];
+
+/** Today is fixed: the seed stickers, in flower order. */
+const DEMO_TODAY = ["meditation", "journaling", "run", "deep-work", "piano"];
 
 /** Weekday multipliers: on vs off a habit's days. */
 const ON_DAY = 1.6;
@@ -214,7 +332,11 @@ export function demoStickers(end: DayString): StickersByDay {
     const activities: ActivitySticker[] = [];
     for (const habit of HABITS) {
       // Per-habit stream, so adding a habit doesn't reshuffle the others.
-      if (random(day, habit.slug) >= chance(habit, day, t, factor)) continue;
+      const skip =
+        day === end
+          ? !DEMO_TODAY.includes(habit.slug)
+          : random(day, habit.slug) >= chance(habit, day, t, factor);
+      if (skip) continue;
 
       const category = CATEGORIES.find((candidate) => candidate.slug === habit.category)!;
       activities.push({

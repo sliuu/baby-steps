@@ -51,7 +51,7 @@ export function RangePicker(props: Props) {
       <Select value={value.kind} onValueChange={(kind) => pick(kind as RangeKind)}>
         {/* Unboxed, like a nav link: the active range, underlined. */}
         <SelectTrigger
-          className="gap-1 border-0 bg-transparent px-0 text-ui text-ink lowercase underline decoration-accent-ink underline-offset-6 shadow-none data-[size=default]:h-auto dark:bg-transparent"
+          className="gap-1 border-0 bg-transparent px-0 text-ui text-ink lowercase underline decoration-ink underline-offset-6 shadow-none data-[size=default]:h-auto dark:bg-transparent"
           aria-label="Date range"
         >
           <SelectValue />

@@ -48,7 +48,6 @@ export function StickerRetire(props: Props) {
           type="button"
           variant="destructive"
           size="sm"
-          className="rounded-full"
           disabled={pending}
           onClick={() => run(() => deleteActivity(props.activityId))}
         >
@@ -95,7 +94,7 @@ export function DeleteWarning(props: { name: string; markCount: number }) {
   const { markCount: count } = props;
 
   return (
-    <p className="rounded-lg bg-accent-ink/10 text-accent-ink px-s1 py-s1 text-label">
+    <p className="rounded-md bg-destructive/10 text-destructive px-s1 py-s1 text-label">
       Deleting <span className="font-medium">{props.name}</span>
       {count === 0 ? (
         <> can’t be undone.</>

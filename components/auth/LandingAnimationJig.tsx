@@ -50,17 +50,17 @@ type MotionStyle = CSSProperties & {
 };
 
 const DEFAULTS: Timings = {
-  heroDuration: 300,
+  heroDuration: 260,
   heroRise: 12,
-  copyDelay: 160,
-  actionsDelay: -310,
+  copyDelay: 140,
+  actionsDelay: -270,
   fallDuration: 620,
   fallDrop: 28,
   stickerStart: 160,
   stickerGap: 160,
-  strikeWait: 280,
-  strikeDuration: 320,
-  strikeGap: 100,
+  strikeWait: 240,
+  strikeDuration: 280,
+  strikeGap: 90,
 };
 
 const ALL_ON: Groups = { text: true, stickers: true, strikes: true };
@@ -163,7 +163,7 @@ export function LandingAnimationJig(props: { children: ReactNode }) {
               [key]: Number(event.target.value),
             }))
           }
-          className="h-4 w-full cursor-pointer accent-accent-ink"
+          className="h-4 w-full cursor-pointer accent-ink"
         />
       </label>
     );
@@ -178,7 +178,7 @@ export function LandingAnimationJig(props: { children: ReactNode }) {
           onChange={(event) =>
             setGroups((current) => ({ ...current, [key]: event.target.checked }))
           }
-          className="size-4 accent-accent-ink"
+          className="size-4 accent-ink"
         />
         {label}
       </label>
@@ -235,7 +235,7 @@ export function LandingAnimationJig(props: { children: ReactNode }) {
                   },
                 }))
               }
-              className="h-4 w-full cursor-pointer accent-accent-ink"
+              className="h-4 w-full cursor-pointer accent-ink"
             />
           </label>
         ))}
